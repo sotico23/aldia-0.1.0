@@ -1,0 +1,151 @@
+<?php
+
+use App\Http\Controllers\Backend\VentaController;
+use App\Models\Almacen;
+use App\Models\Cliente;
+use App\Models\Inventario;
+use App\Models\Producto;
+use App\Models\User;
+use App\Models\Venta;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/test-returnable', function () {
+    // Create test data
+    $user = User::factory()->create();
+    $almacen = Almacen::factory()->create([
+        'owner_id' => $user->getOwnerId(),
+        'nombre' => 'Almacén Test',
+    ]);
+
+    // Producto retornable (ej: botella de agua)
+    $productoRetornable = Producto::factory()->create([
+        'owner_id' => $user->getOwnerId(),
+        'nombre' => 'Botella de Agua 500ml',
+        'codigo' => 'AGUA-500',
+        'precio_venta' => 1000,
+        'envase_retornable' => true,
+        'envase_producto_id' => null,
+    ]);
+
+    // Producto envase (la botella vacía)
+    $productoEnvase = Producto::factory()->create([
+        'owner_id' => $user->getOwnerId(),
+        'nombre' => 'Botella Vacía 500ml',
+        'codigo' => 'BOTELLA-VACIA',
+        'precio_venta' => 0,
+        'envase_retornable' => false,
+    ]);
+
+    // Asociar el producto con su envase
+    $productoRetornable->update([
+        'envase_producto_id' => $productoEnvase->id,
+    ]);
+
+    // Crear inventario inicial
+    Inventario::create([
+        'owner_id' => $user->getOwnerId(),
+        'producto_id' => $productoRetornable->id,
+        'almacen_id' => $almacen->id,
+        'cantidad' => 10, // 10 botellas llenas
+        'cantidad_minima' => 2,
+    ]);
+
+    Inventario::create([
+        'owner_id' => $user->getOwnerId(),
+        'producto_id' => $productoEnvase->id,
+        'almacen_id' => $almacen->id,
+        'cantidad' => 5, // 5 botellas vacías disponibles
+        'cantidad_minima' => 1,
+    ]);
+
+    $cliente = Cliente::factory()->create([
+        'owner_id' => $user->getOwnerId(),
+        'email' => 'cliente@test.com',
+    ]);
+
+    // Test Case 1: Venta sin retorno de envases
+    Log::info('=== TEST 1: Venta sin retorno de envases ===');
+
+    $venta1 = Venta::factory()->create([
+        'owner_id' => $user->getOwnerId(),
+        'cliente_id' => $cliente->id,
+        'almacen_id' => $almacen->id,
+        'estado' => 'pagada',
+        'total' => 2000, // 2 * 1000
+    ]);
+
+    $venta1->detalleVentas()->create([
+        'producto_id' => $productoRetornable->id,
+        'cantidad' => 2,
+        'precio_unitario' => 1000,
+        'subtotal' => 2000,
+        'envase_retornado' => false, // No se retornan envases
+    ]);
+
+    // Procesar el pago
+    app(VentaController::class)->procesarPago($venta1);
+
+    // Verificar resultados
+    $productoInv1 = Inventario::where('producto_id', $productoRetornable->id)
+        ->where('almacen_id', $almacen->id)
+        ->first();
+
+    $envaseInv1 = Inventario::where('producto_id', $productoEnvase->id)
+        ->where('almacen_id', $almacen->id)
+        ->first();
+
+    Log::info('Producto - Esperado: 8, Actual: '.$productoInv1->cantidad);
+    Log::info('Envase - Esperado: 3, Actual: '.$envaseInv1->cantidad);
+
+    // Test Case 2: Venta con retorno de envases
+    Log::info('=== TEST 2: Venta con retorno de envases ===');
+
+    $venta2 = Venta::factory()->create([
+        'owner_id' => $user->getOwnerId(),
+        'cliente_id' => $cliente->id,
+        'almacen_id' => $almacen->id,
+        'estado' => 'pagada',
+        'total' => 2000, // 2 * 1000
+    ]);
+
+    $venta2->detalleVentas()->create([
+        'producto_id' => $productoRetornable->id,
+        'cantidad' => 2,
+        'precio_unitario' => 1000,
+        'subtotal' => 2000,
+        'envase_retornado' => true, // Se retornan envases
+    ]);
+
+    // Procesar el pago
+    app(VentaController::class)->procesarPago($venta2);
+
+    // Verificar resultados
+    $productoInv2 = Inventario::where('producto_id', $productoRetornable->id)
+        ->where('almacen_id', $almacen->id)
+        ->first();
+
+    $envaseInv2 = Inventario::where('producto_id', $productoEnvase->id)
+        ->where('almacen_id', $almacen->id)
+        ->first();
+
+    Log::info('Producto - Esperado: 6, Actual: '.$productoInv2->cantidad);
+    Log::info('Envase - Esperado: 5, Actual: '.$envaseInv2->cantidad);
+    Log::info('(Explicación: 3 anteriores - 2 entregados + 2 retornados = 3)');
+
+    return response()->json([
+        'test1' => [
+            'producto_esperado' => 8,
+            'producto_real' => $productoInv1->cantidad,
+            'envase_esperado' => 3,
+            'envase_real' => $envaseInv1->cantidad,
+            'exito_test1' => ($productoInv1->cantidad == 8 && $envaseInv1->cantidad == 3),
+        ],
+        'test2' => [
+            'producto_esperado' => 6,
+            'producto_real' => $productoInv2->cantidad,
+            'envase_esperado' => 5,
+            'envase_real' => $envaseInv2->cantidad,
+            'exito_test2' => ($productoInv2->cantidad == 6 && $envaseInv2->cantidad == 5),
+        ],
+    ]);
+});
