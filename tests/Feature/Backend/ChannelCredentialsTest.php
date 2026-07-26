@@ -122,7 +122,7 @@ test('test-telegram returns error when no token configured', function () {
 
     $response->assertJson([
         'success' => false,
-        'message' => 'No hay un Token de Bot de Telegram configurado.',
+        'message' => 'No hay un Token de Bot de Telegram configurado. Ingresa un token o guárdalo primero.',
     ]);
 });
 

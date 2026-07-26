@@ -16,6 +16,7 @@ class ChannelCredential extends Model
         'owner_id',
         'telegram_bot_token',
         'telegram_bot_username',
+        'telegram_chat_id',
         'whatsapp_phone_number_id',
         'whatsapp_access_token',
         'whatsapp_business_id',

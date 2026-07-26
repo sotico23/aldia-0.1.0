@@ -92,20 +92,68 @@ class ChannelCredentialController extends Controller
             ->with('success', 'Credenciales guardadas correctamente.');
     }
 
-    public function testTelegram(): JsonResponse
+    public function testTelegram(Request $request): JsonResponse
     {
         $ownerId = Auth::user()->getOwnerId();
-        $credentials = ChannelCredential::where('owner_id', $ownerId)->first();
 
-        if (! $credentials || ! $credentials->telegram_bot_token) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No hay un Token de Bot de Telegram configurado.',
-            ]);
+        $token = $request->input('telegram_bot_token');
+
+        if (! $token) {
+            $credentials = ChannelCredential::where('owner_id', $ownerId)->first();
+
+            if (! $credentials || ! $credentials->telegram_bot_token) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay un Token de Bot de Telegram configurado. Ingresa un token o guárdalo primero.',
+                ]);
+            }
+
+            $token = $credentials->telegram_bot_token;
         }
 
         $service = new TelegramService;
-        $result = $service->validateCredentials($credentials->telegram_bot_token);
+        $result = $service->validateCredentials($token);
+
+        return response()->json($result);
+    }
+
+    public function sendTestMessage(Request $request): JsonResponse
+    {
+        $ownerId = Auth::user()->getOwnerId();
+
+        $token = $request->input('telegram_bot_token');
+
+        if (! $token) {
+            $credentials = ChannelCredential::where('owner_id', $ownerId)->first();
+
+            if (! $credentials || ! $credentials->telegram_bot_token) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay un Token de Bot de Telegram configurado.',
+                ]);
+            }
+
+            $token = $credentials->telegram_bot_token;
+        }
+
+        $chatId = $request->input('telegram_chat_id');
+
+        if (! $chatId) {
+            $credentials = ChannelCredential::where('owner_id', $ownerId)->first();
+
+            if (! $credentials || ! $credentials->telegram_chat_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se ha vinculado una cuenta de Telegram. Primero abre el chat del bot y presiona "Iniciar" (/start) o usa el widget de inicio de sesión de Telegram.',
+                ]);
+            }
+
+            $chatId = $credentials->telegram_chat_id;
+        }
+
+        $service = new TelegramService;
+        $service->forOwner($ownerId);
+        $result = $service->sendMessage($chatId, '🤖 Mensaje de prueba desde Aldia');
 
         return response()->json($result);
     }

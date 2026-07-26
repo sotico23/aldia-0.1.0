@@ -12,6 +12,7 @@ import {
     AlertCircle,
     Settings,
     History,
+    MessageSquare,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -57,6 +58,38 @@ interface PageProps {
     } | null;
 }
 
+interface TelegramLoginWidgetProps {
+    botUsername: string;
+}
+
+function TelegramLoginWidget({ botUsername }: TelegramLoginWidgetProps) {
+    const scriptLoaded = typeof window !== 'undefined' && document.querySelector('script[src*="telegram-widget.js"]');
+
+    if (!scriptLoaded) {
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://telegram.org/js/telegram-widget.js?22';
+        script.setAttribute('data-telegram-login', botUsername);
+        script.setAttribute('data-size', 'large');
+        script.setAttribute('data-radius', '8');
+        script.setAttribute('data-auth-url', '/telegram/login-callback');
+        script.setAttribute('data-request-access', 'write');
+        document.body.appendChild(script);
+    }
+
+    return (
+        <div
+            id="telegram-login-widget"
+            data-telegram-login={botUsername}
+            data-size="large"
+            data-radius="8"
+            data-auth-url="/telegram/login-callback"
+            data-request-access="write"
+            style={{ display: 'block', width: '100%' }}
+        />
+    );
+}
+
 export default function ChannelCredentials({
     credentials,
     has_credentials,
@@ -64,6 +97,7 @@ export default function ChannelCredentials({
 }: PageProps) {
     const [testingTelegram, setTestingTelegram] = useState(false);
     const [testingWhatsapp, setTestingWhatsapp] = useState(false);
+    const [sendingTestMessage, setSendingTestMessage] = useState(false);
     const [telegramStatus, setTelegramStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [whatsappStatus, setWhatsappStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [botUsername, setBotUsername] = useState(credentials?.telegram_bot_username ?? '');
@@ -105,7 +139,11 @@ export default function ChannelCredentials({
                 headers: {
                     'X-CSRF-TOKEN': getCsrfToken(),
                     Accept: 'application/json',
+                    'Content-Type': 'application/json',
                 },
+                body: JSON.stringify({
+                    telegram_bot_token: data.telegram_bot_token,
+                }),
             });
 
             const result = await resp.json();
@@ -125,6 +163,43 @@ export default function ChannelCredentials({
             toast.error('Error de conexión con el servidor.');
         } finally {
             setTestingTelegram(false);
+        }
+    };
+
+    const sendTestMessage = async () => {
+        if (!botUsername) {
+            toast.error('El username del bot no está configurado. Haz clic en "Probar Conexión" primero.');
+            return;
+        }
+
+        setSendingTestMessage(true);
+
+        try {
+            const resp = await fetch('/canales/send-test-message', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify({ telegram_bot_token: botToken }),
+            });
+
+            const result = await resp.json();
+
+            if (result.success) {
+                toast.success('Mensaje de prueba enviado. Revisa tu Telegram.');
+            } else {
+                // Handle specific error when user hasn't started the bot
+                if (result.error_code === 403 || result.message?.includes('chat not found') || result.message?.includes('blocked')) {
+                    toast.error('No se pudo enviar el mensaje. Primero debes abrir el chat del bot y presionar "Iniciar" (/start).');
+                } else {
+                    toast.error(result.message || 'Error al enviar mensaje de prueba.');
+                }
+            }
+        } catch {
+            toast.error('Error de conexión con el servidor.');
+        } finally {
+            setSendingTestMessage(false);
         }
     };
 
@@ -284,6 +359,40 @@ export default function ChannelCredentials({
                                             </span>
                                         )}
                                     </div>
+
+                                    {/* Botones de acción post-conexión */}
+                                    {telegramStatus === 'success' && botUsername && (
+                                        <div className="space-y-2 pt-2 border-t">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                className="w-full gap-2"
+                                                onClick={() => window.open(`https://t.me/${botUsername}`, '_blank', 'noopener,noreferrer')}
+                                            >
+                                                <MessageSquare className="h-3.5 w-3.5" />
+                                                Abrir Chat en Telegram
+                                            </Button>
+                                            {/*      <Button
+                                                type="button"
+                                                variant="default"
+                                                size="sm"
+                                                className="w-full gap-2"
+                                                onClick={sendTestMessage}
+                                                disabled={sendingTestMessage}
+                                            >
+                                                {sendingTestMessage ? (
+                                                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                ) : (
+                                                    <Send className="h-3.5 w-3.5" />
+                                                )}
+                                                {sendingTestMessage ? 'Enviando...' : 'Enviar Mensaje de Prueba'}
+                                            </Button> */}
+                                            <p className="text-[11px] text-muted-foreground text-center">
+                                                Para recibir notificaciones, abre el chat y presiona <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">Iniciar</kbd> o <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">/start</kbd> en Telegram.
+                                            </p>
+                                        </div>
+                                    )}
 
                                     <div className="rounded-lg border border-border/50 bg-muted/20 p-3">
                                         <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -478,6 +587,26 @@ export default function ChannelCredentials({
                         </div>
                     </form>
 
+                    {/* Telegram Login Widget */}
+                    {has_credentials && botUsername && (
+                        <Card className="border-sky-200/50 bg-sky-50/30 dark:bg-sky-900/10">
+                            <CardHeader>
+                                <div className="flex items-center gap-2">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400">
+                                        <Bot className="h-4 w-4" />
+                                    </div>
+                                    <CardTitle className="text-base">Iniciar Sesión con Telegram</CardTitle>
+                                </div>
+                                <CardDescription>
+                                    Permite a tus usuarios autenticarse en la plataforma usando su cuenta de Telegram
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <TelegramLoginWidget botUsername={botUsername} />
+                            </CardContent>
+                        </Card>
+                    )}
+
                     <Separator />
 
                     <Card>
@@ -500,11 +629,10 @@ export default function ChannelCredentials({
                                 <div className="mb-4 rounded-lg border border-border/50 bg-muted/20 p-3">
                                     <div className="flex items-center gap-2 text-xs font-medium">
                                         <span
-                                            className={`inline-block h-2 w-2 rounded-full ${
-                                                automation.enabled
+                                            className={`inline-block h-2 w-2 rounded-full ${automation.enabled
                                                     ? 'bg-emerald-500'
                                                     : 'bg-muted-foreground'
-                                            }`}
+                                                }`}
                                         />
                                         {automation.enabled ? 'Activo' : 'Inactivo'}
                                     </div>
@@ -514,13 +642,13 @@ export default function ChannelCredentials({
                                             {automation.channel === 'telegram'
                                                 ? 'Telegram'
                                                 : automation.channel === 'whatsapp'
-                                                  ? 'WhatsApp'
-                                                  : 'Telegram + WhatsApp'}{' '}
+                                                    ? 'WhatsApp'
+                                                    : 'Telegram + WhatsApp'}{' '}
                                             | {automation.frequency === 'daily'
                                                 ? 'Diario'
                                                 : automation.frequency === 'weekly'
-                                                  ? 'Semanal'
-                                                  : 'Mensual'}{' '}
+                                                    ? 'Semanal'
+                                                    : 'Mensual'}{' '}
                                             a las {automation.execution_time}
                                         </p>
                                         {automation.last_run_at && (

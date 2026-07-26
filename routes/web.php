@@ -24,6 +24,7 @@ use App\Http\Controllers\Backend\PublicacionController;
 use App\Http\Controllers\Backend\SiiController;
 use App\Http\Controllers\Backend\SystemIntegrationController;
 use App\Http\Controllers\Backend\TareaController;
+use App\Http\Controllers\Backend\TelegramCallbackController;
 use App\Http\Controllers\Backend\VentaController;
 use App\Http\Controllers\Backend\WebpayConfigController;
 use App\Http\Controllers\Backend\WebpayController;
@@ -110,6 +111,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('canales/test-telegram', [ChannelCredentialController::class, 'testTelegram'])
             ->name('channel-credentials.test-telegram')
             ->middleware('throttle:10,1');
+        Route::post('canales/send-test-message', [ChannelCredentialController::class, 'sendTestMessage'])
+            ->name('channel-credentials.send-test-message')
+            ->middleware('throttle:10,1');
         Route::post('canales/test-whatsapp', [ChannelCredentialController::class, 'testWhatsApp'])
             ->name('channel-credentials.test-whatsapp')
             ->middleware('throttle:10,1');
@@ -122,6 +126,9 @@ Route::middleware(['auth'])->group(function () {
             ->name('automation.history');
         Route::get('automatizaciones/historial/{id}', [AutomationExecutionController::class, 'show'])
             ->name('automation.history.show');
+
+        Route::post('telegram/login-callback', [TelegramCallbackController::class, 'handle'])
+            ->name('telegram.login-callback');
     });
 
     Route::middleware(['permission:comercial.cotizaciones.viewAny'])->group(function () {
