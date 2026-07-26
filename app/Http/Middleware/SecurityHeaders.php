@@ -25,8 +25,14 @@ class SecurityHeaders
         $response->headers->set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
 
         if (app()->environment('production') && ! Vite::isRunningHot()) {
+            $host = parse_url(config('app.url'), PHP_URL_HOST) ?: 'aldiaproyect.com';
+            $reverbHost = config('reverb.apps.apps.0.options.host') ?: $host;
+            $reverbPort = config('reverb.apps.apps.0.options.port', 443);
+            $reverbScheme = config('reverb.apps.apps.0.options.scheme', 'https');
+            $wsScheme = $reverbScheme === 'https' ? 'wss' : 'ws';
+
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-            $response->headers->set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'nonce-{$nonce}'; style-src 'self' 'nonce-{$nonce}' https://fonts.bunny.net; img-src 'self' data: https:; font-src 'self' https://fonts.bunny.net; connect-src 'self' https://api.telegram.org https://graph.facebook.com; frame-ancestors 'none'; report-uri /api/v1/csp-report; report-to csp-endpoint;");
+            $response->headers->set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'nonce-{$nonce}'; style-src 'self' 'nonce-{$nonce}' https://fonts.bunny.net; img-src 'self' data: https:; font-src 'self' https://fonts.bunny.net; connect-src 'self' https://{$reverbHost} {$wsScheme}://{$reverbHost} https://api.telegram.org https://graph.facebook.com; frame-ancestors 'none'; report-uri /api/v1/csp-report; report-to csp-endpoint;");
             $response->headers->set('Report-To', json_encode([
                 'group' => 'csp-endpoint',
                 'max_age' => 10886400,

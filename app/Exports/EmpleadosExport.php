@@ -14,7 +14,7 @@ class EmpleadosExport implements FromCollection, WithHeadings, WithMapping
     public function collection()
     {
         $query = Empleado::with('almacen')
-            ->where('creator_id', auth()->user()->getOwnerId());
+            ->where('owner_id', auth()->user()->getOwnerId());
 
         if (! empty($this->filters['search'])) {
             $search = $this->filters['search'];

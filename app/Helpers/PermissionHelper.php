@@ -14,73 +14,62 @@ class PermissionHelper
      * Si no hay subgrupo, solo 'Grupo Sidebar'
      */
     private static array $sidebarModuleMap = [
-        // SISTEMA (Administración)
-        'admin.usuarios' => 'SISTEMA:Usuarios y Roles',
-        'admin.roles' => 'SISTEMA:Usuarios y Roles',
-        'admin.configuracion' => 'SISTEMA:Configuración Web',
-        'admin.web-settings' => 'SISTEMA:Configuración Web',
-        'admin.countries' => 'SISTEMA:Países y Monedas',
-        'admin.reportes' => 'SISTEMA:Reportes',
-        'admin.mail-templates' => 'SISTEMA:Email Marketing',
-        'admin.email-config' => 'SISTEMA:Config. Correo',
-        'admin.webhooks' => 'SISTEMA:Automatizaciones',
-        'admin.finanzas' => 'SISTEMA:Automatizaciones',
-        'admin.webpay-config' => 'SISTEMA:Automatizaciones',
-        'admin.paypal-config' => 'SISTEMA:Automatizaciones',
-        'admin.mercadopago-config' => 'SISTEMA:Automatizaciones',
-        'admin.transactions' => 'SISTEMA:Automatizaciones',
-        'admin.commissions' => 'SISTEMA:Automatizaciones',
-        'sistema.automatizaciones' => 'SISTEMA:Automatizaciones',
-
         // COMERCIAL (Gestión Comercial)
         'comercial.categorias' => 'COMERCIAL:Fundamental',
         'comercial.productos' => 'COMERCIAL:Fundamental',
         'comercial.clientes' => 'COMERCIAL:Fundamental',
+        'inventario.almacenes' => 'COMERCIAL:Fundamental',
         'comercial.prospectos' => 'COMERCIAL:CRM & Ventas',
         'comercial.oportunidades' => 'COMERCIAL:CRM & Ventas',
         'comercial.cotizaciones' => 'COMERCIAL:CRM & Ventas',
-        'comercial.campanas' => 'COMERCIAL:CRM & Ventas',
         'comercial.call-center' => 'COMERCIAL:CRM & Ventas',
         'comercial.tickets' => 'COMERCIAL:CRM & Ventas',
+        'comercial.campanas' => 'COMERCIAL:CRM & Ventas',
+        'ventas.ventas' => 'COMERCIAL:CRM & Ventas',
 
         // OPERACIONES (Operaciones e Inventario)
         'inventario.inventarios' => 'OPERACIONES:Inventario',
-        'inventario.almacenes' => 'OPERACIONES:Almacenes',
-        'inventario.movimientos' => 'OPERACIONES:Movimientos',
-        'inventario.lotes' => 'OPERACIONES:Lotes y Series',
-        'inventario.proveedores' => 'OPERACIONES:Proveedores',
-        'inventario.compras' => 'OPERACIONES:Órdenes de Compra',
-        'inventario.vacios' => 'OPERACIONES:Vacíos',
+        'inventario.movimientos' => 'OPERACIONES:Inventario',
+        'inventario.lotes' => 'OPERACIONES:Inventario',
+        'inventario.proveedores' => 'OPERACIONES:Inventario',
+        'inventario.compras' => 'OPERACIONES:Inventario',
+        'inventario.vacios' => 'OPERACIONES:Inventario',
 
-        // MRP (Producción)
-        'mrp.boms' => 'MRP:BOM (Materiales)',
-        'mrp.produccion' => 'MRP:Órdenes Producción',
-        'mrp.calidad' => 'MRP:Control Calidad',
-        'mrp.planificacion' => 'MRP:Planificación',
+        // OPERACIONES (Producción MRP)
+        'mrp.boms' => 'OPERACIONES:Producción',
+        'mrp.produccion' => 'OPERACIONES:Producción',
+        'mrp.calidad' => 'OPERACIONES:Producción',
+        'mrp.planificacion' => 'OPERACIONES:Producción',
 
-        // FINANZAS Y FACTURACIÓN (Facturación)
-        'finanzas.facturacion' => 'FINANZAS Y FACTURACIÓN:Facturación (AR)',
-        'finanzas.cobranzas' => 'FINANZAS Y FACTURACIÓN:Cobranzas',
-        'finanzas.pagos' => 'FINANZAS Y FACTURACIÓN:Pagos (AP)',
-        'finanzas.contabilidad' => 'FINANZAS Y FACTURACIÓN:Contabilidad (GL)',
-        'finanzas.impuestos' => 'FINANZAS Y FACTURACIÓN:Impuestos',
-        'finanzas.tesoreria' => 'FINANZAS Y FACTURACIÓN:Tesorería',
+        // OPERACIONES (Monitoreo)
+        'uptime.monitores' => 'OPERACIONES:Monitoreo',
+        'uptime.alertas' => 'OPERACIONES:Monitoreo',
 
-        // PAGOS EN LÍNEA
-        'finanzas.webpay-config' => 'PAGOS EN LÍNEA:Webpay',
-        'finanzas.paypal-config' => 'PAGOS EN LÍNEA:PayPal',
-        'finanzas.mercadopago-config' => 'PAGOS EN LÍNEA:MercadoPago',
-        'finanzas.webpay-movimientos' => 'PAGOS EN LÍNEA:Movimientos',
-        'finanzas.plataforma-pago' => 'PAGOS EN LÍNEA:Pago Plataforma',
-        'ventas.cupones' => 'PAGOS EN LÍNEA:Cupones',
+        // FACTURACIÓN
+        'finanzas.facturacion' => 'FACTURACIÓN:Facturación',
+        'finanzas.cobranzas' => 'FACTURACIÓN:Cobranzas',
+        'finanzas.pagos' => 'FACTURACIÓN:Pagos',
+        'finanzas.contabilidad' => 'FACTURACIÓN:Contabilidad',
+        'finanzas.impuestos' => 'FACTURACIÓN:Impuestos',
 
-        // GESTIÓN HUMANA
-        'rrhh.empleados' => 'GESTIÓN HUMANA:Empleados',
-        'rrhh.nominas' => 'GESTIÓN HUMANA:Nómina',
-        'rrhh.asistencia' => 'GESTIÓN HUMANA:Asistencia',
-        'rrhh.prestamos' => 'GESTIÓN HUMANA:Préstamos y Adelantos',
-        'rrhh.reclutamiento' => 'GESTIÓN HUMANA:Reclutamiento',
-        'rrhh.evaluaciones' => 'GESTIÓN HUMANA:Evaluaciones',
+        // FINANZAS (Pagos en Línea)
+        'finanzas.tesoreria' => 'FINANZAS:Tesorería',
+        'finanzas.sii' => 'FINANZAS:SII (DTE)',
+        'admin.finanzas' => 'FINANZAS:Configuración',
+        'admin.webpay-config' => 'FINANZAS:Webpay',
+        'admin.paypal-config' => 'FINANZAS:PayPal',
+        'admin.mercadopago-config' => 'FINANZAS:MercadoPago',
+        'admin.transactions' => 'FINANZAS:Movimientos',
+        'admin.commissions' => 'FINANZAS:Comisiones',
+        'ventas.cupones' => 'FINANZAS:Cupones',
+
+        // RRHH (Gestión Humana)
+        'rrhh.empleados' => 'RRHH:Empleados',
+        'rrhh.nominas' => 'RRHH:Nómina',
+        'rrhh.asistencia' => 'RRHH:Asistencia',
+        'rrhh.prestamos' => 'RRHH:Préstamos y Adelantos',
+        'rrhh.reclutamiento' => 'RRHH:Reclutamiento',
+        'rrhh.evaluaciones' => 'RRHH:Evaluaciones',
 
         // PROYECTOS (PMS)
         'proyectos.proyectos' => 'PROYECTOS:Proyectos',
@@ -95,67 +84,71 @@ class PermissionHelper
         'flota.cargas' => 'LOGÍSTICA:Cargas Diarias / Rutas',
         'flota.grupos-trabajo' => 'LOGÍSTICA:Grupos de Trabajo',
 
-        // PUNTO DE VENTA (POS)
-        'ventas.pos' => 'PUNTO DE VENTA (POS):Terminal POS',
-        'ventas.variantes' => 'PUNTO DE VENTA (POS):Variantes / SKUs',
+        // TIENDA (Punto de Venta)
+        'ventas.pos' => 'TIENDA:Terminal POS',
+        'ventas.variantes' => 'TIENDA:Variantes / SKUs',
 
-        // CITAS Y RESERVAS
-        'citas.citas' => 'CITAS Y RESERVAS:Citas',
-        'citas.servicios' => 'CITAS Y RESERVAS:Servicios',
+        // SERVICIOS (Citas y Reservas)
+        'citas.citas' => 'SERVICIOS:Citas',
+        'citas.servicios' => 'SERVICIOS:Servicios',
 
-        // PLATAFORMA DE APRENDIZAJE (LMS)
-        'lms.cursos' => 'PLATAFORMA DE APRENDIZAJE:Cursos',
-        'lms.lecciones' => 'PLATAFORMA DE APRENDIZAJE:Lecciones',
-        'lms.alumnos' => 'PLATAFORMA DE APRENDIZAJE:Alumnos',
+        // EDUCACIÓN (Plataforma de Aprendizaje)
+        'lms.cursos' => 'EDUCACIÓN:Cursos',
+        'lms.lecciones' => 'EDUCACIÓN:Lecciones',
+        'lms.alumnos' => 'EDUCACIÓN:Alumnos',
 
-        // MARKETING (unificado: Campañas + Rifas + Email)
-        'comercial.campanas' => 'MARKETING:Campañas',
-        'rifas.rifas' => 'MARKETING:Rifas y Sorteos',
-        'rifas.sorteos' => 'MARKETING:Rifas y Sorteos',
+        // MARKETING
         'admin.mail-templates' => 'MARKETING:Email Marketing',
         'admin.email-config' => 'MARKETING:Config. Correo',
+        'rifas.rifas' => 'MARKETING:Rifas y Sorteos',
+        'rifas.sorteos' => 'MARKETING:Rifas y Sorteos',
 
-        // MONITOREO
-        'uptime.monitores' => 'MONITOREO:Monitores',
-        'uptime.alertas' => 'MONITOREO:Alertas',
-
-        // GESTIÓN SII (DTE) - desde sidebar derecho
-        'finanzas.sii' => 'GESTIÓN SII (DTE):Configuración SII',
-
-        // MARKETPLACE - desde sidebar derecho
-        'comercial.oportunidades' => 'MARKETPLACE:Mis Ventas',
-        'ventas.cupones' => 'MARKETPLACE:Cupones',
-
-        // RECOMPENSAS - desde sidebar derecho
-        // No hay permisos técnicos específicos, usar general
-
-        // AUTOMATIZACIONES - desde sidebar derecho
-        'sistema.automatizaciones' => 'AUTOMATIZACIONES:Canales',
+        // SISTEMA (Administración)
+        'admin.usuarios' => 'SISTEMA:Usuarios y Roles',
+        'admin.roles' => 'SISTEMA:Usuarios y Roles',
+        'admin.configuracion' => 'SISTEMA:Configuración Web',
+        'admin.web-settings' => 'SISTEMA:Configuración Web',
+        'admin.countries' => 'SISTEMA:Países y Monedas',
+        'admin.reportes' => 'SISTEMA:Reportes',
+        'admin.webhooks' => 'SISTEMA:Automatizaciones',
+        'sistema.automatizaciones' => 'SISTEMA:Automatizaciones',
     ];
 
     /**
-     * Orden visual de las Cards en el frontend
+     * Orden visual de las Cards en el frontend (debe coincidir con el Sidebar)
      */
     private static array $sidebarCardOrder = [
-        'SISTEMA',
         'COMERCIAL',
         'OPERACIONES',
-        'MRP',
-        'FINANZAS Y FACTURACIÓN',
-        'PAGOS EN LÍNEA',
-        'GESTIÓN HUMANA',
+        'FACTURACIÓN',
+        'FINANZAS',
+        'RRHH',
         'PROYECTOS',
         'LOGÍSTICA',
-        'PUNTO DE VENTA (POS)',
-        'CITAS Y RESERVAS',
-        'PLATAFORMA DE APRENDIZAJE',
+        'TIENDA',
+        'SERVICIOS',
+        'EDUCACIÓN',
         'MARKETING',
-        'MONITOREO',
-        'GESTIÓN SII (DTE)',
-        'MARKETPLACE',
-        'RECOMPENSAS',
-        'AUTOMATIZACIONES',
+        'SISTEMA',
         'OTROS / PERMISOS TRANSVERSALES',
+    ];
+
+    /**
+     * Orden de subgrupos dentro de cada módulo (debe coincidir con el Sidebar)
+     */
+    private static array $subgroupOrder = [
+        'COMERCIAL' => ['Fundamental', 'CRM & Ventas'],
+        'OPERACIONES' => ['Inventario', 'Producción', 'Monitoreo'],
+        'FACTURACIÓN' => ['Facturación', 'Cobranzas', 'Pagos', 'Contabilidad', 'Impuestos'],
+        'FINANZAS' => ['Configuración', 'Webpay', 'PayPal', 'MercadoPago', 'Movimientos', 'Comisiones', 'SII (DTE)', 'Tesorería', 'Cupones'],
+        'RRHH' => ['Empleados', 'Nómina', 'Asistencia', 'Préstamos y Adelantos', 'Reclutamiento', 'Evaluaciones'],
+        'PROYECTOS' => ['Proyectos', 'Hitos y Tareas', 'Timesheets', 'Gastos Proyecto'],
+        'LOGÍSTICA' => ['Vehículos', 'Conductores', 'Entregas', 'Cargas Diarias / Rutas', 'Grupos de Trabajo'],
+        'TIENDA' => ['Terminal POS', 'Variantes / SKUs'],
+        'SERVICIOS' => ['Citas', 'Servicios'],
+        'EDUCACIÓN' => ['Cursos', 'Lecciones', 'Alumnos'],
+        'MARKETING' => ['Email Marketing', 'Config. Correo', 'Rifas y Sorteos'],
+        'SISTEMA' => ['Usuarios y Roles', 'Configuración Web', 'Países y Monedas', 'Reportes', 'Automatizaciones'],
     ];
 
     /**
@@ -187,7 +180,10 @@ class PermissionHelper
 
         $friendlyAction = self::$actionMap[$accion] ?? ucfirst($accion);
 
-        return "{$friendlyAction}";
+        // Formatear el recurso: reemplazar guiones/underscores por espacios y capitalizar
+        $formattedResource = ucwords(str_replace(['-', '_'], ' ', $submodulo));
+
+        return "{$friendlyAction} {$formattedResource}";
     }
 
     /**
@@ -275,10 +271,26 @@ class PermissionHelper
             ];
         }
 
-        // Ordenar subgrupos dentro de cada grupo alfabéticamente
+        // Ordenar subgrupos según $subgroupOrder
         foreach ($grouped as $group => $subgroups) {
-            ksort($grouped[$group]);
-            foreach ($subgroups as $subgroup => $perms) {
+            $orderedSubgroups = self::$subgroupOrder[$group] ?? [];
+            $sortedSubgroups = [];
+
+            foreach ($orderedSubgroups as $subgroupName) {
+                if (isset($grouped[$group][$subgroupName])) {
+                    $sortedSubgroups[$subgroupName] = $grouped[$group][$subgroupName];
+                }
+            }
+
+            foreach ($grouped[$group] as $subgroupName => $perms) {
+                if (! isset($sortedSubgroups[$subgroupName])) {
+                    $sortedSubgroups[$subgroupName] = $perms;
+                }
+            }
+
+            $grouped[$group] = $sortedSubgroups;
+
+            foreach ($sortedSubgroups as $subgroup => $perms) {
                 usort($grouped[$group][$subgroup], fn ($a, $b) => strcmp($a['name'], $b['name']));
             }
         }
@@ -301,6 +313,123 @@ class PermissionHelper
         });
 
         return $grouped;
+    }
+
+    /**
+     * Devuelve permisos agrupados por Módulo → Subgrupo → Recurso → Permisos
+     * Estructura de 3 niveles para el modal de edición de roles
+     */
+    public static function getGroupedPermissionsByModuleSubgroupResource(): array
+    {
+        $permissions = Permission::get();
+
+        return self::buildGroupedByModuleSubgroupResource($permissions);
+    }
+
+    /**
+     * Devuelve permisos agrupados por Módulo → Subgrupo → Recurso filtrados por usuario
+     */
+    public static function getGroupedPermissionsForUserByModuleSubgroupResource(User $user): array
+    {
+        $userPermissionIds = $user->getAllPermissions()->pluck('id')->toArray();
+
+        $permissions = Permission::whereIn('id', $userPermissionIds)->get();
+
+        return self::buildGroupedByModuleSubgroupResource($permissions);
+    }
+
+    /**
+     * Construye la estructura agrupada por Módulo → Subgrupo → Recurso → Permisos
+     */
+    private static function buildGroupedByModuleSubgroupResource($permissions): array
+    {
+        $grouped = [];
+
+        foreach ($permissions as $permission) {
+            [$group, $subgroup] = self::getSidebarGroup($permission->name);
+            $resource = self::getResourceName($permission->name);
+
+            if (! isset($grouped[$group])) {
+                $grouped[$group] = [];
+            }
+
+            if (! isset($grouped[$group][$subgroup])) {
+                $grouped[$group][$subgroup] = [];
+            }
+
+            if (! isset($grouped[$group][$subgroup][$resource])) {
+                $grouped[$group][$subgroup][$resource] = [];
+            }
+
+            $grouped[$group][$subgroup][$resource][] = [
+                'id' => $permission->id,
+                'name' => $permission->name,
+                'friendly_name' => self::getFriendlyName($permission->name),
+            ];
+        }
+
+        // Ordenar subgrupos según $subgroupOrder y recursos alfabéticamente
+        foreach ($grouped as $group => $subgroups) {
+            $orderedSubgroups = self::$subgroupOrder[$group] ?? [];
+            $sortedSubgroups = [];
+
+            // Primero los subgrupos en el orden definido
+            foreach ($orderedSubgroups as $subgroupName) {
+                if (isset($grouped[$group][$subgroupName])) {
+                    $sortedSubgroups[$subgroupName] = $grouped[$group][$subgroupName];
+                }
+            }
+
+            // Luego los subgrupos no definidos en el orden (alfabéticamente)
+            foreach ($grouped[$group] as $subgroupName => $resources) {
+                if (! isset($sortedSubgroups[$subgroupName])) {
+                    $sortedSubgroups[$subgroupName] = $resources;
+                }
+            }
+
+            $grouped[$group] = $sortedSubgroups;
+
+            foreach ($sortedSubgroups as $subgroup => $resources) {
+                ksort($grouped[$group][$subgroup]);
+                foreach ($resources as $resource => $perms) {
+                    usort($grouped[$group][$subgroup][$resource], fn ($a, $b) => strcmp($a['name'], $b['name']));
+                }
+            }
+        }
+
+        // Ordenar grupos según $sidebarCardOrder
+        uksort($grouped, function ($a, $b) {
+            $posA = array_search($a, self::$sidebarCardOrder);
+            $posB = array_search($b, self::$sidebarCardOrder);
+            if ($posA === false && $posB === false) {
+                return strcmp($a, $b);
+            }
+            if ($posA === false) {
+                return 1;
+            }
+            if ($posB === false) {
+                return -1;
+            }
+
+            return $posA - $posB;
+        });
+
+        return $grouped;
+    }
+
+    /**
+     * Extrae el nombre legible del recurso a partir del nombre técnico del permiso
+     * Ej: "comercial.call-center.create" → "Call Center"
+     */
+    private static function getResourceName(string $permissionName): string
+    {
+        $parts = explode('.', $permissionName);
+
+        if (count($parts) >= 2) {
+            return ucwords(str_replace(['-', '_'], ' ', $parts[1]));
+        }
+
+        return 'General';
     }
 
     /**

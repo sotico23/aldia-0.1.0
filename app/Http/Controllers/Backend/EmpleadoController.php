@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Role;
@@ -74,6 +75,8 @@ class EmpleadoController extends Controller implements HasMiddleware
 
     public function store(Request $request): RedirectResponse
     {
+        $ownerId = Auth::user()->getOwnerId();
+
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
             'apellido' => 'required|string|max:255',
@@ -88,7 +91,11 @@ class EmpleadoController extends Controller implements HasMiddleware
             'comuna' => 'nullable|string|max:100',
             'cargo' => 'nullable|string|max:100',
             'departamento' => 'nullable|string|max:100',
-            'almacen_id' => 'nullable|exists:almacenes,id',
+            'almacen_id' => [
+                'nullable',
+                'exists:almacenes,id',
+                Rule::in(Almacen::where('owner_id', $ownerId)->pluck('id')),
+            ],
             'fecha_contratacion' => 'nullable|date',
             'tipo_contrato' => 'nullable|string|max:50',
             'salario' => 'nullable|numeric|min:0',
@@ -105,7 +112,11 @@ class EmpleadoController extends Controller implements HasMiddleware
             'notas' => 'nullable|string',
             'crear_usuario' => 'boolean',
             'password' => 'nullable|string|min:6',
-            'rol_id' => 'nullable|exists:roles,id',
+            'rol_id' => [
+                'required_if:crear_usuario,true',
+                'exists:roles,id',
+                Rule::in(Role::where('owner_id', $ownerId)->pluck('id')),
+            ],
         ]);
 
         if (empty($validated['almacen_id'])) {
@@ -143,8 +154,8 @@ class EmpleadoController extends Controller implements HasMiddleware
                 $user->has_explicit_role = true;
                 $user->save();
 
-                $role = $rolId ? Role::findById($rolId) : Role::firstOrCreate(['name' => 'Empleado'], ['guard_name' => 'web']);
-                $user->assignRole($role);
+                $role = Role::findById($rolId);
+                $user->syncRoles([$role->name]);
 
                 $validated['user_id'] = $user->id;
             }
@@ -161,12 +172,19 @@ class EmpleadoController extends Controller implements HasMiddleware
 
     public function update(Request $request, Empleado $empleado): RedirectResponse
     {
+        $ownerId = Auth::user()->getOwnerId();
+
         $validated = $request->validate([
             'nombre' => 'nullable|string|max:255',
             'apellido' => 'nullable|string|max:255',
             'foto' => 'nullable|image|max:2048',
             'rut' => 'nullable|string|max:20|unique:empleados,rut,'.$empleado->id,
-            'email' => 'nullable|email|unique:empleados,email,'.$empleado->id,
+            'email' => [
+                'nullable',
+                'email',
+                'unique:empleados,email,'.$empleado->id,
+                'unique:users,email,'.($empleado->user_id ?? '_'),
+            ],
             'telefono' => 'nullable|string|max:50',
             'fecha_nacimiento' => 'nullable|date',
             'nacionalidad' => 'nullable|string|max:100',
@@ -175,7 +193,11 @@ class EmpleadoController extends Controller implements HasMiddleware
             'comuna' => 'nullable|string|max:100',
             'cargo' => 'nullable|string|max:100',
             'departamento' => 'nullable|string|max:100',
-            'almacen_id' => 'nullable|exists:almacenes,id',
+            'almacen_id' => [
+                'nullable',
+                'exists:almacenes,id',
+                Rule::in(Almacen::where('owner_id', $ownerId)->pluck('id')),
+            ],
             'fecha_contratacion' => 'nullable|date',
             'tipo_contrato' => 'nullable|string|max:50',
             'salario' => 'nullable|numeric|min:0',
@@ -192,7 +214,11 @@ class EmpleadoController extends Controller implements HasMiddleware
             'notas' => 'nullable|string',
             'crear_usuario' => 'nullable|boolean',
             'password' => 'nullable|string|min:6',
-            'rol_id' => 'nullable|exists:roles,id',
+            'rol_id' => [
+                'required_if:crear_usuario,true',
+                'exists:roles,id',
+                Rule::in(Role::where('owner_id', $ownerId)->pluck('id')),
+            ],
         ]);
 
         if ($request->hasFile('foto')) {
@@ -225,11 +251,16 @@ class EmpleadoController extends Controller implements HasMiddleware
         DB::transaction(function () use ($updateData, $empleado, $crearUsuario, $actualizarUsuario, $usuarioExistente, $request, $rolId) {
             if ($actualizarUsuario) {
                 if ($crearUsuario && ! $usuarioExistente && $request->filled('email') && $request->filled('nombre') && $request->filled('apellido')) {
+                    $passwordInput = $request->input('password');
+                    $passwordHash = $passwordInput
+                        ? Hash::make($passwordInput)
+                        : Hash::make(Str::random(16));
+
                     $user = (new User)->forceFill([
                         'creator_id' => Auth::id(),
                         'name' => ($updateData['nombre'] ?? $empleado->nombre).' '.($updateData['apellido'] ?? $empleado->apellido),
                         'email' => $updateData['email'] ?? $empleado->email,
-                        'password' => Hash::make($request->input('password') ?? Str::random(16)),
+                        'password' => $passwordHash,
                         'job' => $updateData['cargo'] ?? $empleado->cargo,
                         'telefono' => $updateData['telefono'] ?? $empleado->telefono,
                         'direccion' => $updateData['direccion'] ?? $empleado->direccion,
@@ -237,8 +268,8 @@ class EmpleadoController extends Controller implements HasMiddleware
                     $user->has_explicit_role = true;
                     $user->save();
 
-                    $role = $rolId ? Role::findById($rolId) : Role::firstOrCreate(['name' => 'Empleado']);
-                    $user->assignRole($role);
+                    $role = Role::findById($rolId);
+                    $user->syncRoles([$role->name]);
 
                     $updateData['user_id'] = $user->id;
                 } elseif ($crearUsuario && $usuarioExistente) {
@@ -246,6 +277,10 @@ class EmpleadoController extends Controller implements HasMiddleware
                         $usuarioExistente->update([
                             'password' => Hash::make($request->input('password')),
                         ]);
+                    }
+                    if ($rolId) {
+                        $role = Role::findById($rolId);
+                        $usuarioExistente->syncRoles([$role->name]);
                     }
                 } elseif (! $crearUsuario && $usuarioExistente) {
                     $usuarioExistente->delete();
@@ -263,6 +298,10 @@ class EmpleadoController extends Controller implements HasMiddleware
 
     public function destroy(Empleado $empleado): RedirectResponse
     {
+        if ($empleado->user) {
+            $empleado->user->delete();
+        }
+
         $empleado->delete();
 
         return redirect()->route('empleados.index');

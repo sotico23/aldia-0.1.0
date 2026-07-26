@@ -80,3 +80,20 @@ Schedule::command('trial:notify')
     ->dailyAt('09:00')
     ->withoutOverlapping()
     ->onOneServer();
+
+// ── FASE 3: Backup & Maintenance ────────────────────────────────────────────
+
+Schedule::command('backup:database --compress')
+    ->dailyAt('02:00')
+    ->withoutOverlapping()
+    ->onOneServer();
+
+Schedule::command('cleanup:temp-data')
+    ->dailyAt('05:30')
+    ->withoutOverlapping()
+    ->onOneServer();
+
+Schedule::command('horizon:snapshot')
+    ->dailyAt('06:30')
+    ->withoutOverlapping()
+    ->onOneServer();

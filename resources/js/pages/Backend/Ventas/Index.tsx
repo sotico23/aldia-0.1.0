@@ -1,5 +1,6 @@
 import { Head, useForm, router } from '@inertiajs/react';
 import { CURRENCY_OPTIONS } from '@/lib/currencies';
+
 import {
     Check,
     LayoutGrid,
@@ -22,6 +23,7 @@ import {
     ChevronUp,
     ChevronDown,
     ArrowUpDown,
+    MessageCircle,
 } from 'lucide-react';
 import { useState, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
@@ -874,22 +876,22 @@ export default function Index({
                     </CardHeader>
                     <CardContent>
                         <div className="mb-4 flex flex-wrap gap-3 rounded-xl border bg-muted/50 p-4 shadow-sm">
-                    <div className="min-w-[200px] flex-1">
-                        <div className="group relative">
-                            <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
-                            <Input
-                                placeholder="Buscar por factura, cliente o notas..."
-                                value={filtros.busqueda}
-                                onChange={(e) =>
-                                    setFiltros({
-                                        ...filtros,
-                                        busqueda: e.target.value,
-                                    })
-                                }
-                                className="h-10 border-muted-foreground/20 pl-9 pr-9 transition-all focus:border-primary"
-                            />
-                        </div>
-                    </div>
+                            <div className="min-w-[200px] flex-1">
+                                <div className="group relative">
+                                    <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                                    <Input
+                                        placeholder="Buscar por factura, cliente o notas..."
+                                        value={filtros.busqueda}
+                                        onChange={(e) =>
+                                            setFiltros({
+                                                ...filtros,
+                                                busqueda: e.target.value,
+                                            })
+                                        }
+                                        className="h-10 border-muted-foreground/20 pl-9 pr-9 transition-all focus:border-primary"
+                                    />
+                                </div>
+                            </div>
 
                             <Select
                                 value={filtros.estado}
@@ -981,250 +983,250 @@ export default function Index({
                             </Button>
                         </div>
                         {viewMode === 'table' ? (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b">
-                                        <th className="pb-3 text-left text-sm font-medium whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('numero_factura')}>
-                                            <div className="flex items-center gap-1">Factura {sortColumn === 'numero_factura' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
-                                        </th>
-                                        <th className="pb-3 text-left text-sm font-medium whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('cliente')}>
-                                            <div className="flex items-center gap-1">Cliente {sortColumn === 'cliente' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
-                                        </th>
-                                        <th className="pb-3 text-left text-sm font-medium whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('fecha')}>
-                                            <div className="flex items-center gap-1">Fecha {sortColumn === 'fecha' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
-                                        </th>
-                                        <th className="pb-3 text-left text-sm font-medium whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('total')}>
-                                            <div className="flex items-center gap-1">Total {sortColumn === 'total' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
-                                        </th>
-                                        <th className="pb-3 text-left text-sm font-medium whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('estado')}>
-                                            <div className="flex items-center gap-1">Estado {sortColumn === 'estado' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
-                                        </th>
-                                        <th className="pb-3 text-left text-sm font-medium whitespace-nowrap">
-                                            Acciones
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {ventasFiltradas.map((venta) => (
-                                        <tr key={venta.id} className="border-b">
-                                            <td className="py-3 font-medium">
-                                                {venta.numero_factura}
-                                            </td>
-                                            <td className="py-3">
-                                                <div className="flex items-center gap-1">
-                                                    <span
-                                                        className="block max-w-[150px] truncate"
-                                                        title={
-                                                            venta.cliente
-                                                                ?.nombre
-                                                        }
-                                                    >
-                                                        {venta.cliente?.nombre}
-                                                    </span>
-                                                    {venta.cliente
-                                                        ?.telefono && (
-                                                        <WhatsAppButton
-                                                            phone={
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b">
+                                            <th className="pb-3 text-left text-sm font-medium whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('numero_factura')}>
+                                                <div className="flex items-center gap-1">Factura {sortColumn === 'numero_factura' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                            </th>
+                                            <th className="pb-3 text-left text-sm font-medium whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('cliente')}>
+                                                <div className="flex items-center gap-1">Cliente {sortColumn === 'cliente' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                            </th>
+                                            <th className="pb-3 text-left text-sm font-medium whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('fecha')}>
+                                                <div className="flex items-center gap-1">Fecha {sortColumn === 'fecha' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                            </th>
+                                            <th className="pb-3 text-left text-sm font-medium whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('total')}>
+                                                <div className="flex items-center gap-1">Total {sortColumn === 'total' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                            </th>
+                                            <th className="pb-3 text-left text-sm font-medium whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('estado')}>
+                                                <div className="flex items-center gap-1">Estado {sortColumn === 'estado' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                            </th>
+                                            <th className="pb-3 text-left text-sm font-medium whitespace-nowrap">
+                                                Acciones
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {ventasFiltradas.map((venta) => (
+                                            <tr key={venta.id} className="border-b">
+                                                <td className="py-3 font-medium">
+                                                    {venta.numero_factura}
+                                                </td>
+                                                <td className="py-3">
+                                                    <div className="flex items-center gap-1">
+                                                        <span
+                                                            className="block max-w-[150px] truncate"
+                                                            title={
                                                                 venta.cliente
-                                                                    .telefono
+                                                                    ?.nombre
                                                             }
-                                                        />
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="py-3">
-                                                {formatDateCLP(venta.fecha)}
-                                            </td>
-                                            <td className="py-3 font-medium">
-                                                {formatCurrency(venta.total, venta.currency)}
-                                            </td>
-                                            <td className="py-3">
-                                                <Select
-                                                    value={venta.estado}
-                                                    onValueChange={(v) =>
-                                                        handleUpdateStatus(
-                                                            venta,
-                                                            v,
-                                                        )
-                                                    }
-                                                >
-                                                    <SelectTrigger className="h-8 w-[120px] border-none bg-transparent p-0 hover:bg-transparent focus:ring-0">
-                                                        <SelectValue>
-                                                            {getEstadoBadge(
-                                                                venta.estado,
+                                                        >
+                                                            {venta.cliente?.nombre}
+                                                        </span>
+                                                        {venta.cliente
+                                                            ?.telefono && (
+                                                                <WhatsAppButton
+                                                                    phone={
+                                                                        venta.cliente
+                                                                            .telefono
+                                                                    }
+                                                                />
                                                             )}
-                                                        </SelectValue>
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="pendiente">
-                                                            Pendiente
-                                                        </SelectItem>
-                                                        <SelectItem value="pagada">
-                                                            Pagada
-                                                        </SelectItem>
-                                                        <SelectItem value="cancelada">
-                                                            Cancelada
-                                                        </SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </td>
-                                            <td className="py-3">
-                                                <div className="flex gap-2">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="icon"
-                                                        onClick={() =>
-                                                            handleVer(venta)
+                                                    </div>
+                                                </td>
+                                                <td className="py-3">
+                                                    {formatDateCLP(venta.fecha)}
+                                                </td>
+                                                <td className="py-3 font-medium">
+                                                    {formatCurrency(venta.total, venta.currency)}
+                                                </td>
+                                                <td className="py-3">
+                                                    <Select
+                                                        value={venta.estado}
+                                                        onValueChange={(v) =>
+                                                            handleUpdateStatus(
+                                                                venta,
+                                                                v,
+                                                            )
                                                         }
-                                                        title="Ver detalles"
                                                     >
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
+                                                        <SelectTrigger className="h-8 w-[120px] border-none bg-transparent p-0 hover:bg-transparent focus:ring-0">
+                                                            <SelectValue>
+                                                                {getEstadoBadge(
+                                                                    venta.estado,
+                                                                )}
+                                                            </SelectValue>
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="pendiente">
+                                                                Pendiente
+                                                            </SelectItem>
+                                                            <SelectItem value="pagada">
+                                                                Pagada
+                                                            </SelectItem>
+                                                            <SelectItem value="cancelada">
+                                                                Cancelada
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </td>
+                                                <td className="py-3">
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="icon"
+                                                            onClick={() =>
+                                                                handleVer(venta)
+                                                            }
+                                                            title="Ver detalles"
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    title="Descargar PDF"
+                                                                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                                >
+                                                                    <FileText className="h-4 w-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end" className="w-56">
+                                                                <DropdownMenuItem
+                                                                    onClick={() =>
+                                                                        window.open(
+                                                                            `/ventas/${venta.id}/download`,
+                                                                            '_blank',
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <FileText className="mr-2 h-4 w-4" />
+                                                                    Formato SII (Formal)
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    onClick={() =>
+                                                                        window.open(
+                                                                            `/ventas/${venta.id}/download-informal`,
+                                                                            '_blank',
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <FileText className="mr-2 h-4 w-4" />
+                                                                    Formato Simple (Informal)
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                        {canEditVenta(venta) && (
                                                             <Button
                                                                 variant="outline"
                                                                 size="icon"
-                                                                title="Descargar PDF"
-                                                                className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                                onClick={() =>
+                                                                    handleEdit(venta)
+                                                                }
                                                             >
-                                                                <FileText className="h-4 w-4" />
+                                                                <Pencil className="h-4 w-4" />
                                                             </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end" className="w-56">
-                                                            <DropdownMenuItem
+                                                        )}
+                                                        {canDeleteVenta(venta) && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
                                                                 onClick={() =>
-                                                                    window.open(
-                                                                        `/ventas/${venta.id}/download`,
-                                                                        '_blank',
+                                                                    handleDelete(
+                                                                        venta.id,
                                                                     )
                                                                 }
                                                             >
-                                                                <FileText className="mr-2 h-4 w-4" />
-                                                                Formato SII (Formal)
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem
-                                                                onClick={() =>
-                                                                    window.open(
-                                                                        `/ventas/${venta.id}/download-informal`,
-                                                                        '_blank',
-                                                                    )
-                                                                }
-                                                            >
-                                                                <FileText className="mr-2 h-4 w-4" />
-                                                                Formato Simple (Informal)
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-{canEditVenta(venta) && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                handleEdit(venta)
-                                                            }
-                                                        >
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-{canDeleteVenta(venta) && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    venta.id,
-                                                                )
-                                                            }
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {ventasFiltradas.length === 0 && (
-                                        <tr>
-                                            <td
-                                                colSpan={6}
-                                                className="py-4 text-center"
-                                            >
-                                                {ventas.data.length === 0
-                                                    ? 'No hay ventas registradas'
-                                                    : 'No hay ventas que coincidan con los filtros'}
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                        ) : (
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {ventasFiltradas.length === 0 ? (
-                                <div className="col-span-full flex flex-col items-center py-12 text-center text-muted-foreground">
-                                    <Wallet className="mb-4 h-12 w-12 opacity-20" />
-                                    <p className="font-medium">No hay ventas que coincidan con los filtros</p>
-                                </div>
-                            ) : ventasFiltradas.map((venta) => (
-                                <Card key={venta.id} className="overflow-hidden">
-                                    <CardHeader className="pb-3">
-                                        <div className="flex items-center justify-between">
-                                            <Badge variant="outline" className="font-mono text-xs">{venta.numero_factura}</Badge>
-                                            {getEstadoBadge(venta.estado)}
-                                        </div>
-                                        <CardTitle className="text-sm font-bold">{venta.cliente?.nombre}</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-2 pt-0">
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-muted-foreground">Fecha</span>
-                                            <span>{formatDateCLP(venta.fecha)}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-muted-foreground">Total</span>
-                                            <span className="font-bold">{formatCurrency(venta.total, venta.currency)}</span>
-                                        </div>
-                                        {venta.almacen_nombre && (
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="text-muted-foreground">Almacén</span>
-                                                <span>{venta.almacen_nombre}</span>
-                                            </div>
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {ventasFiltradas.length === 0 && (
+                                            <tr>
+                                                <td
+                                                    colSpan={6}
+                                                    className="py-4 text-center"
+                                                >
+                                                    {ventas.data.length === 0
+                                                        ? 'No hay ventas registradas'
+                                                        : 'No hay ventas que coincidan con los filtros'}
+                                                </td>
+                                            </tr>
                                         )}
-                                        <div className="flex justify-end gap-1 border-t pt-2">
-                                            <Button variant="outline" size="icon" onClick={() => handleVer(venta)} title="Ver detalles">
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="outline" size="icon" className="text-red-600 hover:bg-red-50 hover:text-red-700">
-                                                        <FileText className="h-4 w-4" />
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                {ventasFiltradas.length === 0 ? (
+                                    <div className="col-span-full flex flex-col items-center py-12 text-center text-muted-foreground">
+                                        <Wallet className="mb-4 h-12 w-12 opacity-20" />
+                                        <p className="font-medium">No hay ventas que coincidan con los filtros</p>
+                                    </div>
+                                ) : ventasFiltradas.map((venta) => (
+                                    <Card key={venta.id} className="overflow-hidden">
+                                        <CardHeader className="pb-3">
+                                            <div className="flex items-center justify-between">
+                                                <Badge variant="outline" className="font-mono text-xs">{venta.numero_factura}</Badge>
+                                                {getEstadoBadge(venta.estado)}
+                                            </div>
+                                            <CardTitle className="text-sm font-bold">{venta.cliente?.nombre}</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-2 pt-0">
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-muted-foreground">Fecha</span>
+                                                <span>{formatDateCLP(venta.fecha)}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-muted-foreground">Total</span>
+                                                <span className="font-bold">{formatCurrency(venta.total, venta.currency)}</span>
+                                            </div>
+                                            {venta.almacen_nombre && (
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-muted-foreground">Almacén</span>
+                                                    <span>{venta.almacen_nombre}</span>
+                                                </div>
+                                            )}
+                                            <div className="flex justify-end gap-1 border-t pt-2">
+                                                <Button variant="outline" size="icon" onClick={() => handleVer(venta)} title="Ver detalles">
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="outline" size="icon" className="text-red-600 hover:bg-red-50 hover:text-red-700">
+                                                            <FileText className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-56">
+                                                        <DropdownMenuItem onClick={() => window.open(`/ventas/${venta.id}/download`, '_blank')}>
+                                                            <FileText className="mr-2 h-4 w-4" /> Formato SII
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => window.open(`/ventas/${venta.id}/download-informal`, '_blank')}>
+                                                            <FileText className="mr-2 h-4 w-4" /> Formato Simple
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                                {canEditVenta(venta) && (
+                                                    <Button variant="outline" size="icon" onClick={() => handleEdit(venta)}>
+                                                        <Pencil className="h-4 w-4" />
                                                     </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-56">
-                                                    <DropdownMenuItem onClick={() => window.open(`/ventas/${venta.id}/download`, '_blank')}>
-                                                        <FileText className="mr-2 h-4 w-4" /> Formato SII
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => window.open(`/ventas/${venta.id}/download-informal`, '_blank')}>
-                                                        <FileText className="mr-2 h-4 w-4" /> Formato Simple
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                            {canEditVenta(venta) && (
-                                                <Button variant="outline" size="icon" onClick={() => handleEdit(venta)}>
-                                                    <Pencil className="h-4 w-4" />
-                                                </Button>
-                                            )}
-                                            {canDeleteVenta(venta) && (
-                                                <Button variant="outline" size="icon" onClick={() => handleDelete(venta.id)}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
+                                                )}
+                                                {canDeleteVenta(venta) && (
+                                                    <Button variant="outline" size="icon" onClick={() => handleDelete(venta.id)}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
                         )}
                         <Pagination
                             links={ventas.links}
@@ -1345,12 +1347,11 @@ export default function Index({
                                                             '',
                                                         );
                                                     }}
-                                                    className={`flex-1 rounded-md px-3 py-2 text-center font-medium transition-colors ${
-                                                        data.cliente_tipo ===
+                                                    className={`flex-1 rounded-md px-3 py-2 text-center font-medium transition-colors ${data.cliente_tipo ===
                                                         'existente'
-                                                            ? 'bg-primary text-primary-foreground'
-                                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                                    }`}
+                                                        ? 'bg-primary text-primary-foreground'
+                                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                                        }`}
                                                 >
                                                     Cliente Existente
                                                 </button>
@@ -1366,12 +1367,11 @@ export default function Index({
                                                             '',
                                                         );
                                                     }}
-                                                    className={`flex-1 rounded-md px-3 py-2 text-center font-medium transition-colors ${
-                                                        data.cliente_tipo ===
+                                                    className={`flex-1 rounded-md px-3 py-2 text-center font-medium transition-colors ${data.cliente_tipo ===
                                                         'generico'
-                                                            ? 'bg-primary text-primary-foreground'
-                                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                                    }`}
+                                                        ? 'bg-primary text-primary-foreground'
+                                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                                        }`}
                                                 >
                                                     Cliente Genérico
                                                 </button>
@@ -1390,7 +1390,7 @@ export default function Index({
                                                         className={
                                                             data.cliente_tipo ===
                                                                 'existente' &&
-                                                            !data.cliente_id
+                                                                !data.cliente_id
                                                                 ? 'border-red-500'
                                                                 : ''
                                                         }
@@ -1440,11 +1440,11 @@ export default function Index({
                                                                             clienteSearch.toLowerCase(),
                                                                         ),
                                                             ).length === 0 && (
-                                                                <p className="px-2 py-3 text-center text-xs text-muted-foreground">
-                                                                    Sin
-                                                                    resultados
-                                                                </p>
-                                                            )}
+                                                                    <p className="px-2 py-3 text-center text-xs text-muted-foreground">
+                                                                        Sin
+                                                                        resultados
+                                                                    </p>
+                                                                )}
                                                         </div>
                                                     </SelectContent>
                                                 </Select>
@@ -1495,26 +1495,26 @@ export default function Index({
                                                         <Label className="text-[10px] text-muted-foreground uppercase">
                                                             RUT (opcional)
                                                         </Label>
-                                                         <Input
-                                                             value={
-                                                                 data.cliente_rut
-                                                             }
-                                                             onChange={(e) =>
-                                                                 setData(
-                                                                     'cliente_rut',
-                                                                     e.target
-                                                                         .value,
-                                                                 )
-                                                             }
-                                                             onBlur={(e) =>
-                                                                 setData(
-                                                                     'cliente_rut',
-                                                                     formatRut(e.target.value)
-                                                                 )
-                                                             }
-                                                             placeholder="12.345.678-9"
-                                                             className="h-9"
-                                                         />
+                                                        <Input
+                                                            value={
+                                                                data.cliente_rut
+                                                            }
+                                                            onChange={(e) =>
+                                                                setData(
+                                                                    'cliente_rut',
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            onBlur={(e) =>
+                                                                setData(
+                                                                    'cliente_rut',
+                                                                    formatRut(e.target.value)
+                                                                )
+                                                            }
+                                                            placeholder="12.345.678-9"
+                                                            className="h-9"
+                                                        />
                                                     </div>
                                                 </div>
                                                 <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3">
@@ -1597,9 +1597,9 @@ export default function Index({
                                                 setData(
                                                     'estado',
                                                     v as
-                                                        | 'pendiente'
-                                                        | 'pagada'
-                                                        | 'cancelada',
+                                                    | 'pendiente'
+                                                    | 'pagada'
+                                                    | 'cancelada',
                                                 )
                                             }
                                         >
@@ -1620,7 +1620,7 @@ export default function Index({
                                         </Select>
                                     </div>
 
-                                    <div className="grid gap-2">
+                                    {/*                                 <div className="grid gap-2">
                                         <Label>Moneda</Label>
                                         <Select
                                             value={data.currency}
@@ -1637,7 +1637,7 @@ export default function Index({
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                    </div>
+                                    </div> */}
 
                                     <div className="grid gap-2">
                                         <Label>
@@ -1706,14 +1706,14 @@ export default function Index({
                                             <div className="space-y-3">
                                                 {data.productos.length ===
                                                     0 && (
-                                                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-center">
-                                                        <p className="text-sm text-red-600">
-                                                            Agregue al menos un
-                                                            producto para
-                                                            continuar
-                                                        </p>
-                                                    </div>
-                                                )}
+                                                        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-center">
+                                                            <p className="text-sm text-red-600">
+                                                                Agregue al menos un
+                                                                producto para
+                                                                continuar
+                                                            </p>
+                                                        </div>
+                                                    )}
                                                 {data.productos.map(
                                                     (producto, index) => {
                                                         const prod =
@@ -1728,17 +1728,17 @@ export default function Index({
                                                             !producto.producto_id ||
                                                             !producto.cantidad ||
                                                             producto.cantidad <=
-                                                                0;
+                                                            0;
                                                         const precio =
                                                             Math.round(
                                                                 producto.precio_unitario ||
-                                                                    prod?.precio_venta ||
-                                                                    0,
+                                                                prod?.precio_venta ||
+                                                                0,
                                                             );
                                                         const subtotalItem =
                                                             Math.round(
                                                                 producto.cantidad *
-                                                                    precio,
+                                                                precio,
                                                             );
 
                                                         return (
@@ -1772,15 +1772,15 @@ export default function Index({
                                                                                 {data.almacen_ids.length === 0
                                                                                     ? 'Seleccione almacén(es) primero'
                                                                                     : (productos.find(
-                                                                                            (
-                                                                                                p,
-                                                                                            ) =>
-                                                                                                p.id ===
-                                                                                                Number(
-                                                                                                    producto.producto_id,
-                                                                                                ),
-                                                                                        )
-                                                                                            ?.nombre ||
+                                                                                        (
+                                                                                            p,
+                                                                                        ) =>
+                                                                                            p.id ===
+                                                                                            Number(
+                                                                                                producto.producto_id,
+                                                                                            ),
+                                                                                    )
+                                                                                        ?.nombre ||
                                                                                         'Seleccionar')}
                                                                             </SelectValue>
                                                                         </SelectTrigger>
@@ -1897,7 +1897,6 @@ export default function Index({
                                                                             );
                                                                         })()}
                                                                     </div>
-                                                                    </div>
                                                                     <div className="md:col-span-4">
                                                                         <Label className="md:text-xs">
                                                                             Precio
@@ -1920,7 +1919,7 @@ export default function Index({
                                                                                             .target
                                                                                             .value,
                                                                                     ) ||
-                                                                                        0,
+                                                                                    0,
                                                                                 )
                                                                             }
                                                                         />
@@ -1945,12 +1944,12 @@ export default function Index({
                                                                                     prod as any
                                                                                 )
                                                                                     .unidad_medida !==
-                                                                                    'unidad' ||
+                                                                                'unidad' ||
                                                                                 (
                                                                                     prod as any
                                                                                 )
                                                                                     .peso_base >
-                                                                                    0) && (
+                                                                                0) && (
                                                                                 <div className="mt-1 flex justify-between px-1 text-[10px] font-bold text-blue-600">
                                                                                     <span>
                                                                                         Total{' '}
@@ -1958,7 +1957,7 @@ export default function Index({
                                                                                             prod as any
                                                                                         )
                                                                                             .unidad_medida ===
-                                                                                        'lt'
+                                                                                            'lt'
                                                                                             ? 'Litros'
                                                                                             : 'Kg'}
 
@@ -1984,9 +1983,9 @@ export default function Index({
                                                                                                 0;
                                                                                             const total =
                                                                                                 producto.cantidad *
-                                                                                                    contenido +
+                                                                                                contenido +
                                                                                                 producto.cantidad *
-                                                                                                    tara;
+                                                                                                tara;
                                                                                             return total.toFixed(
                                                                                                 2,
                                                                                             );
@@ -1995,14 +1994,14 @@ export default function Index({
                                                                                             prod as any
                                                                                         )
                                                                                             .unidad_medida ===
-                                                                                        'lt'
+                                                                                            'lt'
                                                                                             ? 'L'
                                                                                             : 'Kg'}
                                                                                     </span>
                                                                                 </div>
                                                                             )}
                                                                     </div>
-                                                                     {(prod as any)?.envase_retornable == true && (
+                                                                    {(prod as any)?.envase_retornable == true && (
                                                                         <div className="mt-2 flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50 p-2 md:col-span-12">
                                                                             <Label className="text-xs font-bold text-amber-800 whitespace-nowrap">
                                                                                 Envases retornados
@@ -2095,8 +2094,8 @@ export default function Index({
                                                         setData(
                                                             'tipo_descuento',
                                                             v as
-                                                                | 'monto'
-                                                                | 'porcentaje',
+                                                            | 'monto'
+                                                            | 'porcentaje',
                                                         )
                                                     }
                                                 >
@@ -2127,7 +2126,7 @@ export default function Index({
                                                     className="flex-1"
                                                     placeholder={
                                                         data.tipo_descuento ===
-                                                        'monto'
+                                                            'monto'
                                                             ? 'Ej: 5000'
                                                             : 'Ej: 10'
                                                     }
@@ -2150,7 +2149,7 @@ export default function Index({
                                                 <span>
                                                     Descuento (
                                                     {data.tipo_descuento ===
-                                                    'porcentaje'
+                                                        'porcentaje'
                                                         ? `${data.valor_descuento}%`
                                                         : 'Monto'}
                                                     ):
@@ -2291,12 +2290,12 @@ export default function Index({
                                                 val: ventaSeleccionada.estado.toUpperCase(),
                                                 color:
                                                     ventaSeleccionada.estado ===
-                                                    'pagada'
+                                                        'pagada'
                                                         ? 'border-green-200 bg-green-50 text-green-800'
                                                         : ventaSeleccionada.estado ===
                                                             'cancelada'
-                                                          ? 'border-red-200 bg-red-50 text-red-800'
-                                                          : 'border-amber-200 bg-amber-50 text-amber-800',
+                                                            ? 'border-red-200 bg-red-50 text-red-800'
+                                                            : 'border-amber-200 bg-amber-50 text-amber-800',
                                             },
                                             {
                                                 label: 'Total',
@@ -2439,18 +2438,18 @@ export default function Index({
                                                     </div>
                                                     {ventaSeleccionada.monto_descuento >
                                                         0 && (
-                                                        <div className="flex items-center justify-between border-b border-white/10 pb-2 text-xs md:pb-3 md:text-sm">
-                                                            <span className="font-medium text-red-300">
-                                                                Descuento
-                                                            </span>
-                                                            <span className="font-mono text-red-100">
-                                                                -
-                                                                {formatCurrency(
-                                                                    ventaSeleccionada.monto_descuento,
-                                                                )}
-                                                            </span>
-                                                        </div>
-                                                    )}
+                                                            <div className="flex items-center justify-between border-b border-white/10 pb-2 text-xs md:pb-3 md:text-sm">
+                                                                <span className="font-medium text-red-300">
+                                                                    Descuento
+                                                                </span>
+                                                                <span className="font-mono text-red-100">
+                                                                    -
+                                                                    {formatCurrency(
+                                                                        ventaSeleccionada.monto_descuento,
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     <div className="py-2 text-center md:py-4">
                                                         <span className="text-[9px] font-black tracking-tighter text-white/40 uppercase md:text-[10px]">
                                                             Monto Total
@@ -2464,7 +2463,7 @@ export default function Index({
                                                 </CardContent>
                                             </Card>
 
-                                            {ventaSeleccionada.almacenes_data && ventaSeleccionada.almacenes_data.length > 0 && (
+                                            {/*              {ventaSeleccionada.almacenes_data && ventaSeleccionada.almacenes_data.length > 0 && (
                                                 <Card className="border shadow-sm">
                                                     <CardHeader className="border-b bg-gray-50 py-2 md:py-3">
                                                         <CardTitle className="flex items-center gap-2 text-[10px] font-black tracking-widest text-gray-700 uppercase md:text-xs">
@@ -2528,7 +2527,7 @@ export default function Index({
                                                         </div>
                                                     </CardContent>
                                                 </Card>
-                                            )}
+                                            )} */}
 
                                             <Card className="border shadow-sm">
                                                 <CardHeader className="border-b bg-gray-50 py-2 md:py-3">
@@ -2543,20 +2542,28 @@ export default function Index({
                                                                 Nombre
                                                             </p>
                                                             <p className="truncate text-xs font-bold text-gray-700 md:text-sm">
-                                                                {
-                                                                    ventaSeleccionada
-                                                                        .cliente
-                                                                        ?.nombre
-                                                                }
+                                                                {ventaSeleccionada.cliente?.nombre}
                                                             </p>
                                                         </div>
-                                                        <WhatsAppButton
-                                                            phone={
-                                                                ventaSeleccionada
-                                                                    .cliente
-                                                                    ?.telefono
-                                                            }
-                                                        />
+
+                                                        {/* Botón directo de WhatsApp con icono garantizado */}
+                                                        {ventaSeleccionada.cliente?.telefono && (
+                                                            <Button
+                                                                type="button"
+                                                                size="icon"
+                                                                className="h-10 w-10 shrink-0 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                                                                onClick={() => {
+                                                                    const phone = ventaSeleccionada.cliente?.telefono?.replace(/\D/g, "");
+                                                                    const mensaje = encodeURIComponent(
+                                                                        `Hola ${ventaSeleccionada.cliente?.nombre || ""}, te contactamos respecto a tu pedido.`
+                                                                    );
+                                                                    window.open(`https://wa.me/${phone}?text=${mensaje}`, "_blank");
+                                                                }}
+                                                                title="Enviar mensaje por WhatsApp"
+                                                            >
+                                                                <MessageCircle className="h-5 w-5 fill-white stroke-none" />
+                                                            </Button>
+                                                        )}
                                                     </div>
                                                 </CardContent>
                                             </Card>

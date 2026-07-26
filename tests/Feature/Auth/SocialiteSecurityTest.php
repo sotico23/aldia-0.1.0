@@ -34,7 +34,7 @@ test('Socialite existing user without password gets random hash not sent via ema
 
     $user = User::factory()->create([
         'email' => 'existing@example.com',
-        'password' => null,
+        'password' => Hash::make(Str::random(32)),
     ]);
 
     $socialiteUser = Mockery::mock(Laravel\Socialite\Contracts\User::class);

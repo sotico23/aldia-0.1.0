@@ -23,7 +23,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('comunidad', [ComunidadController::class, 'index'])->name('comunidad.index');
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('settings/password', [PasswordController::class, 'edit'])->name('user-password.edit');

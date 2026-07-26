@@ -438,8 +438,8 @@ export default function RafflesIndex({ raffles }: Props) {
         >
             <Head title="Rifas y Sorteos" />
 
-            <div className="mx-auto max-w-7xl p-6">
-                <div className="mb-8 flex items-center justify-between">
+            <div className="mx-auto max-w-7xl p-4 sm:p-6">
+                <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
                             Rifas y Sorteos
@@ -448,7 +448,7 @@ export default function RafflesIndex({ raffles }: Props) {
                             Crea y gestiona tus rifas, sorteos y concursos
                         </p>
                     </div>
-                    <div className="flex gap-2 items-center">
+                    <div className="flex flex-wrap gap-2 items-center">
                         <BulkActions
                             baseUrl="/raffles"
                             modelName="Rifas"
@@ -558,6 +558,7 @@ export default function RafflesIndex({ raffles }: Props) {
                     </CardHeader>
                     <CardContent>
                         {viewMode === 'table' ? (
+                            <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -709,7 +710,8 @@ export default function RafflesIndex({ raffles }: Props) {
                                         ))
                                     )}
                                 </TableBody>
-                            </Table>
+                                </Table>
+                            </div>
                         ) : (
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                                 {raffles.data.length === 0 ? (
@@ -792,7 +794,7 @@ export default function RafflesIndex({ raffles }: Props) {
 
             {/* Modal Crear Rifa */}
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+                <DialogContent className="w-[95vw] max-w-3xl max-h-[95dvh] overflow-y-auto p-4 sm:p-6">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Gift className="h-5 w-5" />
@@ -1110,7 +1112,7 @@ export default function RafflesIndex({ raffles }: Props) {
                         </div>
 
                         {/* Opciones */}
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-2">
                                 <Switch
                                     checked={createData.allow_multiple_entries}
@@ -1147,7 +1149,7 @@ export default function RafflesIndex({ raffles }: Props) {
                                     setCreateData('status', value)
                                 }
                             >
-                                <SelectTrigger className="mt-1 w-48">
+                                <SelectTrigger className="mt-1 w-full sm:w-48">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1161,7 +1163,7 @@ export default function RafflesIndex({ raffles }: Props) {
                             </Select>
                         </div>
 
-                        <div className="flex justify-end gap-2 border-t pt-4">
+                        <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
                             <Button
                                 type="button"
                                 variant="outline"
@@ -1179,7 +1181,7 @@ export default function RafflesIndex({ raffles }: Props) {
 
             {/* Modal Editar Rifa */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+                <DialogContent className="w-[95vw] max-w-3xl max-h-[95dvh] overflow-y-auto p-4 sm:p-6">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Pencil className="h-5 w-5" />
@@ -1463,7 +1465,7 @@ export default function RafflesIndex({ raffles }: Props) {
                                         setCreateData('status', value)
                                     }
                                 >
-                                    <SelectTrigger className="mt-1 w-48">
+                                    <SelectTrigger className="mt-1 w-full sm:w-48">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1666,7 +1668,7 @@ export default function RafflesIndex({ raffles }: Props) {
                                 )}
                             </div>
 
-                            <div className="flex justify-end gap-2 border-t pt-4">
+                            <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
                                 <Button
                                     type="button"
                                     variant="outline"

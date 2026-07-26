@@ -242,6 +242,10 @@ export default function Index({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (data.crear_usuario && !data.rol_id) {
+            setData('rol_id', '');
+            return;
+        }
         if (editando) {
             // Se usa router.post con _method = 'put' para soportar multipart/form-data con fotos
             router.post(`/empleados/${editando.id}`, {
@@ -963,17 +967,18 @@ export default function Index({
                                                 <p className="text-[10px] text-muted-foreground font-mono">
                                                     {editando && editando?.user_id
                                                         ? 'Vacío para mantener actual'
-                                                        : 'Vacío: empleadonuevo'}
+                                                        : 'Se genera automáticamente si se deja vacío'}
                                                 </p>
                                             </div>
                                             <div className="space-y-2">
                                                 <Label className="flex items-center gap-1 text-xs font-medium">
-                                                    <Shield className="h-3 w-3" /> Rol de Permisos
+                                                    <Shield className="h-3 w-3" /> Rol de Permisos <span className="text-destructive">*</span>
                                                 </Label>
                                                 <select
                                                     value={data.rol_id}
                                                     onChange={(e) => setData('rol_id', e.target.value)}
                                                     className="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                                    required
                                                 >
                                                     <option value="">Seleccionar rol...</option>
                                                     {roles.map((rol) => (
@@ -1060,18 +1065,18 @@ export default function Index({
                     },
                 ]}
             >
-                <div className="grid gap-4 py-4 overflow-y-auto max-h-[70vh]">
+                <div className="grid gap-4 py-4">
                     {viewing?.foto ? (
                         <div className="flex justify-center mb-2">
                             <img
                                 src={`/storage/${viewing.foto}`}
                                 alt={`${viewing.nombre} ${viewing.apellido}`}
-                                className="w-28 h-28 rounded-full object-cover border-4 border-blue-100 shadow-md"
+                                className="w-20 h-20 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-blue-100 shadow-md"
                             />
                         </div>
                     ) : (
                         <div className="flex justify-center mb-2">
-                            <div className="w-28 h-28 rounded-full bg-gradient-to-br from-blue-500/15 to-purple-500/15 text-primary flex items-center justify-center font-bold text-3xl uppercase border-4 border-blue-100 shadow-md">
+                            <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-blue-500/15 to-purple-500/15 text-primary flex items-center justify-center font-bold text-2xl sm:text-3xl uppercase border-4 border-blue-100 shadow-md">
                                 {viewing?.nombre?.charAt(0)}{viewing?.apellido?.charAt(0)}
                             </div>
                         </div>
@@ -1083,7 +1088,7 @@ export default function Index({
                                 Información Personal y Residencia
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-5">
+                        <CardContent className="grid grid-cols-1 gap-3 p-3 sm:gap-4 sm:p-5 md:grid-cols-2 lg:grid-cols-3">
                             <div>
                                 <Label className="text-[10px] font-bold text-muted-foreground uppercase">RUT</Label>
                                 <p className="font-medium">{viewing?.rut || '---'}</p>
@@ -1132,7 +1137,7 @@ export default function Index({
                                 Información Contractual y Previsional
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-5">
+                        <CardContent className="grid grid-cols-1 gap-3 p-3 sm:gap-4 sm:p-5 md:grid-cols-2 lg:grid-cols-3">
                             <div>
                                 <Label className="text-[10px] font-bold text-muted-foreground uppercase">Cargo</Label>
                                 <p className="font-medium">{viewing?.cargo || '---'}</p>
@@ -1188,7 +1193,7 @@ export default function Index({
                                 Datos para Pago de Remuneraciones
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5">
+                        <CardContent className="grid grid-cols-1 gap-3 p-3 sm:gap-4 sm:p-5 md:grid-cols-3">
                             <div>
                                 <Label className="text-[10px] font-bold text-muted-foreground uppercase">Banco</Label>
                                 <p className="font-medium">{viewing?.banco_nombre || '---'}</p>

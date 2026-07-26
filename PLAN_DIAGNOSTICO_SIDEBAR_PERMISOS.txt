@@ -1,0 +1,225 @@
+================================================================================
+  DIAGNOSTICO Y PLAN DE ACCION: PERMISOS Y VISIBILIDAD DEL SIDEBAR
+  Fecha: 2026-07-26
+================================================================================
+
+INDICE
+------
+  1. Causa Raiz Identificada
+  2. Mapa de Permisos Faltantes / Desalineados
+  3. Plan de Solucion Paso a Paso
+  4. Cambios a Realizar (Propuesta de codigo/configuracion)
+
+
+================================================================================
+1. CAUSA RAIZ IDENTIFICADA
+================================================================================
+
+El sidebar solo muestra MARKETING porque el sistema de filtrado de navegacion
+tiene 3 problemas que se combinan para ocultar modulos:
+
+PROBLEMA 1: El bypass de permisos para Master/Super Admin es SERVER-SIDE ONLY
+---------------------------------------------------------------------------
+
+En AppServiceProvider.php, Gate::before() permite a Master/Super Admin saltar
+todas las verificaciones de permisos. Sin embargo, esto NO agrega un '*' al
+array de permisos enviado al frontend via Inertia.
+
+HandleInertiaRequests.php linea 49:
+  'permissions' => $user->getAllPermissions()->pluck('name')->toArray()
+
+Esto envia los permisos GRANULARES reales (ej: 'comercial.categorias.viewAny'),
+nunca un literal '*'. El Master ve 500+ permisos individuales en su array.
+
+En navigation.ts linea 331:
+  const hasWildcard = userPermissions?.length === 1 && userPermissions[0] === '*';
+
+Esta condicion SOLO pasa si el array es exactamente ['*']. Como nadie tiene
+eso, el bypass NUNCA se ejecuta. Todos los usuarios pasan por el filtro
+completo canAny() -> filterNavItemsRecursive().
+
+PROBLEMA 2: SISTEMA usa array de permisos exactos, no wildcard
+-------------------------------------------------------------
+
+En navigation.ts linea 48-56, el item "Administracion" (SISTEMA) usa:
+
+  permission: [
+      'admin.usuarios.viewAny',
+      'admin.roles.viewAny',
+      'admin.configuracion.viewAny',
+      'admin.web-settings.viewAny',
+      'admin.countries.viewAny',
+      'admin.reportes.viewAny',
+      'sistema.automatizaciones.viewAny',
+  ]
+
+Mientras que MARKETING (linea 263) usa:
+  permission: 'admin.*'
+
+CanAny() con un array usa .some() con MATCH EXACTO (no wildcard). Un usuario
+con 'admin.mail-templates.viewAny' pasa el check de MARKETING (por 'admin.*')
+pero NO pasa el check de SISTEMA (porque 'admin.mail-templates.viewAny' no
+esta en el array de 7 permisos).
+
+PROBLEMA 3: Eliminacion en cascada por hijos vacios
+---------------------------------------------------
+
+filterNavItemsRecursive() (lineas 316-327) elimina un item padre si DESPUES
+de filtrar hijos, el array de items queda vacio:
+
+  .filter((item) => {
+      if (item.items && item.items.length === 0) {
+          return false;  // elimina el padre
+      }
+      return true;
+  })
+
+Escenario: Un usuario tiene 'comercial.*' (top-level pasa) pero le faltan
+TODOS los permisos especificos de los hijos (comercial.categorias.viewAny,
+comercial.productos.viewAny, etc.). El grupo COMERCIAL se elimina completo.
+
+
+================================================================================
+2. MAPA DE PERMISOS FALTANTES / DESALINEADOS
+================================================================================
+
+Permisos top-level de cada modulo vs. lo que el usuario necesita:
+
+  Modulo             | Top-level permission     | Tipo     | Requiere
+  -------------------|--------------------------|----------|------------------
+  Dashboard          | (ninguno)                | N/A      | Siempre visible
+  COMERCIAL          | comercial.*              | Wildcard | Cualquier comercial.*
+  OPERACIONES        | inventario.*             | Wildcard | Cualquier inventario.*
+  Produccion (MRP)   | mrp.*                    | Wildcard | Cualquier mrp.*
+  Facturacion        | finanzas.*               | Wildcard | Cualquier finanzas.*
+  Pagos en Linea     | finanzas.*               | Wildcard | Cualquier finanzas.*
+  Gestion Humana     | rrhh.*                   | Wildcard | Cualquier rrhh.*
+  Proyectos          | proyectos.*              | Wildcard | Cualquier proyectos.*
+  Logistica          | flota.*                  | Wildcard | Cualquier flota.*
+  Punto de Venta     | ventas.pos.*             | Wildcard | Cualquier ventas.pos.*
+  Citas              | citas.*                  | Wildcard | Cualquier citas.*
+  Educacion          | lms.*                    | Wildcard | Cualquier lms.*
+  Marketing          | admin.*                  | Wildcard | Cualquier admin.*
+  Monitoreo          | uptime.*                 | Wildcard | Cualquier uptime.*
+  Rifas              | rifas.*                  | Wildcard | Cualquier rifas.*
+  SISTEMA            | [array de 7 exactos]     | EXACTO   | 1 de 7 permisos
+
+PROBLEMA: SISTEMA es el UNICO modulo que usa permisos exactos en vez de
+wildcard. Cualquier usuario con permisos 'admin.*' que no sea uno de los 7
+especificos NO vera SISTEMA.
+
+Permisos que SÍ matchearian el wildcard 'admin.*' pero NO estan en el array:
+  - admin.mail-templates.viewAny
+  - admin.email-config.viewAny
+  - admin.finanzas.viewAny
+  - admin.webpay-config.viewAny
+  - admin.paypal-config.viewAny
+  - admin.mercadopago-config.viewAny
+  - admin.transactions.viewAny
+  - admin.commissions.viewAny
+  - admin.webhooks.viewAny
+  - admin.public-profiles.toggle-status
+  - admin.public-profiles.toggle-official
+  - admin.roles.custom
+  - admin.roles.create (no esta en el array, solo viewAny)
+
+
+================================================================================
+3. PLAN DE SOLUCION PASO A PASO
+================================================================================
+
+PASO 1: Corregir permiso top-level de SISTEMA (navigation.ts)
+------------------------------------------------------------
+Cambiar el array de permisos exactos por un wildcard 'admin.*', igual que
+MARKETING. Esto asegura que cualquier usuario con permisos admin.* vea la
+seccion SISTEMA.
+
+ANTES:
+  permission: [
+      'admin.usuarios.viewAny',
+      'admin.roles.viewAny',
+      ...
+  ]
+
+DESPUES:
+  permission: 'admin.*'
+
+NOTA: Los permisos de los HIJOS (items) se mantienen como estan. El filtro
+de hijos ya controla que sub-items individuales se muestren/oculten
+correctamente.
+
+PASO 2: Inyectar '*' para Master/Super Admin (HandleInertiaRequests.php)
+------------------------------------------------------------------------
+Para que el bypass de Master/Super Admin funcione en el frontend, agregar
+un '*' al array de permisos cuando el usuario tenga nivel 0 o 1.
+
+  if ($user->hasRole('Master') || $user->hasRole('Super Admin')) {
+      $authData['permissions'] = ['*'];
+  }
+
+Esto activa el hasWildcard en navigation.ts y hace que TODOS los items del
+sidebar sean visibles sin necesidad de filtrado individual.
+
+PASO 3: Verificar que todos los wildcards son consistentes
+----------------------------------------------------------
+Revisar que todos los modulos usen wildcards al nivel correcto:
+  - comercial.*     -> OK
+  - inventario.*    -> OK
+  - mrp.*           -> OK
+  - finanzas.*      -> OK (usado por Facturacion Y Pagos en Linea)
+  - rrhh.*          -> OK
+  - proyectos.*     -> OK
+  - flota.*         -> OK
+  - ventas.pos.*    -> OK
+  - citas.*         -> OK
+  - lms.*           -> OK
+  - admin.*         -> OK (Marketing)
+  - uptime.*        -> OK
+  - rifas.*         -> OK
+  - 'admin.*'       -> FIX (SISTEMA - cambiar de array a wildcard)
+
+PASO 4: Ejecutar Pint y Tests
+------------------------------
+  vendor/bin/pint --dirty --format agent
+  php artisan test --compact
+
+
+================================================================================
+4. CAMBIOS A REALIZAR (Propuesta de codigo)
+================================================================================
+
+ARCHIVO 1: resources/js/config/navigation.ts
+---------------------------------------------
+Linea 48-56 - Cambiar permission de SISTEMA:
+
+  ANTES:
+      permission: [
+          'admin.usuarios.viewAny',
+          'admin.roles.viewAny',
+          'admin.configuracion.viewAny',
+          'admin.web-settings.viewAny',
+          'admin.countries.viewAny',
+          'admin.reportes.viewAny',
+          'sistema.automatizaciones.viewAny',
+      ],
+
+  DESPUES:
+      permission: 'admin.*',
+
+ARCHIVO 2: app/Http/Middleware/HandleInertiaRequests.php
+--------------------------------------------------------
+Linea 49 - Despues de definir $authData, agregar bypass para Master/SA:
+
+  DESPUES de la linea que define $authData (linea 61), agregar:
+      if ($user->hasRole('Master') || $user->hasRole('Super Admin')) {
+          $authData['permissions'] = ['*'];
+      }
+
+  NOTA: Esto debe ir DESPUES del bloque $authData = [...] y ANTES del
+  return [...]. El $authData ya tiene 'permissions' definido en linea 49,
+  pero lo sobreescribimos con ['*'] para que el frontend haga bypass.
+
+
+================================================================================
+FIN DEL DIAGNOSTICO
+================================================================================

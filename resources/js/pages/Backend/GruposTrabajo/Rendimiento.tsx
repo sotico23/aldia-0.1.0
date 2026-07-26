@@ -888,7 +888,7 @@ export default function Rendimiento({
             </div>
 
             <Dialog open={isAsignacionOpen} onOpenChange={setIsAsignacionOpen}>
-                <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto md:max-w-lg">
+                <DialogContent className="flex max-h-[90vh] max-w-full flex-col overflow-y-auto sm:max-w-lg md:max-w-xl lg:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>
                             {editandoAsignacion ? 'Editar Asignación' : 'Nueva Asignación'}
@@ -920,7 +920,7 @@ export default function Rendimiento({
                                 <p className="text-sm text-red-500">{errors.grupo_trabajo_id}</p>
                             )}
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label>Fecha Inicio</Label>
                                 <Input
@@ -938,7 +938,7 @@ export default function Rendimiento({
                                 />
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label>Meta Monto ($)</Label>
                                 <Input
@@ -962,7 +962,7 @@ export default function Rendimiento({
                                 />
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label>Meta Kg</Label>
                                 <Input
@@ -994,7 +994,7 @@ export default function Rendimiento({
                                 placeholder="Notas opcionales"
                             />
                         </div>
-                        <DialogFooter>
+                        <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                             <Button type="button" variant="outline" onClick={() => setIsAsignacionOpen(false)}>
                                 Cancelar
                             </Button>

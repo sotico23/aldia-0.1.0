@@ -94,14 +94,14 @@ class PedidoController extends Controller
         try {
             $pedido = DB::transaction(function () use ($validated, $publicProfile) {
                 foreach ($validated['items'] as $item) {
-                    $producto = Producto::query()
+                    $producto = Producto::withoutGlobalScope(OwnerScope::class)
                         ->whereKey($item['producto_id'])
                         ->where('public_profile_id', $publicProfile->id)
                         ->where('owner_id', $publicProfile->owner_id)
                         ->firstOrFail();
                     $cantidad = $item['cantidad'];
 
-                    $inventarios = Inventario::query()
+                    $inventarios = Inventario::withoutGlobalScope(OwnerScope::class)
                         ->where('producto_id', $producto->id)
                         ->where('owner_id', $publicProfile->owner_id)
                         ->lockForUpdate()
@@ -132,7 +132,7 @@ class PedidoController extends Controller
                 $subtotal = 0;
 
                 foreach ($validated['items'] as $item) {
-                    $producto = Producto::query()
+                    $producto = Producto::withoutGlobalScope(OwnerScope::class)
                         ->whereKey($item['producto_id'])
                         ->where('public_profile_id', $publicProfile->id)
                         ->where('owner_id', $publicProfile->owner_id)

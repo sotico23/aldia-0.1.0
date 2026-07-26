@@ -317,6 +317,7 @@ class PosController extends Controller implements HasMiddleware
                         'precio_unitario' => $precioUnitario,
                         'descuento_unitario' => $descuentoUnitario ?: null,
                         'subtotal' => (int) round($precioUnitario * $item['cantidad']),
+                        'subtotal_metrica' => 0,
                         'cantidad_retornada' => $item['cantidad_retornada'] ?? null,
                     ]);
 

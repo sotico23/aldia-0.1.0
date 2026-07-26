@@ -45,15 +45,7 @@ export const adminNavItems = (): ExtendedNavItem[] => [
         group: 'SISTEMA',
         href: '#sistema',
         icon: Lock,
-        permission: [
-            'admin.usuarios.viewAny',
-            'admin.roles.viewAny',
-            'admin.configuracion.viewAny',
-            'admin.web-settings.viewAny',
-            'admin.countries.viewAny',
-            'admin.reportes.viewAny',
-            'sistema.automatizaciones.viewAny',
-        ],
+        permission: 'admin.*',
         items: [
             {
                 title: 'Usuarios y Roles',

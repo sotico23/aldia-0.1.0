@@ -16,6 +16,7 @@ class CargaDiaria extends Model
         'owner_id',
         'vehiculo_id',
         'conductor_id',
+        'almacen_id',
         'fecha',
         'estado',
         'ventas_totales',

@@ -108,7 +108,7 @@ test('crea producto con variantes existentes', function () {
         ],
     ]))->assertSessionDoesntHaveErrors();
 
-    $producto = Producto::where('codigo', 'PRO-VAR-01')->first();
+    $producto = Producto::where('codigo', 'PRO-VAR-01')->with('skus.valores')->first();
     expect($producto)->not->toBeNull();
     expect((bool) $producto->tiene_variantes)->toBeTrue();
     expect($producto->skus)->toHaveCount(2);

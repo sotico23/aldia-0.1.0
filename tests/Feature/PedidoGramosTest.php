@@ -26,6 +26,7 @@ beforeEach(function () {
         'categoria_id' => $this->categoria->id,
         'owner_id' => $this->storeOwner->id,
         'user_id' => $this->storeOwner->id,
+        'public_profile_id' => $this->publicProfile->id,
     ]);
     $this->almacen = Almacen::factory()->create([
         'owner_id' => $this->storeOwner->id,
@@ -171,6 +172,7 @@ test('crear accepts multiple items with decimal quantities', function () {
         'categoria_id' => $this->categoria->id,
         'owner_id' => $this->storeOwner->id,
         'user_id' => $this->storeOwner->id,
+        'public_profile_id' => $this->publicProfile->id,
     ]);
     Inventario::factory()->create([
         'producto_id' => $producto2->id,

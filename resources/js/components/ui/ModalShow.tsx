@@ -64,28 +64,28 @@ export function ModalShow<T extends Record<string, any>>({
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogContent className="max-h-[80vh] max-w-2xl overflow-hidden border-none bg-white p-0 shadow-xl">
-                <DialogHeader className="relative overflow-hidden px-8 pt-10 pb-20">
+            <DialogContent className="flex max-h-[90vh] max-w-full flex-col overflow-hidden border-none bg-white p-0 shadow-xl sm:max-w-lg md:max-w-2xl lg:max-w-3xl">
+                <DialogHeader className="relative overflow-hidden px-4 pt-8 pb-16 sm:px-8 sm:pt-10 sm:pb-20">
                     <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-100`} />
-                    <div className="absolute top-0 right-0 p-8 text-white opacity-20">
-                        <Eye className="h-24 w-24 rotate-12" />
+                    <div className="absolute top-0 right-0 p-4 text-white opacity-20 sm:p-8">
+                        <Eye className="h-16 w-16 rotate-12 sm:h-24 sm:w-24" />
                     </div>
                     <div className="relative z-10 flex flex-col gap-1 text-white">
                         <Badge className="w-fit border-none bg-white/20 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase hover:bg-white/30">
                             {badgeLabel}
                         </Badge>
-                        <DialogTitle className="text-3xl font-black tracking-tight text-white uppercase sm:text-4xl">
+                        <DialogTitle className="text-2xl font-black tracking-tight text-white uppercase sm:text-3xl md:text-4xl">
                             {titleField}
                         </DialogTitle>
                         {description && (
-                            <DialogDescription className="text-lg font-medium text-white/80">
+                            <DialogDescription className="text-base font-medium text-white/80 sm:text-lg">
                                 {description}
                             </DialogDescription>
                         )}
                     </div>
                 </DialogHeader>
 
-                <div className="relative z-20 -mt-10 mb-6 flex max-h-[calc(80vh)] flex-col gap-6 overflow-y-auto px-8 pb-4">
+                <div className="relative z-20 -mt-10 mb-6 flex flex-1 flex-col gap-6 overflow-y-auto px-4 pb-4 sm:-mt-10 sm:px-8">
                     {quickStats && quickStats.length > 0 && (
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                             {quickStats.map((stat, idx) => (
@@ -122,7 +122,7 @@ export function ModalShow<T extends Record<string, any>>({
                     {children}
                 </div>
 
-                <DialogFooter className="bg-gray-50 border-t p-4">
+                <DialogFooter className="shrink-0 bg-gray-50 border-t p-3 sm:p-4">
                     <Button onClick={onClose || (() => setIsOpen(false))}>
                         Cerrar
                     </Button>

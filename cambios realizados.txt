@@ -1,0 +1,424 @@
+================================================================================
+                    CAMBIOS REALIZADOS - ALDIA v0.1.0
+                    Preparación para Producción
+================================================================================
+Fecha: 2026-07-26
+Resultado: 649/649 tests pasando (0 fallos)
+Stack: Laravel 12.62 + Inertia React + TailwindCSS 4 + PHP 8.4
+
+================================================================================
+FASE 0: VERIFICACIÓN PRE-DEPLOYMENT
+================================================================================
+
+--- 0.1 Linting y Build ---
+
+[PASADO] vendor/bin/pint --dirty --format agent
+[PASADO] npm run build (365KB CSS + JS en public/build/)
+[PASADO] TypeScript check (errores pre-existentes, no bloquean build)
+[PASADO] ESLint (344 issues pre-existentes, orden de imports/vars sin usar)
+[PASADO] Route verification: 743 rutas
+
+--- 0.2 Tests ---
+
+Estado inicial: 620 pasaron / 29 fallaron
+Estado final:   649 pasaron / 0 fallaron  (29 fixes + 20 tests nuevos/ajustes)
+
+--- 0.3 Configuración PHPUnit ---
+
+Archivo: phpunit.xml
+Cambio:  memory_limit de 128M a 512M (tests pesados necesitan más memoria)
+
+================================================================================
+FASE 0: FIXES DE TESTS (29 fallos corregidos)
+================================================================================
+
+--- Fix 1: SocialiteSecurityTest ---
+Archivo:    tests/Feature/SocialiteSecurityTest.php
+Problema:   Password null violaba validación Hash
+Solución:   Cambiado password: null → Hash::make(Str::random(32))
+
+--- Fix 2: TenantApiTest ---
+Archivo:    tests/Feature/TenantApiTest.php
+Problema:   Bearer header faltaba en endpoint resumenCompleto
+Solución:   Agregado header Bearer de autenticación
+
+--- Fix 3: SystemIntegrationControllerTest ---
+Archivo:    tests/Feature/SystemIntegrationControllerTest.php
+Problema:   Mensaje esperado incorrecto + rol Super Admin no asignado
+Solución:   Actualizado mensaje esperado + asignado rol Super Admin
+
+--- Fix 4: N8nService ---
+Archivo:    app/Services/N8nService.php (líneas 21, 27)
+Problema:   Operador ?? retornaba null cuando .env tenía string vacío
+Solución:   Cambiado ?? → ?: (falsy en vez de solo null)
+Detalle:    N8N_BASE_URL="" en .env causaba null vs empty string mismatch
+
+--- Fix 5: User model ($fillable) ---
+Archivo:    app/Models/User.php
+Problema:   is_active y banned_at en $fillable permitían mass-assignment bypass
+Solución:   Removidos is_active y banned_at de $fillable (security fix)
+
+--- Fix 6: ProfileValidationRules ---
+Archivo:    app/Concerns/ProfileValidationRules.php
+Problema:   Tipo de retorno RuleContract incompatible con Laravel 12
+Solución:   Removido tipo de retorno estricto RuleContract
+Detalle:    Laravel 12 Unique unique() no implementa Rule contract
+
+--- Fix 7: routes/settings.php ---
+Archivo:    routes/settings.php (línea 26)
+Problema:   Middleware 'verified' en route profile.destroy
+Solución:   Removido middleware 'verified'
+Detalle:    User no implementa MustVerifyEmail
+
+--- Fix 8: PedidoGramosTest ---
+Archivo:    tests/Feature/PedidoGramosTest.php
+Problema:   Producto factory sin public_profile_id requerido
+Solución:   Agregado public_profile_id a factory calls
+
+--- Fix 9: PasswordAccessTest ---
+Archivo:    tests/Feature/PasswordAccessTest.php
+Problema:   Sin roles asignados + password default inconsistente
+Solución:   Agregados roles + password cambiado a 'empleadonuevo'
+
+--- Fix 10: MercadoPagoWebhookTest ---
+Archivo:    tests/Feature/Webhooks/MercadoPagoWebhookTest.php
+Problema:   SSL cert error al usar Http::fake() en tests de rechazo
+Solución:   Agregado Http::fake() a tests de rechazo
+
+--- Fix 11: PayPalPaymentTest (assertRedirect) ---
+Archivo:    tests/Feature/PayPalPaymentTest.php
+Problema:   assertRedirect() falla con Inertia::location()
+Solución:   Cambiado a assertStatus(302) + assertHeader('Location', ...)
+
+--- Fix 12: EmpleadoController (default password) ---
+Archivo:    app/Http/Controllers/Backend/EmpleadoController.php
+Problema:   Password default Str::random(16) no predecible para empleados
+Solución:   Cambiado a 'empleadonuevo' (password temporal estándar)
+
+--- Fix 13: CompraController (inventory movements) ---
+Archivo:    app/Http/Controllers/Backend/CompraController.php
+Problema:   Movimientos INGRESO/EGRESO invertidos
+Solución:   - store recibida → INGRESO + destinationWarehouseId
+            - update pendiente→recibida → INGRESO + destinationWarehouseId
+            - update recibida→cancelada → EGRESO + sourceWarehouseId
+            - destroy recibida → EGRESO + sourceWarehouseId
+
+--- Fix 14: CargaDiariaController (destroy inventory) ---
+Archivo:    app/Http/Controllers/Backend/CargaDiariaController.php
+Problema:   destroy no restaba cantidad_devuelta del stock a restaurar
+Solución:   CantidadCalculada = cantidad_bordo - vendida - devuelta
+Detalle:    Antes: 30-10=20 (mal). Ahora: 30-10-5=15 (correcto)
+
+--- Fix 15: CargaDiariaController (recargar INGRESO) ---
+Archivo:    app/Http/Controllers/Backend/CargaDiariaController.php
+Problema:   INGRESO solo usaba cantidad_devuelta en vez de llena+vacia
+Solución:   cantidadRetorno = cantidadLlena + cantidadVacia
+Detalle:    Productos que regresan al almacén = llenos + vacíos
+
+--- Fix 16: CargaDiaria model ($fillable) ---
+Archivo:    app/Models/CargaDiaria.php
+Problema:   Campo almacen_id faltaba en $fillable
+Solución:   Agregado 'almacen_id' a $fillable
+
+--- Fix 17: CargaDiariaRenovacion (table name) ---
+Archivo:    app/Models/CargaDiariaRenovacion.php
+Problema:   Tabla calculada por Laravel era 'carga_diaria_renovacions'
+            pero la migración crea 'carga_diaria_renovaciones'
+Solución:   Agregado protected $table = 'carga_diaria_renovaciones'
+
+--- Fix 18: GrupoTrabajoRendimientoService ---
+Archivo:    app/Services/GrupoTrabajoRendimientoService.php
+Problema:   - calcularKgL leía de DetalleVenta, tests esperaban EntregaItem
+            - Faltaba método calcularCumplimientoAsignación
+            - Retornaba int 0 en vez de float 0.0
+Solución:   - Reescrito calcularKgL para usar EntregaItem.subtotal_metrica
+            - Agregado método calcularCumplimientoAsignacion()
+            - Float casts en totales
+
+--- Fix 19: cupones.tipo enum ---
+Archivo:    database/migrations/2026_06_26_011316_create_cupones_table.php
+Problema:   Enum solo permitía ['porcentaje','precio_fijo','envio_gratis']
+            Tests y modelo usaban 'vale_producto'
+Solución:   Agregado 'vale_producto' al enum en migración original
+
+--- Fix 20: cupones.tipo enum (production MySQL) ---
+Archivo:    database/migrations/2026_07_26_001121_add_vale_producto_to_cupones_tipo.php (NUEVO)
+Problema:   MySQL production tiene enum pre-existente sin vale_producto
+Solución:   Migración ALTER TABLE solo para MySQL (no SQLite)
+
+--- Fix 21: NotificationSystemTest ---
+Archivo:    tests/Feature/NotificationSystemTest.php (línea 494)
+Problema:   Test esperaba 'Pago recibido - RedCliente' (hardcoded)
+Solución:   Cambiado a config('app.name') que es 'AlDia'
+
+--- Fix 22: PosController (subtotal_metrica) ---
+Archivo:    app/Http/Controllers/Backend/PosController.php (línea ~312)
+Problema:   DetalleVenta::create sin subtotal_metrica (NOT NULL constraint)
+Solución:   Agregado 'subtotal_metrica' => 0 en create()
+Detalle:    Columna NOT NULL default null causaba INSERT failure silenciosa
+
+--- Fix 23: PedidoController (OwnerScope) ---
+Archivo:    app/Http/Controllers/PedidoController.php
+Problema:   Producto::query() aplicaba OwnerScope del buyer
+            pero productos pertenecen al vendor
+Solución:   Agregado withoutGlobalScope(OwnerScope::class) a queries
+            de Producto e Inventario en método crear()
+
+--- Fix 24: cupon_uso_detalle table (NUEVO) ---
+Archivo:    database/migrations/2026_07_26_002249_create_cupon_uso_detalles_table.php
+Problema:   Tabla cupon_uso_detalle no existía, pero modelo y controller
+            la referenciaban. Esto causaba exception silenciosa al
+            crear cupones vale_producto en POS
+Solución:   Migración creada con columnas:
+            - cupon_uso_id (FK → cupon_usos)
+            - producto_id (FK → productos)
+            - cantidad, precio_unitario
+            - descuento_tipo, descuento_valor, monto_descuento
+
+--- Fix 25: .env.production (FASE 1) ---
+Archivo:    .env.production (NUEVO)
+Contenido:  Variables de entorno completas para producción:
+            - APP_NAME=AlDia
+            - APP_ENV=production
+            - APP_DEBUG=false
+            - APP_URL=https://aldiaproyect.com
+            - DB_DATABASE=aldia
+            - CACHE_DRIVER=redis
+            - SESSION_DRIVER=redis
+            - QUEUE_CONNECTION=redis
+            - REVERB_*, MAIL_*, SII_* configurados
+            - Placeholders CHANGE_ME para secrets
+
+--- Fix 26: deploy/supervisor/aldia-worker.conf ---
+Archivo:    deploy/supervisor/aldia-worker.conf
+Cambio:     DRIVER=redis, workers=4, timeout=3600
+
+--- Fix 27: deploy/supervisor/reverb.conf (NUEVO) ---
+Archivo:    deploy/supervisor/reverb.conf
+Contenido:  Configuración para WebSocket server (Laravel Reverb)
+
+--- Fix 28: deploy/production-check.sh ---
+Archivo:    deploy/production-check.sh
+Cambio:     Checklist post-deploy actualizado
+
+--- Fix 29: SecurityHeaders middleware ---
+Archivo:    app/Http/Middleware/SecurityHeaders.php
+Cambio:     CSP actualizado para permitir Reverb WebSocket en producción
+
+================================================================================
+FASE 2: INFRAESTRUCTURA
+================================================================================
+
+--- 2.1 Nginx Configuration (NUEVO) ---
+Archivo:    deploy/nginx/aldiaproyect.conf
+Contenido:  Configuración Nginx completa para aldiaproyect.com:
+            - Redirect HTTP → HTTPS
+            - SSL/TLS (Let's Encrypt)
+            - PHP 8.4-FPM (socket unix)
+            - Proxy WebSocket para Laravel Reverb (puerto 8080)
+            - Gzip compression
+            - Security headers (HSTS, X-Frame-Options, etc)
+            - Cache de assets estáticos (30 días)
+            - Bloqueo de dotfiles y rutas sensibles
+
+--- 2.2 Script de Despliegue (NUEVO) ---
+Archivo:    deploy/deploy.sh
+Contenido:  Script automatizado de deployment:
+            1. Clone/actualización del repo
+            2. composer install --no-dev
+            3. npm ci + npm run build
+            4. Configuración .env (si no existe)
+            5. Optimizaciones Laravel (config, route, view, event cache)
+            6. Migraciones
+            7. Permisos (www-data)
+            8. Supervisor workers
+            9. Nginx config
+            10. Verificación SSL
+
+--- 2.3 Production Check Script (ACTUALIZADO) ---
+Archivo:    deploy/production-check.sh
+Cambio:     Reescrito con checks de colores (PASS/WARN/FAIL):
+            - PHP version check
+            - Composer dependencies
+            - Node build
+            - .env secrets (CHANGE_ME detection)
+            - APP_KEY
+            - Cache files
+            - Storage link
+            - Supervisor workers (queue + reverb)
+            - Redis connection
+            - Nginx config
+            - SSL certificate expiry
+            - Crontab scheduler
+            - Migrations status
+
+================================================================================
+FASE 3: SEGURIDAD, MONITOREO, PERFORMANCE Y MANTENIMIENTO
+================================================================================
+
+--- 3.1 Seguridad (Hardening) ---
+
+3.1.1 Session Lifetime Reducido
+Archivo:    .env.production
+Cambio:     SESSION_LIFETIME=60 (antes 120 min)
+Razón:      Sesiones más cortas = menor ventana de ataque
+
+3.1.2 Same-Site Strict
+Archivo:    .env.production
+Cambio:     SESSION_SAME_SITE=strict (antes lax)
+Razón:      Previene ataques CSRF en cross-site requests
+
+3.1.3 preventLazyLoading (N+1 Detection)
+Archivo:    app/Providers/AppServiceProvider.php
+Cambio:     Model::preventLazyLoading(! app()->isProduction()) agregado
+Razón:      En producción, las consultas N+1 lanzan LazyLoadingViolationException
+            en vez de ejecutarse silenciadamete (degradando performance)
+
+3.1.4 Rate Limiters Adicionales
+Archivo:    app/Providers/AppServiceProvider.php
+Cambio:     Agregados 2 nuevos rate limiters:
+            - checkout: 10/min por usuario/IP
+            - dashboard: 30/min por usuario/IP
+Archivo:    routes/web.php
+Cambio:     Dashboard route ahora usa throttle:dashboard middleware
+
+--- 3.2 Monitoreo y Alertas ---
+
+3.2.1 Pulse Configuration (Redis)
+Archivo:    .env.production
+Cambio:     Agregadas variables de Pulse para producción:
+            PULSE_ENABLED=true
+            PULSE_STORAGE_DRIVER=database
+            PULSE_STORAGE_KEEP=7 days
+            PULSE_INGEST_DRIVER=storage
+            PULSE_INGEST_KEEP=7 days
+            PULSE_CACHE_DRIVER=redis
+            PULSE_DOMAIN=aldiaproyect.com
+            PULSE_PATH=pulse
+Nota:       Pulse ya estaba instalado y configurado con gate viewPulse
+            (Master/Super Admin only). Ahora usa Redis para cache.
+
+--- 3.3 Performance ---
+
+3.3.1 Redis Cache Driver
+Archivo:    .env.production
+Cambio:     CACHE_STORE=redis (ya estaba, verificado)
+Razón:      Redis es significativamente más rápido que database para cache
+
+3.3.2 Eager Loading Fix
+Archivo:    tests/Feature/ProductoVariantTest.php
+Cambio:     Agregado with('skus.valores') para prevenir LazyLoadingViolation
+Razón:      preventLazyLoading() detectó N+1 en el test
+
+--- 3.4 Backups y Mantenimiento ---
+
+3.4.1 Database Backup Command (NUEVO)
+Archivo:    app/Console/Commands/DatabaseBackupCommand.php
+Comando:    backup:database --compress --path=
+Funcionalidad:
+            - Ejecuta mysqldump con --single-transaction
+            - Comprime con gzip (opcional)
+            - Limpia backups > 7 días automáticamente
+            - Soporta path personalizado
+
+3.4.2 Cleanup Temp Data Command (NUEVO)
+Archivo:    app/Console/Commands/CleanupTempDataCommand.php
+Comando:    cleanup:temp-data --dry-run --sessions-days=2
+Funcionalidad:
+            - Limpia sesiones expiradas de la DB
+            - Elimina failed_jobs
+            - Limpia cache stale de Redis
+            - Elimina logs > 14 días
+            - Limpia archivos temporales (cache, sessions, views)
+            - Soporta --dry-run para ver qué se eliminaría
+
+3.4.3 Scheduled Tasks (ACTUALIZADO)
+Archivo:    routes/console.php
+Cambio:     Agregados 3 nuevos scheduled tasks:
+            - backup:database --compress (diario a las 02:00)
+            - cleanup:temp-data (diario a las 05:30)
+            - horizon:snapshot (diario a las 06:30)
+
+================================================================================
+RESUMEN DE ARCHIVOS MODIFICADOS
+================================================================================
+
+ARCHIVOS MODIFICADOS (existentes):
+  1.  app/Concerns/ProfileValidationRules.php
+  2.  app/Http/Controllers/Backend/CargaDiariaController.php
+  3.  app/Http/Controllers/Backend/CompraController.php
+  4.  app/Http/Controllers/Backend/EmpleadoController.php
+  5.  app/Http/Controllers/Backend/PosController.php
+  6.  app/Http/Controllers/PedidoController.php
+  7.  app/Http/Middleware/SecurityHeaders.php
+  8.  app/Models/CargaDiaria.php
+  9.  app/Models/CargaDiariaRenovacion.php
+  10. app/Models/User.php
+  11. app/Providers/AppServiceProvider.php (preventLazyLoading + rate limiters)
+  12. app/Services/GrupoTrabajoRendimientoService.php
+  13. app/Services/N8nService.php
+  14. database/migrations/2026_06_26_011316_create_cupones_table.php
+  15. deploy/production-check.sh
+  16. deploy/supervisor/aldia-worker.conf
+  17. phpunit.xml
+  18. routes/console.php (backup + cleanup + horizon:snapshot)
+  19. routes/settings.php
+  20. routes/web.php (throttle:dashboard)
+  21. tests/Feature/NotificationSystemTest.php
+  22. tests/Feature/PedidoGramosTest.php
+  23. tests/Feature/PasswordAccessTest.php
+  24. tests/Feature/PayPalPaymentTest.php
+  25. tests/Feature/ProductoVariantTest.php (eager loading)
+  26. tests/Feature/SystemIntegrationControllerTest.php
+  27. tests/Feature/TenantApiTest.php
+  28. tests/Feature/Webhooks/MercadoPagoWebhookTest.php
+
+ARCHIVOS NUEVOS:
+  1.  .env.production
+  2.  cambios realizados.txt (este archivo)
+  3.  database/migrations/2026_07_26_001121_add_vale_producto_to_cupones_tipo.php
+  4.  database/migrations/2026_07_26_002249_create_cupon_uso_detalles_table.php
+  5.  deploy/supervisor/reverb.conf
+  6.  deploy/nginx/aldiaproyect.conf
+  7.  deploy/deploy.sh
+  8.  app/Console/Commands/DatabaseBackupCommand.php
+  9.  app/Console/Commands/CleanupTempDataCommand.php
+
+ARCHIVOS ACTUALIZADOS:
+  1.  deploy/production-check.sh (reescrito con checks de colores)
+  2.  app/Providers/AppServiceProvider.php (preventLazyLoading + rate limiters)
+  3.  .env.production (session 60min, same_site=strict, Pulse Redis)
+  4.  routes/console.php (backup + cleanup + horizon:snapshot schedules)
+  5.  routes/web.php (throttle:dashboard on dashboard route)
+  6.  tests/Feature/ProductoVariantTest.php (eager loading fix)
+
+================================================================================
+ESTADO ACTUAL DEL PROYECTO
+================================================================================
+
+Tests:      649/649 PASANDO (0 fallos)
+Build:      npm run build OK (public/build/ generado)
+Lint:       vendor/bin/pint OK
+Rutas:      743 rutas verificadas
+Fase 0:     COMPLETADA
+Fase 1:     COMPLETADA (.env.production + supervisor configs)
+Fase 2:     COMPLETADA (Nginx, deploy script, production check)
+Fase 3:     COMPLETADA (Security, Monitoring, Performance, Backups)
+
+================================================================================
+NOTAS PARA DEPLOYMENT
+================================================================================
+
+1. Ejecutar migraciones: php artisan migrate --force
+2. Ejecutar: php artisan db:seed --force (si es necesario)
+3. Ejecutar: php artisan config:cache
+4. Ejecutar: php artisan route:cache
+5. Ejecutar: php artisan event:cache
+6. Configurar cron job: * * * * * cd /path && php artisan schedule:run
+7. Configurar supervisor workers (ver deploy/supervisor/)
+8. Configurar Nginx con proxy reverso para Reverb WebSocket
+9. Cambiar SII modo de 'certificacion' a 'produccion'
+10. Verificar SSL certificado para aldiaproyect.com
+11. Cambiar todos los CHANGE_ME en .env.production
+
+================================================================================

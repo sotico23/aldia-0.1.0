@@ -82,7 +82,7 @@ class EmpleadosImport implements ToCollection, WithHeadingRow
                 [
                     'creator_id' => $ownerId,
                     'owner_id' => $ownerId,
-                    'user_id' => Auth::id(),
+                    'user_id' => null,
                     'almacen_id' => $almacenId,
                     'nombre' => $nombre ?? ($id ? Empleado::find($id)?->nombre : 'Sin Nombre'),
                     'apellido' => $row['apellido'] ?? '',

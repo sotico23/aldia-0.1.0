@@ -1,0 +1,184 @@
+================================================================================
+  CORRECCIÓN: getOwnerId() - USUARIO HIJO NO VEÍA DATOS DEL PADRE
+  Fecha: 2026-07-26
+================================================================================
+
+INDICE
+------
+  1. Problema Reportado
+  2. Causa Raíz
+  3. Traza Completa del Bug
+  4. Solución Implementada
+  5. Por qué NO se cambió Master creator_id
+  6. Distribución de datos por owner_id
+  7. Verificación
+
+
+================================================================================
+1. PROBLEMA REPORTADO
+================================================================================
+
+Usuario padre (id=8, Ezequiel Soto):
+  - owner_id = 7 (resuelve a eze)
+  - Ve productos, almacenes, categorías correctamente
+
+Usuario hijo (id=10, Ezequiel3 Soto):
+  - creator_id = 7 (hijo de eze)
+  - NO veía ningún dato del padre
+  -owner_id resolvía a 10 (ID propio) en vez de 7
+
+
+================================================================================
+2. CAUSA RAÍZ
+================================================================================
+
+Master (User 1) tiene creator_id = 1 (auto-referencia circular).
+
+Cuando getOwnerId() camina la cadena creator_id:
+  User 10 → User 7 → User 1 → User 1 → CIRCULAR
+  Detección circular retornaba $this->id (ID propio del usuario)
+  En vez del root owner real del tenant.
+
+Código original (User.php línea 240-241):
+  if (isset($visited[$nextId])) {
+      return $this->id;  // BUG: retorna ID propio
+  }
+
+
+================================================================================
+3. TRAZA COMPLETA DEL BUG
+================================================================================
+
+ANTES (con bug):
+  User 10 → creator_id=7
+    → visit User 7 (creator_id=1)
+    → visit User 1 (creator_id=1)
+    → CIRCULAR detectado
+    → retorna $this->id = 10  ← INCORRECTO
+
+  Resultado: WHERE owner_id = 10 → 0 registros (no existe nada con owner_id=10)
+
+
+DESPUÉS (corregido):
+  User 10 → creator_id=7
+    → visit User 7 (creator_id=1), prevRowId=7
+    → visit User 1 (creator_id=1), prevRowId=7
+    → CIRCULAR detectado
+    → retorna prevRowId = 7  ← CORRECTO
+
+  Resultado: WHERE owner_id = 7 → ve productos, almacenes, etc.
+
+
+================================================================================
+4. SOLUCIÓN IMPLEMENTADA
+================================================================================
+
+ARCHIVO: app/Models/User.php - Método getOwnerId()
+
+ANTES:
+  public function getOwnerId(): int
+  {
+      if ($this->creator_id) {
+          $visited = [];
+          $nextId = $this->creator_id;
+          do {
+              if (isset($visited[$nextId])) {
+                  return $this->id;  // BUG
+              }
+              $visited[$nextId] = true;
+              $row = \DB::table('users')->find($nextId);
+              if (! $row) {
+                  return $this->creator_id;
+              }
+              $nextId = $row->creator_id;
+          } while ($nextId);
+          return (int) $row->id;
+      }
+      return $this->id;
+  }
+
+DESPUÉS:
+  public function getOwnerId(): int
+  {
+      if ($this->creator_id) {
+          $visited = [];
+          $nextId = $this->creator_id;
+          $prevRowId = null;
+          $currentRowId = null;
+          do {
+              if (isset($visited[$nextId])) {
+                  return $prevRowId ?? $this->id;
+              }
+              $visited[$nextId] = true;
+              $row = \DB::table('users')->find($nextId);
+              if (! $row) {
+                  return $this->creator_id;
+              }
+              $prevRowId = $currentRowId;
+              $currentRowId = (int) $row->id;
+              $nextId = $row->creator_id;
+          } while ($nextId);
+          return (int) $row->id;
+      }
+      return $this->id;
+  }
+
+
+================================================================================
+5. POR QUÉ NO SE CAMBIÓ MASTER CREATOR_ID
+================================================================================
+
+Master (User 1) tiene creator_id=1 (auto-referencia). Originalmente se
+propuso cambiarlo a NULL, pero análisis posterior reveló que:
+
+  - Si Master creator_id = NULL:
+    → User 7 getOwnerId() retorna 1 (Master)
+    → User 10 getOwnerId() retorna 1 (Master)
+    → Datos con owner_id=7 NO serían visibles
+    → SE ROMPE TODO
+
+  - Con Master creator_id=1 (circular):
+    → User 7 getOwnerId() retorna 7 (correcto, tenant root)
+    → User 10 getOwnerId() retorna 7 (correcto, tenant root)
+    → Datos con owner_id=7 SÍ son visibles
+    → FUNCIONA CORRECTAMENTE
+
+La referencia circular de Master es NECESARIA para que el algoritmo
+de detección funcione y retorne el tenant root correcto.
+
+
+================================================================================
+6. DISTRIBUCIÓN DE DATOS POR OWNER_ID
+================================================================================
+
+  owner_id=1 (Master):
+    - categorias: 2 registros
+    - clientes: 17 registros
+    - empleados: 5 registros
+    - ventas: 1 registro
+
+  owner_id=7 (eze):
+    - productos: 5 registros
+    - almacenes: 3 registros
+    - categorias: 3 registros
+    - empleados: 3 registros
+
+  CON EL FIX:
+    - User 7 (eze) ve datos owner_id=7 ✓
+    - User 10 (hijo de eze) ve datos owner_id=7 ✓
+    - User 1 (Master) ve TODO (bypass) ✓
+    - Datos owner_id=1 solo visibles para Master/SuperAdmin ✓
+
+
+================================================================================
+7. VERIFICACIÓN
+================================================================================
+
+  Pint: PASSED
+  Tests: 4 passed (19 assertions) - PasswordAccessTest
+  master creator_id: se mantuvo en 1 (necesario para circular detection)
+
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================

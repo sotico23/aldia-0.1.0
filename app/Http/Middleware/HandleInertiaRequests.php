@@ -61,6 +61,10 @@ class HandleInertiaRequests extends Middleware
             ];
         }
 
+        if (isset($user) && ($user->hasRole('Master') || $user->hasRole('Super Admin'))) {
+            $authData['permissions'] = ['*'];
+        }
+
         return [
             ...parent::share($request),
             'name' => $webSettings['app_name'] ?? config('app.name', 'Al Dia'),

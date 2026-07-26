@@ -59,8 +59,6 @@ class User extends Authenticatable
         'dark_mode_preference',
         'trial_ends_at',
         'trial_starts_at',
-        'is_active',
-        'banned_at',
         'has_explicit_role',
     ];
 
@@ -83,7 +81,7 @@ class User extends Authenticatable
 
             if ($isFirstUser) {
                 $user->assignRole('Super Admin');
-            } else {
+            } elseif (! $user->has_explicit_role) {
                 $user->assignRole('Usuario');
 
                 $trialDays = (int) (WebSetting::getSettings()->trial_days ?? 15);
@@ -235,9 +233,27 @@ class User extends Authenticatable
     public function getOwnerId(): int
     {
         if ($this->creator_id) {
-            $creator = self::find($this->creator_id);
+            $visited = [];
+            $nextId = $this->creator_id;
+            $prevRowId = null;
+            $currentRowId = null;
 
-            return $creator ? $creator->getOwnerId() : $this->creator_id;
+            do {
+                if (isset($visited[$nextId])) {
+                    return $prevRowId ?? $this->id;
+                }
+                $visited[$nextId] = true;
+
+                $row = \DB::table('users')->find($nextId);
+                if (! $row) {
+                    return $this->creator_id;
+                }
+                $prevRowId = $currentRowId;
+                $currentRowId = (int) $row->id;
+                $nextId = $row->creator_id;
+            } while ($nextId);
+
+            return (int) $row->id;
         }
 
         return $this->id;

@@ -22,6 +22,7 @@ import {
     Heart
 } from 'lucide-react';
 import { useState, useRef } from 'react';
+import { toast } from 'sonner';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -360,9 +361,18 @@ export default function Profile() {
         });
     };
 
+    const MAX_PROFILE_PHOTO_SIZE = 3 * 1024 * 1024; // 3MB
+    const MAX_COVER_PHOTO_SIZE = 8 * 1024 * 1024; // 8MB
+
     const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            if (file.size > MAX_PROFILE_PHOTO_SIZE) {
+                toast.error('La foto de perfil no puede superar los 3MB.');
+                e.target.value = '';
+                return;
+            }
+
             const reader = new FileReader();
             reader.onloadend = () => {
                 const result = reader.result;
@@ -376,13 +386,17 @@ export default function Profile() {
 
                     router.post(updateProfile().url, formData, {
                         forceFormData: true,
+                        preserveScroll: true,
                         onSuccess: () => {
                             setPreviewPhoto(null);
                             setUploading(false);
+                            toast.success('Foto de perfil actualizada.');
                             router.visit(editProfile().url, { method: 'get' });
                         },
                         onError: () => {
                             setUploading(false);
+                            setPreviewPhoto(null);
+                            toast.error('Error al subir la foto. Intenta con otro archivo.');
                         },
                     });
                 }
@@ -394,6 +408,12 @@ export default function Profile() {
     const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            if (file.size > MAX_COVER_PHOTO_SIZE) {
+                toast.error('La imagen de portada no puede superar los 8MB.');
+                e.target.value = '';
+                return;
+            }
+
             const reader = new FileReader();
             reader.onloadend = () => {
                 const result = reader.result;
@@ -407,13 +427,17 @@ export default function Profile() {
 
                     router.post(updateProfile().url, formData, {
                         forceFormData: true,
+                        preserveScroll: true,
                         onSuccess: () => {
                             setPreviewCover(null);
                             setUploading(false);
+                            toast.success('Portada actualizada.');
                             router.visit(editProfile().url, { method: 'get' });
                         },
                         onError: () => {
                             setUploading(false);
+                            setPreviewCover(null);
+                            toast.error('Error al subir la portada. Intenta con otro archivo.');
                         },
                     });
                 }

@@ -491,7 +491,7 @@ test('PaymentReceivedNotification mail renders correctly', function () {
     $mail = (new PaymentReceivedNotification($transaction))->toMail($user);
     $data = $mail->toArray();
 
-    expect($mail->subject)->toBe('Pago recibido - RedCliente');
+    expect($mail->subject)->toBe('Pago recibido - '.config('app.name'));
     expect($data['greeting'])->toBe('¡Pago confirmado!');
 });
 

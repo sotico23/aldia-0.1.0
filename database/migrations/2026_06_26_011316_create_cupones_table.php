@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('owner_id')->nullable()->constrained('users')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('codigo', 50)->unique();
-            $table->enum('tipo', ['porcentaje', 'precio_fijo', 'envio_gratis']);
+            $table->enum('tipo', ['porcentaje', 'precio_fijo', 'envio_gratis', 'vale_producto']);
             $table->decimal('valor', 10, 2);
             $table->text('descripcion')->nullable();
             $table->text('plantilla_html')->nullable();

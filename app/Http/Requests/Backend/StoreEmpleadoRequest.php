@@ -26,6 +26,8 @@ class StoreEmpleadoRequest extends FormRequest
             'direccion' => ['nullable', 'string', 'max:500'],
             'almacen_id' => ['nullable', 'exists:almacenes,id'],
             'notas' => ['nullable', 'string'],
+            'crear_usuario' => ['nullable', 'boolean'],
+            'rol_id' => ['required_if:crear_usuario,true', 'exists:roles,id'],
         ];
     }
 
@@ -37,6 +39,8 @@ class StoreEmpleadoRequest extends FormRequest
             'email.email' => 'El correo electrónico debe ser válido.',
             'email.unique' => 'Este correo ya está registrado.',
             'almacen_id.exists' => 'El almacén seleccionado no existe.',
+            'rol_id.required_with' => 'El rol es obligatorio cuando se crea un usuario.',
+            'rol_id.exists' => 'El rol seleccionado no existe.',
         ];
     }
 }

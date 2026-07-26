@@ -4,11 +4,14 @@ use App\Models\SystemIntegration;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    Role::firstOrCreate(['name' => 'Super Admin'], ['owner_id' => null]);
     $this->admin = User::factory()->create();
+    $this->admin->assignRole('Super Admin');
 });
 
 test('show returns null when no integration config exists', function () {
@@ -117,7 +120,7 @@ test('test connection returns error when no config saved', function () {
     $response->assertStatus(422);
     $response->assertJson([
         'success' => false,
-        'message' => 'No se pudo conectar con n8n. Verifica la URL e intenta nuevamente.',
+        'message' => 'No hay configuración de n8n. Configura la URL Base primero.',
     ]);
 });
 
@@ -129,6 +132,9 @@ test('test connection calls n8n health endpoint', function () {
         'api_key' => 'secret',
         'is_active' => true,
     ]);
+
+    $config = SystemIntegration::forProvider('n8n')->first();
+    expect($config)->not->toBeNull();
 
     Http::fake([
         'n8n.example.com/*' => Http::response(['status' => 'ok'], 200),

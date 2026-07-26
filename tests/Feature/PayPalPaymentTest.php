@@ -158,7 +158,8 @@ test('paypal pay creates order and redirects to approval url', function () {
     $response = $this->actingAs($this->buyer)
         ->get(route('paypal.pay', ['pedidoId' => $pedido->id]));
 
-    $response->assertRedirect('https://www.sandbox.paypal.com/checkoutnow?token=PAYPAL-ORDER-123');
+    $response->assertStatus(302);
+    $response->assertHeader('Location', 'https://www.sandbox.paypal.com/checkoutnow?token=PAYPAL-ORDER-123');
 
     $pedido = Pedido::withoutGlobalScope(OwnerScope::class)->find($pedido->id);
     expect($pedido->payment_id)->toBe('PAYPAL-ORDER-123')

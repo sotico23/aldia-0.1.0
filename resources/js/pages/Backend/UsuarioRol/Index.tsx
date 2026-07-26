@@ -55,7 +55,7 @@ import {
     Star,
     ShieldCheck,
 } from 'lucide-react';
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import InputError from '@/components/input-error';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -93,6 +93,7 @@ import {
 import { useCountry } from '@/hooks/use-country';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
+import { mainNavItems, adminNavItems } from '@/config/navigation';
 import type { BreadcrumbItem } from '@/types';
 
 interface User {
@@ -157,9 +158,11 @@ interface Props {
     roles: Role[];
     permisos: Permission[];
     grouped_permissions: Record<string, Record<string, { id: number; name: string; friendly_name: string }[]>>;
+    grouped_permissions_by_resource: Record<string, Record<string, Record<string, { id: number; name: string; friendly_name: string }[]>>>;
     usuariosRoles: UsuarioRol[];
     publicProfiles: PublicProfile[];
     is_master: boolean;
+    user_level: number;
     masterData: MasterData | null;
 }
 
@@ -210,19 +213,19 @@ function getModuleIcon(module: string): React.ReactNode {
  */
 function getFriendlyPermissionLabel(permission: { name: string; friendly_name: string }): string {
     const parts = permission.name.split('.');
-    
+
     // Si no tiene la estructura esperada (modulo.recurso.accion), usar el nombre amigable original
     if (parts.length !== 3) {
         return permission.friendly_name;
     }
-    
+
     const [, resource, action] = parts;
-    
+
     // Formatear el recurso: reemplazar guiones/underscores por espacios y capitalizar
     const formattedResource = resource
         .replace(/[-_]/g, ' ')
         .replace(/\b\w/g, (c) => c.toUpperCase());
-    
+
     // Mapear acciones a texto en español
     const actionMap: Record<string, string> = {
         'create': 'Crear / Agregar',
@@ -238,182 +241,17 @@ function getFriendlyPermissionLabel(permission: { name: string; friendly_name: s
         'export': 'Exportar',
         'import': 'Importar',
     };
-    
+
     const actionLabel = actionMap[action] ?? action.charAt(0).toUpperCase() + action.slice(1);
-    
+
     // Acciones que no necesitan "de" antes del recurso
     const noPrepositionActions = ['create', 'store', 'export', 'import'];
-    
+
     if (noPrepositionActions.includes(action)) {
         return `${actionLabel} ${formattedResource}`;
     }
-    
+
     return `${actionLabel} ${formattedResource}`;
-}
-
-interface PermissionCardProps {
-    cardName: string;
-    submodules: Record<string, { id: number; name: string; friendly_name: string }[]>;
-    searchQuery: string;
-    rolForm: ReturnType<typeof import('@inertiajs/react').useForm<{ name: string; permissions: number[] }>>;
-    isEditing: boolean;
-}
-
-function PermissionCard({ cardName, submodules, searchQuery, rolForm, isEditing }: PermissionCardProps) {
-    const icon = getModuleIcon(cardName);
-
-    // Estado de expansión para cada subgrupo (accordion)
-    const [expandedSubmodules, setExpandedSubmodules] = useState<Record<string, boolean>>(() => {
-        const initial: Record<string, boolean> = {};
-        Object.keys(submodules).forEach((subName) => {
-            // Auto-expand si hay búsqueda y el subgrupo tiene coincidencias
-            const hasMatches = submodules[subName].some(p =>
-                !searchQuery ||
-                p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                p.friendly_name.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-            initial[subName] = hasMatches;
-        });
-        return initial;
-    });
-
-    // Actualizar expansión cuando cambia la búsqueda
-    useEffect(() => {
-        setExpandedSubmodules(prev => {
-            const updated = { ...prev };
-            Object.keys(submodules).forEach((subName) => {
-                const hasMatches = submodules[subName].some(p =>
-                    !searchQuery ||
-                    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    p.friendly_name.toLowerCase().includes(searchQuery.toLowerCase())
-                );
-                if (hasMatches && !updated[subName]) {
-                    updated[subName] = true;
-                }
-            });
-            return updated;
-        });
-    }, [searchQuery, submodules]);
-
-    // Determinar si todos los permisos visibles de esta card están seleccionados
-    const allVisiblePerms = Object.values(submodules).flatMap(sub => sub.filter(p =>
-        !searchQuery ||
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.friendly_name.toLowerCase().includes(searchQuery.toLowerCase())
-    ));
-    const allSelected = allVisiblePerms.length > 0 && allVisiblePerms.every(p => rolForm.data.permissions?.includes(p.id));
-    const someSelected = allVisiblePerms.some(p => rolForm.data.permissions?.includes(p.id));
-
-    const handleToggleAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newPermissions = [...(rolForm.data.permissions || [])];
-        allVisiblePerms.forEach(p => {
-            if (e.target.checked) {
-                if (!newPermissions.includes(p.id)) newPermissions.push(p.id);
-            } else {
-                const idx = newPermissions.indexOf(p.id);
-                if (idx !== -1) newPermissions.splice(idx, 1);
-            }
-        });
-        rolForm.setData('permissions', newPermissions);
-    };
-
-    const toggleSubmodule = (subName: string) => {
-        setExpandedSubmodules(prev => ({ ...prev, [subName]: !prev[subName] }));
-    };
-
-    return (
-        <Card className="flex flex-col overflow-hidden border border-slate-100 shadow-sm bg-white rounded-xl hover:shadow-md transition-shadow">
-            <CardHeader className="flex items-center justify-between gap-2 px-3 py-2.5 bg-slate-50/50 border-b border-slate-100">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
-                        {icon}
-                    </div>
-                    <div className="min-w-0">
-                        <CardTitle className="text-sm font-semibold text-slate-800 truncate">{cardName}</CardTitle>
-                        <span className="text-[10px] text-slate-500 font-medium">
-                            {allVisiblePerms.length} permiso{allVisiblePerms.length !== 1 ? 's' : ''}
-                            {searchQuery && ` (filtrados: ${allVisiblePerms.filter(p =>
-                                p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                p.friendly_name.toLowerCase().includes(searchQuery.toLowerCase())
-                            ).length})`}
-                        </span>
-                    </div>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                    <Checkbox
-                        checked={allSelected}
-                        indeterminate={someSelected && !allSelected}
-                        onCheckedChange={handleToggleAll}
-                        disabled={!isEditing}
-                        className="h-4 w-4 data-[state=checked]:bg-primary data-[state=checked]:border-primary cursor-pointer"
-                        title={allSelected ? 'Deseleccionar todos' : 'Seleccionar todos los permisos visibles'}
-                    />
-                </div>
-            </CardHeader>
-            <CardContent className="flex-1 min-h-0 p-0">
-                <div className="max-h-72 overflow-y-auto p-3 custom-scrollbar">
-                    <div className="space-y-2">
-                        {Object.entries(submodules).map(([subName, perms]) => {
-                            const validPerms = perms.filter(p =>
-                                !searchQuery ||
-                                p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                p.friendly_name.toLowerCase().includes(searchQuery.toLowerCase())
-                            );
-                            if (validPerms.length === 0) return null;
-
-                            const isExpanded = expandedSubmodules[subName] ?? false;
-
-                            return (
-                                <div key={subName} className="space-y-1.5">
-                                    <button
-                                        type="button"
-                                        onClick={() => toggleSubmodule(subName)}
-                                        className="flex items-center gap-1.5 w-full px-1 py-1 rounded hover:bg-slate-50/80 transition-colors"
-                                    >
-                                        <ChevronRight
-                                            className={`h-3 w-3 text-slate-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                                        />
-                                        <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase flex-1 truncate">
-                                            {subName}
-                                        </span>
-                                        <span className="text-slate-300 font-normal text-[10px]">({validPerms.length})</span>
-                                    </button>
-                                    <div className={`${isExpanded ? 'block' : 'hidden'} space-y-1 pl-4 border-l border-slate-100/50`}>
-                                        {validPerms.map(p => (
-                                            <label
-                                                key={p.id}
-                                                className="group flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-slate-50/80 cursor-pointer border border-transparent"
-                                            >
-                                                <Checkbox
-                                                    checked={rolForm.data.permissions?.includes(p.id) ?? false}
-                                                    onCheckedChange={checked => {
-                                                        const newPermissions = [...(rolForm.data.permissions || [])];
-                                                        if (checked) {
-                                                            if (!newPermissions.includes(p.id)) newPermissions.push(p.id);
-                                                        } else {
-                                                            const idx = newPermissions.indexOf(p.id);
-                                                            if (idx !== -1) newPermissions.splice(idx, 1);
-                                                        }
-                                                        rolForm.setData('permissions', newPermissions);
-                                                    }}
-                                                    disabled={!isEditing}
-                                                    className="h-3.5 w-3.5 shrink-0 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                                                />
-                                                <div className="flex-1 min-w-0 flex flex-col">
-                                                    <span className="text-xs font-medium text-slate-700 truncate">{getFriendlyPermissionLabel(p)}</span>
-                                                    <span className="text-[9px] font-mono text-slate-400 truncate">{p.name}</span>
-                                                </div>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    );
 }
 
 export default function Index({
@@ -422,9 +260,11 @@ export default function Index({
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     permisos,
     grouped_permissions,
+    grouped_permissions_by_resource,
     usuariosRoles,
     publicProfiles,
     is_master,
+    user_level,
     masterData,
 }: Props) {
     const { code: countryCode, currency } = useCountry();
@@ -433,6 +273,7 @@ export default function Index({
     const canEdit = hasPermission('admin.usuarios.edit');
     const canDelete = hasPermission('admin.usuarios.delete');
     const canManageRoles = hasPermission('admin.roles.custom');
+    const canSeeTiendas = user_level <= 1;
 
     const [activeTab, setActiveTab] = useState('asignaciones');
     const [searchQuery, setSearchQuery] = useState('');
@@ -444,6 +285,7 @@ export default function Index({
     const [isPermisoOpen, setIsPermisoOpen] = useState(false);
     const [editingPermission, setEditingPermission] = useState<Permission | null>(null);
     const [gruposExpandidos, setGruposExpandidos] = useState<Record<string, boolean>>({});
+    const [recursosExpandidos, setRecursosExpandidos] = useState<Record<string, boolean>>({});
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [assignUserId, setAssignUserId] = useState('');
     const [assignRoleId, setAssignRoleId] = useState('');
@@ -466,9 +308,26 @@ export default function Index({
         password_confirmation: '',
     });
 
-    const totalPermisosCount = useMemo(() => Object.values(grouped_permissions).reduce((acc, subs) => {
-        return acc + Object.values(subs).reduce((a, p) => a + p.length, 0);
-    }, 0), [grouped_permissions]);
+    const totalPermisosCount = useMemo(() => Object.values(grouped_permissions_by_resource).reduce((acc, subgroups) => {
+        return acc + Object.values(subgroups).reduce((a, resources) =>
+            a + Object.values(resources).reduce((b, perms) => b + perms.length, 0)
+            , 0);
+    }, 0), [grouped_permissions_by_resource]);
+
+    const sortedModules = useMemo(() => {
+        if (!grouped_permissions_by_resource) return [];
+        const navOrder = [...mainNavItems, ...adminNavItems()]
+            .map((item) => (item.group || item.title || '').toUpperCase())
+            .filter(Boolean);
+        return Object.entries(grouped_permissions_by_resource).sort(([aKey], [bKey]) => {
+            const idxA = navOrder.indexOf(aKey.toUpperCase());
+            const idxB = navOrder.indexOf(bKey.toUpperCase());
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return aKey.localeCompare(bKey);
+        });
+    }, [grouped_permissions_by_resource]);
 
     const stats = useMemo(() => ({
         usuarios: usuarios.length,
@@ -495,10 +354,17 @@ export default function Index({
 
     const toggleTodosLosGrupos = (expandir: boolean) => {
         const grupos: Record<string, boolean> = {};
+        const recursos: Record<string, boolean> = {};
         if (expandir) {
-            Object.keys(grouped_permissions).forEach(k => { grupos[k] = true; });
+            Object.keys(grouped_permissions_by_resource).forEach(k => { grupos[k] = true; });
+            Object.values(grouped_permissions_by_resource).forEach(subgroups => {
+                Object.values(subgroups).forEach(resources => {
+                    Object.keys(resources).forEach(r => { recursos[r] = true; });
+                });
+            });
         }
         setGruposExpandidos(grupos);
+        setRecursosExpandidos(recursos);
     };
 
     const filteredRoles = useMemo(() => {
@@ -509,8 +375,8 @@ export default function Index({
     const customRoles = useMemo(() => filteredRoles.filter(r => r.owner_id !== null), [filteredRoles]);
 
     const getModuleSummary = (selectedIds: number[]): { module: string; count: number; total: number }[] => {
-        return Object.entries(grouped_permissions).map(([module, subs]) => {
-            const allPerms = Object.values(subs).flat();
+        return Object.entries(grouped_permissions_by_resource).map(([module, subgroups]) => {
+            const allPerms = Object.values(subgroups).flatMap(resources => Object.values(resources).flat());
             const count = allPerms.filter(p => selectedIds.includes(p.id)).length;
             return { module, count, total: allPerms.length };
         }).filter(m => m.count > 0);
@@ -553,6 +419,7 @@ export default function Index({
         setEditingRole(role);
         rolForm.setData({ name: role.name, permissions: role.permissions.map(p => p.id) });
         setGruposExpandidos({});
+        setRecursosExpandidos({});
         setIsRolOpen(true);
     };
 
@@ -597,19 +464,6 @@ export default function Index({
             { preserveScroll: true }
         );
     };
-
-    function filterGroupedPermissions(selectedIds: number[]) {
-        const result: Record<string, Record<string, { id: number; name: string; friendly_name: string }[]>> = {};
-        for (const [moduleName, submodules] of Object.entries(grouped_permissions)) {
-            const subResult: Record<string, any[]> = {};
-            for (const [subName, perms] of Object.entries(submodules)) {
-                const filtered = perms.filter(p => selectedIds.includes(p.id));
-                if (filtered.length > 0) subResult[subName] = filtered;
-            }
-            if (Object.keys(subResult).length > 0) result[moduleName] = subResult;
-        }
-        return result;
-    }
 
     const usuariosAgrupados = useMemo(() => {
         const map = new Map<number, { user: User; assignments: UsuarioRol[] }>();
@@ -674,11 +528,11 @@ export default function Index({
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                     {[
-                        { icon: Users, label: 'Usuarios', value: stats.usuarios, color: 'text-blue-600', bg: 'bg-blue-50' },
-                        { icon: Shield, label: 'Roles', value: stats.roles, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                        { icon: KeyRound, label: 'Permisos', value: stats.permisos, color: 'text-purple-600', bg: 'bg-purple-50' },
-                        { icon: UserCog, label: 'Asignaciones', value: stats.asignaciones, color: 'text-amber-600', bg: 'bg-amber-50' },
-                    ].map((stat, i) => (
+                        { icon: Users, label: 'Usuarios', value: stats.usuarios, color: 'text-blue-600', bg: 'bg-blue-50', masterOnly: true },
+                        { icon: Shield, label: 'Roles', value: stats.roles, color: 'text-emerald-600', bg: 'bg-emerald-50', masterOnly: false },
+                        { icon: KeyRound, label: 'Permisos', value: stats.permisos, color: 'text-purple-600', bg: 'bg-purple-50', masterOnly: false },
+                        { icon: UserCog, label: 'Asignaciones', value: stats.asignaciones, color: 'text-amber-600', bg: 'bg-amber-50', masterOnly: true },
+                    ].filter(stat => !stat.masterOnly || canSeeTiendas).map((stat, i) => (
                         <Card key={i} className="border-0 shadow-sm">
                             <CardContent className="flex items-center gap-3 p-4">
                                 <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.bg}`}>
@@ -696,18 +550,22 @@ export default function Index({
                 {/* Main Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="w-full justify-start overflow-x-auto rounded-xl border bg-muted/50 p-1">
-                        <TabsTrigger value="asignaciones" className="gap-2 rounded-lg data-[state=active]:shadow-sm">
-                            <Users className="h-4 w-4" /> Asignaciones
-                        </TabsTrigger>
+                        {canSeeTiendas && (
+                            <TabsTrigger value="asignaciones" className="gap-2 rounded-lg data-[state=active]:shadow-sm">
+                                <Users className="h-4 w-4" /> Asignaciones
+                            </TabsTrigger>
+                        )}
                         <TabsTrigger value="roles" className="gap-2 rounded-lg data-[state=active]:shadow-sm">
                             <Shield className="h-4 w-4" /> Roles
                         </TabsTrigger>
                         <TabsTrigger value="permisos" className="gap-2 rounded-lg data-[state=active]:shadow-sm">
                             <KeyRound className="h-4 w-4" /> Permisos
                         </TabsTrigger>
-                        <TabsTrigger value="tiendas" className="gap-2 rounded-lg data-[state=active]:shadow-sm">
-                            <Store className="h-4 w-4" /> Tiendas
-                        </TabsTrigger>
+                        {canSeeTiendas && (
+                            <TabsTrigger value="tiendas" className="gap-2 rounded-lg data-[state=active]:shadow-sm">
+                                <Store className="h-4 w-4" /> Tiendas
+                            </TabsTrigger>
+                        )}
                         {is_master && masterData && (
                             <TabsTrigger value="master" className="gap-2 rounded-lg data-[state=active]:shadow-sm">
                                 <Globe className="h-4 w-4" /> Panel Master
@@ -716,281 +574,283 @@ export default function Index({
                     </TabsList>
 
                     {/* === ASIGNACIONES TAB === */}
-                    <TabsContent value="asignaciones" className="mt-4 space-y-4">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="relative flex-1 max-w-md">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input
-                                    ref={searchRef}
-                                    placeholder="Buscar usuario o rol..."
-                                    className="h-10 rounded-xl pl-9 pr-9"
-                                    value={searchQuery}
-                                    onChange={handleSearch}
-                                />
-                                {searchQuery && (
-                                    <button onClick={clearSearch} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                                        <X className="h-4 w-4" />
-                                    </button>
+                    {canSeeTiendas && (
+                        <TabsContent value="asignaciones" className="mt-4 space-y-4">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="relative flex-1 max-w-md">
+                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        ref={searchRef}
+                                        placeholder="Buscar usuario o rol..."
+                                        className="h-10 rounded-xl pl-9 pr-9"
+                                        value={searchQuery}
+                                        onChange={handleSearch}
+                                    />
+                                    {searchQuery && (
+                                        <button onClick={clearSearch} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    )}
+                                </div>
+                                {canCreate && (
+                                    <Button onClick={() => setShowAssignModal(true)} className="rounded-xl gap-2">
+                                        <UserPlus className="h-4 w-4" /> Asignar Rol
+                                    </Button>
                                 )}
                             </div>
-                            {canCreate && (
-                                <Button onClick={() => setShowAssignModal(true)} className="rounded-xl gap-2">
-                                    <UserPlus className="h-4 w-4" /> Asignar Rol
+
+                            <div className="flex items-center justify-end gap-2 pb-2">
+                                <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" className="h-8 text-xs" onClick={() => setViewMode('table')}>
+                                    <List className="mr-1 h-3.5 w-3.5" /> Tabla
                                 </Button>
-                            )}
-                        </div>
+                                <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="sm" className="h-8 text-xs" onClick={() => setViewMode('cards')}>
+                                    <LayoutGrid className="mr-1 h-3.5 w-3.5" /> Tarjetas
+                                </Button>
+                            </div>
 
-                        <div className="flex items-center justify-end gap-2 pb-2">
-                            <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" className="h-8 text-xs" onClick={() => setViewMode('table')}>
-                                <List className="mr-1 h-3.5 w-3.5" /> Tabla
-                            </Button>
-                            <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="sm" className="h-8 text-xs" onClick={() => setViewMode('cards')}>
-                                <LayoutGrid className="mr-1 h-3.5 w-3.5" /> Tarjetas
-                            </Button>
-                        </div>
-
-                        {viewMode === 'cards' ? (
-                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                            {filteredUserGroups.map(({ user, assignments }) => {
-                                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                                const totalPerms = assignments.reduce((acc, a) => acc + a.permissions.length, 0);
-                                return (
-                                    <Card key={user.id} className="group overflow-hidden border-0 bg-gradient-to-b from-card to-muted/20 shadow-sm transition-all hover:shadow-md">
-                                        <CardHeader className="pb-0">
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <Avatar className="h-10 w-10 ring-2 ring-background">
-                                                        <AvatarImage src={user.profile_photo_url ?? undefined} />
-                                                        <AvatarFallback className="bg-primary/10 text-sm font-bold text-primary">
-                                                            {user.name.substring(0, 2).toUpperCase()}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <div>
-                                                        <CardTitle className="text-sm font-bold">{user.name}</CardTitle>
-                                                        <p className="text-xs text-muted-foreground">{user.email}</p>
-                                                    </div>
-                                                </div>
-                                                <Badge variant="outline" className="text-[10px] shrink-0">
-                                                    {assignments.length} rol{assignments.length !== 1 ? 'es' : ''}
-                                                </Badge>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent className="pt-3">
-                                            {assignments.length === 0 ? (
-                                                <div className="rounded-lg border border-dashed p-3 text-center">
-                                                    <p className="text-xs text-muted-foreground">Sin roles asignados</p>
-                                                    {canCreate && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="mt-1 h-7 text-xs gap-1"
-                                                            onClick={() => { setAssignUserId(String(user.id)); setShowAssignModal(true); }}
-                                                        >
-                                                            <Plus className="h-3 w-3" /> Asignar
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <div className="space-y-2">
-                                                    {assignments.map(ur => {
-                                                        const role = roles.find(r => r.name === ur.role_name);
-                                                        const lc = role ? getLevelColor(role.level) : null;
-                                                        const permCount = ur.permissions.length;
-                                                        const permTotal = totalPermisosCount;
-                                                        const pct = permTotal > 0 ? Math.round((permCount / permTotal) * 100) : 0;
-                                                        const moduleSummary = getModuleSummary(ur.permissions.map(p => p.id));
-
-                                                        return (
-                                                            <div key={ur.id} className="rounded-lg border bg-background p-2.5 transition-all hover:border-primary/30">
-                                                                <div className="flex items-center justify-between gap-2">
-                                                                    <div className="flex items-center gap-2 min-w-0">
-                                                                        {lc && (
-                                                                            <div className={`h-2 w-2 shrink-0 rounded-full ${lc.text.replace('text-', 'bg-')}`} />
-                                                                        )}
-                                                                        <span className="truncate text-sm font-semibold">{ur.role_name}</span>
-                                                                        {role && (
-                                                                            <Badge variant="outline" className={`text-[9px] px-1.5 py-0 ${lc?.text ?? ''}`}>
-                                                                                Lv.{role.level}
-                                                                            </Badge>
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="flex shrink-0 gap-0.5">
-                                                                        <TooltipProvider>
-                                                                            <Tooltip>
-                                                                                <TooltipTrigger asChild>
-                                                                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => role && setViewingRole(role)}>
-                                                                                        <Eye className="h-3 w-3" />
-                                                                                    </Button>
-                                                                                </TooltipTrigger>
-                                                                                <TooltipContent>Ver permisos</TooltipContent>
-                                                                            </Tooltip>
-                                                                        </TooltipProvider>
-                                                                        <TooltipProvider>
-                                                                            <Tooltip>
-                                                                                <TooltipTrigger asChild>
-                                                                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDeleteAsignacion(ur.id)}>
-                                                                                        <X className="h-3 w-3" />
-                                                                                    </Button>
-                                                                                </TooltipTrigger>
-                                                                                <TooltipContent>Quitar rol</TooltipContent>
-                                                                            </Tooltip>
-                                                                        </TooltipProvider>
-                                                                    </div>
-                                                                </div>
-                                                                <div className="mt-1.5 flex items-center gap-2">
-                                                                    <Progress value={pct} className="h-1.5 flex-1" />
-                                                                    <span className="shrink-0 text-[10px] text-muted-foreground">{permCount}/{permTotal}</span>
-                                                                </div>
-                                                                <div className="mt-1.5 flex flex-wrap gap-1">
-                                                                    {moduleSummary.slice(0, 3).map(m => (
-                                                                        <Badge key={m.module} variant="secondary" className="text-[9px] px-1.5 py-0 gap-0.5">
-                                                                            <span>{getModuleIcon(m.module)}</span>
-                                                                            {m.count}
-                                                                        </Badge>
-                                                                    ))}
-                                                                    {moduleSummary.length > 3 && (
-                                                                        <Badge variant="outline" className="text-[9px] px-1.5 py-0">
-                                                                            +{moduleSummary.length - 3}
-                                                                        </Badge>
-                                                                    )}
-                                                                </div>
+                            {viewMode === 'cards' ? (
+                                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                    {filteredUserGroups.map(({ user, assignments }) => {
+                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                                        const totalPerms = assignments.reduce((acc, a) => acc + a.permissions.length, 0);
+                                        return (
+                                            <Card key={user.id} className="group overflow-hidden border-0 bg-gradient-to-b from-card to-muted/20 shadow-sm transition-all hover:shadow-md">
+                                                <CardHeader className="pb-0">
+                                                    <div className="flex items-start justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <Avatar className="h-10 w-10 ring-2 ring-background">
+                                                                <AvatarImage src={user.profile_photo_url ?? undefined} />
+                                                                <AvatarFallback className="bg-primary/10 text-sm font-bold text-primary">
+                                                                    {user.name.substring(0, 2).toUpperCase()}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                            <div>
+                                                                <CardTitle className="text-sm font-bold">{user.name}</CardTitle>
+                                                                <p className="text-xs text-muted-foreground">{user.email}</p>
                                                             </div>
-                                                        );
-                                                    })}
-                                                    {canCreate && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="mt-1 h-7 w-full text-xs gap-1"
-                                                            onClick={() => { setAssignUserId(String(user.id)); setShowAssignModal(true); }}
-                                                        >
-                                                            <Plus className="h-3 w-3" /> Agregar Rol
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            )}
-                                            <Separator className="my-2" />
-                                            <div className="flex gap-1.5">
-                                                {canEdit && (
-                                                    <TooltipProvider>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => { setEditingUser(user); setIsUserEditOpen(true); }}>
-                                                                    <Pencil className="h-3 w-3" /> Editar
+                                                        </div>
+                                                        <Badge variant="outline" className="text-[10px] shrink-0">
+                                                            {assignments.length} rol{assignments.length !== 1 ? 'es' : ''}
+                                                        </Badge>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="pt-3">
+                                                    {assignments.length === 0 ? (
+                                                        <div className="rounded-lg border border-dashed p-3 text-center">
+                                                            <p className="text-xs text-muted-foreground">Sin roles asignados</p>
+                                                            {canCreate && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="mt-1 h-7 text-xs gap-1"
+                                                                    onClick={() => { setAssignUserId(String(user.id)); setShowAssignModal(true); }}
+                                                                >
+                                                                    <Plus className="h-3 w-3" /> Asignar
                                                                 </Button>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>Editar datos del usuario</TooltipContent>
-                                                        </Tooltip>
-                                                    </TooltipProvider>
-                                                )}
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => { setResettingPasswordUser(user); setIsPasswordResetOpen(true); }}>
-                                                                <KeyRound className="h-3 w-3" /> Password
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-2">
+                                                            {assignments.map(ur => {
+                                                                const role = roles.find(r => r.name === ur.role_name);
+                                                                const lc = role ? getLevelColor(role.level) : null;
+                                                                const permCount = ur.permissions.length;
+                                                                const permTotal = totalPermisosCount;
+                                                                const pct = permTotal > 0 ? Math.round((permCount / permTotal) * 100) : 0;
+                                                                const moduleSummary = getModuleSummary(ur.permissions.map(p => p.id));
+
+                                                                return (
+                                                                    <div key={ur.id} className="rounded-lg border bg-background p-2.5 transition-all hover:border-primary/30">
+                                                                        <div className="flex items-center justify-between gap-2">
+                                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                                {lc && (
+                                                                                    <div className={`h-2 w-2 shrink-0 rounded-full ${lc.text.replace('text-', 'bg-')}`} />
+                                                                                )}
+                                                                                <span className="truncate text-sm font-semibold">{ur.role_name}</span>
+                                                                                {role && (
+                                                                                    <Badge variant="outline" className={`text-[9px] px-1.5 py-0 ${lc?.text ?? ''}`}>
+                                                                                        Lv.{role.level}
+                                                                                    </Badge>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex shrink-0 gap-0.5">
+                                                                                <TooltipProvider>
+                                                                                    <Tooltip>
+                                                                                        <TooltipTrigger asChild>
+                                                                                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => role && setViewingRole(role)}>
+                                                                                                <Eye className="h-3 w-3" />
+                                                                                            </Button>
+                                                                                        </TooltipTrigger>
+                                                                                        <TooltipContent>Ver permisos</TooltipContent>
+                                                                                    </Tooltip>
+                                                                                </TooltipProvider>
+                                                                                <TooltipProvider>
+                                                                                    <Tooltip>
+                                                                                        <TooltipTrigger asChild>
+                                                                                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDeleteAsignacion(ur.id)}>
+                                                                                                <X className="h-3 w-3" />
+                                                                                            </Button>
+                                                                                        </TooltipTrigger>
+                                                                                        <TooltipContent>Quitar rol</TooltipContent>
+                                                                                    </Tooltip>
+                                                                                </TooltipProvider>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="mt-1.5 flex items-center gap-2">
+                                                                            <Progress value={pct} className="h-1.5 flex-1" />
+                                                                            <span className="shrink-0 text-[10px] text-muted-foreground">{permCount}/{permTotal}</span>
+                                                                        </div>
+                                                                        <div className="mt-1.5 flex flex-wrap gap-1">
+                                                                            {moduleSummary.slice(0, 3).map(m => (
+                                                                                <Badge key={m.module} variant="secondary" className="text-[9px] px-1.5 py-0 gap-0.5">
+                                                                                    <span>{getModuleIcon(m.module)}</span>
+                                                                                    {m.count}
+                                                                                </Badge>
+                                                                            ))}
+                                                                            {moduleSummary.length > 3 && (
+                                                                                <Badge variant="outline" className="text-[9px] px-1.5 py-0">
+                                                                                    +{moduleSummary.length - 3}
+                                                                                </Badge>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                            {canCreate && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    className="mt-1 h-7 w-full text-xs gap-1"
+                                                                    onClick={() => { setAssignUserId(String(user.id)); setShowAssignModal(true); }}
+                                                                >
+                                                                    <Plus className="h-3 w-3" /> Agregar Rol
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                    <Separator className="my-2" />
+                                                    <div className="flex gap-1.5">
+                                                        {canEdit && (
+                                                            <TooltipProvider>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => { setEditingUser(user); setIsUserEditOpen(true); }}>
+                                                                            <Pencil className="h-3 w-3" /> Editar
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>Editar datos del usuario</TooltipContent>
+                                                                </Tooltip>
+                                                            </TooltipProvider>
+                                                        )}
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => { setResettingPasswordUser(user); setIsPasswordResetOpen(true); }}>
+                                                                        <KeyRound className="h-3 w-3" /> Password
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>Restablecer contraseña</TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button variant="ghost" size="sm" className={`h-7 text-xs gap-1 ${user.is_active === false ? 'text-green-600' : 'text-destructive'}`} onClick={() => { setBanningUser(user); setIsBanConfirmOpen(true); }}>
+                                                                        {user.is_active === false ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                                                                        {user.is_active === false ? 'Desbloquear' : 'Bloquear'}
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>{user.is_active === false ? 'Reactivar usuario' : 'Bloquear acceso del usuario'}</TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        );
+                                    })}
+                                    {filteredUserGroups.length === 0 && (
+                                        <div className="col-span-full flex flex-col items-center py-12 text-muted-foreground">
+                                            <Users className="mb-3 h-12 w-12 opacity-20" />
+                                            <p className="font-medium">No se encontraron resultados</p>
+                                            <p className="text-sm">Intenta con otro término de búsqueda</p>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto rounded-lg border">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b bg-muted/50">
+                                                <th className="px-4 py-3 text-left font-medium">Usuario</th>
+                                                <th className="px-4 py-3 text-left font-medium">Email</th>
+                                                <th className="px-4 py-3 text-left font-medium">Roles</th>
+                                                <th className="px-4 py-3 text-center font-medium">Asignaciones</th>
+                                                <th className="px-4 py-3 text-right font-medium">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {filteredUserGroups.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
+                                                        <Users className="mx-auto mb-3 h-12 w-12 opacity-20" />
+                                                        <p className="font-medium">No se encontraron resultados</p>
+                                                    </td>
+                                                </tr>
+                                            ) : filteredUserGroups.map(({ user, assignments }) => (
+                                                <tr key={user.id} className="border-b hover:bg-muted/30">
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <Avatar className="h-8 w-8">
+                                                                <AvatarImage src={user.profile_photo_url ?? undefined} />
+                                                                <AvatarFallback className="bg-primary/10 text-xs font-bold text-primary">
+                                                                    {user.name.substring(0, 2).toUpperCase()}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                            <span className="font-medium">{user.name}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-sm text-muted-foreground">{user.email}</td>
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {assignments.length === 0 ? (
+                                                                <span className="text-xs text-muted-foreground">Sin roles</span>
+                                                            ) : assignments.slice(0, 2).map(ur => (
+                                                                <Badge key={ur.id} variant="secondary" className="text-[10px]">{ur.role_name}</Badge>
+                                                            ))}
+                                                            {assignments.length > 2 && (
+                                                                <Badge variant="outline" className="text-[10px]">+{assignments.length - 2}</Badge>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center text-sm">{assignments.length}</td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <div className="flex justify-end gap-1">
+                                                            {canCreate && (
+                                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { setAssignUserId(String(user.id)); setShowAssignModal(true); }} title="Asignar rol">
+                                                                    <Plus className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {canEdit && (
+                                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { setEditingUser(user); setIsUserEditOpen(true); }} title="Editar">
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { setResettingPasswordUser(user); setIsPasswordResetOpen(true); }} title="Reset password">
+                                                                <KeyRound className="h-4 w-4" />
                                                             </Button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>Restablecer contraseña</TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <Button variant="ghost" size="sm" className={`h-7 text-xs gap-1 ${user.is_active === false ? 'text-green-600' : 'text-destructive'}`} onClick={() => { setBanningUser(user); setIsBanConfirmOpen(true); }}>
-                                                                {user.is_active === false ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
-                                                                {user.is_active === false ? 'Desbloquear' : 'Bloquear'}
+                                                            <Button variant="ghost" size="sm" className={`h-8 w-8 p-0 ${user.is_active === false ? 'text-green-600' : 'text-destructive'}`} onClick={() => { setBanningUser(user); setIsBanConfirmOpen(true); }} title={user.is_active === false ? 'Desbloquear' : 'Bloquear'}>
+                                                                {user.is_active === false ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
                                                             </Button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>{user.is_active === false ? 'Reactivar usuario' : 'Bloquear acceso del usuario'}</TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                );
-                            })}
-                            {filteredUserGroups.length === 0 && (
-                                <div className="col-span-full flex flex-col items-center py-12 text-muted-foreground">
-                                    <Users className="mb-3 h-12 w-12 opacity-20" />
-                                    <p className="font-medium">No se encontraron resultados</p>
-                                    <p className="text-sm">Intenta con otro término de búsqueda</p>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
                             )}
-                        </div>
-                        ) : (
-                        <div className="overflow-x-auto rounded-lg border">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b bg-muted/50">
-                                        <th className="px-4 py-3 text-left font-medium">Usuario</th>
-                                        <th className="px-4 py-3 text-left font-medium">Email</th>
-                                        <th className="px-4 py-3 text-left font-medium">Roles</th>
-                                        <th className="px-4 py-3 text-center font-medium">Asignaciones</th>
-                                        <th className="px-4 py-3 text-right font-medium">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredUserGroups.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
-                                                <Users className="mx-auto mb-3 h-12 w-12 opacity-20" />
-                                                <p className="font-medium">No se encontraron resultados</p>
-                                            </td>
-                                        </tr>
-                                    ) : filteredUserGroups.map(({ user, assignments }) => (
-                                        <tr key={user.id} className="border-b hover:bg-muted/30">
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-2">
-                                                    <Avatar className="h-8 w-8">
-                                                        <AvatarImage src={user.profile_photo_url ?? undefined} />
-                                                        <AvatarFallback className="bg-primary/10 text-xs font-bold text-primary">
-                                                            {user.name.substring(0, 2).toUpperCase()}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <span className="font-medium">{user.name}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-muted-foreground">{user.email}</td>
-                                            <td className="px-4 py-3">
-                                                <div className="flex flex-wrap gap-1">
-                                                    {assignments.length === 0 ? (
-                                                        <span className="text-xs text-muted-foreground">Sin roles</span>
-                                                    ) : assignments.slice(0, 2).map(ur => (
-                                                        <Badge key={ur.id} variant="secondary" className="text-[10px]">{ur.role_name}</Badge>
-                                                    ))}
-                                                    {assignments.length > 2 && (
-                                                        <Badge variant="outline" className="text-[10px]">+{assignments.length - 2}</Badge>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3 text-center text-sm">{assignments.length}</td>
-                                            <td className="px-4 py-3 text-right">
-                                                <div className="flex justify-end gap-1">
-                                                    {canCreate && (
-                                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { setAssignUserId(String(user.id)); setShowAssignModal(true); }} title="Asignar rol">
-                                                            <Plus className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-                                                    {canEdit && (
-                                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { setEditingUser(user); setIsUserEditOpen(true); }} title="Editar">
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { setResettingPasswordUser(user); setIsPasswordResetOpen(true); }} title="Reset password">
-                                                        <KeyRound className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="sm" className={`h-8 w-8 p-0 ${user.is_active === false ? 'text-green-600' : 'text-destructive'}`} onClick={() => { setBanningUser(user); setIsBanConfirmOpen(true); }} title={user.is_active === false ? 'Desbloquear' : 'Bloquear'}>
-                                                        {user.is_active === false ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        )}
-                    </TabsContent>
+                        </TabsContent>
+                    )}
 
                     {/* === ROLES TAB === */}
                     <TabsContent value="roles" className="mt-4 space-y-4">
@@ -1182,123 +1042,184 @@ export default function Index({
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {Object.entries(grouped_permissions).map(([cardName, submodules]) => {
-                                const allPermsInCard = Object.values(submodules).flat();
-                                const filteredPermsInCard = allPermsInCard.filter(p =>
+                            {sortedModules.map(([moduleName, subgroups]) => {
+                                const allPermsInModule = Object.values(subgroups).flatMap(resources => Object.values(resources).flat());
+                                const filteredPermsInModule = allPermsInModule.filter(p =>
                                     !searchQuery ||
                                     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                                     p.friendly_name.toLowerCase().includes(searchQuery.toLowerCase())
                                 );
-                                if (filteredPermsInCard.length === 0 && searchQuery) return null;
+                                if (filteredPermsInModule.length === 0 && searchQuery) return null;
 
                                 return (
-                                    <PermissionCard
-                                        key={cardName}
-                                        cardName={cardName}
-                                        submodules={submodules}
-                                        searchQuery={searchQuery}
-                                        rolForm={rolForm}
-                                        isEditing={!!editingRole}
-                                    />
+                                    <Card key={moduleName} className="flex flex-col overflow-hidden border border-slate-100 shadow-sm bg-white rounded-xl hover:shadow-md transition-shadow">
+                                        <CardHeader className="flex items-center justify-between gap-2 px-3 py-2.5 bg-slate-50/50 border-b border-slate-100">
+                                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                                                    {getModuleIcon(moduleName)}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <CardTitle className="text-sm font-semibold text-slate-800 truncate">{moduleName}</CardTitle>
+                                                    <span className="text-[10px] text-slate-500 font-medium">
+                                                        {allPermsInModule.length} permiso{allPermsInModule.length !== 1 ? 's' : ''}
+                                                        {searchQuery && ` (filtrados: ${filteredPermsInModule.length})`}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="flex-1 min-h-0 p-0">
+                                            <div className="max-h-72 overflow-y-auto p-3 custom-scrollbar">
+                                                <div className="space-y-3">
+                                                    {Object.entries(subgroups).map(([subName, resources]) => {
+                                                        const subPerms = Object.values(resources).flat();
+                                                        const filteredSubPerms = subPerms.filter(p =>
+                                                            !searchQuery ||
+                                                            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                                            p.friendly_name.toLowerCase().includes(searchQuery.toLowerCase())
+                                                        );
+                                                        if (filteredSubPerms.length === 0) return null;
+
+                                                        return (
+                                                            <div key={subName} className="space-y-1.5">
+                                                                <div className="flex items-center gap-1.5 px-1 py-1">
+                                                                    <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase flex-1 truncate">
+                                                                        {subName}
+                                                                    </span>
+                                                                    <span className="text-slate-300 font-normal text-[10px]">({filteredSubPerms.length})</span>
+                                                                </div>
+                                                                <div className="space-y-1 pl-3 border-l-2 border-slate-100">
+                                                                    {Object.entries(resources).map(([resName, perms]) => {
+                                                                        const filteredPerms = perms.filter(p =>
+                                                                            !searchQuery ||
+                                                                            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                                                            p.friendly_name.toLowerCase().includes(searchQuery.toLowerCase())
+                                                                        );
+                                                                        if (filteredPerms.length === 0) return null;
+
+                                                                        return (
+                                                                            <div key={resName} className="space-y-0.5">
+                                                                                <div className="text-[9px] font-semibold text-slate-500 uppercase tracking-wide px-1">{resName}</div>
+                                                                                {filteredPerms.map(p => (
+                                                                                    <div key={p.id} className="flex items-center gap-2 rounded px-2 py-1 text-slate-600">
+                                                                                        <div className="h-1 w-1 rounded-full bg-slate-300 shrink-0" />
+                                                                                        <div className="flex-1 min-w-0 flex flex-col">
+                                                                                            <span className="text-xs font-medium text-slate-700 truncate">{getFriendlyPermissionLabel(p)}</span>
+                                                                                            <span className="text-[9px] font-mono text-slate-400 truncate">{p.name}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
                                 );
                             })}
                         </div>
                     </TabsContent>
 
                     {/* === TIENDAS TAB === */}
-                    <TabsContent value="tiendas" className="mt-4 space-y-4">
-                        <div className="relative max-w-md">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                placeholder="Buscar tienda por nombre, slug o dueño..."
-                                className="h-10 rounded-xl pl-9"
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                            />
-                        </div>
+                    {canSeeTiendas && (
+                        <TabsContent value="tiendas" className="mt-4 space-y-4">
+                            <div className="relative max-w-md">
+                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    placeholder="Buscar tienda por nombre, slug o dueño..."
+                                    className="h-10 rounded-xl pl-9"
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                />
+                            </div>
 
-                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {publicProfiles
-                                .filter(p =>
-                                    p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                    p.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                    p.user.name.toLowerCase().includes(searchQuery.toLowerCase())
-                                )
-                                .map(profile => (
-                                    <Card key={profile.id} className="group overflow-hidden border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md">
-                                        <CardHeader className="pb-3">
-                                            <div className="flex items-center justify-between gap-2">
-                                                <Badge variant="outline" className="text-[10px]">Tienda</Badge>
-                                                <div className="flex items-center gap-1.5 flex-wrap">
-                                                    <TooltipProvider>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <Switch
-                                                                    checked={profile.is_verified}
-                                                                    onCheckedChange={() => handleToggleStatus(profile.id, 'is_verified', profile.is_verified)}
-                                                                    className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
-                                                                    aria-label="Verificado"
-                                                                />
-                                                            </TooltipTrigger>
-                                                            <TooltipContent side="top" align="center" className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1.5 text-xs">
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <CheckCircle2 className="h-3 w-3 text-blue-500 fill-blue-500" />
-                                                                    Verificada
-                                                                </div>
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </TooltipProvider>
-                                                    <TooltipProvider>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <Switch
-                                                                    checked={profile.is_official}
-                                                                    onCheckedChange={() => handleToggleStatus(profile.id, 'is_official', profile.is_official)}
-                                                                    className="data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
-                                                                    aria-label="Tienda Oficial"
-                                                                />
-                                                            </TooltipTrigger>
-                                                            <TooltipContent side="top" align="center" className="bg-amber-50 text-amber-700 border-amber-200 px-3 py-1.5 text-xs">
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
-                                                                    Tienda Oficial
-                                                                </div>
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </TooltipProvider>
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                {publicProfiles
+                                    .filter(p =>
+                                        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                        p.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                        p.user.name.toLowerCase().includes(searchQuery.toLowerCase())
+                                    )
+                                    .map(profile => (
+                                        <Card key={profile.id} className="group overflow-hidden border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md">
+                                            <CardHeader className="pb-3">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <Badge variant="outline" className="text-[10px]">Tienda</Badge>
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Switch
+                                                                        checked={profile.is_verified}
+                                                                        onCheckedChange={() => handleToggleStatus(profile.id, 'is_verified', profile.is_verified)}
+                                                                        className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                                                                        aria-label="Verificado"
+                                                                    />
+                                                                </TooltipTrigger>
+                                                                <TooltipContent side="top" align="center" className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1.5 text-xs">
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <CheckCircle2 className="h-3 w-3 text-blue-500 fill-blue-500" />
+                                                                        Verificada
+                                                                    </div>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Switch
+                                                                        checked={profile.is_official}
+                                                                        onCheckedChange={() => handleToggleStatus(profile.id, 'is_official', profile.is_official)}
+                                                                        className="data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                                                                        aria-label="Tienda Oficial"
+                                                                    />
+                                                                </TooltipTrigger>
+                                                                <TooltipContent side="top" align="center" className="bg-amber-50 text-amber-700 border-amber-200 px-3 py-1.5 text-xs">
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                                                                        Tienda Oficial
+                                                                    </div>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <CardTitle className="mt-2 text-base font-bold truncate">{profile.title}</CardTitle>
-                                            <CardDescription className="flex items-center gap-1 text-xs">
-                                                <Users className="h-3 w-3" /> {profile.user.name}
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent className="pt-0 space-y-2">
-                                            <div className="text-xs text-muted-foreground font-mono truncate">/{profile.slug}</div>
-                                            <div className="flex items-center gap-1.5 flex-wrap">
-                                                {profile.is_verified && (
-                                                    <Badge variant="secondary" className="h-5 px-2 py-0 text-[10px] bg-blue-50 text-blue-700 border-blue-200 gap-1">
-                                                        <CheckCircle2 className="h-2.5 w-2.5 fill-blue-500 text-blue-500" />
-                                                        Verificada
-                                                    </Badge>
-                                                )}
-                                                {profile.is_official && (
-                                                    <Badge variant="secondary" className="h-5 px-2 py-0 text-[10px] bg-amber-50 text-amber-700 border-amber-200 gap-1">
-                                                        <Star className="h-2.5 w-2.5 fill-amber-500 text-amber-500" />
-                                                        Oficial
-                                                    </Badge>
-                                                )}
-                                                {!profile.is_verified && !profile.is_official && (
-                                                    <Badge variant="outline" className="h-5 px-2 py-0 text-[10px] text-muted-foreground">
-                                                        Sin insignias
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                        </div>
-                    </TabsContent>
+                                                <CardTitle className="mt-2 text-base font-bold truncate">{profile.title}</CardTitle>
+                                                <CardDescription className="flex items-center gap-1 text-xs">
+                                                    <Users className="h-3 w-3" /> {profile.user.name}
+                                                </CardDescription>
+                                            </CardHeader>
+                                            <CardContent className="pt-0 space-y-2">
+                                                <div className="text-xs text-muted-foreground font-mono truncate">/{profile.slug}</div>
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    {profile.is_verified && (
+                                                        <Badge variant="secondary" className="h-5 px-2 py-0 text-[10px] bg-blue-50 text-blue-700 border-blue-200 gap-1">
+                                                            <CheckCircle2 className="h-2.5 w-2.5 fill-blue-500 text-blue-500" />
+                                                            Verificada
+                                                        </Badge>
+                                                    )}
+                                                    {profile.is_official && (
+                                                        <Badge variant="secondary" className="h-5 px-2 py-0 text-[10px] bg-amber-50 text-amber-700 border-amber-200 gap-1">
+                                                            <Star className="h-2.5 w-2.5 fill-amber-500 text-amber-500" />
+                                                            Oficial
+                                                        </Badge>
+                                                    )}
+                                                    {!profile.is_verified && !profile.is_official && (
+                                                        <Badge variant="outline" className="h-5 px-2 py-0 text-[10px] text-muted-foreground">
+                                                            Sin insignias
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                            </div>
+                        </TabsContent>
+                    )}
 
                     {/* === PANEL MASTER TAB === */}
                     {is_master && masterData && (
@@ -1453,12 +1374,12 @@ export default function Index({
                                     u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                                     u.email.toLowerCase().includes(searchQuery.toLowerCase())
                                 ).length === 0) && (
-                                    <div className="col-span-full flex flex-col items-center py-12 text-muted-foreground">
-                                        <Users className="mb-3 h-12 w-12 opacity-20" />
-                                        <p className="font-medium">No se encontraron resultados</p>
-                                        <p className="text-sm">Intenta con otro término de búsqueda</p>
-                                    </div>
-                                )}
+                                        <div className="col-span-full flex flex-col items-center py-12 text-muted-foreground">
+                                            <Users className="mb-3 h-12 w-12 opacity-20" />
+                                            <p className="font-medium">No se encontraron resultados</p>
+                                            <p className="text-sm">Intenta con otro término de búsqueda</p>
+                                        </div>
+                                    )}
                             </div>
                         </TabsContent>
                     )}
@@ -1794,7 +1715,7 @@ export default function Index({
 
             {/* === MODAL: CREAR/EDITAR ROL === */}
             <Dialog open={isRolOpen} onOpenChange={setIsRolOpen}>
-                <DialogContent className="max-h-[90vh] max-w-[90vw] overflow-hidden rounded-xl p-0 sm:max-w-[650px]">
+                <DialogContent className="flex max-h-[90vh] max-w-full flex-col overflow-hidden rounded-xl p-0 sm:max-w-lg md:max-w-2xl lg:max-w-3xl">
                     <DialogHeader className="border-b px-6 py-4">
                         <DialogTitle className="flex items-center gap-2 text-lg font-bold">
                             <Shield className="h-5 w-5 text-primary" />
@@ -1830,13 +1751,15 @@ export default function Index({
                                             <span className="text-muted-foreground">
                                                 {rolForm.data.permissions.length} / {totalPermisosCount} seleccionados
                                             </span>
-                                            <button type="button" onClick={() => toggleTodosLosGrupos(true)} className="text-primary hover:underline">Expandir</button>
+                                            <button type="button" onClick={() => toggleTodosLosGrupos(true)} className="text-primary hover:underline">Expandir Todo</button>
                                             <span className="text-muted-foreground">|</span>
-                                            <button type="button" onClick={() => toggleTodosLosGrupos(false)} className="text-primary hover:underline">Colapsar</button>
+                                            <button type="button" onClick={() => toggleTodosLosGrupos(false)} className="text-primary hover:underline">Colapsar Todo</button>
                                             <span className="text-muted-foreground">|</span>
                                             <button type="button" onClick={() => {
-                                                const allIds = Object.values(grouped_permissions).flatMap(subs =>
-                                                    Object.values(subs).flatMap(perms => perms.map(p => p.id))
+                                                const allIds = Object.values(grouped_permissions_by_resource).flatMap(subgroups =>
+                                                    Object.values(subgroups).flatMap(resources =>
+                                                        Object.values(resources).flatMap(perms => perms.map(p => p.id))
+                                                    )
                                                 );
                                                 rolForm.setData('permissions', allIds);
                                             }} className="text-primary hover:underline font-semibold">Seleccionar todo</button>
@@ -1852,12 +1775,12 @@ export default function Index({
                                     />
                                 </div>
 
-                                <div className="max-h-[45vh] space-y-2 overflow-y-auto rounded-xl border p-3">
-                                    {Object.entries(grouped_permissions).map(([moduleName, submodules]) => {
-                                        const modulePerms = Object.values(submodules).flat();
-                                        const allSelected = modulePerms.every(p => rolForm.data.permissions.includes(p.id));
-                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                                        const someSelected = modulePerms.some(p => rolForm.data.permissions.includes(p.id));
+                                <div className="max-h-[35vh] sm:max-h-[45vh] space-y-2 overflow-y-auto rounded-xl border p-3">
+                                    {sortedModules.map(([moduleName, subgroups]) => {
+                                        const modulePerms = Object.values(subgroups).flatMap(resources =>
+                                            Object.values(resources).flat()
+                                        );
+                                        const allSelected = modulePerms.length > 0 && modulePerms.every(p => rolForm.data.permissions.includes(p.id));
                                         const moduleCount = modulePerms.filter(p => rolForm.data.permissions.includes(p.id)).length;
                                         const isExpanded = gruposExpandidos[moduleName];
 
@@ -1872,7 +1795,7 @@ export default function Index({
                                                     </button>
                                                     <div className="flex items-center gap-2">
                                                         <Progress
-                                                            value={(moduleCount / modulePerms.length) * 100}
+                                                            value={modulePerms.length > 0 ? (moduleCount / modulePerms.length) * 100 : 0}
                                                             className="h-1.5 w-16"
                                                         />
                                                         <Checkbox
@@ -1890,44 +1813,140 @@ export default function Index({
                                                 </div>
 
                                                 {isExpanded && (
-                                                    <div className="mt-3 grid gap-2 pl-6 sm:grid-cols-2">
-                                                        {Object.entries(submodules).map(([subName, perms]) => {
-                                                            const subAllSelected = perms.every(p => rolForm.data.permissions.includes(p.id));
+                                                    <div className="mt-3 space-y-3 pl-6">
+                                                        {Object.entries(subgroups).map(([subName, resources]) => {
+                                                            const subPerms = Object.values(resources).flat();
+                                                            const subCount = subPerms.filter(p => rolForm.data.permissions.includes(p.id)).length;
+                                                            const subAllSelected = subPerms.length > 0 && subPerms.every(p => rolForm.data.permissions.includes(p.id));
+                                                            const subSomeSelected = subPerms.some(p => rolForm.data.permissions.includes(p.id));
+
                                                             return (
-                                                                <div key={subName} className="rounded-lg border bg-background p-2.5">
-                                                                    <div className="mb-1.5 flex items-center justify-between border-b pb-1">
-                                                                        <span className="text-[10px] font-semibold uppercase text-muted-foreground">{subName}</span>
-                                                                        <Checkbox
-                                                                            checked={subAllSelected}
-                                                                            onCheckedChange={(checked) => {
-                                                                                const ids = perms.map(p => p.id);
-                                                                                if (checked) {
+                                                                <div key={subName} className="space-y-2">
+                                                                    <div className="flex items-center justify-between gap-2 rounded-md bg-slate-50/80 px-3 py-1.5">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-[11px] font-bold tracking-wide text-slate-500 uppercase">{subName}</span>
+                                                                            <span className="text-[10px] text-slate-400 font-medium">({subCount}/{subPerms.length})</span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    const ids = subPerms.map(p => p.id);
                                                                                     rolForm.setData('permissions', [...new Set([...rolForm.data.permissions, ...ids])]);
-                                                                                } else {
+                                                                                }}
+                                                                                className="text-[10px] text-primary hover:underline"
+                                                                            >
+                                                                                Todos
+                                                                            </button>
+                                                                            <span className="text-slate-300 text-[10px]">|</span>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    const ids = subPerms.map(p => p.id);
                                                                                     rolForm.setData('permissions', rolForm.data.permissions.filter(id => !ids.includes(id)));
-                                                                                }
-                                                                            }}
-                                                                        />
+                                                                                }}
+                                                                                className="text-[10px] text-destructive hover:underline"
+                                                                            >
+                                                                                Ninguno
+                                                                            </button>
+                                                                            <Checkbox
+                                                                                checked={subAllSelected}
+                                                                                indeterminate={subSomeSelected && !subAllSelected}
+                                                                                onCheckedChange={(checked) => {
+                                                                                    const ids = subPerms.map(p => p.id);
+                                                                                    if (checked) {
+                                                                                        rolForm.setData('permissions', [...new Set([...rolForm.data.permissions, ...ids])]);
+                                                                                    } else {
+                                                                                        rolForm.setData('permissions', rolForm.data.permissions.filter(id => !ids.includes(id)));
+                                                                                    }
+                                                                                }}
+                                                                                className="h-3.5 w-3.5"
+                                                                            />
+                                                                        </div>
                                                                     </div>
-                                                                    <div className="space-y-0.5">
-                                                                        {perms.map(p => (
-                                                                            <div key={p.id} className="flex items-center gap-2 rounded px-1.5 py-0.5 hover:bg-muted/30">
-                                                                                <Checkbox
-                                                                                    id={`rol-p-${p.id}`}
-                                                                                    checked={rolForm.data.permissions.includes(p.id)}
-                                                                                    onCheckedChange={(checked) => {
-                                                                                        if (checked) {
-                                                                                            rolForm.setData('permissions', [...rolForm.data.permissions, p.id]);
-                                                                                        } else {
-                                                                                            rolForm.setData('permissions', rolForm.data.permissions.filter(id => id !== p.id));
-                                                                                        }
-                                                                                    }}
-                                                                                />
-                                                                                <label htmlFor={`rol-p-${p.id}`} className="flex-1 cursor-pointer text-xs">
-                                                                                    {p.friendly_name}
-                                                                                </label>
-                                                                            </div>
-                                                                        ))}
+                                                                    <div className="space-y-1.5 pl-3 border-l-2 border-slate-100 ml-2">
+                                                                        {Object.entries(resources).map(([resourceName, perms]) => {
+                                                                            const resourceKey = `${moduleName}:${subName}:${resourceName}`;
+                                                                            const resExpanded = recursosExpandidos[resourceKey];
+                                                                            const resAllSelected = perms.every(p => rolForm.data.permissions.includes(p.id));
+                                                                            const resCount = perms.filter(p => rolForm.data.permissions.includes(p.id)).length;
+
+                                                                            return (
+                                                                                <div key={resourceKey} className="rounded-lg border bg-background overflow-hidden">
+                                                                                    <div className="flex items-center justify-between px-3 py-2">
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={() => setRecursosExpandidos(prev => ({ ...prev, [resourceKey]: !prev[resourceKey] }))}
+                                                                                            className="flex items-center gap-2 text-xs font-semibold text-foreground"
+                                                                                        >
+                                                                                            {resExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                                                                                            <span>{resourceName}</span>
+                                                                                            <span className="font-normal text-muted-foreground">({resCount}/{perms.length})</span>
+                                                                                        </button>
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    const ids = perms.map(p => p.id);
+                                                                                                    rolForm.setData('permissions', [...new Set([...rolForm.data.permissions, ...ids])]);
+                                                                                                }}
+                                                                                                className="text-[10px] text-primary hover:underline"
+                                                                                            >
+                                                                                                Marcar Todo
+                                                                                            </button>
+                                                                                            <span className="text-muted-foreground text-[10px]">|</span>
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    const ids = perms.map(p => p.id);
+                                                                                                    rolForm.setData('permissions', rolForm.data.permissions.filter(id => !ids.includes(id)));
+                                                                                                }}
+                                                                                                className="text-[10px] text-destructive hover:underline"
+                                                                                            >
+                                                                                                Desmarcar
+                                                                                            </button>
+                                                                                            <Checkbox
+                                                                                                checked={resAllSelected}
+                                                                                                onCheckedChange={(checked) => {
+                                                                                                    const ids = perms.map(p => p.id);
+                                                                                                    if (checked) {
+                                                                                                        rolForm.setData('permissions', [...new Set([...rolForm.data.permissions, ...ids])]);
+                                                                                                    } else {
+                                                                                                        rolForm.setData('permissions', rolForm.data.permissions.filter(id => !ids.includes(id)));
+                                                                                                    }
+                                                                                                }}
+                                                                                            />
+                                                                                        </div>
+                                                                                    </div>
+
+                                                                                    {resExpanded && (
+                                                                                        <div className="grid gap-x-4 gap-y-1 border-t bg-muted/10 px-3 py-2 sm:grid-cols-2">
+                                                                                            {perms.map(p => (
+                                                                                                <div key={p.id} className="flex items-center gap-2 rounded px-1.5 py-0.5 hover:bg-muted/30">
+                                                                                                    <Checkbox
+                                                                                                        id={`rol-p-${p.id}`}
+                                                                                                        checked={rolForm.data.permissions.includes(p.id)}
+                                                                                                        onCheckedChange={(checked) => {
+                                                                                                            if (checked) {
+                                                                                                                rolForm.setData('permissions', [...rolForm.data.permissions, p.id]);
+                                                                                                            } else {
+                                                                                                                rolForm.setData('permissions', rolForm.data.permissions.filter(id => id !== p.id));
+                                                                                                            }
+                                                                                                        }}
+                                                                                                    />
+                                                                                                    <label htmlFor={`rol-p-${p.id}`} className="flex-1 cursor-pointer text-xs">
+                                                                                                        <span className="block">{p.friendly_name}</span>
+                                                                                                        <span className="block text-[10px] text-muted-foreground font-mono">{p.name}</span>
+                                                                                                    </label>
+                                                                                                </div>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            );
+                                                                        })}
                                                                     </div>
                                                                 </div>
                                                             );
@@ -1941,7 +1960,7 @@ export default function Index({
                             </div>
                         </div>
                         <DialogFooter className="shrink-0 border-t px-6 py-4">
-                            <Button type="submit" className="w-full rounded-xl" disabled={rolForm.processing}>
+                            <Button type="submit" className="w-full sm:w-auto rounded-xl" disabled={rolForm.processing}>
                                 {editingRole ? 'Guardar Cambios' : 'Crear Rol'}
                             </Button>
                         </DialogFooter>
@@ -1951,7 +1970,7 @@ export default function Index({
 
             {/* === MODAL: NUEVO/EDITAR PERMISO === */}
             <Dialog open={isPermisoOpen} onOpenChange={setIsPermisoOpen}>
-                <DialogContent className="sm:max-w-[400px]">
+                <DialogContent className="max-w-full sm:max-w-[400px] md:max-w-md">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-xl font-bold">
                             <KeyRound className="h-5 w-5 text-primary" />
@@ -1974,7 +1993,7 @@ export default function Index({
                             <InputError message={permisoForm.errors.name} />
                         </div>
                         <DialogFooter>
-                            <Button type="submit" className="w-full rounded-xl" disabled={permisoForm.processing}>
+                            <Button type="submit" className="w-full sm:w-auto rounded-xl" disabled={permisoForm.processing}>
                                 {editingPermission ? 'Guardar Cambios' : 'Registrar Permiso'}
                             </Button>
                         </DialogFooter>
@@ -1984,7 +2003,7 @@ export default function Index({
 
             {/* === MODAL: VER DETALLE DE ROL === */}
             <Dialog open={!!viewingRole} onOpenChange={() => setViewingRole(null)}>
-                <DialogContent className="mx-2 w-[95vw] max-w-xl rounded-xl p-4 sm:p-6">
+                <DialogContent className="max-w-full mx-2 w-[95vw] rounded-xl p-4 sm:max-w-lg md:max-w-xl lg:max-w-2xl">
                     <DialogHeader className="pb-0">
                         <div className="flex items-start gap-3 sm:items-center">
                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
@@ -1998,47 +2017,78 @@ export default function Index({
                             </div>
                         </div>
                     </DialogHeader>
-                    <div className="max-h-[60vh] space-y-3 overflow-y-auto px-1 sm:px-0">
-                        {viewingRole && (
-                            <>
-                                <Progress
-                                    value={totalPermisosCount > 0 ? (viewingRole.permissions.length / totalPermisosCount) * 100 : 0}
-                                    className="h-2"
-                                />
-                                {Object.entries(filterGroupedPermissions(viewingRole.permissions.map(p => p.id))).map(([moduleName, submodules]) => {
-                                    const totalModule = Object.values(submodules).flat().length;
-                                    return (
-                                        <div key={moduleName} className="rounded-xl border bg-muted/20 p-3 sm:p-4">
-                                            <div className="mb-3 flex items-center gap-2">
-                                                <span className="text-lg">{getModuleIcon(moduleName)}</span>
-                                                <span className="text-xs font-bold uppercase">{moduleName}</span>
-                                                <Badge variant="secondary" className="ml-auto text-[10px] px-2">{totalModule}</Badge>
-                                            </div>
-                                            <div className="space-y-2">
-                                                {Object.entries(submodules).map(([subName, perms]) => (
-                                                    <div key={subName} className="rounded-lg bg-background p-3">
-                                                        <h4 className="mb-2 text-[11px] font-semibold text-muted-foreground uppercase">{subName}</h4>
-                                                        <div className="flex flex-wrap gap-1.5">
-                                                            {perms.map(p => (
-                                                                <Badge key={p.id} variant="outline" className="text-[10px] bg-card/50 px-2 py-0.5" title={p.name}>
-                                                                    {p.friendly_name}
-                                                                </Badge>
+                    <div className="max-h-[70vh] sm:max-h-[60vh] space-y-3 overflow-y-auto px-1 sm:px-0">
+                        {viewingRole && (() => {
+                            const permIds = viewingRole.permissions.map(p => p.id);
+                            const navOrder = [...mainNavItems, ...adminNavItems()]
+                                .map((item) => (item.group || item.title || '').toUpperCase())
+                                .filter(Boolean);
+                            const filtered = Object.entries(grouped_permissions_by_resource)
+                                .map(([moduleName, subgroups]) => {
+                                    const filteredSubs: Record<string, Record<string, { id: number; name: string; friendly_name: string }[]>> = {};
+                                    for (const [subName, resources] of Object.entries(subgroups)) {
+                                        const filteredResources: Record<string, { id: number; name: string; friendly_name: string }[]> = {};
+                                        for (const [resName, perms] of Object.entries(resources)) {
+                                            const filtered = perms.filter(p => permIds.includes(p.id));
+                                            if (filtered.length > 0) filteredResources[resName] = filtered;
+                                        }
+                                        if (Object.keys(filteredResources).length > 0) filteredSubs[subName] = filteredResources;
+                                    }
+                                    return { moduleName, subgroups: filteredSubs };
+                                })
+                                .filter(m => Object.keys(m.subgroups).length > 0)
+                                .sort((a, b) => {
+                                    const idxA = navOrder.indexOf(a.moduleName.toUpperCase());
+                                    const idxB = navOrder.indexOf(b.moduleName.toUpperCase());
+                                    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                                    if (idxA !== -1) return -1;
+                                    if (idxB !== -1) return 1;
+                                    return a.moduleName.localeCompare(b.moduleName);
+                                });
+
+                            return filtered.map(({ moduleName, subgroups }) => {
+                                const totalModule = Object.values(subgroups).flatMap(resources => Object.values(resources).flat()).length;
+                                return (
+                                    <div key={moduleName} className="rounded-xl border bg-muted/20 p-3 sm:p-4">
+                                        <div className="mb-3 flex items-center gap-2">
+                                            <span className="text-lg">{getModuleIcon(moduleName)}</span>
+                                            <span className="text-xs font-bold uppercase">{moduleName}</span>
+                                            <Badge variant="secondary" className="ml-auto text-[10px] px-2">{totalModule}</Badge>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {Object.entries(subgroups).map(([subName, resources]) => {
+                                                const subTotal = Object.values(resources).flat().length;
+                                                return (
+                                                    <div key={subName}>
+                                                        <div className="mb-1.5 flex items-center gap-1.5">
+                                                            <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">{subName}</span>
+                                                            <span className="text-[9px] text-slate-300">({subTotal})</span>
+                                                        </div>
+                                                        <div className="space-y-1.5 pl-3 border-l-2 border-slate-100">
+                                                            {Object.entries(resources).map(([resName, perms]) => (
+                                                                <div key={resName} className="rounded-lg bg-background p-2.5">
+                                                                    <h4 className="mb-1.5 text-[10px] font-semibold text-muted-foreground uppercase">{resName}</h4>
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {perms.map(p => (
+                                                                            <Badge key={p.id} variant="outline" className="text-[9px] bg-card/50 px-1.5 py-0" title={p.name}>
+                                                                                {p.friendly_name}
+                                                                            </Badge>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
                                                             ))}
                                                         </div>
                                                     </div>
-                                                ))}
-                                            </div>
+                                                );
+                                            })}
                                         </div>
-                                    );
-                                })}
-                                {viewingRole.permissions.length === 0 && (
-                                    <p className="py-8 text-center text-sm text-muted-foreground">Este rol no tiene permisos asignados.</p>
-                                )}
-                            </>
-                        )}
+                                    </div>
+                                );
+                            });
+                        })()}
                     </div>
                     <DialogFooter className="pt-3 sm:pt-4">
-                        <Button variant="outline" className="w-full rounded-xl gap-2" onClick={() => { if (viewingRole) openEditRole(viewingRole); setViewingRole(null); }}>
+                        <Button variant="outline" className="w-full sm:w-auto rounded-xl gap-2" onClick={() => { if (viewingRole) openEditRole(viewingRole); setViewingRole(null); }}>
                             <Pencil className="h-4 w-4" /> Editar Rol
                         </Button>
                     </DialogFooter>

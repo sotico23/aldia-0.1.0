@@ -3,6 +3,7 @@
 namespace App\Concerns;
 
 use App\Models\User;
+use Illuminate\Contracts\Validation\Rule as RuleContract;
 use Illuminate\Validation\Rule;
 
 trait ProfileValidationRules
@@ -10,7 +11,7 @@ trait ProfileValidationRules
     /**
      * Get the validation rules used to validate user profiles.
      *
-     * @return array<string, array<int, \Illuminate\Contracts\Validation\Rule|array<mixed>|string>>
+     * @return array<string, array<int, RuleContract|array<mixed>|string>>
      */
     protected function profileRules(?int $userId = null): array
     {
@@ -51,7 +52,7 @@ trait ProfileValidationRules
      * @param  string  $field  The database column name.
      * @param  ?int  $userId  The user id to ignore.
      */
-    private function uniqueUserRule(string $field, ?int $userId = null): Rule
+    private function uniqueUserRule(string $field, ?int $userId = null)
     {
         return Rule::unique(User::class, $field)->ignore($userId);
     }
@@ -59,7 +60,7 @@ trait ProfileValidationRules
     /**
      * Get the validation rules used to validate user names.
      *
-     * @return array<int, \Illuminate\Contracts\Validation\Rule|array<mixed>|string>
+     * @return array<int, RuleContract|array<mixed>|string>
      */
     protected function nameRules(): array
     {
@@ -69,7 +70,7 @@ trait ProfileValidationRules
     /**
      * Get the validation rules used to validate user emails.
      *
-     * @return array<int, \Illuminate\Contracts\Validation\Rule|array<mixed>|string>
+     * @return array<int, RuleContract|array<mixed>|string>
      */
     protected function emailRules(?int $userId = null): array
     {

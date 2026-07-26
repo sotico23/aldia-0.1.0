@@ -8,12 +8,14 @@ use App\Models\CargaDiariaProducto;
 use App\Models\CargaDiariaRenovacion;
 use App\Models\CargaDiariaRenovacionDetalle;
 use App\Models\Conductor;
+use App\Models\InventoryMovement;
 use App\Models\Producto;
 use App\Models\Vehiculo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -63,6 +65,7 @@ class CargaDiariaController extends Controller implements HasMiddleware
         $validated = $request->validate([
             'vehiculo_id' => 'required|exists:vehiculos,id',
             'conductor_id' => 'required|exists:conductores,id',
+            'almacen_id' => 'nullable|exists:almacenes,id',
             'fecha' => 'required|date',
             'estado' => 'required|string|max:50',
             'notas' => 'nullable|string',
@@ -73,9 +76,14 @@ class CargaDiariaController extends Controller implements HasMiddleware
 
         try {
             DB::transaction(function () use ($validated) {
+                $ownerId = Auth::user()->getOwnerId();
+                $userId = Auth::id();
+
                 $carga = CargaDiaria::create([
+                    'owner_id' => $ownerId,
                     'vehiculo_id' => $validated['vehiculo_id'],
                     'conductor_id' => $validated['conductor_id'],
+                    'almacen_id' => $validated['almacen_id'] ?? null,
                     'fecha' => $validated['fecha'],
                     'estado' => $validated['estado'] ?? 'pendiente',
                     'notas' => $validated['notas'] ?? null,
@@ -84,10 +92,24 @@ class CargaDiariaController extends Controller implements HasMiddleware
                 if (! empty($validated['productos'])) {
                     foreach ($validated['productos'] as $prod) {
                         CargaDiariaProducto::create([
+                            'owner_id' => $ownerId,
                             'carga_diaria_id' => $carga->id,
                             'producto_id' => $prod['producto_id'],
                             'cantidad_bordo' => $prod['cantidad'],
                         ]);
+
+                        if ($carga->almacen_id) {
+                            InventoryMovement::registrarMovimiento(
+                                productId: $prod['producto_id'],
+                                userId: $userId,
+                                type: 'EGRESO',
+                                quantity: $prod['cantidad'],
+                                sourceWarehouseId: $carga->almacen_id,
+                                destinationWarehouseId: null,
+                                description: "Egreso por carga diaria #{$carga->id}",
+                                ownerId: $ownerId
+                            );
+                        }
                     }
                 }
             });
@@ -153,7 +175,33 @@ class CargaDiariaController extends Controller implements HasMiddleware
     public function destroy(CargaDiaria $cargaDiaria): RedirectResponse
     {
         try {
-            $cargaDiaria->delete();
+            DB::transaction(function () use ($cargaDiaria) {
+                $ownerId = Auth::user()->getOwnerId();
+                $userId = Auth::id();
+
+                if ($cargaDiaria->almacen_id) {
+                    $productos = $cargaDiaria->productos()->get();
+
+                    foreach ($productos as $prod) {
+                        $cantidadRestaurar = $prod['cantidad_bordo'] - ($prod['cantidad_vendida'] ?? 0) - ($prod['cantidad_devuelta'] ?? 0);
+
+                        if ($cantidadRestaurar > 0) {
+                            InventoryMovement::registrarMovimiento(
+                                productId: $prod['producto_id'],
+                                userId: $userId,
+                                type: 'INGRESO',
+                                quantity: $cantidadRestaurar,
+                                sourceWarehouseId: null,
+                                destinationWarehouseId: $cargaDiaria->almacen_id,
+                                description: "Ingreso por eliminación de carga diaria #{$cargaDiaria->id}",
+                                ownerId: $ownerId
+                            );
+                        }
+                    }
+                }
+
+                $cargaDiaria->delete();
+            });
 
             return redirect()->route('cargas-diarias.index')->with('success', 'Carga eliminada correctamente.');
         } catch (\Exception $e) {
@@ -239,6 +287,35 @@ class CargaDiariaController extends Controller implements HasMiddleware
                             'cantidad_faltante' => $cantidadFaltante,
                             'cantidad_defectuosa' => $cantidadDefectuosa,
                         ]);
+
+                    // Movimiento INGRESO por todos los productos devueltos al almacén (llenos + vacíos)
+                    $cantidadRetorno = $cantidadLlena + $cantidadVacia;
+                    if ($cantidadRetorno > 0 && $cargaDiaria->almacen_id) {
+                        InventoryMovement::registrarMovimiento(
+                            productId: $prod['producto_id'],
+                            userId: auth()->id(),
+                            type: 'INGRESO',
+                            quantity: $cantidadRetorno,
+                            sourceWarehouseId: null,
+                            destinationWarehouseId: $cargaDiaria->almacen_id,
+                            description: "Ingreso por retorno en recarga de carga diaria #{$cargaDiaria->id}",
+                            ownerId: $ownerId
+                        );
+                    }
+
+                    // Movimiento EGRESO por productos nuevos cargados
+                    if ($cantidadLlena > 0 && $cargaDiaria->almacen_id) {
+                        InventoryMovement::registrarMovimiento(
+                            productId: $prod['producto_id'],
+                            userId: auth()->id(),
+                            type: 'EGRESO',
+                            quantity: $cantidadLlena,
+                            sourceWarehouseId: $cargaDiaria->almacen_id,
+                            destinationWarehouseId: null,
+                            description: "Egreso por recarga de carga diaria #{$cargaDiaria->id}",
+                            ownerId: $ownerId
+                        );
+                    }
                 }
 
                 // 3. Actualizar totales de la renovación
@@ -332,6 +409,7 @@ class CargaDiariaController extends Controller implements HasMiddleware
         try {
             DB::transaction(function () use ($cargaDiaria, $validated) {
                 $ownerId = auth()->user()->getOwnerId();
+                $userId = Auth::id();
 
                 foreach ($validated['productos'] as $prod) {
                     $cargaDiaria->productos()
@@ -340,6 +418,20 @@ class CargaDiariaController extends Controller implements HasMiddleware
                             'cantidad_vendida' => $prod['cantidad_vendida'],
                             'cantidad_devuelta' => $prod['cantidad_devuelta'],
                         ]);
+
+                    // Movimiento INGRESO por productos devueltos al almacén
+                    if ($prod['cantidad_devuelta'] > 0 && $cargaDiaria->almacen_id) {
+                        InventoryMovement::registrarMovimiento(
+                            productId: $prod['producto_id'],
+                            userId: $userId,
+                            type: 'INGRESO',
+                            quantity: $prod['cantidad_devuelta'],
+                            sourceWarehouseId: null,
+                            destinationWarehouseId: $cargaDiaria->almacen_id,
+                            description: "Ingreso por devolución al cerrar carga diaria #{$cargaDiaria->id}",
+                            ownerId: $ownerId
+                        );
+                    }
                 }
 
                 $cargaDiaria->update([
@@ -355,6 +447,7 @@ class CargaDiariaController extends Controller implements HasMiddleware
                         'owner_id' => $ownerId,
                         'vehiculo_id' => $cargaDiaria->vehiculo_id,
                         'conductor_id' => $cargaDiaria->conductor_id,
+                        'almacen_id' => $cargaDiaria->almacen_id,
                         'fecha' => now()->toDateString(),
                         'estado' => 'pendiente',
                         'notas' => 'Renovación de carga #'.$cargaDiaria->id,
@@ -369,6 +462,20 @@ class CargaDiariaController extends Controller implements HasMiddleware
                                 'producto_id' => $prod['producto_id'],
                                 'cantidad_bordo' => $cantidadRenovar,
                             ]);
+
+                            // Movimiento EGRESO por productos renovados
+                            if ($nuevaCarga->almacen_id) {
+                                InventoryMovement::registrarMovimiento(
+                                    productId: $prod['producto_id'],
+                                    userId: $userId,
+                                    type: 'EGRESO',
+                                    quantity: $cantidadRenovar,
+                                    sourceWarehouseId: $nuevaCarga->almacen_id,
+                                    destinationWarehouseId: null,
+                                    description: "Egreso por renovación en carga diaria #{$nuevaCarga->id}",
+                                    ownerId: $ownerId
+                                );
+                            }
                         }
                     }
                 }

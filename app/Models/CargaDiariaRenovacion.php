@@ -12,6 +12,8 @@ class CargaDiariaRenovacion extends Model
 {
     use BelongsToOwner, HasFactory;
 
+    protected $table = 'carga_diaria_renovaciones';
+
     protected $fillable = [
         'owner_id',
         'carga_diaria_id',

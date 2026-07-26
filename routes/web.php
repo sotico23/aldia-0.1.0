@@ -92,7 +92,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard')->middleware('permission:ver dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard')->middleware(['permission:ver dashboard', 'throttle:dashboard']);
     Route::post('dashboard/config', [DashboardController::class, 'saveConfig'])->name('dashboard.config')->middleware('permission:ver dashboard');
     Route::post('dashboard/widgets/toggle', [DashboardController::class, 'toggleWidget'])->name('dashboard.widgets.toggle')->middleware('permission:ver dashboard');
     Route::post('dashboard/widgets/reorder', [DashboardController::class, 'reorderWidgets'])->name('dashboard.widgets.reorder')->middleware('permission:ver dashboard');

@@ -29,7 +29,7 @@ class UsuarioRolController extends Controller
         $isMaster = $user->hasRole('Master');
 
         // Obtain visible users
-        $usuarios = User::visibles()->with('roles', 'permissions')->orderBy('name')->get();
+        $usuarios = User::visibles()->with('roles.permissions', 'permissions')->orderBy('name')->get();
 
         // System roles (owner_id = null): filtered by level for non-Master
         $systemQuery = Role::with('permissions')
@@ -97,14 +97,15 @@ class UsuarioRolController extends Controller
             'grouped_permissions' => $isMaster
                 ? PermissionHelper::getGroupedPermissions()
                 : PermissionHelper::getGroupedPermissionsForUser($user),
+            'grouped_permissions_by_resource' => $isMaster
+                ? PermissionHelper::getGroupedPermissionsByModuleSubgroupResource()
+                : PermissionHelper::getGroupedPermissionsForUserByModuleSubgroupResource($user),
             'usuariosRoles' => $asignaciones,
-            'publicProfiles' => $isMaster
+            'publicProfiles' => $userLevel <= 1
                 ? PublicProfile::with('user')->orderBy('title')->get()
-                : PublicProfile::whereHas('user', fn ($q) => $q->where('owner_id', $ownerId))
-                    ->with('user')
-                    ->orderBy('title')
-                    ->get(),
+                : [],
             'is_master' => $isMaster,
+            'user_level' => $userLevel,
             'masterData' => $masterData,
         ]);
     }

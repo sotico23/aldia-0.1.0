@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\DetalleVenta;
 use App\Models\Entrega;
+use App\Models\EntregaItem;
 use App\Models\GrupoTrabajo;
 use App\Models\GrupoTrabajoAsignacion;
 use App\Models\Venta;
@@ -85,7 +85,7 @@ class GrupoTrabajoRendimientoService
 
         $ventaIds = $ventaQuery->pluck('venta_id');
 
-        $monto = Venta::whereIn('id', $ventaIds)->sum('total');
+        $monto = (float) Venta::whereIn('id', $ventaIds)->sum('total');
         $cantidad = count($ventaIds);
 
         [$kg, $l] = $this->calcularKgL($ventaIds);
@@ -154,41 +154,69 @@ class GrupoTrabajoRendimientoService
 
     private function calcularKgL(Collection $ventaIds): array
     {
-        $totalKg = 0;
-        $totalL = 0;
+        $totalKg = 0.0;
+        $totalL = 0.0;
 
         if ($ventaIds->isEmpty()) {
-            return [0, 0];
+            return [0.0, 0.0];
         }
 
-        $detalles = DetalleVenta::whereIn('venta_id', $ventaIds)
-            ->with('producto')
-            ->get();
+        $entregaIds = Entrega::whereIn('venta_id', $ventaIds)->pluck('id');
 
-        foreach ($detalles as $detalle) {
-            $producto = $detalle->producto;
-            if (! $producto) {
-                continue;
-            }
+        if ($entregaIds->isEmpty()) {
+            return [0.0, 0.0];
+        }
 
-            $cantidad = (float) $detalle->cantidad;
-            $valorMedida = (float) ($producto->cantidad_medida ?: 1);
-            $tipoMedida = strtolower($producto->tipo_medida ?? '');
-            $unidadMedida = strtolower($producto->unidad_medida ?? '');
+        $items = EntregaItem::whereIn('entrega_id', $entregaIds)->get();
 
-            $esKg = $tipoMedida === 'kg' || $tipoMedida === 'kilo' || $tipoMedida === 'kilos'
-                || $unidadMedida === 'kg';
-            $esL = $tipoMedida === 'l' || $tipoMedida === 'litro' || $tipoMedida === 'litros'
-                || $unidadMedida === 'l';
+        foreach ($items as $item) {
+            $unidad = strtolower($item->unidad_medida ?? '');
 
-            if ($esKg) {
-                $totalKg += $cantidad * ($valorMedida ?: 1);
-            } elseif ($esL) {
-                $totalL += $cantidad * ($valorMedida ?: 1);
+            if ($unidad === 'kg') {
+                $totalKg += (float) ($item->subtotal_metrica ?? 0);
+            } elseif ($unidad === 'l' || $unidad === 'lt' || $unidad === 'litro' || $unidad === 'litros') {
+                $totalL += (float) ($item->subtotal_metrica ?? 0);
             }
         }
 
         return [$totalKg, $totalL];
+    }
+
+    public function calcularCumplimientoAsignacion(GrupoTrabajoAsignacion $asignacion): array
+    {
+        $ownerId = $asignacion->owner_id;
+        $grupo = $asignacion->grupoTrabajo;
+
+        $conductorIds = $grupo->conductores->pluck('id');
+
+        $entregas = Entrega::where(function ($q) use ($conductorIds, $grupo) {
+            $q->whereIn('conductor_id', $conductorIds)
+                ->orWhere('grupo_trabajo_id', $grupo->id);
+        })
+            ->where('owner_id', $ownerId)
+            ->whereHas('venta', function ($q) use ($asignacion) {
+                $q->where('estado', 'pagada')
+                    ->whereBetween('fecha', [$asignacion->fecha_inicio, $asignacion->fecha_fin]);
+            })
+            ->pluck('id');
+
+        $pesoEntregadoKg = 0.0;
+
+        if ($entregas->isNotEmpty()) {
+            $pesoEntregadoKg = EntregaItem::whereIn('entrega_id', $entregas)
+                ->where('unidad_medida', 'kg')
+                ->sum('subtotal_metrica');
+        }
+
+        $metaKg = (float) $asignacion->meta_kg;
+        $porcentajeCumplimientoKg = $metaKg > 0 ? round(($pesoEntregadoKg / $metaKg) * 100, 2) : 0.0;
+
+        return [
+            'peso_entregado_kg' => (float) $pesoEntregadoKg,
+            'meta_kg' => $metaKg,
+            'porcentaje_cumplimiento_kg' => $porcentajeCumplimientoKg,
+            'cumple_meta_kg' => $pesoEntregadoKg >= $metaKg,
+        ];
     }
 
     public function asignacionesActivas(int $ownerId): Collection

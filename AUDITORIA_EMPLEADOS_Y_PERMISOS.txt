@@ -1,0 +1,496 @@
+================================================================================
+  AUDITORIA: FLUJO DE CREACION DE EMPLEADOS Y PERMISOS
+  Ruta: http://localhost:8000/empleados
+  Fecha: 2026-07-26
+================================================================================
+
+INDICE
+------
+  1. Resumen Ejecutivo
+  2. Asignacion de Roles por Defecto
+  3. Trazabilidad y Huella de Auditoria
+  4. Visibilidad y Privacidad de Datos
+  5. Hallazgos de Seguridad (Bugs y Riesgos)
+  6. Archivos Revisados
+  7. Plan de Accion Progresivo (Modularizacion de Permisos)
+
+
+================================================================================
+1. RESUMEN EJECUTIVO
+================================================================================
+
+Se audito el flujo completo de creacion de empleados desde /empleados,
+incluyendo: rutas, controlador, modelo, migraciones, middleware, permisos,
+scopes globales, export/import, y el componente Inertia frontend.
+
+NIVEL DE RIESGO GENERAL: MEDIO-ALTO
+
+Hallazgos criticos:
+  - El rol asignado al crear un empleado NO valida que pertenezca al mismo owner
+  - Contrasena por defecto "empleadonuevo" es conocible y no se fuerza cambio
+  - El import masivo asigna user_id = Auth::id() a TODOS los registros (BUG)
+  - No existe EmpleadoPolicy; la autorizacion depende solo de middleware
+  - El export usa creator_id en vez de owner_id (inconsistencia)
+
+
+================================================================================
+2. ASIGNACION DE ROLES POR DEFECTO
+================================================================================
+
+ARCHIVO: app/Http/Controllers/Backend/EmpleadoController.php (lineas 124-148)
+
+FLUJO DE CREACION:
+
+  1. El formulario incluye un toggle "crear_usuario" (boolean) y un campo
+     "rol_id" (select nullable).
+
+  2. Si crear_usuario = true:
+     a. Se crea un User con creator_id = Auth::id()
+     b. Si se proporciono rol_id:
+        -> Role::findById($rolId)  // ASIGNA EL ROL SELECCIONADO
+     c. Si NO se proporciono rol_id:
+        -> Role::firstOrCreate(['name' => 'Empleado'])  // ROL POR DEFECTO
+     d. Se asigna el rol al usuario con $user->assignRole($role)
+
+  3. Si crear_usuario = false:
+     -> No se crea User, el empleado queda sin acceso a la plataforma
+
+ROLES DISPONIBLES EN EL DROPDOWN (linea 65):
+  $roles = Role::where('owner_id', $userId)->orderBy('name')->get();
+
+  Esto muestra SOLO roles custom creados por el mismo owner. Los roles del
+  sistema (Master, Super Admin, Administrador, Empleado, etc.) tienen
+  owner_id = null y NO aparecen en el dropdown del frontend.
+
+RIESGO IDENTIFICADO:
+  La validacion backend (linea 107) es:
+    'rol_id' => 'nullable|exists:roles,id'
+
+  Esto VALIDA que el rol existe pero NO verifica que pertenezca al mismo owner.
+  Si un atacante envia manualmente un rol_id de un rol del sistema (por ejemplo
+  el ID del rol Master), el backend lo aceptaria. El dropdown del frontend
+  filtra por owner_id, pero la validacion backend es insuficiente.
+
+  SEVERIDAD: ALTA - Escalada de privilegios potencial
+
+CONTRASENA POR DEFECTO:
+  Linea 131: Hash::make('empleadonuevo')
+
+  Si el admin no define contrasena personalizada, todos los empleados quedan
+  con la misma contrasena conocible. No hay mecanismo de forzar cambio en
+  primer inicio de sesion.
+
+  SEVERIDAD: ALTA - Credenciales predecibles
+
+COLISION CON EL BOOTE DEL USER MODEL (lineas 79-107 de User.php):
+  El evento 'created' del User model asigna automaticamente el rol 'Usuario'
+  a todo nuevo user que no sea el primero del sistema. Sin embargo, el
+  controlador de empleados llama a assignRole() DESPUES de save(), lo que
+  SOBRESCRIBE el rol por defecto. El flujo queda:
+    1. User::forceFill([...])->save()
+    2. User boot asigna rol 'Usuario' automaticamente
+    3. Controlador llama assignRole($rol) -> SOBRESCRIBE a 'Empleado' o el rol
+       seleccionado
+  Esto funciona correctamente pero es fragil y depende del orden de ejecucion.
+
+
+================================================================================
+3. TRAZABILIDAD Y HUELLA DE AUDITORIA
+================================================================================
+
+TABLA: empleados
+CAMPOS DE AUDITORIA:
+
+  Campo              | Tipo         | Presente | Descripcion
+  -------------------|--------------|----------|----------------------------------
+  user_id            | FK users     | SI       | Usuario de plataforma vinculado
+  creator_id         | FK users     | SI       | Quien creo el registro
+  owner_id           | FK users     | SI       | Tenant/negocio al que pertenece
+  created_at         | timestamp    | SI       | Fecha de creacion
+  updated_at         | timestamp    | SI       | Fecha de ultima actualizacion
+
+  NOTA: No existe campo "created_by" separado de "creator_id". El campo
+  creator_id cumple ambas funciones.
+
+MIGACIONES RELACIONALES:
+
+  2026_03_01_020808  - Tabla base empleados
+  2026_03_10_000356  - Agrega user_id FK (nullable, nullOnDelete)
+  2026_03_15_014231  - Agrega creator_id FK (nullable, cascadeOnDelete)
+  2026_03_29_011748  - Agrega owner_id FK (nullable, cascadeOnDelete)
+
+COMO SE ASIGNAN:
+
+  owner_id:   Automaticamente por trait BelongsToOwner (linea 18-19 del trait)
+              -> Auth::user()->getOwnerId()
+              -> El metodo getOwnerId() camina la cadena creator_id hasta
+                 encontrar el usuario raiz (sin creator_id)
+
+  creator_id: Manualmente en el controlador (linea 126)
+              -> $validated['creator_id'] = Auth::id()
+
+  user_id:    Solo se establece si crear_usuario = true (linea 148)
+              -> $validated['user_id'] = $user->id
+
+CAMPO FALTANTE RECOMENDADO:
+  No existe campo "updated_by" para registrar quien hizo la ultima modificacion.
+  Si se necesita esa trazabilidad, agregar migracion:
+    $table->foreignId('updated_by')->nullable()->constrained('users');
+
+
+================================================================================
+4. VISIBILIDAD Y PRIVACIDAD DE DATOS
+================================================================================
+
+4.1 QUE VE UN EMPLEADO AL INICIAR SESION
+-----------------------------------------
+
+El rol "Empleado" (Level 3) tiene estos permisos por defecto (PermissionsSeeder):
+
+  - ver dashboard
+  - comercial.prospectos.{viewAny,view,create,edit}
+  - comercial.oportunidades.{viewAny,view,create,edit}
+  - comercial.clientes.{viewAny,view,create,edit}
+  - comercial.productos.{viewAny,view}
+  - comercial.categorias.{viewAny,view,create,edit}
+  - comercial.cotizaciones.{viewAny,view,create,edit}
+  - comercial.tickets.{viewAny,view,create}
+  - inventario.{inventarios,almacenes,vacios}.{viewAny,view}
+  - flota.{vehiculos,conductores,entregas}.{viewAny,view}
+  - flota.entregas.{create,edit}
+  - flota.{cargas,grupos-trabajo}.{viewAny,view}
+  - ventas.ventas.{viewAny,view}
+  - ventas.pos.{viewAny,view,create}
+  - ventas.variantes.{viewAny,view}
+  - ventas.cupones.{viewAny,view,create,edit}
+
+  NO TIENE permisos rrhh.empleados.* -> NO puede ver la seccion de empleados.
+  NO TIENE permisos de gestion de usuarios o roles.
+
+4.2 PROTECCION POR LAYERS (DEFENSA EN PROFUNDIDAD)
+
+  Layer                     | Mecanismo                    | Efecto
+  --------------------------|------------------------------|---------------------------
+  Middleware global          | RedirectIfClient             | Clientes nunca llegan a backend
+  Middleware global          | CheckActive                  | Usuarios inactivos bloqueados
+  Ruta                      | permission:rrhh.empleados.*  | Requiere permiso especifico
+  Controlador               | HasMiddleware (per-action)   | CRUD granular por accion
+  Ownership                 | ownership:empleado           | Verifica owner_id del recurso
+  Global Scope              | OwnerScope en Empleado       | Filtra WHERE owner_id = mio
+  Gate bypass               | Gate::before (Master/SA)     | Acceso total para niveles 0-1
+  Nav filtering             | filterNavItems()             | Sidebar oculta si no tiene permisos
+  Inertia shared            | permissions[] array          | UI oculta botones sin permiso
+
+4.3 DATOS SENSIBLES EXPUESTOS AL FRONTEND
+
+  HandleInertiaRequests.php comparte globalmente:
+    - auth.user.permissions[]  -> Todos los nombres de permisos (visible en DevTools)
+    - auth.user.roles[]        -> Nombres de roles
+    - auth.user.email          -> Email del usuario
+    - auth.user.name           -> Nombre completo
+
+  El controller EmpleadoController::index() pasa a Inertia:
+    - empleados[]              -> Lista paginada (con salario, banco, AFP, etc.)
+    - roles[]                  -> Roles del mismo owner (solo id y name)
+    - almacenes[]              -> Almacenes del mismo owner
+
+  El frontend Empleados/Index.tsx recibe y renderiza:
+    - salario, sueldo_liquido_pactado, afp, sistema_salud, banco_nombre,
+      banco_tipo_cuenta, banco_numero_cuenta
+    -> Estos campos SOLO se muestran a usuarios con permiso rrhh.empleados.view
+
+4.4 SCOPE DEL OWNER EN CONSULTAS
+
+  El controller index() (lineas 51-55) aplica:
+    Empleado::with([...])->where('owner_id', $userId)
+
+  ADemas, el OwnerScope global scope agrega la misma condicion automaticamente.
+  Es redundante pero seguro. Un empleado solo puede ver empleados de su propio
+  tenant/negocio.
+
+  El middleware CheckOwnership (lineas 25-31) verifica en cada peticion con
+  route-model-binding que el recurso pertenece al mismo owner. Master y Super
+  Admin bypasean esta verificacion.
+
+
+================================================================================
+5. HALLAZGOS DE SEGURIDAD (BUGS Y RIESGOS)
+================================================================================
+
+CRITICO
+-------
+
+[C1] ESCALADA DE PRIVILEGIOS POR ROL NO VALIDADO (EmpleadoController:107)
+     El backend acepta cualquier rol_id sin verificar owner_id.
+     Un atacante podria asignarse el rol "Master" si conoce su ID.
+     FIX: Validar que $rolId pertenezca al mismo owner:
+       'rol_id' => ['nullable', 'exists:roles,id',
+         Rule::in(Role::where('owner_id', $userId)->pluck('id'))]
+
+[C2] CONTRASENA POR DEFECTO CONOCIBLE (EmpleadoController:131)
+     'empleadonuevo' es una contrasena trivial. No hay forzar-cambio.
+     FIX: Generar contrasena aleatoria o forzar cambio en primer login.
+
+[C3] BUG EN IMPORT MASIVO (EmpleadosImport:85)
+     'user_id' => Auth::id() asigna al IMPORTADOR como user_id de cada
+     empleado importado. Esto vincula erroneamente todos los empleados
+     importados al usuario que ejecuto la importacion.
+     FIX: No asignar user_id en import, o asignar null.
+
+ALTO
+----
+
+[A1] EXPORT INCONSISTENTE (EmpleadosExport:17)
+     Usa ->where('creator_id', ...) en vez de ->where('owner_id', ...).
+     El index() usa owner_id. Si un usuario creo empleados de otro tenant
+     (como Master), el export mostraria registros diferentes al index.
+     FIX: Cambiar a ->where('owner_id', auth()->user()->getOwnerId())
+
+[A2] DESTRUCCION NO CASCADEA USER (EmpleadoController:263-268)
+     Al eliminar un empleado, el User asociado queda activo y puede
+     seguir iniciando sesion. La FK user_id usa nullOnDelete, asi que
+     el empleado pierde el vinculo pero el user persiste.
+     FIX: Eliminar o desactivar el User asociado al eliminar el empleado.
+
+[A3] EMAIL UNIQUE NO VERIFICADO EN UPDATE (EmpleadoController:168)
+     Store valida unique:empleados,email|unique:users,email
+     Update solo valida unique:empleados,email,{id}
+     Podria crearse un User con email duplicado al actualizar.
+     FIX: Agregar|unique:users,email,{user_id_del_empleado}
+
+[A4] ALMACEN_ID NO VALIDADO POR OWNER (EmpleadoController:90,177)
+     exists:almacenes,id valida que existe pero no que pertenece al owner.
+     Un atacante podria asignar un almacen de otro tenant.
+     FIX: Validar con Rule::in(Almacen::where('owner_id', $userId)->pluck('id'))
+
+MEDIO
+-----
+
+[M1] FORMREQUEST HUERFANO (StoreEmpleadoRequest.php)
+     Existe pero NUNCA se usa. El controlador valida inline.
+     Esto crea una trampa de mantenimiento: si alguien agrega reglas al
+     FormRequest, estas no tendran efecto.
+
+[M2] PASSWORD MINIMO 6 CARACTERES (EmpleadoController:106,193)
+     Sin requisitos de complejidad (mayuscula, numero, simbolo).
+
+[M3] RUT UNIQUE GLOBAL (empleados.rut)
+     Dos empresas distintas no pueden tener empleados con el mismo RUT.
+     Problematico en SaaS multi-tenant.
+
+[M4] SIN AUDIT TRAIL
+     No existe activity log para creaciones, actualizaciones o eliminaciones
+     de empleados. No hay forma de rastrear cambios historicos.
+
+[M5] FACTORY SIN OWNER_ID (EmpleadoFactory.php)
+     El factory no incluye owner_id, depende del trait boot.
+     Puede fallar en tests sin contexto de autenticacion.
+
+
+================================================================================
+6. ARCHIVOS REVISADOS
+================================================================================
+
+CONTROLADORES:
+  app/Http/Controllers/Backend/EmpleadoController.php (269 lineas)
+
+MODELOS:
+  app/Models/Empleado.php (114 lineas)
+  app/Models/User.php (511 lineas) - secciones boot(), getOwnerId(), empleado()
+
+MIGRACIONES:
+  database/migrations/2026_03_01_020808_create_empleados_table.php
+  database/migrations/2026_03_10_000356_add_platform_access_fields_to_multiple_tables.php
+  database/migrations/2026_03_15_014231_add_creator_id_to_empleados.php
+  database/migrations/2026_03_15_023040_add_almacen_id_to_empleados.php
+  database/migrations/2026_03_29_011748_add_owner_id_to_remaining_operational_tables.php
+  database/migrations/2026_05_10_070040_add_chilean_compliance_fields_to_empleados_table.php
+  database/migrations/2026_05_24_034617_add_foto_to_empleados_table.php
+  database/migrations/2026_06_18_010613_add_horario_to_empleados_table.php
+
+SEEDERS:
+  database/seeders/PermissionsSeeder.php - define permisos rrhh.empleados.*
+  database/seeders/UsersTestSeeder.php - crea usuario de prueba
+
+MIDDLEWARE:
+  app/Http/Middleware/CheckOwnership.php (36 lineas)
+  app/Http/Middleware/CheckPermission.php
+  app/Http/Middleware/HandleInertiaRequests.php (237 lineas)
+  app/Http/Middleware/RedirectIfClient.php
+  app/Http/Middleware/RedirectIfProveedor.php
+
+SCOPES Y TRAITS:
+  app/Scopes/OwnerScope.php (30 lineas)
+  app/Traits/BelongsToOwner.php (41 lineas)
+
+PERMISOS:
+  app/Helpers/PermissionHelper.php - mapeo rrhh.empleados -> RRHH:Empleados
+
+IMPORT/EXPORT:
+  app/Imports/EmpleadosImport.php (116 lineas)
+  app/Exports/EmpleadosExport.php (101 lineas)
+
+FRONTEND:
+  resources/js/pages/Backend/Empleados/Index.tsx (1217 lineas)
+  resources/js/config/navigation.ts - seccion RRHH/Gestion Humana
+  resources/js/components/nav-main.tsx - rendering de sidebar
+
+FORM REQUEST (NO USADO):
+  app/Http/Requests/Backend/StoreEmpleadoRequest.php (42 lineas)
+
+FACTORY:
+  database/factories/EmpleadoFactory.php (35 lineas)
+
+RUTAS:
+  routes/modules/rrhh.php - define rutas de empleados
+  routes/web.php (linea 159) - incluye modulo RRHH
+
+
+================================================================================
+7. PLAN DE ACCION PROGRESIVO (MODULARIZACION DE PERMISOS)
+================================================================================
+
+El objetivo es permitir que el Administrador/Creador controle exactamente
+que ve y que no ve un empleado. Se propone un plan en 3 fases:
+
+----------------------------------------------------------------------
+FASE 1: CORRECCIONES INMEDIATAS (Seguridad)
+----------------------------------------------------------------------
+Prioridad: CRITICA | Estimacion: 1-2 dias
+
+1.1  Validar rol_id por owner
+     En EmpleadoController::store() y update(), cambiar:
+       'rol_id' => 'nullable|exists:roles,id'
+     Por:
+       'rol_id' => ['nullable', 'exists:roles,id',
+         Rule::in(Role::where('owner_id', $userId)->pluck('id'))]
+
+1.2  Corregir bug de import
+     En EmpleadosImport.php linea 85, cambiar:
+       'user_id' => Auth::id()
+     Por:
+       'user_id' => null
+
+1.3  Corregir export inconsistente
+     En EmpleadosExport.php linea 17, cambiar:
+       ->where('creator_id', auth()->user()->getOwnerId())
+     Por:
+       ->where('owner_id', auth()->user()->getOwnerId())
+
+1.4  Cascade delete de User al eliminar empleado
+     En EmpleadoController::destroy(), antes de $empleado->delete():
+       if ($empleado->user) {
+           $empleado->user->delete();
+       }
+
+1.5  Validar email en update contra users table
+     En update(), agregar validacion:
+       'email' => 'nullable|email|unique:empleados,email,'.$empleado->id
+                     '|unique:users,email,'.($empleado->user_id ?? '_')
+
+1.6  Generar contrasena aleatoria en vez de 'empleadonuevo'
+     En store() linea 131:
+       $passwordHash = $password
+           ? Hash::make($password)
+           : Hash::make(Str::random(12));
+
+----------------------------------------------------------------------
+FASE 2: SCOPING POR CREADOR/TENANT (Aislamiento)
+----------------------------------------------------------------------
+Prioridad: ALTA | Estimacion: 3-5 dias
+
+2.1  Agregar campo updated_by a empleados
+     Crear migracion:
+       $table->foreignId('updated_by')->nullable()->constrained('users');
+
+     Actualizar EmpleadoController::update() para setear:
+       $updateData['updated_by'] = Auth::id();
+
+2.2  Crear EmpleadoPolicy
+     Generar app/Policies/EmpleadoPolicy.php con metodos:
+       - viewAny(User $user): bool     -> tiene rrhh.empleados.viewAny
+       - view(User $user, Empleado $e): bool -> dueno o Master/SA
+       - create(User $user): bool      -> tiene rrhh.empleados.create
+       - update(User $user, Empleado $e): bool -> dueno + permiso
+       - delete(User $user, Empleado $e): bool -> dueno + permiso
+
+     Registrar en AuthServiceProvider y usar en controlador con
+     $this->authorize() o middleware 'can:'.
+
+2.3  Scoping estricto en export/import
+     Asegurar que export e import solo operen sobre registros del mismo
+     owner_id. Actualmente export ya usa owner_id (tras FASE 1.3) pero
+     import no valida owner_id en el match (usa creator_id).
+
+2.4  Agregar validacion de ownership a almacen_id
+     En store() y update():
+       'almacen_id' => ['nullable', 'exists:almacenes,id',
+         Rule::in(Almacen::where('owner_id', $userId)->pluck('id'))]
+
+----------------------------------------------------------------------
+FASE 3: PERFILES/SUB-ROLES DE EMPLEADOS (Modularizacion)
+----------------------------------------------------------------------
+Prioridad: MEDIA | Estimacion: 1-2 semanas
+
+3.1  Plantillas de permisos por rol de empleado
+     Crear una tabla "permission_templates" o usar un sistema de
+     "roles predefinidos" que el admin pueda seleccionar:
+
+       Empleado Ventas     -> comercial.*, ventas.*
+       Empleado Bodega     -> inventario.*
+       Empleado Logistica  -> flota.*
+       Empleado RRHH       -> rrhh.*
+       Empleado Contable   -> finanzas.*
+       Empleado Produccion -> mrp.*
+
+     Cada plantilla es un conjunto predefinido de permisos que se
+     asigna automaticamente al crear un empleado con ese perfil.
+
+3.2  Formulario de creacion con selector de perfil
+     En el frontend (Empleados/Index.tsx), agregar un paso o seccion
+     "Perfil de Acceso" antes de la asignacion de permisos:
+
+       [ ] Empleado Ventas
+           -> Pre-selecciona: comercial.*, ventas.pos
+       [ ] Empleado Bodega
+           -> Pre-selecciona: inventario.*
+       [ ] Personalizado
+           -> Muestra el arbol de permisos completo para seleccion manual
+
+     Esto simplifica la creacion para el 80% de casos comunes.
+
+3.3  Restricciones por modulo en UI
+     Agregar switches en el formulario de creacion/edicion que
+     permitan al admin activar/desactivar modulos completos:
+
+       Modulos visibles:
+         [x] Comercial
+         [x] Inventario
+         [ ] Logistica
+         [ ] RRHH (ver otros empleados)
+         [ ] Finanzas (ver salarios)
+
+     Cada toggle selecciona/deselecciona todos los permisos del
+     modulo correspondiente. Esto reemplaza la necesidad de
+     seleccionar permisos individuales.
+
+3.4  Perfil de empleado en vista detail
+     En la vista de detalle de un empleado, mostrar:
+       - Permisos asignados (agrupados por modulo)
+       - Historial de cambios (si se implementa activity log)
+       - Auditoria: quien creo, cuando, ultimo acceso
+
+3.5  Activity Log (Audit Trail)
+     Instalar paquete spatie/laravel-activitylog o implementar
+     un observer en Empleado que registre:
+       - Creacion (creator_id + timestamp)
+       - Cada campo modificado (antes/despues)
+       - Eliminacion (quien elimino)
+
+     Esto cumple con requisitos de auditoria para empresa chilena
+     (respaldo de datos laborales segun Codigo del Trabajo).
+
+
+================================================================================
+FIN DEL INFORME
+================================================================================

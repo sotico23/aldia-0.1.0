@@ -9,7 +9,7 @@ use App\Imports\ComprasImport;
 use App\Models\Almacen;
 use App\Models\Compra;
 use App\Models\DetalleCompra;
-use App\Models\Inventario;
+use App\Models\InventoryMovement;
 use App\Models\Producto;
 use App\Models\Proveedor;
 use App\Models\WebSetting;
@@ -124,18 +124,15 @@ class CompraController extends Controller implements HasMiddleware
             ]);
 
             if ($validated['estado'] === 'recibida') {
-                $inventario = Inventario::firstOrCreate(
-                    [
-                        'producto_id' => $item['producto_id'],
-                        'almacen_id' => $validated['almacen_id'],
-                    ],
-                    [
-                        'owner_id' => $ownerId,
-                        'cantidad' => 0,
-                        'cantidad_minima' => 0,
-                    ]
+                InventoryMovement::registrarMovimiento(
+                    productId: $item['producto_id'],
+                    userId: Auth::id(),
+                    type: 'INGRESO',
+                    quantity: $item['cantidad'],
+                    destinationWarehouseId: $validated['almacen_id'],
+                    description: "Compra #{$validated['numero']} recibida",
+                    ownerId: $ownerId,
                 );
-                $inventario->increment('cantidad', $item['cantidad']);
             }
         }
 
@@ -160,36 +157,30 @@ class CompraController extends Controller implements HasMiddleware
         if ($estadoAnterior !== 'recibida' && $validated['estado'] === 'recibida') {
             $compra->load('detalleCompras');
             foreach ($compra->detalleCompras as $detalle) {
-                $inventario = Inventario::firstOrCreate(
-                    [
-                        'producto_id' => $detalle->producto_id,
-                        'almacen_id' => $almacenId,
-                    ],
-                    [
-                        'owner_id' => $ownerId,
-                        'cantidad' => 0,
-                        'cantidad_minima' => 0,
-                    ]
+                InventoryMovement::registrarMovimiento(
+                    productId: $detalle->producto_id,
+                    userId: Auth::id(),
+                    type: 'INGRESO',
+                    quantity: $detalle->cantidad,
+                    destinationWarehouseId: $almacenId,
+                    description: "Compra #{$compra->numero} recibida",
+                    ownerId: $ownerId,
                 );
-                $inventario->increment('cantidad', $detalle->cantidad);
             }
         }
 
         if ($validated['estado'] === 'cancelada' && $estadoAnterior === 'recibida') {
             $compra->load('detalleCompras');
             foreach ($compra->detalleCompras as $detalle) {
-                $inventario = Inventario::firstOrCreate(
-                    [
-                        'producto_id' => $detalle->producto_id,
-                        'almacen_id' => $almacenId,
-                    ],
-                    [
-                        'owner_id' => $ownerId,
-                        'cantidad' => 0,
-                        'cantidad_minima' => 0,
-                    ]
+                InventoryMovement::registrarMovimiento(
+                    productId: $detalle->producto_id,
+                    userId: Auth::id(),
+                    type: 'EGRESO',
+                    quantity: $detalle->cantidad,
+                    sourceWarehouseId: $almacenId,
+                    description: "Compra #{$compra->numero} cancelada - productos devueltos",
+                    ownerId: $ownerId,
                 );
-                $inventario->decrement('cantidad', $detalle->cantidad);
             }
         }
 
@@ -200,6 +191,21 @@ class CompraController extends Controller implements HasMiddleware
     {
         if ($compra->owner_id !== Auth::user()->getOwnerId()) {
             abort(403, 'No tienes permiso para eliminar esta compra.');
+        }
+
+        if ($compra->estado === 'recibida') {
+            $compra->load('detalleCompras');
+            foreach ($compra->detalleCompras as $detalle) {
+                InventoryMovement::registrarMovimiento(
+                    productId: $detalle->producto_id,
+                    userId: Auth::id(),
+                    type: 'EGRESO',
+                    quantity: $detalle->cantidad,
+                    sourceWarehouseId: $compra->almacen_id,
+                    description: "Compra #{$compra->numero} eliminada - productos devueltos",
+                    ownerId: $compra->owner_id,
+                );
+            }
         }
 
         $compra->delete();

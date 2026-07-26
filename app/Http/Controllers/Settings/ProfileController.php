@@ -12,10 +12,12 @@ use App\Models\Follower;
 use App\Models\Publicacion;
 use App\Models\User;
 use App\Models\Venta;
+use Illuminate\Http\Illuminate\Filesystem\UnsupportedFileException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -201,11 +203,17 @@ class ProfileController extends Controller
             }
 
             if ($request->hasFile('profile_photo')) {
+                if ($user->profile_photo_path) {
+                    Storage::disk('public')->delete($user->profile_photo_path);
+                }
                 $path = $request->file('profile_photo')->store('profile-photos', 'public');
                 $user->profile_photo_path = $path;
             }
 
             if ($request->hasFile('cover_photo')) {
+                if ($user->cover_photo_path) {
+                    Storage::disk('public')->delete($user->cover_photo_path);
+                }
                 $path = $request->file('cover_photo')->store('cover-photos', 'public');
                 $user->cover_photo_path = $path;
             }
@@ -213,10 +221,14 @@ class ProfileController extends Controller
             $user->save();
 
             return to_route('profile.edit');
-        } catch (\Exception $e) {
-            Log::error('Profile update error: '.$e->getMessage());
+        } catch (UnsupportedFileException $e) {
+            Log::warning('Profile upload unsupported file: '.$e->getMessage());
 
-            return to_route('profile.edit')->with('error', 'Error al actualizar el perfil');
+            return back()->withErrors(['profile_photo' => 'El archivo no es una imagen válida.'])->withInput();
+        } catch (\Exception $e) {
+            Log::error('Profile update error: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
+            return back()->withErrors(['profile_photo' => 'Error al subir la imagen. Intenta con un archivo más pequeño.'])->withInput();
         }
     }
 

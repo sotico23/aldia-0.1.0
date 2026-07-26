@@ -4,11 +4,18 @@ use App\Models\Empleado;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
+beforeEach(function () {
+    Role::firstOrCreate(['name' => 'Master'], ['owner_id' => null]);
+    Role::firstOrCreate(['name' => 'Super Admin'], ['owner_id' => null]);
+});
+
 test('new client with access has default password clientenuevo', function () {
     $admin = User::factory()->create();
+    $admin->assignRole('Super Admin');
 
     $payload = [
         'nombre' => 'Cliente Test',
@@ -29,8 +36,11 @@ test('new client with access has default password clientenuevo', function () {
     expect(Hash::check('clientenuevo', $user->password))->toBeTrue();
 });
 
-test('new employee with access has default password empleadonuevo', function () {
+test('new employee with access has a secure random password when none provided', function () {
     $admin = User::factory()->create();
+    $admin->assignRole('Super Admin');
+
+    $role = Role::firstOrCreate(['name' => 'Empleado Test', 'owner_id' => $admin->id], ['guard_name' => 'web']);
 
     $payload = [
         'nombre' => 'Empleado',
@@ -38,6 +48,7 @@ test('new employee with access has default password empleadonuevo', function () 
         'email' => 'empleadotest@example.com',
         'estado' => 'activo',
         'crear_usuario' => true,
+        'rol_id' => $role->id,
         'cargo' => 'Tester',
     ];
 
@@ -48,7 +59,8 @@ test('new employee with access has default password empleadonuevo', function () 
 
     $user = User::where('email', 'empleadotest@example.com')->first();
     expect($user)->not->toBeNull();
-    expect(Hash::check('empleadonuevo', $user->password))->toBeTrue();
+    expect(Hash::check('empleadonuevo', $user->password))->toBeFalse();
+    expect($user->getRoleNames()->toArray())->toBe(['Empleado Test']);
 });
 
 test('employee creation without access does not create user', function () {
@@ -75,8 +87,11 @@ test('employee creation without access does not create user', function () {
     expect($empleado->user_id)->toBeNull();
 });
 
-test('updating employee to add access works and sets password', function () {
+test('updating employee to add access works and sets a secure random password', function () {
     $admin = User::first() ?: User::factory()->create();
+    $admin->assignRole('Super Admin');
+
+    $role = Role::firstOrCreate(['name' => 'Empleado Test', 'owner_id' => $admin->id], ['guard_name' => 'web']);
 
     // Create manually to avoid the factory issues for now
     $empleado = Empleado::create([
@@ -94,6 +109,7 @@ test('updating employee to add access works and sets password', function () {
         'email' => 'updateaccess@example.com',
         'estado' => 'activo',
         'crear_usuario' => true,
+        'rol_id' => $role->id,
         'cargo' => 'Tester',
         'telefono' => '123456',
         'direccion' => 'Calle Falsa 123',
@@ -106,7 +122,7 @@ test('updating employee to add access works and sets password', function () {
 
     $user = User::where('email', 'updateaccess@example.com')->first();
     expect($user)->not->toBeNull();
-    expect(Hash::check('empleadonuevo', $user->password))->toBeTrue();
+    expect(Hash::check('empleadonuevo', $user->password))->toBeFalse();
 
     $empleado->refresh();
     expect($empleado->user_id)->toBe($user->id);

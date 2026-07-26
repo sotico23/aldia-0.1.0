@@ -276,6 +276,7 @@ class PermissionsSeeder extends Seeder
                 'transactions',
                 'commissions',
                 'webhooks',
+                'countries',
             ],
             'rrhh' => [
                 'empleados',

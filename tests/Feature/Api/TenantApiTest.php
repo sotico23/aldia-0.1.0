@@ -157,7 +157,9 @@ test('resumenCompleto returns full summary with all KPIs', function () {
         'owner_id' => $ownerId,
     ]);
 
-    $response = $this->getJson('/api/tenant/resumen-completo?api_token='.$this->tenant->api_token);
+    $response = $this->getJson('/api/tenant/resumen-completo', [
+        'Authorization' => 'Bearer '.$this->tenant->api_token,
+    ]);
 
     $response->assertOk();
     $response->assertJsonStructure([

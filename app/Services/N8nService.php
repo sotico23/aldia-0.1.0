@@ -18,12 +18,12 @@ class N8nService
      */
     public function getWebhookUrl(): ?string
     {
-        return config('services.n8n.webhook_url') ?? $this->getConfig()?->webhook_url;
+        return config('services.n8n.webhook_url') ?: $this->getConfig()?->webhook_url;
     }
 
     public function getBaseUrl(): ?string
     {
-        return config('services.n8n.base_url') ?? $this->getConfig()?->base_url;
+        return config('services.n8n.base_url') ?: $this->getConfig()?->base_url;
     }
 
     public function isAvailable(): bool

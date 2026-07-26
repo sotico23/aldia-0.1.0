@@ -271,6 +271,8 @@ it('handles unknown mercadopago event type gracefully', function () {
 });
 
 it('rejects mercadopago webhook without signature header', function () {
+    Http::fake();
+
     $payload = [
         'id' => fake()->uuid(),
         'type' => 'payment',
@@ -284,6 +286,8 @@ it('rejects mercadopago webhook without signature header', function () {
 });
 
 it('rejects mercadopago webhook with invalid signature', function () {
+    Http::fake();
+
     $payload = [
         'id' => fake()->uuid(),
         'type' => 'payment.created',

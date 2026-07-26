@@ -9,7 +9,9 @@ import {
     Check,
     AlertCircle,
     Clock,
-    Loader2
+    Loader2,
+    Eye,
+    RefreshCw,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -39,6 +41,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { ModalShow } from '@/components/ui/ModalShow';
 import '@/components/ui/textarea';
 import {
     Tooltip,
@@ -118,6 +121,10 @@ export default function EmailConfig({
     const [testingConfig, setTestingConfig] = useState<MailConfig | null>(null);
     const [testEmail, setTestEmail] = useState('');
     const [testing, setTesting] = useState(false);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [detailsConfig, setDetailsConfig] = useState<MailConfig | null>(null);
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+    const [logsRefreshing, setLogsRefreshing] = useState(false);
 
     const { data, setData, post, patch, processing, reset } = useForm({
         name: '',
@@ -137,14 +144,29 @@ export default function EmailConfig({
         is_default: false,
     });
 
+    const openDetailsModal = (config: MailConfig) => {
+        setDetailsConfig(config);
+        setShowDetailsModal(true);
+    };
+
+    const refreshLogs = () => {
+        setLogsRefreshing(true);
+        router.reload({
+            only: ['logs'],
+            onFinish: () => setLogsRefreshing(false),
+        });
+    };
+
     const openCreateModal = () => {
         setEditingConfig(null);
         reset();
+        setFormErrors({});
         setShowModal(true);
     };
 
     const openEditModal = (config: MailConfig) => {
         setEditingConfig(config);
+        setFormErrors({});
         setData({
             name: config.name,
             driver: config.driver,
@@ -167,6 +189,38 @@ export default function EmailConfig({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        setFormErrors({});
+
+        const errors: Record<string, string> = {};
+        if (!data.name.trim()) errors.name = 'El nombre es requerido';
+        if (!data.from_address.trim()) errors.from_address = 'El email remitente es requerido';
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.from_address))
+            errors.from_address = 'Email inválido';
+        if (!data.from_name.trim()) errors.from_name = 'El nombre remitente es requerido';
+
+        if (data.driver === 'smtp') {
+            if (!data.host.trim()) errors.host = 'El host es requerido';
+            if (!data.port || data.port < 1 || data.port > 65535)
+                errors.port = 'Puerto inválido (1-65535)';
+            if (!data.username.trim()) errors.username = 'El usuario es requerido';
+            if (!editingConfig && !data.password) errors.password = 'La contraseña es requerida';
+        }
+        if (data.driver === 'mailgun') {
+            if (!data.domain.trim()) errors.domain = 'El dominio es requerido';
+            if (!editingConfig && !data.secret) errors.secret = 'El API Key es requerida';
+        }
+        if (data.driver === 'postmark') {
+            if (!editingConfig && !data.secret) errors.secret = 'El Token es requerido';
+        }
+        if (data.driver === 'ses') {
+            if (!data.username.trim()) errors.username = 'El Access Key es requerido';
+            if (!editingConfig && !data.password) errors.password = 'El Secret Key es requerido';
+        }
+
+        if (Object.keys(errors).length > 0) {
+            setFormErrors(errors);
+            return;
+        }
 
         const formData: Record<string, any> = { ...data };
         if (!formData.password) delete formData.password;
@@ -180,9 +234,13 @@ export default function EmailConfig({
                         : 'Configuración creada',
                 );
                 setShowModal(false);
+                setFormErrors({});
                 router.reload({ only: ['configs', 'logs'] });
             },
-            onError: () => toast.error('Error al guardar'),
+            onError: (errs: Record<string, string>) => {
+                setFormErrors(errs);
+                toast.error('Error al guardar');
+            },
         };
 
         if (editingConfig) {
@@ -240,18 +298,28 @@ export default function EmailConfig({
 
     const handleTest = () => {
         if (!testingConfig || !testEmail) return;
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail)) {
+            toast.error('Ingresa un email válido');
+            return;
+        }
 
         setTesting(true);
         router.post(
             `/marketing/email-config/${testingConfig.id}/test`,
             { test_email: testEmail },
             {
-                onSuccess: () => {
-                    toast.success('Email de prueba enviado');
+                onSuccess: (page: any) => {
+                    const flash = page?.props?.flash;
+                    if (flash?.success) toast.success(flash.success);
+                    else if (flash?.error) toast.error(flash.error);
+                    else toast.success('Email de prueba enviado');
                     setShowTestModal(false);
                     router.reload({ only: ['logs'] });
                 },
-                onError: () => toast.error('Error al enviar prueba'),
+                onError: (errs: Record<string, string>) => {
+                    const msg = errs?.test_email || errs?.message || 'Error al enviar prueba';
+                    toast.error(msg);
+                },
                 onFinish: () => setTesting(false),
             },
         );
@@ -422,6 +490,25 @@ export default function EmailConfig({
                                                     size="sm"
                                                     variant="outline"
                                                     onClick={() =>
+                                                        openDetailsModal(config)
+                                                    }
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                Ver detalles
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() =>
                                                         openEditModal(config)
                                                     }
                                                 >
@@ -479,10 +566,22 @@ export default function EmailConfig({
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Clock className="h-5 w-5" />
-                            Historial de Pruebas
-                        </CardTitle>
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="flex items-center gap-2">
+                                <Clock className="h-5 w-5" />
+                                Historial de Pruebas
+                            </CardTitle>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={refreshLogs}
+                                disabled={logsRefreshing}
+                            >
+                                <RefreshCw
+                                    className={`h-4 w-4 ${logsRefreshing ? 'animate-spin' : ''}`}
+                                />
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         {logs.length === 0 ? (
@@ -534,7 +633,7 @@ export default function EmailConfig({
             </div>
 
             <Dialog open={showModal} onOpenChange={setShowModal}>
-                <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+                <DialogContent className="w-[95vw] max-w-2xl max-h-[95dvh] overflow-y-auto p-4 sm:p-6">
                     <DialogHeader>
                         <DialogTitle>
                             {editingConfig
@@ -557,6 +656,11 @@ export default function EmailConfig({
                                     placeholder="Gmail Producción"
                                     required
                                 />
+                                {formErrors.name && (
+                                    <p className="text-xs text-destructive">
+                                        {formErrors.name}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label>Driver *</Label>
@@ -584,7 +688,7 @@ export default function EmailConfig({
                         </div>
 
                         {data.driver === 'smtp' && (
-                            <div className="space-y-4 rounded-lg border p-4">
+                            <div className="space-y-4 rounded-lg border p-3 sm:p-4">
                                 <Label className="text-base font-semibold">
                                     Configuración SMTP
                                 </Label>
@@ -599,6 +703,11 @@ export default function EmailConfig({
                                             placeholder="smtp.gmail.com"
                                             required
                                         />
+                                        {formErrors.host && (
+                                            <p className="text-xs text-destructive">
+                                                {formErrors.host}
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Puerto *</Label>
@@ -614,6 +723,11 @@ export default function EmailConfig({
                                             placeholder="587"
                                             required
                                         />
+                                        {formErrors.port && (
+                                            <p className="text-xs text-destructive">
+                                                {formErrors.port}
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Encriptación</Label>
@@ -652,6 +766,11 @@ export default function EmailConfig({
                                             placeholder="tu@email.com"
                                             required
                                         />
+                                        {formErrors.username && (
+                                            <p className="text-xs text-destructive">
+                                                {formErrors.username}
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="space-y-2 sm:col-span-2">
                                         <Label>Contraseña *</Label>
@@ -671,13 +790,18 @@ export default function EmailConfig({
                                             }
                                             required={!editingConfig}
                                         />
+                                        {formErrors.password && (
+                                            <p className="text-xs text-destructive">
+                                                {formErrors.password}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
                         )}
 
                         {data.driver === 'mailgun' && (
-                            <div className="space-y-4 rounded-lg border p-4">
+                            <div className="space-y-4 rounded-lg border p-3 sm:p-4">
                                 <Label className="text-base font-semibold">
                                     Configuración Mailgun
                                 </Label>
@@ -695,6 +819,11 @@ export default function EmailConfig({
                                             placeholder="mg.tudominio.com"
                                             required
                                         />
+                                        {formErrors.domain && (
+                                            <p className="text-xs text-destructive">
+                                                {formErrors.domain}
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Secret API Key *</Label>
@@ -710,6 +839,11 @@ export default function EmailConfig({
                                             placeholder="key-..."
                                             required
                                         />
+                                        {formErrors.secret && (
+                                            <p className="text-xs text-destructive">
+                                                {formErrors.secret}
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Endpoint</Label>
@@ -729,7 +863,7 @@ export default function EmailConfig({
                         )}
 
                         {data.driver === 'postmark' && (
-                            <div className="space-y-4 rounded-lg border p-4">
+                            <div className="space-y-4 rounded-lg border p-3 sm:p-4">
                                 <Label className="text-base font-semibold">
                                     Configuración Postmark
                                 </Label>
@@ -744,12 +878,17 @@ export default function EmailConfig({
                                         placeholder="Token..."
                                         required
                                     />
+                                    {formErrors.secret && (
+                                        <p className="text-xs text-destructive">
+                                            {formErrors.secret}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         )}
 
                         {data.driver === 'ses' && (
-                            <div className="space-y-4 rounded-lg border p-4">
+                            <div className="space-y-4 rounded-lg border p-3 sm:p-4">
                                 <Label className="text-base font-semibold">
                                     Configuración AWS SES
                                 </Label>
@@ -767,6 +906,11 @@ export default function EmailConfig({
                                             placeholder="AKIA..."
                                             required
                                         />
+                                        {formErrors.username && (
+                                            <p className="text-xs text-destructive">
+                                                {formErrors.username}
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Secret Key *</Label>
@@ -782,6 +926,11 @@ export default function EmailConfig({
                                             placeholder="Secret..."
                                             required
                                         />
+                                        {formErrors.password && (
+                                            <p className="text-xs text-destructive">
+                                                {formErrors.password}
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Region</Label>
@@ -814,7 +963,7 @@ export default function EmailConfig({
                         )}
 
                         {data.driver === 'sendmail' && (
-                            <div className="space-y-4 rounded-lg border p-4">
+                            <div className="space-y-4 rounded-lg border p-3 sm:p-4">
                                 <Label className="text-base font-semibold">
                                     Configuración Sendmail
                                 </Label>
@@ -825,7 +974,7 @@ export default function EmailConfig({
                             </div>
                         )}
 
-                        <div className="space-y-4 rounded-lg border p-4">
+                        <div className="space-y-4 rounded-lg border p-3 sm:p-4">
                             <Label className="text-base font-semibold">
                                 Información del Remitente
                             </Label>
@@ -844,6 +993,11 @@ export default function EmailConfig({
                                         placeholder="noreply@tudominio.com"
                                         required
                                     />
+                                    {formErrors.from_address && (
+                                        <p className="text-xs text-destructive">
+                                            {formErrors.from_address}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Nombre Remitente *</Label>
@@ -855,11 +1009,16 @@ export default function EmailConfig({
                                         placeholder="Mi Empresa"
                                         required
                                     />
+                                    {formErrors.from_name && (
+                                        <p className="text-xs text-destructive">
+                                            {formErrors.from_name}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-lg border p-3 sm:p-4">
                             <div className="space-y-0.5">
                                 <Label>Activa</Label>
                                 <p className="text-sm text-muted-foreground">
@@ -872,7 +1031,7 @@ export default function EmailConfig({
                             />
                         </div>
 
-                        <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-lg border p-3 sm:p-4">
                             <div className="space-y-0.5">
                                 <Label>Predeterminada</Label>
                                 <p className="text-sm text-muted-foreground">
@@ -904,7 +1063,7 @@ export default function EmailConfig({
             </Dialog>
 
             <Dialog open={showTestModal} onOpenChange={setShowTestModal}>
-                <DialogContent>
+                <DialogContent className="w-[95vw] max-w-md max-h-[95dvh] overflow-y-auto p-4 sm:p-6">
                     <DialogHeader>
                         <DialogTitle>Enviar Email de Prueba</DialogTitle>
                         <DialogDescription>
@@ -942,6 +1101,232 @@ export default function EmailConfig({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <ModalShow
+                isOpen={showDetailsModal}
+                setIsOpen={setShowDetailsModal}
+                item={detailsConfig}
+                title={detailsConfig?.name || 'Detalles'}
+                badgeLabel="Config. Correo"
+                description={detailsConfig ? getDriverLabel(detailsConfig.driver) : undefined}
+                colorScheme={
+                    detailsConfig?.driver === 'smtp'
+                        ? 'blue'
+                        : detailsConfig?.driver === 'mailgun'
+                          ? 'purple'
+                          : detailsConfig?.driver === 'postmark'
+                            ? 'amber'
+                            : detailsConfig?.driver === 'ses'
+                              ? 'orange'
+                              : 'slate'
+                }
+                quickStats={
+                    detailsConfig
+                        ? [
+                              {
+                                  label: 'Driver',
+                                  val: getDriverLabel(detailsConfig.driver),
+                                  colorScheme: 'blue',
+                              },
+                              {
+                                  label: 'Estado',
+                                  val: detailsConfig.is_active
+                                      ? 'Activo'
+                                      : 'Inactivo',
+                                  colorScheme: detailsConfig.is_active
+                                      ? 'green'
+                                      : 'rose',
+                              },
+                              {
+                                  label: 'Default',
+                                  val: detailsConfig.is_default ? 'Sí' : 'No',
+                                  colorScheme: detailsConfig.is_default
+                                      ? 'amber'
+                                      : 'slate',
+                              },
+                          ]
+                        : undefined
+                }
+            >
+                {detailsConfig && (
+                    <div className="space-y-4">
+                        <div className="rounded-lg border">
+                            <div className="border-b bg-muted/50 px-4 py-3">
+                                <h4 className="text-sm font-semibold">
+                                    Información General
+                                </h4>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 p-4">
+                                <div>
+                                    <Label className="text-xs text-muted-foreground">
+                                        Nombre
+                                    </Label>
+                                    <p className="text-sm font-medium">
+                                        {detailsConfig.name}
+                                    </p>
+                                </div>
+                                <div>
+                                    <Label className="text-xs text-muted-foreground">
+                                        Driver
+                                    </Label>
+                                    <p className="text-sm font-medium">
+                                        {getDriverLabel(detailsConfig.driver)}{' '}
+                                        {getDriverIcon(detailsConfig.driver)}
+                                    </p>
+                                </div>
+                                <div>
+                                    <Label className="text-xs text-muted-foreground">
+                                        Email Remitente
+                                    </Label>
+                                    <p className="text-sm font-medium">
+                                        {detailsConfig.from_address}
+                                    </p>
+                                </div>
+                                <div>
+                                    <Label className="text-xs text-muted-foreground">
+                                        Nombre Remitente
+                                    </Label>
+                                    <p className="text-sm font-medium">
+                                        {detailsConfig.from_name}
+                                    </p>
+                                </div>
+                                <div>
+                                    <Label className="text-xs text-muted-foreground">
+                                        Creado
+                                    </Label>
+                                    <p className="text-sm font-medium">
+                                        {new Date(
+                                            detailsConfig.created_at,
+                                        ).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                <div>
+                                    <Label className="text-xs text-muted-foreground">
+                                        Actualizado
+                                    </Label>
+                                    <p className="text-sm font-medium">
+                                        {new Date(
+                                            detailsConfig.updated_at,
+                                        ).toLocaleDateString()}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {detailsConfig.driver === 'smtp' && (
+                            <div className="rounded-lg border">
+                                <div className="border-b bg-muted/50 px-4 py-3">
+                                    <h4 className="text-sm font-semibold">
+                                        Configuración SMTP
+                                    </h4>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 p-4">
+                                    <div>
+                                        <Label className="text-xs text-muted-foreground">
+                                            Host
+                                        </Label>
+                                        <p className="text-sm font-medium">
+                                            {detailsConfig.host || '—'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs text-muted-foreground">
+                                            Puerto
+                                        </Label>
+                                        <p className="text-sm font-medium">
+                                            {detailsConfig.port || '—'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs text-muted-foreground">
+                                            Encriptación
+                                        </Label>
+                                        <p className="text-sm font-medium">
+                                            {detailsConfig.encryption ||
+                                                'Ninguna'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs text-muted-foreground">
+                                            Usuario
+                                        </Label>
+                                        <p className="text-sm font-medium">
+                                            {detailsConfig.username || '—'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {detailsConfig.driver === 'mailgun' && (
+                            <div className="rounded-lg border">
+                                <div className="border-b bg-muted/50 px-4 py-3">
+                                    <h4 className="text-sm font-semibold">
+                                        Configuración Mailgun
+                                    </h4>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 p-4">
+                                    <div>
+                                        <Label className="text-xs text-muted-foreground">
+                                            Domain
+                                        </Label>
+                                        <p className="text-sm font-medium">
+                                            {detailsConfig.domain || '—'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs text-muted-foreground">
+                                            Endpoint
+                                        </Label>
+                                        <p className="text-sm font-medium">
+                                            {detailsConfig.endpoint || 'api.mailgun.net'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {detailsConfig.driver === 'ses' && (
+                            <div className="rounded-lg border">
+                                <div className="border-b bg-muted/50 px-4 py-3">
+                                    <h4 className="text-sm font-semibold">
+                                        Configuración AWS SES
+                                    </h4>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 p-4">
+                                    <div>
+                                        <Label className="text-xs text-muted-foreground">
+                                            Access Key
+                                        </Label>
+                                        <p className="text-sm font-medium">
+                                            {detailsConfig.username
+                                                ? `${detailsConfig.username.slice(0, 8)}...`
+                                                : '—'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs text-muted-foreground">
+                                            Region
+                                        </Label>
+                                        <p className="text-sm font-medium">
+                                            {detailsConfig.region ||
+                                                'us-east-1'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs text-muted-foreground">
+                                            Domain
+                                        </Label>
+                                        <p className="text-sm font-medium">
+                                            {detailsConfig.domain || '—'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </ModalShow>
         </AppLayout>
     );
 }

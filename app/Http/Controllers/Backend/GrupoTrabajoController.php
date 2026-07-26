@@ -15,6 +15,7 @@ use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -274,10 +275,11 @@ class GrupoTrabajoController extends Controller implements HasMiddleware
                 'creator_id' => Auth::id(),
                 'name' => $empleado->nombre.' '.$empleado->apellido,
                 'email' => $empleado->email,
-                'password' => Hash::make('empleadonuevo'),
+                'password' => Hash::make(Str::random(16)),
                 'telefono' => $empleado->telefono,
                 'direccion' => $empleado->direccion,
                 'email_verified_at' => now(),
+                'has_explicit_role' => true,
             ]);
 
             $empleado->update(['user_id' => $user->id]);
