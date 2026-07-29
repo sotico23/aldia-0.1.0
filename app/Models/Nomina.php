@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\BelongsToOwner;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Nomina extends Model
 {
@@ -35,5 +36,10 @@ class Nomina extends Model
             'total_neto' => 'decimal:2',
             'detalles' => 'array',
         ];
+    }
+
+    public function prestamoCuotas(): HasMany
+    {
+        return $this->hasMany(PrestamoCuota::class);
     }
 }

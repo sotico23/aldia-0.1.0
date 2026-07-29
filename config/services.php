@@ -59,6 +59,7 @@ return [
 
     'whatsapp' => [
         'default_to' => env('WHATSAPP_DEFAULT_TO'),
+        'verify_token' => env('WHATSAPP_VERIFY_TOKEN'),
     ],
 
     'n8n' => [

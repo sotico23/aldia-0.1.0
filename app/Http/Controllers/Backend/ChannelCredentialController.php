@@ -68,17 +68,13 @@ class ChannelCredentialController extends Controller
 
             if ($request->filled('telegram_bot_token') && $request->input('telegram_bot_token') !== '••••••••••••••••') {
                 $updateData['telegram_bot_token'] = $request->input('telegram_bot_token');
-            } elseif (! $request->filled('telegram_bot_token')) {
-                unset($updateData['telegram_bot_token']);
-            } else {
+            } elseif (! $request->filled('telegram_bot_token') || $request->input('telegram_bot_token') === '••••••••••••••••') {
                 unset($updateData['telegram_bot_token']);
             }
 
             if ($request->filled('whatsapp_access_token') && $request->input('whatsapp_access_token') !== '••••••••••••••••') {
                 $updateData['whatsapp_access_token'] = $request->input('whatsapp_access_token');
-            } elseif (! $request->filled('whatsapp_access_token')) {
-                unset($updateData['whatsapp_access_token']);
-            } else {
+            } elseif (! $request->filled('whatsapp_access_token') || $request->input('whatsapp_access_token') === '••••••••••••••••') {
                 unset($updateData['whatsapp_access_token']);
             }
 
@@ -176,6 +172,40 @@ class ChannelCredentialController extends Controller
             $credentials->whatsapp_access_token,
             $credentials->whatsapp_phone_number_id,
         );
+
+        return response()->json($result);
+    }
+
+    public function sendWhatsAppTestMessage(Request $request): JsonResponse
+    {
+        $ownerId = Auth::user()->getOwnerId();
+
+        $phoneNumberId = $request->input('whatsapp_phone_number_id');
+
+        if (! $phoneNumberId) {
+            $credentials = ChannelCredential::where('owner_id', $ownerId)->first();
+
+            if (! $credentials || ! $credentials->whatsapp_phone_number_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay un Phone Number ID de WhatsApp configurado.',
+                ]);
+            }
+
+            $phoneNumberId = $credentials->whatsapp_phone_number_id;
+        }
+
+        $to = $request->input('whatsapp_to');
+
+        if (! $to) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debes proporcionar un número de WhatsApp destino.',
+            ]);
+        }
+
+        $service = (new WhatsAppService)->forOwner($ownerId);
+        $result = $service->sendMessage($to, '🤖 Mensaje de prueba desde Aldia');
 
         return response()->json($result);
     }

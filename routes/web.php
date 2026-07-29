@@ -43,6 +43,7 @@ use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\StatusPageController;
 use App\Http\Controllers\Webhooks\MercadoPagoWebhookController;
 use App\Http\Controllers\Webhooks\PaypalWebhookController;
+use App\Http\Controllers\Webhooks\WhatsAppWebhookController;
 use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
@@ -116,6 +117,9 @@ Route::middleware(['auth'])->group(function () {
             ->middleware('throttle:10,1');
         Route::post('canales/test-whatsapp', [ChannelCredentialController::class, 'testWhatsApp'])
             ->name('channel-credentials.test-whatsapp')
+            ->middleware('throttle:10,1');
+        Route::post('canales/send-whatsapp-test-message', [ChannelCredentialController::class, 'sendWhatsAppTestMessage'])
+            ->name('channel-credentials.send-whatsapp-test-message')
             ->middleware('throttle:10,1');
         Route::post('canales/automation', [AutomationController::class, 'store'])->name('automation.store');
         Route::post('canales/automation/test', [AutomationController::class, 'runTest'])
@@ -349,4 +353,5 @@ require __DIR__.'/settings.php';
 Route::prefix('webhooks')->name('webhooks.')->group(function () {
     Route::post('paypal', [PaypalWebhookController::class, 'handle'])->name('paypal');
     Route::post('mercadopago', [MercadoPagoWebhookController::class, 'handle'])->name('mercadopago');
+    Route::post('whatsapp', [WhatsAppWebhookController::class, 'handle'])->name('whatsapp');
 });

@@ -97,9 +97,9 @@ export default function ChannelCredentials({
 }: PageProps) {
     const [testingTelegram, setTestingTelegram] = useState(false);
     const [testingWhatsapp, setTestingWhatsapp] = useState(false);
-    const [sendingTestMessage, setSendingTestMessage] = useState(false);
-    const [telegramStatus, setTelegramStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [sendingWhatsappTestMessage, setSendingWhatsappTestMessage] = useState(false);
     const [whatsappStatus, setWhatsappStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [whatsappTo, setWhatsappTo] = useState('');
     const [botUsername, setBotUsername] = useState(credentials?.telegram_bot_username ?? '');
 
     const { data, setData, put, processing, errors } = useForm({
@@ -233,6 +233,39 @@ export default function ChannelCredentials({
             toast.error('Error de conexión con el servidor.');
         } finally {
             setTestingWhatsapp(false);
+        }
+    };
+
+    const sendWhatsAppTestMessage = async () => {
+        if (!whatsappTo) {
+            toast.error('Debes proporcionar un número de WhatsApp destino.');
+            return;
+        }
+
+        setSendingWhatsappTestMessage(true);
+
+        try {
+            const resp = await fetch('/canales/send-whatsapp-test-message', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ whatsapp_to: whatsappTo }),
+            });
+
+            const result = await resp.json();
+
+            if (result.success) {
+                toast.success('Mensaje de prueba enviado. Revisa tu WhatsApp.');
+            } else {
+                toast.error(result.message || 'Error al enviar mensaje de prueba.');
+            }
+        } catch {
+            toast.error('Error de conexión con el servidor.');
+        } finally {
+            setSendingWhatsappTestMessage(false);
         }
     };
 
@@ -540,13 +573,47 @@ export default function ChannelCredentials({
                                                 Conectado
                                             </span>
                                         )}
-                                        {whatsappStatus === 'error' && (
-                                            <span className="flex items-center gap-1 text-xs text-destructive">
-                                                <AlertCircle className="h-3.5 w-3.5" />
-                                                Error
-                                            </span>
-                                        )}
+{whatsappStatus === 'error' && (
+                                             <span className="flex items-center gap-1 text-xs text-destructive">
+                                                 <AlertCircle className="h-3.5 w-3.5" />
+                                                 Error
+                                             </span>
+                                         )}
                                     </div>
+
+                                    {whatsappStatus === 'success' && (
+                                        <div className="space-y-2 pt-2 border-t">
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="whatsapp_test_to">
+                                                    Número destino para mensaje de prueba
+                                                </Label>
+                                                <Input
+                                                    id="whatsapp_test_to"
+                                                    value={whatsappTo}
+                                                    onChange={(e) => setWhatsappTo(e.target.value)}
+                                                    placeholder="+34600123456"
+                                                />
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="default"
+                                                size="sm"
+                                                className="w-full gap-2"
+                                                onClick={sendWhatsAppTestMessage}
+                                                disabled={sendingWhatsappTestMessage}
+                                            >
+                                                {sendingWhatsappTestMessage ? (
+                                                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                ) : (
+                                                    <Send className="h-3.5 w-3.5" />
+                                                )}
+                                                {sendingWhatsappTestMessage ? 'Enviando...' : 'Enviar Mensaje de Prueba'}
+                                            </Button>
+                                            <p className="text-[11px] text-muted-foreground text-center">
+                                                El mensaje de prueba se enviará al número proporcionado usando la API de WhatsApp Cloud.
+                                            </p>
+                                        </div>
+                                    )}
 
                                     <div className="rounded-lg border border-border/50 bg-muted/20 p-3">
                                         <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">

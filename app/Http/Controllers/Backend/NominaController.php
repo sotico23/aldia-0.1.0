@@ -9,10 +9,12 @@ use App\Imports\NominasImport;
 use App\Models\Asistencia;
 use App\Models\Empleado;
 use App\Models\Nomina;
+use App\Models\PrestamoCuota;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -60,9 +62,31 @@ class NominaController extends Controller implements HasMiddleware
             'estado' => 'required|string|max:50',
             'notas' => 'nullable|string',
             'detalles' => 'nullable|array',
+            'calculos' => 'nullable|array',
         ]);
         $validated['owner_id'] = auth()->user()->getOwnerId();
-        Nomina::create($validated);
+
+        DB::transaction(function () use ($validated, $request) {
+            $nomina = Nomina::create($validated);
+
+            $calculos = $request->input('calculos', []);
+
+            foreach ($calculos as $calculo) {
+                $cuotasIds = $calculo['cuotas_prestamo_ids'] ?? [];
+
+                if (! empty($cuotasIds)) {
+                    PrestamoCuota::whereIn('id', $cuotasIds)
+                        ->where('aplicada_en_nomina', false)
+                        ->update([
+                            'nomina_id' => $nomina->id,
+                            'aplicada_en_nomina' => true,
+                            'estado' => 'pagada',
+                            'fecha_pago' => now()->toDateString(),
+                            'metodo_pago' => 'nomina',
+                        ]);
+                }
+            }
+        });
 
         return redirect()->route('nominas.index');
     }
@@ -122,6 +146,19 @@ class NominaController extends Controller implements HasMiddleware
 
             $sueldoProporcional = $sueldoDiario * $diasAsistidos;
 
+            // Consultar cuotas de préstamo pendientes del empleado
+            $cuotasPendientes = PrestamoCuota::whereHas('prestamo', function ($q) use ($empleado) {
+                $q->where('empleado_id', $empleado->id);
+            })
+                ->where('aplicada_en_nomina', false)
+                ->where('estado', 'pendiente')
+                ->get();
+
+            $totalDescuentoPrestamos = $cuotasPendientes->sum('monto');
+            $cuotasIds = $cuotasPendientes->pluck('id')->toArray();
+
+            $sueldoLiquido = max(0, $sueldoProporcional - $totalDescuentoPrestamos);
+
             $calculos[] = [
                 'empleado_id' => $empleado->id,
                 'nombre' => $empleado->nombre,
@@ -132,6 +169,9 @@ class NominaController extends Controller implements HasMiddleware
                 'sueldo_pactado' => $sueldoPactado,
                 'dias_asistidos' => $diasAsistidos,
                 'sueldo_proporcional' => $sueldoProporcional,
+                'total_descuento_prestamos' => round($totalDescuentoPrestamos, 2),
+                'cuotas_prestamo_ids' => $cuotasIds,
+                'sueldo_liquido' => round($sueldoLiquido, 2),
             ];
         }
 

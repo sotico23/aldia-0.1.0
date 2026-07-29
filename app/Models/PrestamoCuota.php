@@ -14,6 +14,7 @@ class PrestamoCuota extends Model
     protected $fillable = [
         'owner_id',
         'prestamo_id',
+        'nomina_id',
         'numero_cuota',
         'monto',
         'fecha_vencimiento',
@@ -40,6 +41,11 @@ class PrestamoCuota extends Model
     public function prestamo(): BelongsTo
     {
         return $this->belongsTo(Prestamo::class);
+    }
+
+    public function nomina(): BelongsTo
+    {
+        return $this->belongsTo(Nomina::class);
     }
 
     public function getEstadoColorAttribute(): string
