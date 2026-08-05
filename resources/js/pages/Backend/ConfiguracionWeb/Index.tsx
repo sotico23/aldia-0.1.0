@@ -104,6 +104,13 @@ interface WebSetting {
     facebook_client_id?: string;
     facebook_client_secret?: string;
     facebook_redirect_uri?: string;
+    global_telegram_bot_username?: string;
+    global_telegram_bot_token?: string;
+    whatsapp_webhook_url?: string;
+    whatsapp_phone_number_id?: string;
+    whatsapp_access_token?: string;
+    whatsapp_business_id?: string;
+    whatsapp_api_version?: string;
 }
 
 interface FormFields {
@@ -553,8 +560,8 @@ const [testingGoogle, setTestingGoogle] = useState(false);
      const [testingFacebook, setTestingFacebook] = useState(false);
      const [testingTelegram, setTestingTelegram] = useState(false);
      const [testingWhatsApp, setTestingWhatsApp] = useState(false);
-     const [telegramConnected, setTelegramConnected] = useState(false);
-     const [whatsappConnected, setWhatsappConnected] = useState(false);
+     const [isTelegramTested, setIsTelegramTested] = useState(false);
+     const [isWhatsAppTested, setIsWhatsAppTested] = useState(false);
 
 const [n8nConfig, setN8nConfig] = useState({
          provider: 'n8n',
@@ -638,15 +645,15 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
                  bot_username: data.global_telegram_bot_username,
              });
 
-             if (response.data.success) {
-                 setTelegramConnected(true);
-                 toast.success(response.data.message);
-             } else {
-                 setTelegramConnected(false);
-                 toast.error(response.data.message);
-             }
-         } catch (error: any) {
-             setTelegramConnected(false);
+              if (response.data.success) {
+                  setIsTelegramTested(true);
+                  toast.success(response.data.message);
+              } else {
+                  setIsTelegramTested(false);
+                  toast.error(response.data.message);
+              }
+          } catch (error: any) {
+              setIsTelegramTested(false);
              const msg = error.response?.data?.message || 'Error al conectar con Telegram';
              toast.error(msg);
          } finally {
@@ -668,15 +675,15 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
                  webhook_url: data.whatsapp_webhook_url,
              });
 
-             if (response.data.success) {
-                 setWhatsappConnected(true);
-                 toast.success(response.data.message);
-             } else {
-                 setWhatsappConnected(false);
-                 toast.error(response.data.message);
-             }
-         } catch (error: any) {
-             setWhatsappConnected(false);
+              if (response.data.success) {
+                  setIsWhatsAppTested(true);
+                  toast.success(response.data.message);
+              } else {
+                  setIsWhatsAppTested(false);
+                  toast.error(response.data.message);
+              }
+          } catch (error: any) {
+              setIsWhatsAppTested(false);
              const msg = error.response?.data?.message || 'Error al conectar con WhatsApp';
              toast.error(msg);
          } finally {
@@ -698,6 +705,27 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
              return;
          }
          window.open(data.whatsapp_webhook_url, '_blank');
+     };
+
+     const handleTelegramChange = (
+         field: 'global_telegram_bot_token' | 'global_telegram_bot_username',
+         value: string,
+     ) => {
+         setData(field, value);
+         setIsTelegramTested(false);
+     };
+
+     const handleWhatsAppChange = (
+         field:
+             | 'whatsapp_webhook_url'
+             | 'whatsapp_phone_number_id'
+             | 'whatsapp_access_token'
+             | 'whatsapp_business_id'
+             | 'whatsapp_api_version',
+         value: string,
+     ) => {
+         setData(field, value);
+         setIsWhatsAppTested(false);
      };
 
     const addCaracteristica = () => {
@@ -1870,7 +1898,7 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
                                                          id="global_telegram_bot_token"
                                                          type="password"
                                                          value={data.global_telegram_bot_token}
-                                                         onChange={(e) => setData('global_telegram_bot_token', e.target.value)}
+                                                          onChange={(e) => handleTelegramChange('global_telegram_bot_token', e.target.value)}
                                                          placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
                                                      />
                                                      <p className="text-[11px] text-muted-foreground">
@@ -1882,7 +1910,7 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
                                                      <Input
                                                          id="global_telegram_bot_username"
                                                          value={data.global_telegram_bot_username}
-                                                         onChange={(e) => setData('global_telegram_bot_username', e.target.value)}
+                                                          onChange={(e) => handleTelegramChange('global_telegram_bot_username', e.target.value)}
                                                          placeholder="@aldia_bot"
                                                      />
                                                      <p className="text-[11px] text-muted-foreground">
@@ -1904,7 +1932,7 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
                                                          )}
                                                          {testingTelegram ? 'Probando...' : 'Probar Conexión'}
                                                      </Button>
-                                                     {telegramConnected && (
+                                                      {isTelegramTested && (
                                                          <Button
                                                              type="button"
                                                              variant="default"
@@ -1914,15 +1942,16 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
                                                              Conectado
                                                          </Button>
                                                      )}
-                                                     <Button
-                                                         type="button"
-                                                         variant="outline"
-                                                         onClick={openTelegramChat}
-                                                         className="gap-2"
-                                                     >
-                                                         <MessageSquare className="h-4 w-4" />
-                                                         Abrir Chat
-                                                     </Button>
+                                                      <Button
+                                                          type="button"
+                                                          variant="outline"
+                                                          onClick={openTelegramChat}
+                                                          disabled={!isTelegramTested}
+                                                          className="gap-2"
+                                                      >
+                                                          <MessageSquare className="h-4 w-4" />
+                                                          Abrir Chat
+                                                      </Button>
                                                  </div>
                                              </CardContent>
                                          </Card>
@@ -1942,7 +1971,7 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
                                                      <Input
                                                          id="whatsapp_webhook_url"
                                                          value={data.whatsapp_webhook_url}
-                                                         onChange={(e) => setData('whatsapp_webhook_url', e.target.value)}
+                                                          onChange={(e) => handleWhatsAppChange('whatsapp_webhook_url', e.target.value)}
                                                          placeholder="https://tu-dominio.com/webhooks/whatsapp"
                                                      />
                                                      <p className="text-[11px] text-muted-foreground">
@@ -1954,7 +1983,7 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
                                                      <Input
                                                          id="whatsapp_phone_number_id"
                                                          value={data.whatsapp_phone_number_id}
-                                                         onChange={(e) => setData('whatsapp_phone_number_id', e.target.value)}
+                                                          onChange={(e) => handleWhatsAppChange('whatsapp_phone_number_id', e.target.value)}
                                                          placeholder="1234567890"
                                                      />
                                                  </div>
@@ -1964,7 +1993,7 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
                                                          id="whatsapp_access_token"
                                                          type="password"
                                                          value={data.whatsapp_access_token}
-                                                         onChange={(e) => setData('whatsapp_access_token', e.target.value)}
+                                                          onChange={(e) => handleWhatsAppChange('whatsapp_access_token', e.target.value)}
                                                          placeholder="Ingresa el Access Token"
                                                      />
                                                  </div>
@@ -1973,7 +2002,7 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
                                                      <Input
                                                          id="whatsapp_business_id"
                                                          value={data.whatsapp_business_id}
-                                                         onChange={(e) => setData('whatsapp_business_id', e.target.value)}
+                                                          onChange={(e) => handleWhatsAppChange('whatsapp_business_id', e.target.value)}
                                                          placeholder="123456789012345"
                                                      />
                                                  </div>
@@ -1982,7 +2011,7 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
                                                      <Input
                                                          id="whatsapp_api_version"
                                                          value={data.whatsapp_api_version}
-                                                         onChange={(e) => setData('whatsapp_api_version', e.target.value)}
+                                                          onChange={(e) => handleWhatsAppChange('whatsapp_api_version', e.target.value)}
                                                          placeholder="v22.0"
                                                      />
                                                  </div>
@@ -2001,7 +2030,7 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
                                                          )}
                                                          {testingWhatsApp ? 'Probando...' : 'Probar Conexión'}
                                                      </Button>
-                                                     {whatsappConnected && (
+                                                      {isWhatsAppTested && (
                                                          <Button
                                                              type="button"
                                                              variant="default"
@@ -2011,15 +2040,16 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
                                                              Conectado
                                                          </Button>
                                                      )}
-                                                     <Button
-                                                         type="button"
-                                                         variant="outline"
-                                                         onClick={openWhatsAppChat}
-                                                         className="gap-2"
-                                                     >
-                                                         <Phone className="h-4 w-4" />
-                                                         Abrir Chat
-                                                     </Button>
+                                                      <Button
+                                                          type="button"
+                                                          variant="outline"
+                                                          onClick={openWhatsAppChat}
+                                                          disabled={!isWhatsAppTested}
+                                                          className="gap-2"
+                                                      >
+                                                          <Phone className="h-4 w-4" />
+                                                          Abrir Chat
+                                                      </Button>
                                                  </div>
                                              </CardContent>
                                          </Card>

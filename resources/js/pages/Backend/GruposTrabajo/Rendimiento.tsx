@@ -182,6 +182,7 @@ export default function Rendimiento({
         delete: destroy,
         reset,
         errors,
+        transform,
     } = useForm({
         grupo_trabajo_id: '',
         fecha_inicio: '',
@@ -283,17 +284,16 @@ export default function Rendimiento({
     const handleSubmitAsignacion = (e: React.FormEvent) => {
         e.preventDefault();
 
-        const payload = {
-            ...data,
-            meta_monto: data.meta_monto ? parseFloat(data.meta_monto) : 0,
-            meta_cantidad: data.meta_cantidad ? parseInt(data.meta_cantidad) : 0,
-            meta_kg: data.meta_kg ? parseFloat(data.meta_kg) : 0,
-            meta_l: data.meta_l ? parseFloat(data.meta_l) : 0,
-        };
+        transform((formData) => ({
+            ...formData,
+            meta_monto: formData.meta_monto ? parseFloat(formData.meta_monto) : 0,
+            meta_cantidad: formData.meta_cantidad ? parseInt(formData.meta_cantidad) : 0,
+            meta_kg: formData.meta_kg ? parseFloat(formData.meta_kg) : 0,
+            meta_l: formData.meta_l ? parseFloat(formData.meta_l) : 0,
+        }));
 
         if (editandoAsignacion) {
             put(`/grupos-trabajo/rendimiento/${editandoAsignacion.id}`, {
-                data: payload,
                 onSuccess: () => {
                     setIsAsignacionOpen(false);
                     reset();
@@ -302,7 +302,6 @@ export default function Rendimiento({
             });
         } else {
             post('/grupos-trabajo/rendimiento', {
-                data: payload,
                 onSuccess: () => {
                     setIsAsignacionOpen(false);
                     reset();
@@ -604,7 +603,7 @@ export default function Rendimiento({
                                             <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                                             <YAxis tick={{ fontSize: 11 }} />
                                             <Tooltip
-                                                formatter={(value: number) => formatCurrency(value)}
+                                                formatter={(value) => formatCurrency(Number(value) || 0)}
                                             />
                                             <Bar dataKey="Monto" radius={[4, 4, 0, 0]}>
                                                 {comparativaMonto.map((entry, index) => (
@@ -641,7 +640,7 @@ export default function Rendimiento({
                                             <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
                                             <YAxis tick={{ fontSize: 11 }} />
                                             <Tooltip
-                                                formatter={(value: number) => formatCurrency(value)}
+                                                formatter={(value) => formatCurrency(Number(value) || 0)}
                                             />
                                             <Line
                                                 type="monotone"
@@ -686,7 +685,7 @@ export default function Rendimiento({
                                                 paddingAngle={2}
                                                 dataKey="value"
                                                 label={({ name, percent }) =>
-                                                    `${name} ${(percent * 100).toFixed(0)}%`
+                                                    `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
                                                 }
                                                 labelLine={false}
                                             >
@@ -694,7 +693,7 @@ export default function Rendimiento({
                                                     <Cell key={`cell-${index}`} fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]} />
                                                 ))}
                                             </Pie>
-                                            <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                                            <Tooltip formatter={(value) => formatCurrency(Number(value) || 0)} />
                                         </PieChart>
                                     </ResponsiveContainer>
                                 </div>

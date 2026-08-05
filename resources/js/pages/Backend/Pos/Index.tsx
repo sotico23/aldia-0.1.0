@@ -195,7 +195,7 @@ export default function PosIndex({
         estado?: string;
     } | null>(null);
 
-    const [clienteId, setClienteId] = useState<string | null>(null);
+    const [clienteId, setClienteId] = useState<string | undefined>(undefined);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [metodoPago, setMetodoPago] = useState<
         | 'efectivo'

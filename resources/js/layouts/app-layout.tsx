@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { TrialExpiryModal } from '@/components/trial-expiry-modal';
 import { TrialWarningModal } from '@/components/trial-warning-modal';
 import AppLayoutTemplate from '@/layouts/app/app-sidebar-layout';
-import { index as planesIndex } from '@/routes{planesIndex().url}';
+import { index as planesIndex } from '@/routes/planes';
 import type { AppLayoutProps } from '@/types';
 
 const TrialBanner = () => {
@@ -21,7 +21,7 @@ const TrialBanner = () => {
                 <div className="bg-red-600 text-white text-center text-xs py-1.5 px-4 font-medium">
                     Tu período de prueba termina <strong>hoy</strong> — elige un plan para no perder acceso
                     {' — '}
-                    <Link href="{planesIndex().url}" className="underline font-semibold hover:text-red-100">
+                    <Link href={planesIndex().url} className="underline font-semibold hover:text-red-100">
                         Ver planes
                     </Link>
                 </div>
@@ -33,7 +33,7 @@ const TrialBanner = () => {
                 <div className="bg-orange-500 text-white text-center text-xs py-1.5 px-4 font-medium">
                     Tu período de prueba termina en <strong>{daysLeft} días</strong> — elige un plan para continuar
                     {' — '}
-                    <Link href="{planesIndex().url}" className="underline font-semibold hover:text-orange-100">
+                    <Link href={planesIndex().url} className="underline font-semibold hover:text-orange-100">
                         Ver planes
                     </Link>
                 </div>
@@ -45,7 +45,7 @@ const TrialBanner = () => {
                 <div className="bg-amber-500 text-white text-center text-xs py-1.5 px-4 font-medium">
                     Periodo de prueba activo — te quedan <strong>{daysLeft} días</strong> con acceso completo
                     {' — '}
-                    <Link href="{planesIndex().url}" className="underline font-semibold hover:text-amber-100">
+                    <Link href={planesIndex().url} className="underline font-semibold hover:text-amber-100">
                         Ver planes
                     </Link>
                 </div>
@@ -56,7 +56,7 @@ const TrialBanner = () => {
             <div className="bg-blue-600 text-white text-center text-xs py-1.5 px-4 font-medium">
                 Periodo de prueba activo — te quedan <strong>{daysLeft} días</strong> con acceso completo
                 {' — '}
-                <Link href="{planesIndex().url}" className="underline font-semibold hover:text-blue-100">
+                <Link href={planesIndex().url} className="underline font-semibold hover:text-blue-100">
                     Ver planes
                 </Link>
             </div>
@@ -68,7 +68,7 @@ const TrialBanner = () => {
             <div className="bg-red-600 text-white text-center text-xs py-1.5 px-4 font-medium">
                 Tu período de prueba finalizó — puedes seguir viendo tus datos pero no crear ni editar registros
                 {' — '}
-                <Link href="{planesIndex().url}" className="underline font-semibold hover:text-red-100">
+                <Link href={planesIndex().url} className="underline font-semibold hover:text-red-100">
                     Actualizar plan
                 </Link>
             </div>

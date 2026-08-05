@@ -7,12 +7,35 @@ use App\Models\ChannelCredential;
 use App\Models\TelegramLinkingToken;
 use App\Models\WebSetting;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class TelegramLinkingController extends Controller
 {
+    /**
+     * Atiende el enlace de vinculación abierto en el navegador.
+     *
+     * Siempre retorna un redirect (nunca una página en blanco). Si el token es
+     * válido se redirige a canales pidiendo confirmar en Telegram; si no, se
+     * informa que el enlace expiró o es inválido.
+     */
+    public function confirmLink(string $token): RedirectResponse
+    {
+        $linkingToken = TelegramLinkingToken::valid()
+            ->where('token', $token)
+            ->first();
+
+        if (! $linkingToken) {
+            return redirect()->route('channel-credentials.index')
+                ->with('error', 'El enlace de vinculación es inválido o ha expirado.');
+        }
+
+        return redirect()->route('channel-credentials.index')
+            ->with('success', 'Enlace generado. Por favor confirma en Telegram.');
+    }
+
     public function generateLink(Request $request): JsonResponse
     {
         try {

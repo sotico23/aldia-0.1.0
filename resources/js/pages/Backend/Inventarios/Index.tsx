@@ -1204,7 +1204,7 @@ export default function Index({
                                                     tickLine={false}
                                                     axisLine={false}
                                                 />
-                                                <Tooltip
+                                                <RechartsTooltip
                                                     contentStyle={{
                                                         backgroundColor:
                                                             'rgba(255, 255, 255, 0.8)',

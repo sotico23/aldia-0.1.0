@@ -117,6 +117,7 @@ interface Venta {
     tipo_descuento: 'monto' | 'porcentaje';
     valor_descuento: number;
     monto_descuento: number;
+    user_id?: number;
     almacen_id?: number;
     almacen_nombre?: string;
     cliente?: Cliente;
@@ -297,7 +298,7 @@ export default function Index({
         }, {
             forceFormData: true,
             onSuccess: (page) => {
-                const flash = page.props.flash?.success;
+                const flash = (page.props.flash as { success?: string } | undefined)?.success;
                 if (flash) {
                     toast.success(flash);
                 } else {
@@ -350,6 +351,7 @@ export default function Index({
             producto_id: string;
             cantidad: number;
             precio_unitario: number;
+            cantidad_retornada?: number;
             modoGramos?: boolean;
         }[],
         almacen_ids: [] as number[],
@@ -431,7 +433,7 @@ export default function Index({
         }
 
         if (field === 'cantidad') {
-            updated[index].cantidad_retornada = value;
+            updated[index].cantidad_retornada = Number(value);
         }
 
         setData('productos', updated);
@@ -590,7 +592,7 @@ export default function Index({
                     precio_unitario: d.precio_unitario,
                     cantidad_retornada: (d as any).cantidad_retornada ?? d.cantidad,
                 })) || [],
-            almacen_ids: (venta as any).almacen_ids || venta.almacen_id ? [venta.almacen_id] : [],
+            almacen_ids: (venta as any).almacen_ids || (venta.almacen_id ? [venta.almacen_id] : []),
             currency: (venta as any).currency || currency.code,
         });
         setIsOpen(true);

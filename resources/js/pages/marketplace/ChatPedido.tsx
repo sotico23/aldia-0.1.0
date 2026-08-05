@@ -153,7 +153,6 @@ export default function ChatPedido({
             router.reload({
                 only: ['mensajes'],
                 preserveUrl: true,
-                preserveScroll: true,
             });
         }, 30000);
 

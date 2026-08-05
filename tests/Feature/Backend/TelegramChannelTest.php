@@ -1055,3 +1055,39 @@ test('generate-link returns the linking token alongside the url', function () {
     expect(isset($data['token']))->toBeTrue();
     expect($data['token'])->not->toBeEmpty();
 });
+
+test('web linking page redirects to canales with success flash when token is valid', function () {
+    $token = TelegramLinkingToken::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'user_id' => $this->user->id,
+        'token' => 'web_valid_token',
+        'expires_at' => now()->addMinutes(15),
+    ]);
+
+    $response = $this->get(route('telegram.vincular', $token->token));
+
+    $response->assertRedirect(route('channel-credentials.index'));
+    $response->assertSessionHas('success', 'Enlace generado. Por favor confirma en Telegram.');
+});
+
+test('web linking page redirects with error flash when token is invalid or expired', function () {
+    TelegramLinkingToken::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'user_id' => $this->user->id,
+        'token' => 'web_expired_token',
+        'expires_at' => now()->subMinutes(1),
+    ]);
+
+    $response = $this->get(route('telegram.vincular', 'web_expired_token'));
+
+    $response->assertRedirect(route('channel-credentials.index'));
+    $response->assertSessionHas('error', 'El enlace de vinculación es inválido o ha expirado.');
+});
+
+test('web linking page redirects with error flash when token does not exist', function () {
+    $response = $this->get(route('telegram.vincular', 'nonexistent_token'));
+
+    $response->assertRedirect(route('channel-credentials.index'));
+    $response->assertSessionHas('error', 'El enlace de vinculación es inválido o ha expirado.');
+    $this->assertDatabaseMissing('telegram_linking_tokens', ['token' => 'nonexistent_token']);
+});

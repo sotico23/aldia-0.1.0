@@ -17,6 +17,6 @@ class TelegramWebhookController extends Controller
     {
         $result = $this->telegramWebhookService->processWebhook($request->input());
 
-        return response()->json($result);
+        return response()->json($result, 200);
     }
 }

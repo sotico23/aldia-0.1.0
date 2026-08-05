@@ -260,6 +260,7 @@ export default function MensajesIndex() {
         const tempId = `temp-${Date.now()}`;
         const tempMsg: Mensaje = {
             id: -Date.now(),
+            sender_id: auth.user.id,
             contenido: nuevoMensaje.trim() || '',
             archivo_path: null,
             archivo_nombre: archivo?.name || null,

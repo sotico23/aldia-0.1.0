@@ -22,7 +22,6 @@ import {
     Clock,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
-import { useCountry } from '@/hooks/use-country';
 import { toast } from 'sonner';
 import { FormInput } from '@/components/form-input';
 import { Button } from '@/components/ui/button';
@@ -55,7 +54,9 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import '@/components/whatsapp-button';
+import { useCountry } from '@/hooks/use-country';
 import AppLayout from '@/layouts/app-layout';
 import { cn, formatRut } from '@/lib/utils';
 import chat from '@/routes/chat';
@@ -143,7 +144,7 @@ export default function MarketplaceShow({
     hasPurchased?: boolean;
     userReview?: StoreReview | null;
 }) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const { auth } = usePage<{ auth: { user?: User } }>().props;
 
     // States - Carrito persistente en localStorage

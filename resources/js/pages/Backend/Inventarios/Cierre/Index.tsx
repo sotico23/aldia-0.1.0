@@ -67,6 +67,7 @@ interface Cierre {
     total_products: number;
     opening_stock: number;
     closing_stock: number;
+    total_stock?: number;
     expected_stock: number;
     difference: number;
     observations: string | null;

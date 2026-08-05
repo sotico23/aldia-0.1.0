@@ -41,6 +41,23 @@ interface Country {
     is_active: boolean;
 }
 
+interface CountryFormData {
+    code: string;
+    name: string;
+    currency_code: string;
+    currency_symbol: string;
+    currency_decimals: number;
+    locale: string;
+    timezone: string;
+    phone_code: string;
+    tax_name: string;
+    tax_rate: number;
+    fiscal_id_label: string;
+    fiscal_id_pattern: string;
+    date_format: string;
+    is_active: boolean;
+}
+
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
     { title: 'Países', href: '/paises' },
@@ -53,7 +70,7 @@ function getFlagEmoji(countryCode: string): string {
     return String.fromCodePoint(...codePoints);
 }
 
-const emptyCountry: Record<string, unknown> = {
+const emptyCountry: CountryFormData = {
     code: '',
     name: '',
     currency_code: '',
@@ -78,7 +95,7 @@ export default function Index({ countries }: { countries: Country[] }) {
 
     const [isOpen, setIsOpen] = useState(false);
     const [editando, setEditando] = useState<Country | null>(null);
-    const { data, setData, post, put, delete: destroy, reset, processing } = useForm(emptyCountry);
+    const { data, setData, post, put, delete: destroy, reset, processing } = useForm<CountryFormData>(emptyCountry);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();

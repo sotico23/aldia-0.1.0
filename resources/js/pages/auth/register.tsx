@@ -24,6 +24,7 @@ interface Country {
 
 interface RegisterPageProps {
     countries: Country[];
+    [key: string]: unknown;
 }
 
 function getFlagEmoji(countryCode: string): string {
@@ -34,7 +35,7 @@ function getFlagEmoji(countryCode: string): string {
 }
 
 export default function Register() {
-    const { countries } = usePage().props as RegisterPageProps;
+    const { countries } = usePage<RegisterPageProps>().props;
     const params = new URLSearchParams(window.location.search);
     const referralCode = params.get('ref') || '';
 

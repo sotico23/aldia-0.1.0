@@ -1849,10 +1849,9 @@ export default function Index({
                                                                             >
                                                                                 Ninguno
                                                                             </button>
-                                                                            <Checkbox
-                                                                                checked={subAllSelected}
-                                                                                indeterminate={subSomeSelected && !subAllSelected}
-                                                                                onCheckedChange={(checked) => {
+                                            <Checkbox
+                                                checked={subSomeSelected && !subAllSelected ? 'indeterminate' : subAllSelected}
+                                                onCheckedChange={(checked) => {
                                                                                     const ids = subPerms.map(p => p.id);
                                                                                     if (checked) {
                                                                                         rolForm.setData('permissions', [...new Set([...rolForm.data.permissions, ...ids])]);

@@ -365,3 +365,8 @@ Route::prefix('webhooks')->name('webhooks.')->group(function () {
 // Alias del webhook de Telegram sin prefijo /api (compatibilidad con flujos n8n existentes)
 Route::post('canales/telegram/webhook', [TelegramWebhookController::class, 'handle'])
     ->name('canales.telegram.webhook');
+
+// Página web del enlace de vinculación: nunca deja una pestaña en blanco.
+// El token es la credencial, por lo que la ruta es pública y solo redirige con flash.
+Route::get('canales/telegram/vincular/{token}', [TelegramLinkingController::class, 'confirmLink'])
+    ->name('telegram.vincular');
