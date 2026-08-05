@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\SystemIntegration;
+use App\Models\TelegramLinkingToken;
 use App\Models\User;
+use App\Models\WebSetting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Spatie\Permission\Models\Role;
@@ -110,21 +112,28 @@ test('update validates required fields', function () {
         ->putJson('/api/system-integrations/n8n', []);
 
     $response->assertStatus(422);
-    $response->assertJsonValidationErrors(['base_url']);
-});
-
-test('test connection returns error when no config saved', function () {
-    $response = $this->actingAs($this->admin)
-        ->postJson('/api/system-integrations/n8n/test');
-
-    $response->assertStatus(422);
     $response->assertJson([
         'success' => false,
-        'message' => 'No hay configuración de n8n. Configura la URL Base primero.',
+        'message' => 'La URL Base es requerida al crear la configuración.',
     ]);
 });
 
-test('test connection calls n8n health endpoint', function () {
+test('test connection returns error when no url configured', function () {
+    config(['services.n8n.webhook_url' => null]);
+    config(['services.n8n.telegram_proxy_url' => null]);
+    config(['services.n8n.base_url' => null]);
+
+    $response = $this->actingAs($this->admin)
+        ->postJson('/api/system-integrations/n8n/test');
+
+    $response->assertOk();
+    $response->assertJson([
+        'success' => false,
+        'message' => 'No hay URL de n8n configurada. Ingresa Telegram Proxy URL, Webhook URL o Base URL.',
+    ]);
+});
+
+test('test connection posts test_connection payload to webhook url', function () {
     SystemIntegration::create([
         'provider' => 'n8n',
         'base_url' => 'https://n8n.example.com',
@@ -147,8 +156,51 @@ test('test connection calls n8n health endpoint', function () {
     $response->assertJson(['success' => true]);
 
     Http::assertSent(function ($request) {
-        return $request->url() === 'https://n8n.example.com/healthz';
+        $body = $request->data();
+
+        return $request->method() === 'POST'
+            && $request->url() === 'https://n8n.example.com/webhook/test'
+            && $body['event'] === 'test_connection'
+            && $body['is_test'] === true
+            && $body['linking_url'] === null
+            && array_key_exists('bot_token', $body)
+            && array_key_exists('bot_username', $body);
     });
+});
+
+test('test connection does NOT create phantom linking tokens', function () {
+    WebSetting::create([
+        'app_name' => 'Aldia',
+        'global_telegram_bot_username' => 'aldia_global_bot',
+    ]);
+
+    SystemIntegration::create([
+        'provider' => 'n8n',
+        'base_url' => 'https://n8n.example.com',
+        'webhook_url' => 'https://n8n.example.com/webhook/test',
+        'api_key' => 'secret',
+        'is_active' => true,
+    ]);
+
+    Http::fake([
+        'n8n.example.com/*' => Http::response(['status' => 'ok'], 200),
+    ]);
+
+    $response = $this->actingAs($this->admin)
+        ->postJson('/api/system-integrations/n8n/test');
+
+    $response->assertOk();
+
+    Http::assertSent(function ($request) {
+        $body = $request->data();
+
+        return $request->url() === 'https://n8n.example.com/webhook/test'
+            && $body['event'] === 'test_connection'
+            && $body['linking_url'] === null;
+    });
+
+    // A connection test must NOT mint linking tokens (used_at/chat_id stay NULL).
+    expect(TelegramLinkingToken::where('owner_id', $this->admin->getOwnerId())->count())->toBe(0);
 });
 
 test('test connection marks status on failure', function () {
@@ -167,7 +219,7 @@ test('test connection marks status on failure', function () {
     $response = $this->actingAs($this->admin)
         ->postJson('/api/system-integrations/n8n/test');
 
-    $response->assertStatus(422);
+    $response->assertOk();
     $response->assertJson(['success' => false]);
 
     $config = SystemIntegration::forProvider('n8n')->first();
@@ -183,4 +235,90 @@ test('forbidden for user without Master or Super Admin role', function () {
         ->getJson('/api/system-integrations/n8n');
 
     $response->assertForbidden();
+});
+
+test('update with WhatsApp fields', function () {
+    $response = $this->actingAs($this->admin)
+        ->putJson('/api/system-integrations/n8n', [
+            'base_url' => 'https://n8n.example.com',
+            'webhook_url' => 'https://n8n.example.com/webhook/test',
+            'api_key' => 'new-secret-key',
+            'whatsapp_phone_number_id' => '1234567890',
+            'whatsapp_access_token' => 'whatsapp-token-123',
+            'whatsapp_business_id' => '9876543210',
+            'whatsapp_api_version' => 'v22.0',
+            'is_active' => true,
+        ]);
+
+    $response->assertOk();
+    $response->assertJson(['success' => true]);
+
+    $this->assertDatabaseHas('system_integrations', [
+        'provider' => 'n8n',
+        'base_url' => 'https://n8n.example.com',
+        'whatsapp_phone_number_id' => '1234567890',
+        'whatsapp_business_id' => '9876543210',
+        'whatsapp_api_version' => 'v22.0',
+    ]);
+});
+
+test('test WhatsApp connection returns error when no credentials configured', function () {
+    $response = $this->actingAs($this->admin)
+        ->postJson('/api/system-integrations/n8n/test-whatsapp');
+
+    $response->assertStatus(422);
+    $response->assertJson([
+        'success' => false,
+        'message' => 'No hay Phone Number ID de WhatsApp configurado.',
+    ]);
+});
+
+test('test WhatsApp connection returns error when no access token', function () {
+    SystemIntegration::create([
+        'provider' => 'n8n',
+        'base_url' => 'https://n8n.example.com',
+        'whatsapp_phone_number_id' => '1234567890',
+        'is_active' => true,
+    ]);
+
+    $response = $this->actingAs($this->admin)
+        ->postJson('/api/system-integrations/n8n/test-whatsapp', [
+            'whatsapp_phone_number_id' => '1234567890',
+        ]);
+
+    $response->assertStatus(422);
+    $response->assertJson([
+        'success' => false,
+        'message' => 'No hay Access Token de WhatsApp configurado.',
+    ]);
+});
+
+test('test WhatsApp connection calls Facebook Graph API', function () {
+    SystemIntegration::create([
+        'provider' => 'n8n',
+        'base_url' => 'https://n8n.example.com',
+        'whatsapp_phone_number_id' => '1234567890',
+        'whatsapp_access_token' => 'whatsapp-token-123',
+        'whatsapp_business_id' => '9876543210',
+        'whatsapp_api_version' => 'v22.0',
+        'is_active' => true,
+    ]);
+
+    Http::fake([
+        'graph.facebook.com/v22.0/1234567890' => Http::response([
+            'id' => '1234567890',
+            'business' => ['id' => '9876543210'],
+            'display_phone' => '+1234567890',
+            'name' => 'Test Business',
+        ], 200),
+    ]);
+
+    $response = $this->actingAs($this->admin)
+        ->postJson('/api/system-integrations/n8n/test-whatsapp');
+
+    $response->assertOk();
+    $response->assertJson([
+        'success' => true,
+        'message' => 'Conexión exitosa con WhatsApp Cloud API.',
+    ]);
 });

@@ -5,6 +5,7 @@ use App\Models\AutomationConfig;
 use App\Models\AutomationExecution;
 use App\Models\ChannelCredential;
 use App\Models\User;
+use App\Models\WebSetting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -73,6 +74,68 @@ test('job sends to n8n when configured', function () {
     expect($config->last_run_status)->toBe('sent_to_n8n');
 });
 
+test('job payload to n8n includes tenant bot_token and bot_username', function () {
+    config(['services.n8n.webhook_url' => 'https://n8n.example.com/webhook/automation']);
+
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_token' => 'tenant:token',
+        'telegram_bot_username' => 'tenant_bot',
+    ]);
+
+    Http::fake([
+        'n8n.example.com/*' => Http::response(['success' => true]),
+    ]);
+
+    $config = AutomationConfig::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'channel' => 'telegram',
+        'frequency' => 'daily',
+        'execution_time' => '08:00',
+        'enabled' => true,
+        'selected_reports' => ['ventas'],
+    ]);
+
+    RunAutomationJob::dispatchSync($this->user->getOwnerId(), $config->id);
+
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://n8n.example.com/webhook/automation'
+            && $request['bot_token'] === 'tenant:token'
+            && $request['bot_username'] === 'tenant_bot';
+    });
+});
+
+test('job payload to n8n falls back to global bot token from WebSetting', function () {
+    config(['services.n8n.webhook_url' => 'https://n8n.example.com/webhook/automation']);
+
+    WebSetting::create([
+        'app_name' => 'Aldia',
+        'global_telegram_bot_token' => 'global:token',
+        'global_telegram_bot_username' => 'aldia_global_bot',
+    ]);
+
+    Http::fake([
+        'n8n.example.com/*' => Http::response(['success' => true]),
+    ]);
+
+    $config = AutomationConfig::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'channel' => 'telegram',
+        'frequency' => 'daily',
+        'execution_time' => '08:00',
+        'enabled' => true,
+        'selected_reports' => ['ventas'],
+    ]);
+
+    RunAutomationJob::dispatchSync($this->user->getOwnerId(), $config->id);
+
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://n8n.example.com/webhook/automation'
+            && $request['bot_token'] === 'global:token'
+            && $request['bot_username'] === 'aldia_global_bot';
+    });
+});
+
 test('job creates execution with error when n8n fails', function () {
     Http::fake([
         'n8n.example.com/*' => Http::response(['error' => 'fail'], 500),
@@ -97,6 +160,7 @@ test('job creates execution with error when n8n fails', function () {
 
 test('job sends directly when n8n is not configured', function () {
     config(['services.n8n.webhook_url' => null]);
+    config(['services.n8n.telegram_proxy_url' => null]);
 
     $config = AutomationConfig::create([
         'owner_id' => $this->user->getOwnerId(),
@@ -146,6 +210,7 @@ test('format reports includes all selected sections', function () {
 
     config(['services.telegram.default_chat_id' => '123456']);
     config(['services.n8n.webhook_url' => null]);
+    config(['services.n8n.telegram_proxy_url' => null]);
 
     RunAutomationJob::dispatchSync($this->user->getOwnerId(), $config->id);
 

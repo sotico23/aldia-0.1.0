@@ -25,6 +25,7 @@ use App\Http\Controllers\Backend\SiiController;
 use App\Http\Controllers\Backend\SystemIntegrationController;
 use App\Http\Controllers\Backend\TareaController;
 use App\Http\Controllers\Backend\TelegramCallbackController;
+use App\Http\Controllers\Backend\TelegramLinkingController;
 use App\Http\Controllers\Backend\VentaController;
 use App\Http\Controllers\Backend\WebpayConfigController;
 use App\Http\Controllers\Backend\WebpayController;
@@ -43,6 +44,7 @@ use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\StatusPageController;
 use App\Http\Controllers\Webhooks\MercadoPagoWebhookController;
 use App\Http\Controllers\Webhooks\PaypalWebhookController;
+use App\Http\Controllers\Webhooks\TelegramWebhookController;
 use App\Http\Controllers\Webhooks\WhatsAppWebhookController;
 use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
@@ -104,6 +106,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('n8n', [SystemIntegrationController::class, 'show'])->name('show');
         Route::match(['put', 'post'], 'n8n', [SystemIntegrationController::class, 'update'])->name('update');
         Route::post('n8n/test', [SystemIntegrationController::class, 'testConnection'])->name('test');
+        Route::post('n8n/test-whatsapp', [SystemIntegrationController::class, 'testWhatsAppConnection'])->name('test-whatsapp');
     });
 
     Route::middleware(['permission:sistema.automatizaciones.viewAny'])->group(function () {
@@ -133,6 +136,8 @@ Route::middleware(['auth'])->group(function () {
 
         Route::post('telegram/login-callback', [TelegramCallbackController::class, 'handle'])
             ->name('telegram.login-callback');
+        Route::post('canales/telegram/generate-link', [TelegramLinkingController::class, 'generateLink'])
+            ->name('telegram.generate-link');
     });
 
     Route::middleware(['permission:comercial.cotizaciones.viewAny'])->group(function () {
@@ -354,4 +359,9 @@ Route::prefix('webhooks')->name('webhooks.')->group(function () {
     Route::post('paypal', [PaypalWebhookController::class, 'handle'])->name('paypal');
     Route::post('mercadopago', [MercadoPagoWebhookController::class, 'handle'])->name('mercadopago');
     Route::post('whatsapp', [WhatsAppWebhookController::class, 'handle'])->name('whatsapp');
+    Route::post('telegram', [TelegramWebhookController::class, 'handle'])->name('telegram');
 });
+
+// Alias del webhook de Telegram sin prefijo /api (compatibilidad con flujos n8n existentes)
+Route::post('canales/telegram/webhook', [TelegramWebhookController::class, 'handle'])
+    ->name('canales.telegram.webhook');

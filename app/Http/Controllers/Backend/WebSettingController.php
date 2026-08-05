@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Backend;
 
+use App\Events\ChannelConfigurationUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Country;
 use App\Models\MailTemplate;
 use App\Models\User;
 use App\Models\WebSetting;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -206,6 +208,13 @@ class WebSettingController extends Controller implements HasMiddleware
             'facebook_client_id' => 'nullable|string|max:255',
             'facebook_client_secret' => 'nullable|string',
             'facebook_redirect_uri' => 'nullable|string|max:255',
+            'global_telegram_bot_username' => 'nullable|string|max:255',
+            'global_telegram_bot_token' => 'nullable|string|max:255',
+            'whatsapp_webhook_url' => 'nullable|string|max:255',
+            'whatsapp_phone_number_id' => 'nullable|string|max:255',
+            'whatsapp_access_token' => 'nullable|string',
+            'whatsapp_business_id' => 'nullable|string|max:255',
+            'whatsapp_api_version' => 'nullable|string|max:20',
 
             'hero.titulo' => 'nullable|string|max:255',
             'hero.subtitulo' => 'nullable|string|max:500',
@@ -370,6 +379,67 @@ class WebSettingController extends Controller implements HasMiddleware
         $configuracion_web->update($validated);
         WebSetting::clearCache();
 
+        $channelFields = [
+            'global_telegram_bot_username',
+            'global_telegram_bot_token',
+            'whatsapp_webhook_url',
+            'whatsapp_phone_number_id',
+            'whatsapp_access_token',
+            'whatsapp_business_id',
+            'whatsapp_api_version',
+        ];
+
+        $hasChannelUpdates = false;
+        foreach ($channelFields as $field) {
+            if ($request->has($field)) {
+                $hasChannelUpdates = true;
+                break;
+            }
+        }
+
+        // Configure the webhook for the global Telegram bot so that
+        // /start payloads (deep links) are delivered to Laravel, which is
+        // what persists the user's chat_id and the linking token's used_at.
+        $globalBotToken = $configuracion_web->global_telegram_bot_token ?? null;
+        if ($globalBotToken) {
+            $webhookUrl = route('webhooks.telegram');
+
+            try {
+                $setWebhook = Http::timeout(10)
+                    ->connectTimeout(5)
+                    ->withOptions(['verify' => false])
+                    ->post("https://api.telegram.org/bot{$globalBotToken}/setWebhook", [
+                        'url' => $webhookUrl,
+                        'drop_pending_updates' => true,
+                    ]);
+
+                $setResult = $setWebhook->json();
+
+                if (! $setWebhook->successful() || ! ($setResult['ok'] ?? false)) {
+                    Log::warning('WebSettingController: failed to set global Telegram webhook', [
+                        'status' => $setWebhook->status(),
+                        'error' => $setResult['description'] ?? 'Unknown error',
+                    ]);
+                }
+            } catch (ConnectionException $e) {
+                Log::error('WebSettingController: connection error setting global Telegram webhook', [
+                    'error' => $e->getMessage(),
+                ]);
+            } catch (\Exception $e) {
+                Log::error('WebSettingController: error setting global Telegram webhook', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        if ($hasChannelUpdates) {
+            event(new ChannelConfigurationUpdated(
+                Auth::user()->getOwnerId(),
+                Auth::id(),
+                'global'
+            ));
+        }
+
         return redirect()->route('configuracion-web.index')->with('success', 'Configuración guardada.');
     }
 
@@ -462,6 +532,121 @@ class WebSettingController extends Controller implements HasMiddleware
                 'success' => false,
                 'message' => 'Error de conexión con el proveedor. Intenta nuevamente.',
             ], 500);
+        }
+    }
+
+    public function testTelegramConnection(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'bot_token' => 'required|string',
+            'bot_username' => 'required|string',
+        ]);
+
+        try {
+            $response = Http::timeout(10)
+                ->connectTimeout(5)
+                ->withOptions(['verify' => false])
+                ->get('https://api.telegram.org/bot'.$validated['bot_token'].'/getMe');
+
+            if ($response->successful() && $response->json('ok')) {
+                $botInfo = $response->json('result');
+
+                if (($botInfo['is_bot'] ?? false) !== true) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El Token de Telegram ingresado no es válido o expiró.',
+                    ], 422);
+                }
+
+                if (($botInfo['username'] ?? '') !== ltrim($validated['bot_username'], '@')) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El username del bot no coincide con el token proporcionado.',
+                    ], 422);
+                }
+
+                // Point the global bot webhook to Laravel so /start deep links
+                // are forwarded here (this is what closes the linking cycle).
+                $webhookResult = Http::timeout(10)
+                    ->connectTimeout(5)
+                    ->withOptions(['verify' => false])
+                    ->post('https://api.telegram.org/bot'.$validated['bot_token'].'/setWebhook', [
+                        'url' => route('webhooks.telegram'),
+                        'drop_pending_updates' => true,
+                    ]);
+
+                $webhookBody = $webhookResult->json();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Conexión con Telegram exitosa. El bot está activo y el webhook está configurado.',
+                    'webhook_configured' => ($webhookResult->successful() && ($webhookBody['ok'] ?? false)),
+                    'webhook_url' => route('webhooks.telegram'),
+                    'bot_username' => $botInfo['username'],
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'El Token de Telegram ingresado no es válido o expiró.',
+            ], 422);
+        } catch (ConnectionException $e) {
+            Log::error('Telegram connection test exception', [
+                'error' => $e->getMessage(),
+                'type' => 'connection',
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo conectar con la API de Telegram. Verifica tu conexión e inténtalo nuevamente.',
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Telegram connection test exception', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'El Token de Telegram ingresado no es válido o expiró.',
+            ], 422);
+        }
+    }
+
+    public function testWhatsAppConnection(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'webhook_url' => 'required|string|url',
+        ]);
+
+        try {
+            $response = Http::timeout(10)
+                ->connectTimeout(5)
+                ->withOptions(['verify' => false])
+                ->get($validated['webhook_url']);
+
+            if ($response->successful()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Conexión con WhatsApp Webhook exitosa.',
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo conectar con la URL del webhook. Verifica la URL.',
+            ], 422);
+        } catch (ConnectionException $e) {
+            Log::error('WhatsApp connection test exception', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo conectar con la URL del webhook. Verifica la URL e inténtalo nuevamente.',
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('WhatsApp connection test exception', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'El webhook de WhatsApp ingresado no es válido o no está disponible.',
+            ], 422);
         }
     }
 }

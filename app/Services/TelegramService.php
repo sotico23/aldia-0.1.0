@@ -107,6 +107,51 @@ class TelegramService
         }
     }
 
+    public function setWebhook(string $webhookUrl): array
+    {
+        $token = $this->getToken();
+
+        if (! $token) {
+            return [
+                'success' => false,
+                'message' => 'No hay token de bot configurado.',
+            ];
+        }
+
+        try {
+            $response = Http::timeout(10)
+                ->connectTimeout(5)
+                ->withOptions(['verify' => false])
+                ->post("https://api.telegram.org/bot{$token}/setWebhook", [
+                    'url' => $webhookUrl,
+                    'drop_pending_updates' => true,
+                ]);
+
+            $result = $response->json();
+
+            if ($response->successful() && ($result['ok'] ?? false)) {
+                Log::info('Telegram webhook set successfully', ['url' => $webhookUrl]);
+
+                return [
+                    'success' => true,
+                    'message' => 'Webhook configurado correctamente.',
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => $result['description'] ?? 'Error al configurar el webhook.',
+            ];
+        } catch (\Exception $e) {
+            Log::error('Telegram setWebhook error', ['error' => $e->getMessage()]);
+
+            return [
+                'success' => false,
+                'message' => 'Error de conexión al configurar el webhook.',
+            ];
+        }
+    }
+
     public function sendMessage(string $chatId, string $message, array $options = []): array
     {
         try {

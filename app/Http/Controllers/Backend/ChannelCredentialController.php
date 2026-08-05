@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\Backend;
 
+use App\Events\ChannelConfigurationUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\AutomationConfig;
 use App\Models\ChannelCredential;
+use App\Models\SystemIntegration;
+use App\Models\WebSetting;
+use App\Services\N8nService;
 use App\Services\TelegramService;
 use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
@@ -21,17 +25,30 @@ class ChannelCredentialController extends Controller
         $ownerId = Auth::user()->getOwnerId();
         $credentials = ChannelCredential::where('owner_id', $ownerId)->first();
         $automation = AutomationConfig::where('owner_id', $ownerId)->first();
+        $webSettings = WebSetting::getSettings();
+        $n8nConfig = SystemIntegration::forProvider('n8n')->first();
 
         return Inertia::render('Backend/ChannelCredentials', [
             'credentials' => $credentials ? [
                 'telegram_bot_token' => $credentials->telegram_bot_token ? '••••••••••••••••' : '',
                 'telegram_bot_username' => $credentials->telegram_bot_username ?? '',
+                'telegram_chat_id' => $credentials->telegram_chat_id ?? null,
+                'bot_type' => $credentials->bot_type ?? null,
                 'whatsapp_phone_number_id' => $credentials->whatsapp_phone_number_id ?? '',
                 'whatsapp_access_token' => $credentials->whatsapp_access_token ? '••••••••••••••••' : '',
                 'whatsapp_business_id' => $credentials->whatsapp_business_id ?? '',
                 'whatsapp_api_version' => $credentials->whatsapp_api_version ?? 'v22.0',
             ] : null,
             'has_credentials' => $credentials !== null,
+            'global_telegram_bot_username' => $webSettings->global_telegram_bot_username ?? null,
+            'global_whatsapp' => $n8nConfig ? [
+                'phone_number_id' => $n8nConfig->whatsapp_phone_number_id,
+                'access_token' => $n8nConfig->whatsapp_access_token,
+                'business_id' => $n8nConfig->whatsapp_business_id,
+                'api_version' => $n8nConfig->whatsapp_api_version ?? 'v22.0',
+                'is_active' => $n8nConfig->is_active,
+            ] : null,
+            'app_name' => $webSettings->app_name ?? 'Aldia',
             'automation' => $automation ? [
                 'channel' => $automation->channel,
                 'frequency' => $automation->frequency,
@@ -52,6 +69,7 @@ class ChannelCredentialController extends Controller
         $validated = $request->validate([
             'telegram_bot_token' => 'nullable|string|max:255',
             'telegram_bot_username' => 'nullable|string|max:255',
+            'bot_type' => 'nullable|string|in:global,custom',
             'whatsapp_phone_number_id' => 'nullable|string|max:50',
             'whatsapp_access_token' => 'nullable|string',
             'whatsapp_business_id' => 'nullable|string|max:50',
@@ -84,6 +102,14 @@ class ChannelCredentialController extends Controller
             ChannelCredential::create($data);
         }
 
+        if ($credentials?->telegram_bot_token) {
+            $telegramService = new TelegramService;
+            $telegramService->forOwner($ownerId);
+            $telegramService->setWebhook(route('webhooks.telegram'));
+        }
+
+        event(new ChannelConfigurationUpdated($ownerId, Auth::id(), 'custom'));
+
         return redirect()->route('channel-credentials.index')
             ->with('success', 'Credenciales guardadas correctamente.');
     }
@@ -110,46 +136,49 @@ class ChannelCredentialController extends Controller
         $service = new TelegramService;
         $result = $service->validateCredentials($token);
 
-        return response()->json($result);
+        if (! ($result['success'] ?? false)) {
+            return response()->json($result);
+        }
+
+        $webhookUrl = route('webhooks.telegram');
+        $service->setWebhook($webhookUrl);
+
+        $n8nResult = (new N8nService)->testTelegramProxy();
+
+        return response()->json([
+            'success' => $n8nResult['success'],
+            'message' => ($result['message'] ?? 'Credenciales de Telegram válidas.')
+                .' '
+                .$n8nResult['message'],
+            'bot_username' => $result['bot_username'] ?? null,
+            'bot_id' => $result['bot_id'] ?? null,
+            'bot_name' => $result['bot_name'] ?? null,
+        ]);
     }
 
     public function sendTestMessage(Request $request): JsonResponse
     {
         $ownerId = Auth::user()->getOwnerId();
 
-        $token = $request->input('telegram_bot_token');
+        $credentials = ChannelCredential::where('owner_id', $ownerId)->first();
 
-        if (! $token) {
-            $credentials = ChannelCredential::where('owner_id', $ownerId)->first();
-
-            if (! $credentials || ! $credentials->telegram_bot_token) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No hay un Token de Bot de Telegram configurado.',
-                ]);
-            }
-
-            $token = $credentials->telegram_bot_token;
+        if (! $credentials || ! $credentials->telegram_bot_token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay un Token de Bot de Telegram configurado.',
+            ]);
         }
 
-        $chatId = $request->input('telegram_chat_id');
-
-        if (! $chatId) {
-            $credentials = ChannelCredential::where('owner_id', $ownerId)->first();
-
-            if (! $credentials || ! $credentials->telegram_chat_id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No se ha vinculado una cuenta de Telegram. Primero abre el chat del bot y presiona "Iniciar" (/start) o usa el widget de inicio de sesión de Telegram.',
-                ]);
-            }
-
-            $chatId = $credentials->telegram_chat_id;
+        if (! $credentials->telegram_chat_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se ha vinculado una cuenta de Telegram. Primero abre el chat del bot y presiona "Iniciar" (/start) o usa el widget de inicio de sesión de Telegram.',
+            ]);
         }
 
         $service = new TelegramService;
         $service->forOwner($ownerId);
-        $result = $service->sendMessage($chatId, '🤖 Mensaje de prueba desde Aldia');
+        $result = $service->sendMessage($credentials->telegram_chat_id, '🤖 Mensaje de prueba desde Aldia');
 
         return response()->json($result);
     }

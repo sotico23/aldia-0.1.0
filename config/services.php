@@ -66,6 +66,16 @@ return [
         'token' => env('N8N_API_TOKEN'),
         'webhook_url' => env('N8N_WEBHOOK_URL'),
         'base_url' => env('N8N_BASE_URL'),
+        'telegram_proxy_url' => env('N8N_TELEGRAM_PROXY_URL', 'https://n8n.redcliente.cl/webhook/telegram-proxy'),
+    ],
+
+    'llm' => [
+        'enabled' => env('LLM_ENABLED', false),
+        'endpoint' => env('LLM_ENDPOINT', 'https://api.openai.com/v1/chat/completions'),
+        'api_key' => env('LLM_API_KEY'),
+        'model' => env('LLM_MODEL', 'gpt-4o-mini'),
+        'max_tokens' => env('LLM_MAX_TOKENS', 500),
+        'memory_window' => env('LLM_MEMORY_WINDOW', 20),
     ],
 
 ];

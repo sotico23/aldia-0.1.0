@@ -17,6 +17,8 @@ class ChannelCredential extends Model
         'telegram_bot_token',
         'telegram_bot_username',
         'telegram_chat_id',
+        'telegram_linked_at',
+        'bot_type',
         'whatsapp_phone_number_id',
         'whatsapp_access_token',
         'whatsapp_business_id',
@@ -28,6 +30,7 @@ class ChannelCredential extends Model
         return [
             'telegram_bot_token' => 'encrypted',
             'whatsapp_access_token' => 'encrypted',
+            'telegram_linked_at' => 'datetime',
         ];
     }
 

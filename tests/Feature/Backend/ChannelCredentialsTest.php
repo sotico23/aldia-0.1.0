@@ -1,8 +1,11 @@
 <?php
 
 use App\Models\ChannelCredential;
+use App\Models\SystemIntegration;
 use App\Models\User;
+use App\Models\WebSetting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 
 uses(RefreshDatabase::class);
 
@@ -126,6 +129,119 @@ test('test-telegram returns error when no token configured', function () {
     ]);
 });
 
+test('test-telegram posts test_connection payload to n8n telegram proxy url and succeeds', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_token' => 'test:token',
+        'telegram_bot_username' => 'test_bot',
+    ]);
+
+    SystemIntegration::create([
+        'provider' => 'n8n',
+        'base_url' => 'https://n8n.example.com',
+        'webhook_url' => 'https://n8n.example.com/webhook/test',
+        'telegram_proxy_url' => 'https://n8n.example.com/webhook/telegram-proxy',
+        'api_key' => 'secret',
+        'is_active' => true,
+    ]);
+
+    Http::fake([
+        'api.telegram.org*' => Http::response([
+            'ok' => true,
+            'result' => ['id' => 1, 'username' => 'test_bot', 'first_name' => 'Test Bot'],
+        ], 200),
+        'n8n.example.com/*' => Http::response(['status' => 'ok'], 200),
+    ]);
+
+    $response = $this->actingAs($this->user)->post(route('channel-credentials.test-telegram'), [
+        'telegram_bot_token' => 'test:token',
+    ], ['Accept' => 'application/json']);
+
+    $response->assertJson([
+        'success' => true,
+        'bot_username' => 'test_bot',
+    ]);
+
+    Http::assertSent(function ($request) {
+        $body = $request->data();
+
+        return $request->url() === 'https://n8n.example.com/webhook/telegram-proxy'
+            && $request->method() === 'POST'
+            && $body['event'] === 'test_connection'
+            && $body['is_test'] === true
+            && $body['tenant_id'] === $this->user->getOwnerId()
+            && $body['bot_token'] === 'test:token'
+            && $body['bot_username'] === 'test_bot'
+            && $body['is_linked'] === false
+            && $body['callback_url'] === route('api.canales.telegram.webhook');
+    });
+});
+
+test('test-telegram fails when n8n telegram proxy responds with error', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_token' => 'test:token',
+        'telegram_bot_username' => 'test_bot',
+    ]);
+
+    SystemIntegration::create([
+        'provider' => 'n8n',
+        'base_url' => 'https://n8n.example.com',
+        'telegram_proxy_url' => 'https://n8n.example.com/webhook/telegram-proxy',
+        'api_key' => 'secret',
+        'is_active' => true,
+    ]);
+
+    Http::fake([
+        'api.telegram.org*' => Http::response([
+            'ok' => true,
+            'result' => ['id' => 1, 'username' => 'test_bot', 'first_name' => 'Test Bot'],
+        ], 200),
+        'n8n.example.com/*' => Http::response(['status' => 'error'], 500),
+    ]);
+
+    $response = $this->actingAs($this->user)->post(route('channel-credentials.test-telegram'), [
+        'telegram_bot_token' => 'test:token',
+    ], ['Accept' => 'application/json']);
+
+    $response->assertJson([
+        'success' => false,
+    ]);
+
+    $response->assertJsonPath('message', fn ($message) => str_contains($message, 'n8n respondió con estado 500'));
+});
+
+test('test-telegram fails with guidance when no n8n url is configured', function () {
+    config([
+        'services.n8n.webhook_url' => null,
+        'services.n8n.telegram_proxy_url' => null,
+        'services.n8n.base_url' => null,
+    ]);
+
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_token' => 'test:token',
+        'telegram_bot_username' => 'test_bot',
+    ]);
+
+    Http::fake([
+        'api.telegram.org*' => Http::response([
+            'ok' => true,
+            'result' => ['id' => 1, 'username' => 'test_bot', 'first_name' => 'Test Bot'],
+        ], 200),
+    ]);
+
+    $response = $this->actingAs($this->user)->post(route('channel-credentials.test-telegram'), [
+        'telegram_bot_token' => 'test:token',
+    ], ['Accept' => 'application/json']);
+
+    $response->assertJson([
+        'success' => false,
+    ]);
+
+    $response->assertJsonPath('message', fn ($message) => str_contains($message, 'No hay URL de proxy de Telegram configurada'));
+});
+
 test('test-whatsapp returns error when no credentials configured', function () {
     $response = $this->actingAs($this->user)->post(route('channel-credentials.test-whatsapp'), [], [
         'Accept' => 'application/json',
@@ -134,6 +250,55 @@ test('test-whatsapp returns error when no credentials configured', function () {
     $response->assertJson([
         'success' => false,
         'message' => 'Credenciales de WhatsApp no configuradas.',
+    ]);
+});
+
+test('index returns global_telegram_bot_username and app_name props', function () {
+    WebSetting::create([
+        'app_name' => 'Aldia',
+        'global_telegram_bot_username' => 'aldia_global_bot',
+    ]);
+
+    $response = $this->actingAs($this->user)->get(route('channel-credentials.index'));
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('global_telegram_bot_username', 'aldia_global_bot')
+        ->where('app_name', 'Aldia')
+    );
+});
+
+test('index returns bot_type in credentials', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_token' => 'test:token',
+        'telegram_bot_username' => 'test_bot',
+        'bot_type' => 'global',
+    ]);
+
+    $response = $this->actingAs($this->user)->get(route('channel-credentials.index'));
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('credentials.bot_type', 'global')
+    );
+});
+
+test('update stores bot_type field', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_token' => 'existing_token',
+        'telegram_bot_username' => 'existing_bot',
+    ]);
+
+    $response = $this->actingAs($this->user)->put(route('channel-credentials.update'), [
+        'telegram_bot_token' => 'new_token',
+        'bot_type' => 'global',
+    ]);
+
+    $response->assertRedirect(route('channel-credentials.index'));
+
+    $this->assertDatabaseHas('channel_credentials', [
+        'owner_id' => $this->user->getOwnerId(),
+        'bot_type' => 'global',
     ]);
 });
 

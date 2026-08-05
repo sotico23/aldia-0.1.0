@@ -1,7 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
 import axios from 'axios';
 import {
-    LayoutGrid,
+LayoutGrid,
     List,
     Upload,
     Link as LinkIcon,
@@ -11,7 +11,9 @@ import {
     Trash2,
     RefreshCw,
     Check,
-    Users
+    Users,
+    MessageSquare,
+    Phone,
 } from 'lucide-react';
 import { lazy, Suspense, useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -161,6 +163,13 @@ interface FormFields {
     facebook_client_id: string;
     facebook_client_secret: string;
     facebook_redirect_uri: string;
+global_telegram_bot_username: string;
+     global_telegram_bot_token: string;
+     whatsapp_webhook_url: string;
+     whatsapp_phone_number_id: string;
+     whatsapp_access_token: string;
+     whatsapp_business_id: string;
+     whatsapp_api_version: string;
 }
 
 const defaultHero = {
@@ -530,35 +539,48 @@ export default function Index({
         facebook_client_id: settings.facebook_client_id || '',
         facebook_client_secret: settings.facebook_client_secret || '',
         facebook_redirect_uri: settings.facebook_redirect_uri || '',
+global_telegram_bot_username: settings.global_telegram_bot_username || '',
+         global_telegram_bot_token: settings.global_telegram_bot_token || '',
+         whatsapp_webhook_url: settings.whatsapp_webhook_url || '',
+         whatsapp_phone_number_id: settings.whatsapp_phone_number_id || '',
+         whatsapp_access_token: settings.whatsapp_access_token || '',
+         whatsapp_business_id: settings.whatsapp_business_id || '',
+         whatsapp_api_version: settings.whatsapp_api_version || 'v22.0',
     });
 
     const [activeSection, setActiveSection] = useState('general');
-    const [testingGoogle, setTestingGoogle] = useState(false);
-    const [testingFacebook, setTestingFacebook] = useState(false);
+const [testingGoogle, setTestingGoogle] = useState(false);
+     const [testingFacebook, setTestingFacebook] = useState(false);
+     const [testingTelegram, setTestingTelegram] = useState(false);
+     const [testingWhatsApp, setTestingWhatsApp] = useState(false);
+     const [telegramConnected, setTelegramConnected] = useState(false);
+     const [whatsappConnected, setWhatsappConnected] = useState(false);
 
-    const [n8nConfig, setN8nConfig] = useState({
-        provider: 'n8n',
-        base_url: '',
-        webhook_url: '',
-        api_key: '',
-        is_active: true,
-    });
+const [n8nConfig, setN8nConfig] = useState({
+         provider: 'n8n',
+         base_url: '',
+         webhook_url: '',
+         telegram_proxy_url: '',
+         api_key: '',
+         is_active: true,
+     });
     const [n8nLoaded, setN8nLoaded] = useState(false);
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-    const [testingN8n, setTestingN8n] = useState(false);
-    const [savingN8n, setSavingN8n] = useState(false);
+const [testingN8n, setTestingN8n] = useState(false);
+     const [savingN8n, setSavingN8n] = useState(false);
 
-    useEffect(() => {
+     useEffect(() => {
         if (activeSection === 'n8n' && !n8nLoaded) {
             axios.get('/api/system-integrations/n8n').then((res) => {
                 const data = res.data?.data ?? res.data;
-                setN8nConfig({
-                    provider: 'n8n',
-                    base_url: data.base_url || '',
-                    webhook_url: data.webhook_url || '',
-                    api_key: '',
-                    is_active: data.is_active ?? true,
-                });
+setN8nConfig({
+                     provider: 'n8n',
+                     base_url: data.base_url || '',
+                     webhook_url: data.webhook_url || '',
+                     telegram_proxy_url: data.telegram_proxy_url || '',
+                     api_key: '',
+                     is_active: data.is_active ?? true,
+                 });
                 setN8nLoaded(true);
             }).catch(() => {
                 setN8nLoaded(true);
@@ -566,40 +588,117 @@ export default function Index({
         }
     }, [activeSection, n8nLoaded]);
 
-    const testSocialConnection = async (provider: 'google' | 'facebook') => {
-        const setTesting = provider === 'google' ? setTestingGoogle : setTestingFacebook;
-        setTesting(true);
+const testSocialConnection = async (provider: 'google' | 'facebook') => {
+         const setTesting = provider === 'google' ? setTestingGoogle : setTestingFacebook;
+         setTesting(true);
 
-        const clientId = provider === 'google' ? data.google_client_id : data.facebook_client_id;
-        const clientSecret = provider === 'google' ? data.google_client_secret : data.facebook_client_secret;
-        const redirectUri = provider === 'google' ? data.google_redirect_uri : data.facebook_redirect_uri;
+         const clientId = provider === 'google' ? data.google_client_id : data.facebook_client_id;
+         const clientSecret = provider === 'google' ? data.google_client_secret : data.facebook_client_secret;
+         const redirectUri = provider === 'google' ? data.google_redirect_uri : data.facebook_redirect_uri;
 
-        if (!clientId || !clientSecret || !redirectUri) {
-            toast.error('Completa todos los campos de ' + (provider === 'google' ? 'Google' : 'Facebook') + ' antes de probar.');
-            setTesting(false);
-            return;
-        }
+         if (!clientId || !clientSecret || !redirectUri) {
+             toast.error('Completa todos los campos de ' + (provider === 'google' ? 'Google' : 'Facebook') + ' antes de probar.');
+             setTesting(false);
+             return;
+         }
 
-        try {
-            const response = await axios.post('/configuracion-web/test-social', {
-                provider,
-                client_id: clientId,
-                client_secret: clientSecret,
-                redirect_uri: redirectUri,
-            });
+         try {
+             const response = await axios.post('/configuracion-web/test-social', {
+                 provider,
+                 client_id: clientId,
+                 client_secret: clientSecret,
+                 redirect_uri: redirectUri,
+             });
 
-            if (response.data.success) {
-                toast.success(response.data.message);
-            } else {
-                toast.error(response.data.message);
-            }
-        } catch (error: any) {
-            const msg = error.response?.data?.message || 'Error al conectar con ' + (provider === 'google' ? 'Google' : 'Facebook');
-            toast.error(msg);
-        } finally {
-            setTesting(false);
-        }
-    };
+             if (response.data.success) {
+                 toast.success(response.data.message);
+             } else {
+                 toast.error(response.data.message);
+             }
+         } catch (error: any) {
+             const msg = error.response?.data?.message || 'Error al conectar con ' + (provider === 'google' ? 'Google' : 'Facebook');
+             toast.error(msg);
+         } finally {
+             setTesting(false);
+         }
+     };
+
+     const testTelegramConnection = async () => {
+         setTestingTelegram(true);
+
+         if (!data.global_telegram_bot_token || !data.global_telegram_bot_username) {
+             toast.error('Completa el token y el username del bot de Telegram antes de probar.');
+             setTestingTelegram(false);
+             return;
+         }
+
+         try {
+             const response = await axios.post('/configuracion-web/test-telegram', {
+                 bot_token: data.global_telegram_bot_token,
+                 bot_username: data.global_telegram_bot_username,
+             });
+
+             if (response.data.success) {
+                 setTelegramConnected(true);
+                 toast.success(response.data.message);
+             } else {
+                 setTelegramConnected(false);
+                 toast.error(response.data.message);
+             }
+         } catch (error: any) {
+             setTelegramConnected(false);
+             const msg = error.response?.data?.message || 'Error al conectar con Telegram';
+             toast.error(msg);
+         } finally {
+             setTestingTelegram(false);
+         }
+     };
+
+     const testWhatsAppConnection = async () => {
+         setTestingWhatsApp(true);
+
+         if (!data.whatsapp_webhook_url) {
+             toast.error('Completa la URL del webhook de WhatsApp antes de probar.');
+             setTestingWhatsApp(false);
+             return;
+         }
+
+         try {
+             const response = await axios.post('/configuracion-web/test-whatsapp', {
+                 webhook_url: data.whatsapp_webhook_url,
+             });
+
+             if (response.data.success) {
+                 setWhatsappConnected(true);
+                 toast.success(response.data.message);
+             } else {
+                 setWhatsappConnected(false);
+                 toast.error(response.data.message);
+             }
+         } catch (error: any) {
+             setWhatsappConnected(false);
+             const msg = error.response?.data?.message || 'Error al conectar con WhatsApp';
+             toast.error(msg);
+         } finally {
+             setTestingWhatsApp(false);
+         }
+     };
+
+     const openTelegramChat = () => {
+         if (!data.global_telegram_bot_username) {
+             toast.error('Configura primero el username del bot de Telegram.');
+             return;
+         }
+         window.open(`https://t.me/${data.global_telegram_bot_username.replace(/^@/, '')}`, '_blank');
+     };
+
+     const openWhatsAppChat = () => {
+         if (!data.whatsapp_webhook_url) {
+             toast.error('Configura primero la URL del webhook de WhatsApp.');
+             return;
+         }
+         window.open(data.whatsapp_webhook_url, '_blank');
+     };
 
     const addCaracteristica = () => {
         setData('caracteristicas', [
@@ -1642,228 +1741,418 @@ export default function Index({
                         )}
 
                         {activeSection === 'social' && (
-                            <div className="grid gap-6 md:grid-cols-2">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <span>🔵 Google</span>
-                                        </CardTitle>
-                                        <CardDescription>
-                                            Credenciales de Google OAuth para inicio de sesión con Google
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="google_client_id">Google Client ID</Label>
-                                            <Input
-                                                id="google_client_id"
-                                                value={data.google_client_id}
-                                                onChange={(e) => setData('google_client_id', e.target.value)}
-                                                placeholder="515936358278-xxxxx.apps.googleusercontent.com"
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="google_client_secret">Google Client Secret</Label>
-                                            <Input
-                                                id="google_client_secret"
-                                                value={data.google_client_secret}
-                                                onChange={(e) => setData('google_client_secret', e.target.value)}
-                                                placeholder="GOCSPX-xxxxx"
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="google_redirect_uri">Google Redirect URI</Label>
-                                            <Input
-                                                id="google_redirect_uri"
-                                                value={data.google_redirect_uri}
-                                                onChange={(e) => setData('google_redirect_uri', e.target.value)}
-                                                placeholder="http://localhost:8000/auth/google/callback"
-                                            />
-                                        </div>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() => testSocialConnection('google')}
-                                            disabled={testingGoogle}
-                                            className="w-full gap-2"
-                                        >
-                                            {testingGoogle ? (
-                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                            ) : (
-                                                <RefreshCw className="h-4 w-4" />
-                                            )}
-                                            {testingGoogle ? 'Probando conexión...' : 'Probar Conexión con Google'}
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <span>📘 Facebook</span>
-                                        </CardTitle>
-                                        <CardDescription>
-                                            Credenciales de Facebook OAuth para inicio de sesión con Facebook
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="facebook_client_id">Facebook Client ID</Label>
-                                            <Input
-                                                id="facebook_client_id"
-                                                value={data.facebook_client_id}
-                                                onChange={(e) => setData('facebook_client_id', e.target.value)}
-                                                placeholder="1320052013408272"
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="facebook_client_secret">Facebook Client Secret</Label>
-                                            <Input
-                                                id="facebook_client_secret"
-                                                value={data.facebook_client_secret}
-                                                onChange={(e) => setData('facebook_client_secret', e.target.value)}
-                                                placeholder="910fb902e5c544a6ed152e2906048266"
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="facebook_redirect_uri">Facebook Redirect URI</Label>
-                                            <Input
-                                                id="facebook_redirect_uri"
-                                                value={data.facebook_redirect_uri}
-                                                onChange={(e) => setData('facebook_redirect_uri', e.target.value)}
-                                                placeholder="http://localhost:8000/auth/facebook/callback"
-                                            />
-                                        </div>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() => testSocialConnection('facebook')}
-                                            disabled={testingFacebook}
-                                            className="w-full gap-2"
-                                        >
-                                            {testingFacebook ? (
-                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                            ) : (
-                                                <RefreshCw className="h-4 w-4" />
-                                            )}
-                                            {testingFacebook ? 'Probando conexión...' : 'Probar Conexión con Facebook'}
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        )}
-
-                        {activeSection === 'n8n' && isN8nAllowed && (
-                            <div className="grid gap-6 md:grid-cols-2">
-                                <Card className="md:col-span-2">
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <span>⚡ n8n</span>
-                                        </CardTitle>
-                                        <CardDescription>
-                                            Configuración global de n8n para automatización de reportes. 
-                                            Esta integración es utilizada por todos los negocios del sistema.
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="n8n_base_url">Base URL *</Label>
-                                            <Input
-                                                id="n8n_base_url"
-                                                value={n8nConfig.base_url}
-                                                onChange={(e) => setN8nConfig((prev) => ({ ...prev, base_url: e.target.value }))}
-                                                placeholder="https://n8n.tudominio.com"
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="n8n_webhook_url">Webhook URL</Label>
-                                            <Input
-                                                id="n8n_webhook_url"
-                                                value={n8nConfig.webhook_url}
-                                                onChange={(e) => setN8nConfig((prev) => ({ ...prev, webhook_url: e.target.value }))}
-                                                placeholder="https://n8n.tudominio.com/webhook/reporte-diario"
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="n8n_api_key">API Key</Label>
-                                            <Input
-                                                id="n8n_api_key"
-                                                type="password"
-                                                value={n8nConfig.api_key}
-                                                onChange={(e) => setN8nConfig((prev) => ({ ...prev, api_key: e.target.value }))}
-                                                placeholder={n8nLoaded && !n8nConfig.api_key ? '•••••••••••••••• (ya configurada)' : 'Ingresa la API Key'}
-                                            />
-                                            <p className="text-xs text-muted-foreground">
-                                                La API Key se almacena encriptada. Si se deja vacía, se mantendrá la existente.
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Switch
-                                                id="n8n_is_active"
-                                                checked={n8nConfig.is_active}
-                                                onCheckedChange={(checked) => setN8nConfig((prev) => ({ ...prev, is_active: checked }))}
-                                            />
-                                            <Label htmlFor="n8n_is_active">Activo</Label>
-                                        </div>
-                                        <div className="flex gap-3">
-                                            <Button
-                                                type="button"
-                                                onClick={async () => {
-                                                    setSavingN8n(true);
-                                                    try {
-                                                        await axios.put('/api/system-integrations/n8n', {
-                                                            base_url: n8nConfig.base_url,
-                                                            webhook_url: n8nConfig.webhook_url,
-                                                            api_key: n8nConfig.api_key || undefined,
-                                                            is_active: n8nConfig.is_active,
-                                                        });
-                                                        toast.success('Configuración guardada correctamente');
-                                                    } catch {
-                                                        toast.error('Error al guardar la configuración');
-                                                    } finally {
-                                                        setSavingN8n(false);
-                                                    }
-                                                }}
-                                                disabled={savingN8n}
-                                                className="gap-2"
-                                            >
-                                                {savingN8n ? (
-                                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                                ) : null}
-                                                {savingN8n ? 'Guardando...' : 'Guardar Configuración'}
-                                            </Button>
+                            <div>
+                                <div className="grid gap-6 md:grid-cols-2">
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="flex items-center gap-2">
+                                                <span>🔵 Google</span>
+                                            </CardTitle>
+                                            <CardDescription>
+                                                Credenciales de Google OAuth para inicio de sesión con Google
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="google_client_id">Google Client ID</Label>
+                                                <Input
+                                                    id="google_client_id"
+                                                    value={data.google_client_id}
+                                                    onChange={(e) => setData('google_client_id', e.target.value)}
+                                                    placeholder="515936358278-xxxxx.apps.googleusercontent.com"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="google_client_secret">Google Client Secret</Label>
+                                                <Input
+                                                    id="google_client_secret"
+                                                    value={data.google_client_secret}
+                                                    onChange={(e) => setData('google_client_secret', e.target.value)}
+                                                    placeholder="GOCSPX-xxxxx"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="google_redirect_uri">Google Redirect URI</Label>
+                                                <Input
+                                                    id="google_redirect_uri"
+                                                    value={data.google_redirect_uri}
+                                                    onChange={(e) => setData('google_redirect_uri', e.target.value)}
+                                                    placeholder="http://localhost:8000/auth/google/callback"
+                                                />
+                                            </div>
                                             <Button
                                                 type="button"
                                                 variant="outline"
-                                                onClick={async () => {
-                                                    setTestingN8n(true);
-                                                    try {
-                                                        const res = await axios.post('/api/system-integrations/n8n/test');
-                                                        if (res.data.success) {
-                                                            toast.success(res.data.message || 'Conexión exitosa');
-                                                        } else {
-                                                            toast.error(res.data.message || 'No se pudo conectar');
-                                                        }
-                                                    } catch (error: any) {
-                                                        toast.error(error.response?.data?.message || 'Error al probar la conexión');
-                                                    } finally {
-                                                        setTestingN8n(false);
-                                                    }
-                                                }}
-                                                disabled={testingN8n}
-                                                className="gap-2"
+                                                onClick={() => testSocialConnection('google')}
+                                                disabled={testingGoogle}
+                                                className="w-full gap-2"
                                             >
-                                                {testingN8n ? (
+                                                {testingGoogle ? (
                                                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                                                 ) : (
                                                     <RefreshCw className="h-4 w-4" />
                                                 )}
-                                                {testingN8n ? 'Probando conexión...' : 'Probar Conexión'}
+                                                {testingGoogle ? 'Probando conexión...' : 'Probar Conexión con Google'}
                                             </Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="flex items-center gap-2">
+                                                <span>📘 Facebook</span>
+                                            </CardTitle>
+                                            <CardDescription>
+                                                Credenciales de Facebook OAuth para inicio de sesión con Facebook
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="facebook_client_id">Facebook Client ID</Label>
+                                                <Input
+                                                    id="facebook_client_id"
+                                                    value={data.facebook_client_id}
+                                                    onChange={(e) => setData('facebook_client_id', e.target.value)}
+                                                    placeholder="1320052013408272"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="facebook_client_secret">Facebook Client Secret</Label>
+                                                <Input
+                                                    id="facebook_client_secret"
+                                                    value={data.facebook_client_secret}
+                                                    onChange={(e) => setData('facebook_client_secret', e.target.value)}
+                                                    placeholder="910fb902e5c544a6ed152e2906048266"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="facebook_redirect_uri">Facebook Redirect URI</Label>
+                                                <Input
+                                                    id="facebook_redirect_uri"
+                                                    value={data.facebook_redirect_uri}
+                                                    onChange={(e) => setData('facebook_redirect_uri', e.target.value)}
+                                                    placeholder="http://localhost:8000/auth/facebook/callback"
+                                                />
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() => testSocialConnection('facebook')}
+                                                disabled={testingFacebook}
+                                                className="w-full gap-2"
+                                            >
+                                                {testingFacebook ? (
+                                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                ) : (
+                                                    <RefreshCw className="h-4 w-4" />
+                                                )}
+                                                {testingFacebook ? 'Probando conexión...' : 'Probar Conexión con Facebook'}
+                                            </Button>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+
+                                <div className="mt-6 space-y-6">
+                                    <div className="grid gap-6 md:grid-cols-2">
+<Card>
+                                             <CardHeader>
+                                                 <CardTitle className="flex items-center gap-2">
+                                                     <MessageSquare className="h-4 w-4" />
+                                                     Telegram Global
+                                                 </CardTitle>
+                                                 <CardDescription>
+                                                     Configura el bot oficial de Telegram para la plataforma
+                                                 </CardDescription>
+                                             </CardHeader>
+                                             <CardContent className="space-y-4">
+                                                 <div className="space-y-1.5">
+                                                     <Label htmlFor="global_telegram_bot_token">Token del Bot</Label>
+                                                     <Input
+                                                         id="global_telegram_bot_token"
+                                                         type="password"
+                                                         value={data.global_telegram_bot_token}
+                                                         onChange={(e) => setData('global_telegram_bot_token', e.target.value)}
+                                                         placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
+                                                     />
+                                                     <p className="text-[11px] text-muted-foreground">
+                                                         El token del bot de Telegram que se usará para enviar notificaciones.
+                                                     </p>
+                                                 </div>
+                                                 <div className="space-y-1.5">
+                                                     <Label htmlFor="global_telegram_bot_username">Username del Bot Oficial</Label>
+                                                     <Input
+                                                         id="global_telegram_bot_username"
+                                                         value={data.global_telegram_bot_username}
+                                                         onChange={(e) => setData('global_telegram_bot_username', e.target.value)}
+                                                         placeholder="@aldia_bot"
+                                                     />
+                                                     <p className="text-[11px] text-muted-foreground">
+                                                         El username del bot oficial de Telegram que todos los negocios usarán para recibir notificaciones.
+                                                     </p>
+                                                 </div>
+                                                 <div className="flex gap-2">
+                                                     <Button
+                                                         type="button"
+                                                         variant="outline"
+                                                         onClick={testTelegramConnection}
+                                                         disabled={testingTelegram}
+                                                         className="flex-1 gap-2"
+                                                     >
+                                                         {testingTelegram ? (
+                                                             <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                         ) : (
+                                                             <RefreshCw className="h-4 w-4" />
+                                                         )}
+                                                         {testingTelegram ? 'Probando...' : 'Probar Conexión'}
+                                                     </Button>
+                                                     {telegramConnected && (
+                                                         <Button
+                                                             type="button"
+                                                             variant="default"
+                                                             className="gap-2"
+                                                         >
+                                                             <Check className="h-4 w-4" />
+                                                             Conectado
+                                                         </Button>
+                                                     )}
+                                                     <Button
+                                                         type="button"
+                                                         variant="outline"
+                                                         onClick={openTelegramChat}
+                                                         className="gap-2"
+                                                     >
+                                                         <MessageSquare className="h-4 w-4" />
+                                                         Abrir Chat
+                                                     </Button>
+                                                 </div>
+                                             </CardContent>
+                                         </Card>
+<Card>
+                                             <CardHeader>
+                                                 <CardTitle className="flex items-center gap-2">
+                                                     <Phone className="h-4 w-4" />
+                                                     WhatsApp Global
+                                                 </CardTitle>
+                                                 <CardDescription>
+                                                     Configura el webhook global de WhatsApp para la plataforma
+                                                 </CardDescription>
+                                             </CardHeader>
+                                             <CardContent className="space-y-4">
+                                                 <div className="space-y-1.5">
+                                                     <Label htmlFor="whatsapp_webhook_url">Webhook URL de WhatsApp</Label>
+                                                     <Input
+                                                         id="whatsapp_webhook_url"
+                                                         value={data.whatsapp_webhook_url}
+                                                         onChange={(e) => setData('whatsapp_webhook_url', e.target.value)}
+                                                         placeholder="https://tu-dominio.com/webhooks/whatsapp"
+                                                     />
+                                                     <p className="text-[11px] text-muted-foreground">
+                                                         La URL del webhook donde WhatsApp Cloud enviará los eventos de mensajes.
+                                                     </p>
+                                                 </div>
+                                                 <div className="space-y-1.5">
+                                                     <Label htmlFor="whatsapp_phone_number_id">WhatsApp Phone Number ID</Label>
+                                                     <Input
+                                                         id="whatsapp_phone_number_id"
+                                                         value={data.whatsapp_phone_number_id}
+                                                         onChange={(e) => setData('whatsapp_phone_number_id', e.target.value)}
+                                                         placeholder="1234567890"
+                                                     />
+                                                 </div>
+                                                 <div className="space-y-1.5">
+                                                     <Label htmlFor="whatsapp_access_token">WhatsApp Access Token</Label>
+                                                     <Input
+                                                         id="whatsapp_access_token"
+                                                         type="password"
+                                                         value={data.whatsapp_access_token}
+                                                         onChange={(e) => setData('whatsapp_access_token', e.target.value)}
+                                                         placeholder="Ingresa el Access Token"
+                                                     />
+                                                 </div>
+                                                 <div className="space-y-1.5">
+                                                     <Label htmlFor="whatsapp_business_id">WhatsApp Business ID</Label>
+                                                     <Input
+                                                         id="whatsapp_business_id"
+                                                         value={data.whatsapp_business_id}
+                                                         onChange={(e) => setData('whatsapp_business_id', e.target.value)}
+                                                         placeholder="123456789012345"
+                                                     />
+                                                 </div>
+                                                 <div className="space-y-1.5">
+                                                     <Label htmlFor="whatsapp_api_version">WhatsApp API Version</Label>
+                                                     <Input
+                                                         id="whatsapp_api_version"
+                                                         value={data.whatsapp_api_version}
+                                                         onChange={(e) => setData('whatsapp_api_version', e.target.value)}
+                                                         placeholder="v22.0"
+                                                     />
+                                                 </div>
+                                                 <div className="flex gap-2">
+                                                     <Button
+                                                         type="button"
+                                                         variant="outline"
+                                                         onClick={testWhatsAppConnection}
+                                                         disabled={testingWhatsApp}
+                                                         className="flex-1 gap-2"
+                                                     >
+                                                         {testingWhatsApp ? (
+                                                             <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                         ) : (
+                                                             <RefreshCw className="h-4 w-4" />
+                                                         )}
+                                                         {testingWhatsApp ? 'Probando...' : 'Probar Conexión'}
+                                                     </Button>
+                                                     {whatsappConnected && (
+                                                         <Button
+                                                             type="button"
+                                                             variant="default"
+                                                             className="gap-2"
+                                                         >
+                                                             <Check className="h-4 w-4" />
+                                                             Conectado
+                                                         </Button>
+                                                     )}
+                                                     <Button
+                                                         type="button"
+                                                         variant="outline"
+                                                         onClick={openWhatsAppChat}
+                                                         className="gap-2"
+                                                     >
+                                                         <Phone className="h-4 w-4" />
+                                                         Abrir Chat
+                                                     </Button>
+                                                 </div>
+                                             </CardContent>
+                                         </Card>
+                                    </div>
+                                </div>
                             </div>
                         )}
+
+                        {activeSection === 'n8n' && isN8nAllowed && (
+                             <div className="grid gap-6 md:grid-cols-2">
+                                 <Card className="md:col-span-2">
+                                     <CardHeader>
+                                         <CardTitle className="flex items-center gap-2">
+                                             <span>⚡ n8n</span>
+                                         </CardTitle>
+                                         <CardDescription>
+                                             Configuración global de n8n para automatización de reportes.
+                                             Esta integración es utilizada por todos los negocios del sistema.
+                                         </CardDescription>
+                                     </CardHeader>
+                                     <CardContent className="space-y-4">
+                                         <div className="space-y-1.5">
+                                             <Label htmlFor="n8n_base_url">Base URL *</Label>
+                                             <Input
+                                                 id="n8n_base_url"
+                                                 value={n8nConfig.base_url}
+                                                 onChange={(e) => setN8nConfig((prev) => ({ ...prev, base_url: e.target.value }))}
+                                                 placeholder="https://n8n.tudominio.com"
+                                             />
+                                         </div>
+                                         <div className="space-y-1.5">
+                                             <Label htmlFor="n8n_webhook_url">Webhook URL</Label>
+                                             <Input
+                                                 id="n8n_webhook_url"
+                                                 value={n8nConfig.webhook_url}
+                                                 onChange={(e) => setN8nConfig((prev) => ({ ...prev, webhook_url: e.target.value }))}
+                                                 placeholder="https://n8n.tudominio.com/webhook/reporte-diario"
+                                             />
+                                         </div>
+                                         <div className="space-y-1.5">
+                                             <Label htmlFor="n8n_telegram_proxy_url">Telegram Proxy URL</Label>
+                                             <Input
+                                                 id="n8n_telegram_proxy_url"
+                                                 value={n8nConfig.telegram_proxy_url}
+                                                 onChange={(e) => setN8nConfig((prev) => ({ ...prev, telegram_proxy_url: e.target.value }))}
+                                                 placeholder="https://n8n.redcliente.cl/webhook/telegram-proxy"
+                                             />
+                                             <p className="text-xs text-muted-foreground">
+                                                 URL del webhook de n8n para el proxy de Telegram. Se usa para notificar la configuración de canales.
+                                             </p>
+                                         </div>
+                                         <div className="space-y-1.5">
+                                             <Label htmlFor="n8n_api_key">API Key</Label>
+                                             <Input
+                                                 id="n8n_api_key"
+                                                 type="password"
+                                                 value={n8nConfig.api_key}
+                                                 onChange={(e) => setN8nConfig((prev) => ({ ...prev, api_key: e.target.value }))}
+                                                 placeholder={n8nLoaded && !n8nConfig.api_key ? '•••••••••••••••• (ya configurada)' : 'Ingresa la API Key'}
+                                             />
+<p className="text-xs text-muted-foreground">
+                                                  La API Key se almacena encriptada. Si se deja vacía, se mantendrá la existente.
+                                              </p>
+                                          </div>
+                                          <div className="flex items-center gap-2">
+                                             <Switch
+                                                 id="n8n_is_active"
+                                                 checked={n8nConfig.is_active}
+                                                 onCheckedChange={(checked) => setN8nConfig((prev) => ({ ...prev, is_active: checked }))}
+                                             />
+                                             <Label htmlFor="n8n_is_active">Activo</Label>
+                                         </div>
+                                         <div className="flex gap-3">
+                                             <Button
+                                                 type="button"
+                                                 onClick={async () => {
+                                                     setSavingN8n(true);
+                                                     try {
+await axios.put('/api/system-integrations/n8n', {
+                                                              base_url: n8nConfig.base_url || null,
+                                                              webhook_url: n8nConfig.webhook_url || null,
+                                                              telegram_proxy_url: n8nConfig.telegram_proxy_url || null,
+                                                              api_key: n8nConfig.api_key || undefined,
+                                                              is_active: n8nConfig.is_active,
+                                                          });
+                                                         toast.success('Configuración guardada correctamente');
+                                                     } catch {
+                                                         toast.error('Error al guardar la configuración');
+                                                     } finally {
+                                                         setSavingN8n(false);
+                                                     }
+                                                 }}
+                                                 disabled={savingN8n}
+                                                 className="gap-2"
+                                             >
+                                                 {savingN8n ? (
+                                                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                 ) : null}
+                                                 {savingN8n ? 'Guardando...' : 'Guardar Configuración'}
+                                             </Button>
+                                             <Button
+                                                 type="button"
+                                                 variant="outline"
+                                                 onClick={async () => {
+                                                     setTestingN8n(true);
+                                                     try {
+                                                         const res = await axios.post('/api/system-integrations/n8n/test');
+                                                         if (res.data.success) {
+                                                             toast.success(res.data.message || 'Conexión exitosa');
+                                                         } else {
+                                                             toast.error(res.data.message || 'No se pudo conectar');
+                                                         }
+                                                     } catch (error: any) {
+                                                         toast.error(error.response?.data?.message || 'Error al probar la conexión');
+                                                     } finally {
+                                                         setTestingN8n(false);
+                                                     }
+                                                 }}
+                                                 disabled={testingN8n}
+                                                 className="gap-2"
+                                             >
+                                                 {testingN8n ? (
+                                                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                 ) : (
+                                                     <RefreshCw className="h-4 w-4" />
+                                                 )}
+{testingN8n ? 'Probando conexión...' : 'Probar Conexión n8n'}
+                                              </Button>
+                                          </div>
+                                      </CardContent>
+                                  </Card>
+                             </div>
+                         )}
 
                         {activeSection === 'countries' && (
                             <CountriesTab countries={countries || []} />

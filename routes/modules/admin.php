@@ -29,6 +29,8 @@ Route::middleware(['permission:admin.countries.viewAny'])->group(function () {
 
 Route::middleware(['permission:admin.web-settings.viewAny'])->group(function () {
     Route::post('configuracion-web/test-social', [WebSettingController::class, 'testSocialConnection'])->name('configuracion-web.test-social');
+    Route::post('configuracion-web/test-telegram', [WebSettingController::class, 'testTelegramConnection'])->name('configuracion-web.test-telegram');
+    Route::post('configuracion-web/test-whatsapp', [WebSettingController::class, 'testWhatsAppConnection'])->name('configuracion-web.test-whatsapp');
 
     Route::middleware('throttle:60,1')->group(function () {
         Route::get('configuracion-web/financial-settings', [FinancialSettingsController::class, 'show'])->name('configuracion-web.financial-settings');

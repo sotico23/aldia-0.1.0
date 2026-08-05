@@ -1,0 +1,112 @@
+{
+  "name": "telegram-proxy",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "telegram-proxy",
+        "responseMode": "responseNode"
+      },
+      "name": "Telegram Proxy Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [320, 420],
+      "webhook": "telegram-proxy",
+      "httpMethod": "POST"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            { "value1": "={{ $json.event ?? '' }}", "operation": "equal", "case": "send_linking_code", "target": 1 },
+            { "value1": "={{ $json.event ?? '' }}", "operation": "equal", "case": "test_connection", "target": 2 },
+            { "value1": "={{ $json.event ?? '' }}", "operation": "equal", "case": "message", "target": 3 }
+          ]
+        },
+        "output": 0
+      },
+      "name": "Switch by event",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 2.2,
+      "position": [540, 420]
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200,
+          "responseData": "{\"status\":\"ok\",\"message\":\"Linking handled by deep link /start TOKEN in chat; no outgoing message to avoid 403 before bot is started.\"}"
+        }
+      },
+      "name": "No-op (linking / test_connection)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [780, 220]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{ $json.chat_id }}", "operation": "notEmpty" }
+          ]
+        },
+        "combine": "ALL"
+      },
+      "name": "Guard: chat_id present",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [780, 560]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.telegram.org/bot' + $json.bot_token + '/sendMessage' }}",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "chat_id": "={{ $json.chat_id }}",
+          "text": "={{ $json.user_message ?? 'Mensaje desde Al Día' }}",
+          "parse_mode": "Markdown"
+        },
+        "jsonParameters": true,
+        "options": { "timeout": 15000, "followRedirect": true }
+      },
+      "name": "Telegram: send message (HTTP)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1020, 560]
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200,
+          "responseData": "{\"status\":\"ignored\",\"message\":\"message event received without chat_id.\"}"
+        }
+      },
+      "name": "No-op (no chat_id)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1020, 700]
+    }
+  ],
+  "connections": {
+    "Telegram Proxy Webhook": { "main": [ [ { "node": "Switch by event", "type": "main", "index": 0 } ] ] },
+    "Switch by event": {
+      "main": [
+        [ { "node": "No-op (linking / test_connection)", "type": "main", "index": 0 } ],
+        [ { "node": "No-op (linking / test_connection)", "type": "main", "index": 0 } ],
+        [ { "node": "Guard: chat_id present", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Guard: chat_id present": {
+      "main": [
+        [ { "node": "Telegram: send message (HTTP)", "type": "main", "index": 0 } ],
+        [ { "node": "No-op (no chat_id)", "type": "main", "index": 0 } ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": { "timezone": "America/Santiago", "executionTimeout": 600, "saveExecutionType": "none" },
+  "meta": {
+    "templateCredsSetupCompleted": [],
+    "instanceId": "LOCAL_ADMIN_OVERRIDE",
+    "note": "Imports clean (no Telegram API credential needed): bot_token is forwarded per-request from Laravel via the HTTP Request URL. Activate in production AND ensure its production URL matches config('services.n8n.telegram_proxy_url'). The Switch node routes send_linking_code/test_connection to a 200 (no outgoing message), preventing 403 Forbidden before the user starts the bot."
+  }
+}

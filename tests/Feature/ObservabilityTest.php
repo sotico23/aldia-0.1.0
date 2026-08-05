@@ -5,6 +5,7 @@ use App\Models\User;
 use App\Notifications\AutomationFailureAlert;
 use App\Services\ObservabilityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -75,15 +76,21 @@ describe('ObservabilityService', function () {
     });
 
     test('getHealthStatus returns healthy when no issues', function () {
-        $health = $this->service->getHealthStatus();
+        Carbon::setTestNow(now()->startOfDay()->addHours(8));
 
-        expect($health['status'])->toBe('healthy');
-        expect($health['metrics'])->toHaveKeys([
-            'pending_jobs', 'failed_jobs', 'today_executions',
-            'failed_executions', 'average_execution_time_ms',
-            'success_rate_percent',
-        ]);
-        expect($health['issues'])->toBeEmpty();
+        try {
+            $health = $this->service->getHealthStatus();
+
+            expect($health['status'])->toBe('healthy');
+            expect($health['metrics'])->toHaveKeys([
+                'pending_jobs', 'failed_jobs', 'today_executions',
+                'failed_executions', 'average_execution_time_ms',
+                'success_rate_percent',
+            ]);
+            expect($health['issues'])->toBeEmpty();
+        } finally {
+            Carbon::setTestNow();
+        }
     });
 
     test('getHealthStatus detects failed jobs', function () {

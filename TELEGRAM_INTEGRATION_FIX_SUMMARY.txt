@@ -1,0 +1,315 @@
+TELEGRAM INTEGRATION FIX SUMMARY
+================================
+Proyecto: aldia-0.1.0-main
+Fecha: 2026-08-02
+Autor: Revisión y correcciones de integración Telegram + n8n
+
+OBJETIVO
+--------
+Solucionar el problema crítico: "el chat_id y el campo used_at no se están enviando o
+persistiendo correctamente durante el flujo del webhook y el proxy", y el error 422
+recibido en el navegador al probar la conexión de Telegram desde
+Index.tsx (POST /configuracion-web/test-telegram 422).
+
+FLUJO DE DATOS (Telegram -> Laravel -> n8n)
+------------------------------------------
+1. Telegram envía el update a POST /webhooks/telegram (Laravel) — ruta pública (verificado
+   routes/web.php:362). La llamada al bot se configura en ChannelCredentialController::update
+   (setWebhook(route('webhooks.telegram'))).
+2. TelegramWebhookController::handle -> TelegramWebhookService::processWebhook:
+   - extrae chat_id de message.chat.id / callback_query.message.chat.id / from.id
+   - si text === "/start TOKEN" -> linkAccount: persiste telegram_chat_id + used_at
+     en telegram_linking_tokens y ChannelCredential (transacción DB).
+   - si mensaje normal -> buildPayload (incluye chat_id) -> forwardToN8n -> HTTP POST
+     a N8N_TELEGRAM_PROXY_URL (default https://n8n.redcliente.cl/webhook/telegram-proxy).
+3. n8n recibe el payload con chat_id e intenta propagarlo. Si el workflow "telegram-proxy"
+   no está activo en n8n, devuelve 404 y el mensaje se pierde.
+4. Login Widget -> POST /telegram/login-callback -> TelegramCallbackController: valida hash
+   HMAC-SHA256 con el bot_token y marca used_at del token de vinculación.
+
+PROBLEMAS ENCONTRADOS
+---------------------
+P1. (browser 422) WebSettingController::testTelegramConnection usaba Http::get() plano
+    (sin timeout/connectTimeout/verify=>false). Los logs mostraban:
+        testing.ERROR: Telegram connection test exception {"error":"Network error"}
+    repetido al pulsar "Probar Conexión". La excepción se atrapaba y devolvía 422 con el
+    mensaje engañoso "El Token de Telegram ingresado no es válido o expiró." aunque el
+    token fuera correcto. Causa: falla la verificación SSL / conexión saliente en el
+    entorno local, algo que TelegramService::validateCredentials ya manejaba con
+    Http::timeout(10)->connectTimeout(5)->withOptions(['verify' => false]).
+P2. (chat_id) callback_query: chat_id se extraía de $message['chat']['id'], pero en un
+    callback_query el chat está en $message['message']['chat']['id'] -> null -> early
+    return: chat_id perdido, nada se reenvía ni persiste.
+P3. (chat_id) body envuelto como STRING JSON (p. ej. n8n reenvía {"body": "{...}"}):
+    $update quedaba como string y $update['message'] lanzaba TypeError -> try/catch ->
+    ['status' => 'ok'] -> el update (incl. vinculación) se perdía silenciosamente.
+P4. (used_at) TelegramCallbackController: el Telegram Login Widget NO envía "token", por
+    lo que se usaba el fallback del "último token activo del usuario", que podía marcar el
+    token equivocado. Además, si en el futuro se incluía "token" en el body, el cálculo
+    del hash firmado por Telegram incluiría "token" -> hash inválido -> vinculación fallida.
+P5. (used_at) fallback no usaba el scope valid() (tampoco verificaba expiración) y no
+    estaba dentro de transacción junto a la credencial.
+P6. (n8n 404) forwardToN8n: el webhook n8n redirigía a https://n8n.redcliente.cl/webhook/
+    telegram-proxy que devolvía 404 "The requested webhook POST telegram-proxy is not
+    registered." porque el workflow "telegram-proxy" no está activo en n8n. (Esto es
+    configuración de infraestructura n8n: hay que activar el workflow.)
+
+CAMBIOS APLICADOS
+-----------------
+app/Http/Controllers/Backend/WebSettingController.php
+  - testTelegramConnection: Http::timeout(10)->connectTimeout(5)->withOptions(['verify'=>false])
+    (alineado con TelegramService::validateCredentials).
+  - catch: distingue ConnectionException (mensaje: "No se pudo conectar con la API de
+    Telegram. Verifica tu conexión...") de Exception (mensaje: token inválido).
+  - testWhatsAppConnection: mismo tratamiento HTTP + catch distinto para ConnectionException
+    (mensaje de red) vs excepción genérica.
+
+app/Services/TelegramWebhookService.php
+  - processUpdate: refactorización -> helper unwrapUpdate() que normaliza:
+      * envoltura n8n {"body": ...} / {"data": ...}
+      * body/data como STRING JSON (json_decode) -> corrige P3.
+  - extractChatId(): $message['chat']['id'] | $message['message']['chat']['id'] (callback_query)
+    | $update['chat']['id'] | $message['from']['id'] (fallback). Corrige P2.
+  - extractText(): message.text | callback_query.data | message.message.text.
+  - forwardToN8n: log de advertencia mejorado con hint cuando el status es 404
+    ("activate the telegram-proxy webhook workflow in n8n"). Corrige P6 (aviso).
+
+app/Http/Controllers/Backend/TelegramCallbackController.php
+  - Excluye 'token' del data_check_string antes del hash (corrige P4: un futuro token en
+    el body no rompe la verificación telemétrica).
+  - resolveLinkingToken(): asocia used_at al token EXACTO recibido (preciso), usando scope
+    valid() (verifica expiración + no usado).
+  - Fallback: usa TelegramLinkingToken::valid() en vez de whereNull('used_at') (corrige P5).
+  - Todo el persiste en un DB::transaction (credential + linking token) para atomicidad.
+  - resolveBotToken(): admite bot_token vía input (para bot global custom) con fallback a
+    config/services -> ChannelCredential.
+
+TESTS NUEVOS / EXTENDIDOS
+-------------------------
+tests/Feature/Backend/WebSettingTest.php (+2):
+  - test-telegram-connection returns network message on ConnectionException
+  - test-whatsapp-connection returns network message on ConnectionException
+
+tests/Feature/Backend/TelegramChannelTest.php (+3):
+  - webhook handle extracts chat_id from callback_query nested chat
+  - webhook handle links account when body arrives as JSON string (n8n wrapped)
+  - telegram login callback with token in body still validates hash and marks token as used
+
+RESULTADOS DE TESTS
+-------------------
+- TelegramChannelTest: 31 passed (89 assertions)  [28 previos + 3 nuevos]
+- WebSettingTest: 12 passed (23 assertions)  [10 previos + 2 nuevos]
+        - Suite completa: 727 passed (2402 assertions), 0 fallas.
+  - Pint: formatted OK en todos los archivos modificados.
+
+CAMBIOS APLICADOS — V2 (vinculación /start TOKEN vs Login Widget)
+---------------------------------------------------------------
+Motivo: el comando /start llegaba limpio al bot sin el token de vinculación, y por
+eso chat_id y used_at no se actualizaban. Análisis de los 4 escenarios:
+
+B1. (root cause - UX) t.me/{bot}?start=TOKEN: en Telegram, el payload ?start= solo se
+    envía cuando el usuario pulsa START Y el chat aún no está iniciado. Si el bot ya
+    fue iniciado, el enlace abre el chat SIN enviar el payload -> el usuario pulsa
+    "Iniciar" manualmente y llega /start limpio -> onboarding "¡Hola!" -> el token
+    nunca viaja -> chat_id/used_at no se persisten.
+B2. (root cause - frontend) ChannelCredentials -> openChatWithLinking hacía
+    `await generateLinking()` (fetch async) y luego `window.open`: el bloqueador de
+    popups lo anulaba -> el enlace nunca se abría solo -> el usuario abría el chat manualmente.
+B3. (root cause - token burn) El Login Widget ("Iniciar Sesión con Telegram") y el
+    flujo de chat ("Abrir Chat en Telegram") convivían en la misma página. El callback
+    del widget (TelegramCallbackController) marcaba used_at del "último token activo del
+    usuario logueado" como fallback -> QUEMABA el token generado para el enlace de chat;
+    al pulsar /start TOKEN en el chat el token ya estaba usado -> "❌ token inválido o
+    expirado". used_at/chat_id quedaban inconsistentes.
+B4. (UI) En modo global, el botón "Abrir Chat en Telegram" estaba oculto (requería
+    telegramStatus==='success', que nunca ocurre en modo global).
+
+CORRECCIONES V2
+--------------
+app/Http/Controllers/Backend/TelegramCallbackController.php
+   - SE ELIMINA el fallback que marcaba used_at del último token activo (ramas `elseif
+     (Auth::check())`). El widget web solo actualiza ChannelCredential.telegram_chat_id
+     + telegram_linked_at; los tokens los consume exclusivamente el webhook /start.
+     Así el widget ya no "quema" tokens y el flujo de chat vuelve a ser el único dueño
+     del ciclo used_at. Se mantiene la actualización del chat_id con el uid del widget
+     (válido como chat_id en chats privados).
+
+app/Services/TelegramWebhookService.php (linkAccount)
+   - Idempotente ante re-entregas de Telegram: si el token ya está usado pero con el
+     MISMO telegram_chat_id, se devuelve ['status'=>'linked'] (antes: "❌ token inválido").
+     Consulta el token SIN el scope valid() y valida usado/expiración explícitamente, de
+     modo que el caso de re-entrega no rompa la vinculación ni marque used_at dos veces.
+
+app/Http/Controllers/Backend/TelegramLinkingController.php
+   - generateLink devuelve ahora `token` en el JSON (además de telegram_url) para que
+     el frontend permita pegar /start TOKEN manualmente.
+
+resources/js/pages/Backend/ChannelCredentials.tsx
+   - openChatWithLinking abre la ventana SINCRÓNICAMENTE (window.open(''), luego
+     win.location.href = url) -> evita el popup blocker.
+   - Tras generar el enlace, se muestra el token con "/start {token}" + botón de copiar
+     (clipboard) -> fallback fiabilidad UX: si Telegram descarta el payload, el usuario
+     pega /start TOKEN a mano.
+   - Modo global: "Abrir Chat en Telegram" ahora se muestra cuando
+     global_telegram_bot_username existe (no depende de telegramStatus).
+   - La tarjeta del Login Widget aclara que es login web opcional y NO vincula el canal.
+
+TESTS NUEVOS (TelegramChannelTest +3)
+------------------------------------
+   - webhook handle treats a re-delivered /start TOKEN for the same chat as linked
+     (idempotent): token usado + mismo chat_id -> status 'linked'.
+   - telegram login-callback without a token does not mark any linking token as used:
+     el widget sin token NO consume tokens.
+   - generate-link returns the linking token alongside the url: el JSON incluye `token`.
+   - Suite completa: 727 passed (2402 assertions), 0 fallas.
+
+VERIFICACIONES OPERACIONALES RECOMENDADAS (actualizadas)
+-------------------------------------------------------
+V1. Telegram bot webhook: setWebhook apunta a /webhooks/telegram (ChannelCredentialController).
+    Para el bot GLOBAL oficial, setearlo manualmente vía TelegramService::setWebhook o BotFather,
+    pues solo el bot custom se setea al guardar.
+V2. n8n: activar el workflow "telegram-proxy" (404). El log ya advertirá el hint.
+V3. .env: N8N_TELEGRAM_PROXY_URL=https://n8n.redcliente.cl/webhook/telegram-proxy (confirmado).
+    Rellenar N8N_API_TOKEN/N8N_WEBHOOK_URL si n8n lo requiere.
+V4. LLM_ENABLED=false por defecto -> los mensajes van a n8n (comportamiento esperado).
+V5. (nueva) Asegurar que el usuario abra el bot con el token manual /start TOKEN (o botón
+    "Abrir Chat") y NO usar la tarjeta de Login Widget para vincular el canal; el widget
+    solo es para login web de usuarios finales.
+
+VERIFICACIONES OPERACIONALES RECOMENDADAS (fuera de código)
+-----------------------------------------------------------
+V1. Telegram bot webhook: confirmar que setWebhook apunta a Laravel
+    (https://tudominio.com/webhooks/telegram). ChannelCredentialController::update lo
+    configura al guardar el bot custom; para el bot global oficial, setearlo manualmente
+    vía TelegramService::setWebhook o BotFather.
+V2. n8n: activar el workflow "telegram-proxy" en la instancia n8n (production URL). El log
+    ahora advertirá: "activate the telegram-proxy webhook workflow in n8n".
+V3. .env: N8N_TELEGRAM_PROXY_URL apunta a https://n8n.redcliente.cl/webhook/telegram-proxy
+    (confirmado). N8N_API_TOKEN y N8N_WEBHOOK_URL están vacíos — rellenarlos si n8n requiere
+    autenticación o webhook base distinto.
+V4. LLM_ENABLED por defecto es false -> los mensajes siempre van a n8n. Si se activa el
+    asistente, los mensajes manejados por LaravelAssistantService NO se reenvían a n8n
+    (comportamiento esperado).
+
+ARCHIVOS MODIFICADOS
+--------------------
+app/Http/Controllers/Backend/WebSettingController.php
+app/Http/Controllers/Backend/TelegramCallbackController.php
+app/Http/Controllers/Backend/TelegramLinkingController.php
+app/Services/TelegramWebhookService.php
+resources/js/pages/Backend/ChannelCredentials.tsx
+tests/Feature/Backend/WebSettingTest.php
+   tests/Feature/Backend/TelegramChannelTest.php
+   app/Console/Commands/TelegramSetWebhookCommand.php (NUEVO)
+   tests/Feature/Backend/TelegramSetWebhookCommandTest.php (NUEVO)
+   tests/Feature/Backend/SystemIntegrationControllerTest.php
+   docs/n8n/telegram-proxy.json (NUEVO)
+   docs/n8n/telegram-inbound.json (NUEVO)
+
+TESTS (actualizado V3)
+----------------------
+   - TelegramSetWebhookCommandTest: setWebhook exitoso (HTTP fake, salida
+     "Webhook configurado correctamente", exit 0); token rechazado por Telegram
+     (401) -> salida "Error al configurar el webhook" + exit 1 (FAILURE);
+     --info via getWebhookInfo -> muestra URL + exit 0; sin bot token configurado
+     -> "No hay token de bot global configurado" + exit 2 (INVALID).
+   - SystemIntegrationControllerTest: testConnection NO crea tokens "fantasma"
+     (linking_url=null cuando no hay token existente; 0 filas en
+     telegram_linking_tokens tras el test). Test anterior (que esperaba creación
+     de token) reemplazado por "does NOT create phantom linking tokens".
+   - WebSettingTest: test-telegram ahora finge getMe + setWebhook; aserción de
+     éxito incluye webhook_configured=true, webhook_url y bot_username.
+   - Suite completa: 733 passed (2415 assertions), 0 fallas relacionadas.
+     (1 falla preexistente y NO relacionada: VentaGramosTest "Stock insuficiente
+     para Producto por Kilo" — descontextualizado al presente cambio.)
+
+=== V3 — RAZÓN RAÍZ: BOT GLOBAL SIN WEBHOOK + TOKENS FANTASMA ===
+------------------------------------------------------------
+Síntoma: el chat_id y used_at seguían quedando NULL aunque el widget y el
+/start TOKEN parecieran bien; y telegram_linking_tokens acumulaba filas
+"usadas-at=NULL" (id=55: owner_id=5, user_id=1, bot_type=global) que nunca
+se consumían.
+
+RC1. (bot global sin webhook) El webhook del bot GLOBAL nunca se configuraba:
+     - ChannelCredentialController::update setea setWebhook SOLO para el bot
+       CUSTOM al guardar (verificado routes/web.php:362 + controlador).
+     - WebSettingController::testTelegramConnection llamaba a getMe
+       (TelegramService::validateCredentials) pero NO llamaba a setWebhook,
+       por lo que probar la conexión no dejaba al bot escuchando.
+   Conclusión: un bot admite un único webhook -> "setWebhook apuntando a Laravel"
+   (POST /webhooks/telegram) y "Telegram Trigger de n8n" son mutuamente
+   excluyentes para el MISMO bot. Elegir topología:
+
+     TOPOLOGÍA A (elegida): Telegram -> POST /webhooks/telegram (Laravel)
+       -> processUpdate -> linkAccount / forwardToN8n.
+       n8n solo como PROXY de SALIDA (telegram-proxy), recibe chat_id ya
+       resuelto desde Laravel. Ventaja: el deep link /start TOKEN llega
+       directamente a Laravel y persiste chat_id + used_at en la transacción.
+     TOPOLOGÍA B (respaldo): Telegram -> Telegram Trigger (n8n)
+       -> HTTP Request -> POST /api/canales/telegram/webhook (Laravel).
+       Se incluye workflow importable docs/n8n/telegram-inbound.json, activado
+       SOLO si el webhook del bot apunta a n8n (no con Topología A).
+
+RC2. (tokens "fantasma") N8nService::testConnection CREABA un
+     TelegramLinkingToken en cada "Probar conexión" (solo para renderizar el
+     link de prueba), dejando filas usadas-at/chat_id=NULL que confundían
+     los reportes y el scope valid(). Corrección: testConnection reutiliza el
+     token valid() existente (más reciente) y envía linking_url=null si no
+     hay uno; la creación de tokens es responsabilidad EXCLUSIVA del flujo
+     /start deep-link (TelegramLinkingController::generateLink).
+
+CAMBIOS APLICADOS (V3)
+----------------------
+app/Http/Controllers/Backend/WebSettingController.php
+   - update(): al guardar global_telegram_bot_token, llama
+     Http::post setWebhook(route('webhooks.telegram')) con
+     drop_pending_updates=true; atrapa ConnectionException y excepciones
+     genéricas con Log::error y mensaje al usuario (no rompe el save).
+   - testTelegramConnection(): tras validar getMe, llama setWebhook y retorna
+     {success, message, webhook_configured, webhook_url, bot_username}.
+     setWebhook se fuerza incluso en test (HTTP fake getMe + setWebhook).
+
+app/Console/Commands/TelegramSetWebhookCommand.php  (NUEVO)
+   - Artisan: php artisan telegram:set-webhook {--bot=global|custom}
+     {--owner=} {--webhook=} {--info}
+   - set global: post setWebhook https://api.telegram.org/bot{token}/setWebhook
+     (drop_pending_updates=true) -> Laravel POST /webhooks/telegram.
+   - set custom: por owner_id (ChannelCredential.telegram_bot_token).
+   - --info: getWebhookInfo para diagnosticar (url, pending, last_error).
+   - Auto-descubierto por Laravel (app/Console/Commands).
+
+app/Services/N8nService.php
+   - testConnection(): ELIMINADA la creación de TelegramLinkingToken; pasa a
+     reusar TelegramLinkingToken::valid()->...->latest()->value('token') y
+     linking_url=null cuando no existe.
+
+docs/n8n/telegram-proxy.json  (NUEVO)
+   - Workflow OUTBOUND para n8n (topología A). Webhook "telegram-proxy".
+   - Switch por event: test_connection / send_linking_code -> responde 200
+     (NO sendMessage, evita 403 Forbidden antes de que el usuario haga /start).
+   - message -> If(chat_id presente) -> HTTP Request a
+     https://api.telegram.org/bot{bot_token}/sendMessage (bot_token y chat_id
+     vienen forwardeados por Laravel -> NO credential de n8n necesario).
+
+docs/n8n/telegram-inbound.json  (NUEVO)
+   - Workflow INBOUND (topología B) — Telegram Trigger (long polling) ->
+     HTTP Request POST raw $json a {LARAVEL_WEBHOOK_URL}
+     (default https://tudominio.com/api/canales/telegram/webhook).
+   - Filtra solo /start TOKEN y mensajes con texto; inactivo por defecto.
+
+VERIFICACIONES OPERACIONALES (V3 - obligatorio)
+----------------------------------------------
+V3.1 Ejecutar una sola vez en producción:
+     php artisan telegram:set-webhook --bot=global
+     (o --bot=custom --owner=NN), o setearlo vía BotFather.
+V3.2 Confirmar:
+     php artisan telegram:set-webhook --bot=global --info
+     -> "Webhook URL: https://tudominio.com/webhooks/telegram"
+V3.3 Activar en n8n el workflow telegram-proxy.json (topología A) y confirmar
+     que test_connection responde 200 y que los mensajes salen por sendMessage.
+     (Si el bot webhook apunta a n8n, activar telegram-inbound.json en su
+      lugar.) Recordar: UN solo webhook por bot -> no mezclar topologías.
+V3.4 Limpieza de datos: las filas "fantasma" preexistentes pueden borrarse:
+     php artisan tinker
+     >>> \App\Models\TelegramLinkingToken::whereNull('used_at')->whereNull('telegram_chat_id')->delete();
+     (NO se crean nuevas filas al testear conexión desde ahora.)

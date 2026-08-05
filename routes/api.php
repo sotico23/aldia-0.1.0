@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\InternalAutomationSendController;
 use App\Http\Controllers\Api\TenantDataController;
 use App\Http\Controllers\Api\TrackingController;
 use App\Http\Controllers\Internal\N8nController;
+use App\Http\Controllers\Webhooks\TelegramWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -63,7 +64,10 @@ Route::prefix('internal')->middleware(['verify-n8n-token', 'throttle:60,1'])->gr
     Route::get('business/{business}/executions', [N8nController::class, 'executions']);
 });
 
-// API pública para tenants autenticados por api_token (Bearer token o ?api_token=)
+Route::post('canales/telegram/webhook', [TelegramWebhookController::class, 'handle'])
+    ->name('api.canales.telegram.webhook');
+Route::post('telegram/webhook', [TelegramWebhookController::class, 'handle'])
+    ->name('telegram.webhook');
 Route::prefix('tenant')->middleware(['verify-tenant-token', 'active'])->group(function () {
     Route::get('resumen-completo', [TenantDataController::class, 'resumenCompleto'])
         ->name('api.tenant.resumen-completo');

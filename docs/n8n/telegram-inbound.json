@@ -1,0 +1,91 @@
+{
+  "name": "telegram-inbound",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTime": [{ "hour": 0, "minute": 0 }],
+        "options": { "rawUpdates": true }
+      },
+      "name": "Telegram Trigger (polling)",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 2.2,
+      "position": [300, 380],
+      "credentials": { "telegramApi": "telegram-bot-token" },
+      "polling": true
+    },
+    {
+      "parameters": {
+        "options": {
+          "headers": {
+            "Content-Type": "application/json"
+          }
+        },
+        "url": "={{ $var.LARAVEL_WEBHOOK_URL || 'https://tudominio.com/api/canales/telegram/webhook' }}",
+        "method": "POST",
+        "body": "={{ $json }}",
+        "jsonParameters": true
+      },
+      "name": "Forward to Laravel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [540, 380]
+    },
+    {
+      "parameters": {
+        "options": { "responseCode": 200, "responseData": "{\"status\":\"ignored\"}" }
+      },
+      "name": "Respond ignored update",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [540, 520]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "array": [
+            { "value1": "={{ $json.message?.text }}", "operation": "notEmpty" }
+          ],
+          "combine": "AND"
+        }
+      },
+      "name": "Filter: text messages",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [540, 240]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{ $json.message?.text }}", "operation": "startsWith", "value2": "/start " }
+          ]
+        }
+      },
+      "name": "Filter: /start TOKEN",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [760, 240]
+    }
+  ],
+  "connections": {
+    "Telegram Trigger (polling)": { "main": [ [ { "node": "Filter: text messages", "type": "main", "index": 0 } ] ] },
+    "Filter: text messages": {
+      "main": [
+        [ { "node": "Filter: /start TOKEN", "type": "main", "index": 0 } ],
+        [ { "node": "Respond ignored update", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Filter: /start TOKEN": {
+      "main": [
+        [ { "node": "Forward to Laravel", "type": "main", "index": 0 } ],
+        [ { "node": "Respond ignored update", "type": "main", "index": 0 } ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "timezone": "America/Santiago", "executionTimeout": 600, "saveExecutionType": "none" },
+  "meta": {
+    "instanceId": "LOCAL_ADMIN_OVERRIDE",
+    "note": "OPTIONAL inbound workflow: use ONLY if the Telegram bot webhook is pointed at n8n. It forwards the RAW update (message.chat.id + message.text incl. '/start TOKEN') to Laravel POST /api/canales/telegram/webhook, which persists telegram_chat_id + used_at. Recommended Topology A (bot webhook -> Laravel directly) avoids this entirely. Replace tudominio.com with the real domain. Uses long-polling; alternatively use a Telegram Webhook node with the n8n webhook URL as the bot webhook."
+  }
+}
