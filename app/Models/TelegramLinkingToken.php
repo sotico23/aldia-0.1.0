@@ -46,12 +46,6 @@ class TelegramLinkingToken extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function scopeValid($query)
-    {
-        return $query->whereNull('used_at')
-            ->where('expires_at', '>', now());
-    }
-
     public function isExpired(): bool
     {
         return $this->expires_at->isPast();

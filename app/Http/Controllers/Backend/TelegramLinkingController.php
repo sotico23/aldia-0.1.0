@@ -23,7 +23,8 @@ class TelegramLinkingController extends Controller
      */
     public function confirmLink(string $token): RedirectResponse
     {
-        $linkingToken = TelegramLinkingToken::valid()
+        $linkingToken = TelegramLinkingToken::whereNull('used_at')
+            ->where('expires_at', '>', now())
             ->where('token', $token)
             ->first();
 
@@ -33,18 +34,21 @@ class TelegramLinkingController extends Controller
         }
 
         return redirect()->route('channel-credentials.index')
-            ->with('success', 'Enlace generado. Por favor confirma en Telegram.');
+            ->with('success', 'Enlace generado. Por favor confirma enviando el comando /start en Telegram.');
     }
 
+    /**
+     * Genera el token y la URL profunda de Telegram (https://t.me/bot?start=token)
+     */
     public function generateLink(Request $request): JsonResponse
     {
         try {
             $ownerId = Auth::user()->getOwnerId();
 
-            $type = $request->input('type', 'custom');
+            // Sincroniza 'type' o 'bot_type' enviados por Axios en el frontend
+            $type = $request->input('bot_type', $request->input('type', 'global'));
 
             $token = TelegramLinkingToken::generateToken();
-
             $expiresAt = now()->addMinutes(15);
 
             TelegramLinkingToken::create([
@@ -55,15 +59,15 @@ class TelegramLinkingController extends Controller
                 'expires_at' => $expiresAt,
             ]);
 
-            if ($type === 'global') {
+            // CASO 1: BOT OFICIAL / GLOBAL
+            if ($type === 'global' || $type === 'oficial') {
                 $webSettings = WebSetting::getSettings();
-
-                $globalBotUsername = $webSettings->global_telegram_bot_username;
+                $globalBotUsername = $webSettings->global_telegram_bot_username ?? config('services.telegram.default_bot_username');
 
                 if (! $globalBotUsername) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'No hay un bot oficial configurado en la plataforma.',
+                        'message' => 'No hay un bot oficial configurado en la plataforma. Por favor configúralo en Configuración Web.',
                     ], 422);
                 }
 
@@ -86,19 +90,35 @@ class TelegramLinkingController extends Controller
                 ]);
             }
 
+            // CASO 2: BOT PERSONALIZADO (CUSTOM)
             $credentials = ChannelCredential::where('owner_id', $ownerId)->first();
 
             if (! $credentials || ! $credentials->telegram_bot_username) {
+                // Fallback: si no tiene bot custom guardado pero intenta generar, usar el global si está disponible
+                $webSettings = WebSetting::getSettings();
+                if (! empty($webSettings->global_telegram_bot_username)) {
+                    $globalBotUsername = ltrim($webSettings->global_telegram_bot_username, '@');
+                    $link = "https://t.me/{$globalBotUsername}?start={$token}";
+
+                    return response()->json([
+                        'success' => true,
+                        'telegram_url' => $link,
+                        'token' => $token,
+                        'bot_username' => $webSettings->global_telegram_bot_username,
+                        'bot_type' => 'global',
+                    ]);
+                }
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'No hay un bot de Telegram configurado. Guarda las credenciales primero.',
+                    'message' => 'No hay un bot de Telegram configurado. Guarda las credenciales del bot primero.',
                 ], 422);
             }
 
             $botUsername = ltrim($credentials->telegram_bot_username, '@');
             $link = "https://t.me/{$botUsername}?start={$token}";
 
-            Log::info('Telegram linking token generated', [
+            Log::info('Telegram custom linking token generated', [
                 'owner_id' => $ownerId,
                 'token' => $token,
                 'expires_at' => $expiresAt,
@@ -111,6 +131,7 @@ class TelegramLinkingController extends Controller
                 'bot_username' => $credentials->telegram_bot_username,
                 'bot_type' => 'custom',
             ]);
+
         } catch (\Exception $e) {
             Log::error('Telegram linking error', [
                 'error' => $e->getMessage(),
@@ -119,7 +140,7 @@ class TelegramLinkingController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al generar el enlace de vinculación.',
+                'message' => 'Error interno al generar el enlace de vinculación: '.$e->getMessage(),
             ], 500);
         }
     }

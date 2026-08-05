@@ -6,7 +6,6 @@ use App\Models\ChannelCredential;
 use App\Models\SystemIntegration;
 use App\Models\TelegramLinkingToken;
 use App\Models\WebSetting;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -38,21 +37,19 @@ class TelegramWebhookService
             ?? $update['my_chat_member']
             ?? $update['chat_join_to_channel']
             ?? $update['chat_join_request']
-            ?? ($update['body']['message'] ?? $update['data']['message'] ?? null);
+            ?? null;
 
-        if (! $message) {
-            return ['status' => 'ok'];
-        }
-
+        // Accept flat n8n-relayed payloads (chat_id + text/token) that arrive
+        // without a Telegram "message" object.
         $chatId = $this->extractChatId($message, $update);
-        $text = trim($this->extractText($message));
+        $text = trim($this->extractText($message, $update));
 
         if (! $chatId) {
             return ['status' => 'ok'];
         }
 
         $chatIdStr = (string) $chatId;
-        $token = $this->extractStartToken($text);
+        $token = $this->extractFlatToken($update) ?? $this->extractStartToken($text);
 
         if ($token) {
             return $this->linkAccount($token, $chatIdStr);
@@ -139,11 +136,16 @@ class TelegramWebhookService
      * Extract the chat id from a Telegram update message.
      *
      * Supports regular messages, edited messages and callback queries where the
-     * chat object is nested under message.message.chat. Falls back to the
-     * triggering user id (from.id / chat.id) for membership updates.
+     * chat object is nested under message.message.chat, flat n8n-relayed
+     * payloads (chat_id), and falls back to the triggering user id
+     * (from.id / chat.id) for membership updates.
      */
-    private function extractChatId(array $message, array $update): mixed
+    private function extractChatId(?array $message, array $update): mixed
     {
+        if (isset($update['chat_id'])) {
+            return $update['chat_id'];
+        }
+
         if (isset($message['chat']['id'])) {
             return $message['chat']['id'];
         }
@@ -169,75 +171,130 @@ class TelegramWebhookService
     }
 
     /**
-     * Extract the text payload of a message, supporting callback_query data.
+     * Extract the text payload of a message, supporting callback_query data,
+     * flat n8n-relayed payloads (text / user_message) and message.text.
      */
-    private function extractText(array $message): string
+    private function extractText(?array $message, array $update): string
     {
-        return $message['text']
+        return $update['text']
+            ?? $message['text']
             ?? $message['data']
             ?? $message['message']['text']
+            ?? $update['user_message']
             ?? '';
+    }
+
+    /**
+     * Extract a linking token sent as a flat field, as produced by n8n-relayed payloads.
+     */
+    private function extractFlatToken(array $update): ?string
+    {
+        $token = $update['token'] ?? null;
+
+        if (is_string($token) && trim($token) !== '') {
+            return trim($token);
+        }
+
+        return null;
     }
 
     private function linkAccount(string $token, string $chatId): array
     {
         $linkingToken = TelegramLinkingToken::where('token', $token)->first();
 
-        // Idempotent re-delivery: Telegram may forward the same /start payload
-        // multiple times. If the token is already used but with the SAME chat_id,
-        // treat it as a successful re-link rather than an invalid token.
-        if ($linkingToken && $linkingToken->isUsed() && $linkingToken->telegram_chat_id === $chatId) {
-            Log::info('TelegramWebhookService: start token re-delivered for already-linked chat, treated as linked', [
+        if (! $linkingToken) {
+            Log::warning('TelegramWebhookService: token de vinculación no encontrado', [
                 'token' => $token,
                 'chat_id' => $chatId,
             ]);
 
-            return ['status' => 'linked'];
+            $this->sendInvalidTokenMessage($chatId);
+
+            return [
+                'status' => 'invalid',
+                'message' => 'El enlace o token de vinculación no es válido.',
+            ];
         }
 
-        if (! $linkingToken || ! $linkingToken->owner_id || $linkingToken->isUsed() || $linkingToken->isExpired()) {
-            $botToken = WebSetting::getSettings()?->global_telegram_bot_token
-                ?: config('services.telegram.bot_token');
-
-            if ($botToken) {
-                $this->sendTelegramMessage($botToken, $chatId, '❌ El token de vinculación es inválido o ha expirado. Por favor, genera un nuevo enlace desde la plataforma.');
-            }
-
-            return ['status' => 'invalid_token'];
-        }
-
-        $tenantId = $linkingToken->owner_id;
-        $botType = $linkingToken->bot_type ?? 'custom';
-
-        DB::transaction(function () use ($linkingToken, $chatId, $tenantId, $botType) {
-            $linkingToken->update([
-                'telegram_chat_id' => $chatId,
-                'used_at' => now(),
+        // Idempotencia: Telegram reenvía el mismo /start varias veces.
+        // Si el token ya fue usado con el MISMO chat_id, responder como exitoso.
+        if ($linkingToken->isUsed() && $linkingToken->telegram_chat_id === $chatId) {
+            Log::info('TelegramWebhookService: token reutilizado por el mismo chat_id (idempotente)', [
+                'token' => $token,
+                'chat_id' => $chatId,
             ]);
 
-            $credential = ChannelCredential::firstOrCreate(['owner_id' => $tenantId]);
-            $credential->update([
+            return [
+                'status' => 'linked',
+                'message' => 'Tu cuenta ya se encuentra vinculada correctamente.',
+            ];
+        }
+
+        // Validar si expiró o si fue consumido por otro chat
+        if ($linkingToken->isExpired() || $linkingToken->isUsed()) {
+            Log::warning('TelegramWebhookService: token expirado o ya consumido por otro usuario', [
+                'token' => $token,
+                'chat_id' => $chatId,
+                'used_at' => $linkingToken->used_at,
+                'expires_at' => $linkingToken->expires_at,
+            ]);
+
+            $this->sendInvalidTokenMessage($chatId);
+
+            return [
+                'status' => 'expired',
+                'message' => 'El enlace de vinculación ha expirado o ya fue utilizado.',
+            ];
+        }
+
+        // --- VINCULACIÓN EXITOSA ---
+
+        // 1. Asignar el chat_id en las credenciales del negocio/owner
+        $credential = ChannelCredential::updateOrCreate(
+            ['owner_id' => $linkingToken->owner_id],
+            [
                 'telegram_chat_id' => $chatId,
                 'telegram_linked_at' => now(),
-                'bot_type' => $botType,
-            ]);
-        });
+                'bot_type' => $linkingToken->bot_type ?? 'custom',
+            ]
+        );
 
-        Log::info('Telegram account linked via start token', [
-            'tenant_id' => $tenantId,
-            'token' => $token,
-            'chat_id' => $chatId,
+        // 2. Marcar el token como consumido
+        $linkingToken->update([
+            'used_at' => now(),
+            'telegram_chat_id' => $chatId,
         ]);
 
-        $credential = ChannelCredential::where('owner_id', $tenantId)->first();
+        // 3. Enviar confirmación al usuario vía Telegram API
         $botToken = $credential?->telegram_bot_token
-            ?: WebSetting::getSettings()?->global_telegram_bot_token;
+            ?: (WebSetting::getSettings()?->global_telegram_bot_token
+            ?: config('services.telegram.bot_token'));
 
         if ($botToken) {
             $this->sendTelegramMessage($botToken, $chatId, '🎉 ¡Cuenta vinculada exitosamente! Ya puedes interactuar con tu asistente de Al Día.');
         }
 
-        return ['status' => 'linked'];
+        Log::info('TelegramWebhookService: vinculación de Telegram completada exitosamente', [
+            'owner_id' => $linkingToken->owner_id,
+            'user_id' => $linkingToken->user_id,
+            'chat_id' => $chatId,
+            'token' => $token,
+        ]);
+
+        return [
+            'status' => 'linked',
+            'message' => '¡Cuenta vinculada con éxito en Al Día! 🎉',
+        ];
+    }
+
+    private function sendInvalidTokenMessage(string $chatId): void
+    {
+        $botToken = WebSetting::getSettings()?->global_telegram_bot_token
+            ?: config('services.telegram.bot_token');
+
+        if ($botToken) {
+            $this->sendTelegramMessage($botToken, $chatId, '❌ El token de vinculación es inválido o ha expirado. Por favor, genera un nuevo enlace desde la plataforma.');
+        }
     }
 
     private function extractStartToken(string $text): ?string

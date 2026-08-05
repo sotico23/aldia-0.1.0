@@ -7,6 +7,8 @@ import {
     Phone,
     ShieldCheck,
     ExternalLink,
+    Eye,
+    EyeOff,
     HelpCircle,
     CheckCircle2,
     AlertCircle,
@@ -19,8 +21,8 @@ import {
     Globe,
     User,
     Radio,
-    Sparkles,
     Copy,
+    Zap,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -65,6 +67,17 @@ interface PageProps {
         api_version: string | null;
         is_active: boolean;
     } | null;
+    global_n8n?: {
+        base_url: string | null;
+        webhook_url: string | null;
+        telegram_proxy_url: string | null;
+        is_active: boolean;
+    };
+    n8n_config?: {
+        n8n_base_url: string;
+        n8n_telegram_proxy_webhook_url: string;
+        has_api_key: boolean;
+    };
     app_name?: string;
     automation: {
         channel: string;
@@ -81,6 +94,10 @@ interface PageProps {
 interface TelegramLoginWidgetProps {
     botUsername: string;
 }
+
+const sanitizeTelegramUsername = (
+    username: string | null | undefined,
+): string => (username ?? '').trim().replace(/^@+/, '');
 
 function TelegramLoginWidget({ botUsername }: TelegramLoginWidgetProps) {
     useEffect(() => {
@@ -120,6 +137,8 @@ export default function ChannelCredentials({
     has_credentials,
     global_telegram_bot_username,
     global_whatsapp,
+    global_n8n,
+    n8n_config,
     app_name = 'Aldia',
     automation,
 }: PageProps) {
@@ -150,6 +169,28 @@ export default function ChannelCredentials({
     const [whatsappActiveTab, setWhatsappActiveTab] = useState<
         'global' | 'custom'
     >('custom');
+
+    const [n8nForm, setN8nForm] = useState({
+        base_url: n8n_config?.n8n_base_url ?? '',
+        webhook_url: n8n_config?.n8n_telegram_proxy_webhook_url ?? '',
+        api_key: '',
+    });
+    const [n8nHasApiKey, setN8nHasApiKey] = useState(
+        n8n_config?.has_api_key ?? false,
+    );
+    const [showN8nApiKey, setShowN8nApiKey] = useState(false);
+    const [n8nDirty, setN8nDirty] = useState(false);
+    const [n8nTested, setN8nTested] = useState(false);
+    const [n8nTesting, setN8nTesting] = useState(false);
+    const [n8nSaving, setN8nSaving] = useState(false);
+
+    const globalN8nProxyUrl =
+        global_n8n?.telegram_proxy_url || global_n8n?.webhook_url || '';
+    const n8nCanTest = !!(
+        n8nForm.base_url.trim() ||
+        n8nForm.webhook_url.trim() ||
+        globalN8nProxyUrl
+    );
 
     const isGlobalMode = activeTab === 'global';
     const isWhatsappGlobalMode = whatsappActiveTab === 'global';
@@ -184,6 +225,47 @@ export default function ChannelCredentials({
             },
         });
     };
+
+    useEffect(() => {
+        const autofillFromIntegrations = async () => {
+            try {
+                const resp = await fetch(
+                    '/api/v1/tenant-credentials/autocomplete',
+                    { headers: { Accept: 'application/json' } },
+                );
+
+                if (!resp.ok) return;
+
+                const result = await resp.json();
+                const creds = result?.data ?? {};
+                const patch: Record<string, string> = {};
+
+                if (creds.telegram?.telegram_bot_username && !data.telegram_bot_username) {
+                    patch.telegram_bot_username = creds.telegram.telegram_bot_username;
+                }
+                if (creds.whatsapp) {
+                    if (creds.whatsapp.whatsapp_phone_number_id && !data.whatsapp_phone_number_id) {
+                        patch.whatsapp_phone_number_id = creds.whatsapp.whatsapp_phone_number_id;
+                    }
+                    if (creds.whatsapp.whatsapp_business_id && !data.whatsapp_business_id) {
+                        patch.whatsapp_business_id = creds.whatsapp.whatsapp_business_id;
+                    }
+                    if (creds.whatsapp.whatsapp_api_version) {
+                        patch.whatsapp_api_version = creds.whatsapp.whatsapp_api_version;
+                    }
+                }
+
+                if (Object.keys(patch).length > 0) {
+                    setData(patch);
+                }
+            } catch {
+                // Silently skip autofill failures
+            }
+        };
+
+        autofillFromIntegrations();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const getCsrfToken = () =>
         document.head
@@ -229,6 +311,92 @@ export default function ChannelCredentials({
         } finally {
             setTestingTelegram(false);
         }
+    };
+
+    const testN8nConnection = async () => {
+        setN8nTesting(true);
+        setN8nTested(false);
+
+        try {
+            const resp = await fetch('/canales/n8n-config/test', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    n8n_base_url: n8nForm.base_url,
+                    n8n_telegram_proxy_webhook_url: n8nForm.webhook_url,
+                }),
+            });
+
+            const result = await resp.json().catch(() => null);
+
+            if (resp.ok && result?.success) {
+                setN8nTested(true);
+                toast.success(result.message ?? 'Conexión exitosa.');
+            } else {
+                toast.error(
+                    result?.message ?? 'Error al probar la conexión n8n.',
+                );
+            }
+        } catch {
+            toast.error('Error de conexión con el servidor.');
+        } finally {
+            setN8nTesting(false);
+        }
+    };
+
+    const saveN8nConfig = async () => {
+        setN8nSaving(true);
+
+        try {
+            const resp = await fetch('/canales/n8n-config', {
+                method: 'PUT',
+                headers: {
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    n8n_base_url: n8nForm.base_url,
+                    n8n_telegram_proxy_webhook_url: n8nForm.webhook_url,
+                    n8n_api_key: n8nForm.api_key,
+                }),
+            });
+
+            const result = await resp.json().catch(() => null);
+
+            if (resp.ok && result?.success) {
+                toast.success(result.message ?? 'Configuración guardada.');
+                setN8nForm((prev) => ({ ...prev, api_key: '' }));
+                setN8nHasApiKey(Boolean(result.data?.has_api_key));
+                setN8nDirty(false);
+            } else {
+                const errors = result?.errors
+                    ? Object.values(result.errors).flat().join(', ')
+                    : '';
+                toast.error(
+                    result?.message ||
+                        errors ||
+                        'Error al guardar la configuración n8n.',
+                );
+            }
+        } catch {
+            toast.error('Error de conexión con el servidor.');
+        } finally {
+            setN8nSaving(false);
+        }
+    };
+
+    const handleN8nFieldChange = (
+        field: 'base_url' | 'webhook_url' | 'api_key',
+        value: string,
+    ) => {
+        setN8nForm((prev) => ({ ...prev, [field]: value }));
+        setN8nDirty(true);
+        setN8nTested(false);
     };
 
     const sendTestMessage = async () => {
@@ -310,15 +478,24 @@ export default function ChannelCredentials({
             const result = await resp.json();
 
             if (result.success) {
-                setLinkingLink(result.telegram_url);
-                setLinkingToken(result.token ?? '');
+                const token = result.token ?? '';
+                const cleanUsername = sanitizeTelegramUsername(
+                    result.bot_username,
+                );
+                const telegramUrl =
+                    cleanUsername && token
+                        ? `https://t.me/${cleanUsername}?start=${token}`
+                        : (result.telegram_url ?? null);
+
+                setLinkingLink(telegramUrl ?? '');
+                setLinkingToken(token);
                 setLinkingStatus('pending');
                 toast.success(
                     'Enlace de vinculación generado. Ábrelo en Telegram para vincular tu cuenta.',
                 );
                 startLinkingPoll();
 
-                return result.telegram_url;
+                return telegramUrl;
             }
 
             setLinkingStatus('error');
@@ -334,14 +511,40 @@ export default function ChannelCredentials({
     };
 
     const openChatWithLinking = async (type: 'global' | 'custom') => {
-        // Open synchronously to avoid popup blockers; the URL is assigned afterwards.
-        const win = window.open('', '_blank', 'noopener,noreferrer');
-        const url = await generateLinking(type);
+        // 1. Abrir la pestaña en blanco de forma síncrona (dentro del evento de
+        //    clic) para evitar el bloqueo de popups. NO usar 'noopener' como
+        //    feature string: hace que window.open() retorne null y la pestaña
+        //    quede en blanco para siempre.
+        const newTab = window.open('about:blank', '_blank');
 
-        if (url && win) {
-            win.location.href = url;
-        } else if (win) {
-            win.close();
+        try {
+            // 2. Obtener el token y la URL de vinculación desde el backend.
+            const url = await generateLinking(type);
+
+            if (url && newTab) {
+                // Cortar la relación opener (equivale a noopener) sin perder la
+                // referencia a la pestaña, y cargar el deep link en ella.
+                newTab.opener = null;
+                newTab.location.href = url;
+
+                return;
+            }
+
+            if (url) {
+                // Fallback: si el navegador bloqueó la pestaña, redirigir en la
+                // misma pestaña.
+                window.location.assign(url);
+
+                return;
+            }
+
+            if (newTab) {
+                newTab.close();
+            }
+        } catch {
+            if (newTab) {
+                newTab.close();
+            }
         }
     };
 
@@ -1512,6 +1715,187 @@ export default function ChannelCredentials({
                             </Card>
                         </div>
                     </form>
+
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+                                    <Zap className="h-4 w-4" />
+                                </div>
+                                <CardTitle className="text-base">
+                                    ⚡ Configuración Personal de n8n
+                                </CardTitle>
+                            </div>
+                            <CardDescription>
+                                Configuración de n8n para automatización de
+                                reportes y canal proxy de Telegram. Cada
+                                usuario/negocio gestiona sus propios datos de
+                                manera aislada.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="n8n_base_url">
+                                    Base URL de n8n
+                                </Label>
+                                <Input
+                                    id="n8n_base_url"
+                                    type="url"
+                                    value={n8nForm.base_url}
+                                    onChange={(e) =>
+                                        handleN8nFieldChange(
+                                            'base_url',
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="https://n8n.tu-dominio.com"
+                                />
+                                <p className="text-[11px] text-muted-foreground">
+                                    URL principal de tu servidor o instancia de
+                                    n8n.
+                                </p>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="n8n_telegram_proxy_webhook_url">
+                                    Webhook URL (Proxy Telegram)
+                                </Label>
+                                <Input
+                                    id="n8n_telegram_proxy_webhook_url"
+                                    type="url"
+                                    value={n8nForm.webhook_url}
+                                    onChange={(e) =>
+                                        handleN8nFieldChange(
+                                            'webhook_url',
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="https://n8n.tu-dominio.com/webhook/webhook-telegram-proxy"
+                                />
+                                <p className="text-[11px] text-muted-foreground">
+                                    URL del webhook en tu n8n que procesa las
+                                    peticiones y proxifica Telegram.
+                                </p>
+                                {globalN8nProxyUrl && (
+                                    <p className="text-[11px] text-muted-foreground">
+                                        Si se deja vacío, se usará el webhook
+                                        global de la plataforma:{' '}
+                                        <code className="font-mono">
+                                            {globalN8nProxyUrl}
+                                        </code>
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="n8n_api_key">
+                                    n8n API Key
+                                </Label>
+                                <div className="relative">
+                                    <Input
+                                        id="n8n_api_key"
+                                        type={
+                                            showN8nApiKey
+                                                ? 'text'
+                                                : 'password'
+                                        }
+                                        value={n8nForm.api_key}
+                                        onChange={(e) =>
+                                            handleN8nFieldChange(
+                                                'api_key',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder={
+                                            n8nHasApiKey
+                                                ? '•••••••••••••••• (ya configurada)'
+                                                : 'Ingresa la API Key'
+                                        }
+                                        className="pr-10"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowN8nApiKey((prev) => !prev)
+                                        }
+                                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-foreground"
+                                        aria-label={
+                                            showN8nApiKey
+                                                ? 'Ocultar API Key'
+                                                : 'Mostrar API Key'
+                                        }
+                                        title={
+                                            showN8nApiKey
+                                                ? 'Ocultar API Key'
+                                                : 'Mostrar API Key'
+                                        }
+                                    >
+                                        {showN8nApiKey ? (
+                                            <EyeOff className="h-4 w-4" />
+                                        ) : (
+                                            <Eye className="h-4 w-4" />
+                                        )}
+                                    </button>
+                                </div>
+                                <p className="text-[11px] text-muted-foreground">
+                                    La API Key se almacena encriptada de forma
+                                    segura. Si la dejas vacía, se mantendrá la
+                                    existente.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={testN8nConnection}
+                                    disabled={n8nTesting || !n8nCanTest}
+                                    className="gap-2"
+                                >
+                                    {n8nTesting ? (
+                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                    ) : (
+                                        <Radio className="h-4 w-4" />
+                                    )}
+                                    {n8nTesting
+                                        ? 'Probando...'
+                                        : 'Probar Conexión n8n'}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="default"
+                                    onClick={saveN8nConfig}
+                                    disabled={
+                                        n8nSaving ||
+                                        (!n8nDirty && !n8nTested)
+                                    }
+                                    className="gap-2"
+                                >
+                                    {n8nSaving ? (
+                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                    ) : (
+                                        <Save className="h-4 w-4" />
+                                    )}
+                                    {n8nSaving
+                                        ? 'Guardando...'
+                                        : 'Guardar Configuración n8n'}
+                                </Button>
+                                {n8nTested && (
+                                    <span className="flex items-center gap-1 text-xs text-emerald-600">
+                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                        Conexión exitosa
+                                    </span>
+                                )}
+                            </div>
+
+                            {n8nHasApiKey && (
+                                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                                    <ShieldCheck className="h-3 w-3" />
+                                    API Key configurada y almacenada encriptada.
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
 
                     {/* Telegram Login Widget */}
                     {has_credentials && botUsername && (

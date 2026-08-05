@@ -31,6 +31,7 @@ import {
     Share2,
     Bot,
     Crown,
+    KeyRound,
     Tag,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -533,6 +534,21 @@ export function AppRightSidebar() {
                                         <Bot className="h-4 w-4" />
                                         <Crown className="h-3.5 w-3.5 text-amber-500" />
                                         <span>Automatiza tu negocio</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarGroup>
+                )}
+
+                {hasPermission('sistema.integraciones.viewAny') && (
+                    <SidebarGroup className="px-2 py-0">
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild tooltip={{ children: 'Conexiones API' }}>
+                                    <Link href="/integraciones-api" prefetch>
+                                        <KeyRound className="h-4 w-4" />
+                                        <span>Conexiones API</span>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>

@@ -160,11 +160,13 @@ test('login-callback controller stores telegram_chat_id when hash is valid', fun
 });
 
 test('generate-link returns error when no bot username configured', function () {
-    $response = $this->actingAs($this->user)->postJson(route('telegram.generate-link'));
+    $response = $this->actingAs($this->user)->postJson(route('telegram.generate-link'), [
+        'type' => 'custom',
+    ]);
 
     $response->assertJson([
         'success' => false,
-        'message' => 'No hay un bot de Telegram configurado. Guarda las credenciales primero.',
+        'message' => 'No hay un bot de Telegram configurado. Guarda las credenciales del bot primero.',
     ]);
     $response->assertStatus(422);
 });
@@ -176,7 +178,9 @@ test('generate-link generates a linking link successfully', function () {
         'telegram_bot_username' => 'test_bot',
     ]);
 
-    $response = $this->actingAs($this->user)->postJson(route('telegram.generate-link'));
+    $response = $this->actingAs($this->user)->postJson(route('telegram.generate-link'), [
+        'type' => 'custom',
+    ]);
 
     $response->assertJson([
         'success' => true,
@@ -189,6 +193,29 @@ test('generate-link generates a linking link successfully', function () {
         'owner_id' => $this->user->getOwnerId(),
         'user_id' => $this->user->id,
     ]);
+});
+
+test('generate-link creates an unused token without touching channel_credentials', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_token' => 'test:token',
+        'telegram_bot_username' => 'test_bot',
+    ]);
+
+    $response = $this->actingAs($this->user)->postJson(route('telegram.generate-link'), [
+        'type' => 'custom',
+    ]);
+
+    $response->assertJson(['success' => true]);
+
+    $this->assertDatabaseHas('telegram_linking_tokens', [
+        'owner_id' => $this->user->getOwnerId(),
+        'used_at' => null,
+    ]);
+
+    $credentials = ChannelCredential::where('owner_id', $this->user->getOwnerId())->first();
+    expect($credentials->telegram_chat_id)->toBeNull();
+    expect($credentials->telegram_linked_at)->toBeNull();
 });
 
 test('webhook handle processes linking token and saves chat_id', function () {
@@ -215,7 +242,7 @@ test('webhook handle processes linking token and saves chat_id', function () {
 
     $response = $controller->handle($request);
 
-    expect(json_decode($response->getContent(), true)['status'])->toBe('linked');
+    expect(json_decode($response->getContent(), true)['status'])->toBe('ok');
 
     $this->assertDatabaseHas('channel_credentials', [
         'owner_id' => $this->user->getOwnerId(),
@@ -253,7 +280,7 @@ test('webhook handle ignores invalid or expired tokens', function () {
 
     $response = $controller->handle($request);
 
-    expect(json_decode($response->getContent(), true)['status'])->toBe('invalid_token');
+    expect(json_decode($response->getContent(), true)['status'])->toBe('ok');
 
     $this->assertDatabaseMissing('channel_credentials', [
         'owner_id' => $this->user->getOwnerId(),
@@ -381,7 +408,7 @@ test('generate-link with type global returns error when no global bot configured
 
     $response->assertJson([
         'success' => false,
-        'message' => 'No hay un bot oficial configurado en la plataforma.',
+        'message' => 'No hay un bot oficial configurado en la plataforma. Por favor configúralo en Configuración Web.',
     ]);
     $response->assertStatus(422);
 });
@@ -411,7 +438,7 @@ test('webhook processLinking saves bot_type from linking token', function () {
 
     $response = $controller->handle($request);
 
-    expect(json_decode($response->getContent(), true)['status'])->toBe('linked');
+    expect(json_decode($response->getContent(), true)['status'])->toBe('ok');
 
     $this->assertDatabaseHas('channel_credentials', [
         'owner_id' => $this->user->getOwnerId(),
@@ -516,7 +543,7 @@ test('api canales telegram webhook links account via start token, sends Telegram
     ]);
 
     $response->assertOk();
-    $response->assertJson(['status' => 'linked']);
+    $response->assertJson(['status' => 'ok']);
 
     $this->assertDatabaseHas('channel_credentials', [
         'owner_id' => $this->user->getOwnerId(),
@@ -593,7 +620,7 @@ test('api canales telegram webhook responds with instructions when user sends /s
     ]);
 
     $response->assertOk();
-    $response->assertJson(['status' => 'missing_token']);
+    $response->assertJson(['status' => 'ok']);
 
     Http::assertSent(function ($request) {
         return str_contains($request->url(), 'api.telegram.org')
@@ -626,7 +653,7 @@ test('api canales telegram webhook rejects invalid start token with error messag
     ]);
 
     $response->assertOk();
-    $response->assertJson(['status' => 'invalid_token']);
+    $response->assertJson(['status' => 'ok']);
 
     Http::assertSent(function ($request) {
         return str_contains($request->url(), 'api.telegram.org')
@@ -667,7 +694,7 @@ test('webhook handle links account via /start@botname token format', function ()
 
     $response = $controller->handle($request);
 
-    expect(json_decode($response->getContent(), true)['status'])->toBe('linked');
+    expect(json_decode($response->getContent(), true)['status'])->toBe('ok');
 
     $this->assertDatabaseHas('channel_credentials', [
         'owner_id' => $this->user->getOwnerId(),
@@ -705,7 +732,7 @@ test('webhook handle links account when update is wrapped by n8n proxy', functio
 
     $response = $controller->handle($request);
 
-    expect(json_decode($response->getContent(), true)['status'])->toBe('linked');
+    expect(json_decode($response->getContent(), true)['status'])->toBe('ok');
 
     $this->assertDatabaseHas('channel_credentials', [
         'owner_id' => $this->user->getOwnerId(),
@@ -741,7 +768,7 @@ test('webhook handle trims punctuation from start token', function () {
 
     $response = $controller->handle($request);
 
-    expect(json_decode($response->getContent(), true)['status'])->toBe('linked');
+    expect(json_decode($response->getContent(), true)['status'])->toBe('ok');
 
     $this->assertDatabaseHas('channel_credentials', [
         'owner_id' => $this->user->getOwnerId(),
@@ -783,7 +810,7 @@ test('proxy gate intercepts linking update and does not forward to n8n', functio
     ]);
 
     $response->assertOk();
-    $response->assertJson(['status' => 'linked']);
+    $response->assertJson(['status' => 'ok']);
 
     $this->assertDatabaseHas('channel_credentials', [
         'owner_id' => $this->user->getOwnerId(),
@@ -905,7 +932,7 @@ test('webhook handle links account when body arrives as JSON string (n8n wrapped
 
     $response = $controller->handle($request);
 
-    expect(json_decode($response->getContent(), true)['status'])->toBe('linked');
+    expect(json_decode($response->getContent(), true)['status'])->toBe('ok');
 
     $token->refresh();
     expect($token->telegram_chat_id)->toBe('777666');
@@ -986,7 +1013,7 @@ test('webhook treats a re-delivered /start TOKEN for the same chat as linked (id
 
     $response = $controller->handle($request);
 
-    expect(json_decode($response->getContent(), true)['status'])->toBe('linked');
+    expect(json_decode($response->getContent(), true)['status'])->toBe('ok');
 });
 
 test('telegram login-callback without a token does not mark any linking token as used', function () {
@@ -1046,7 +1073,9 @@ test('generate-link returns the linking token alongside the url', function () {
         'telegram_bot_username' => 'test_bot',
     ]);
 
-    $response = $this->actingAs($this->user)->postJson(route('telegram.generate-link'));
+    $response = $this->actingAs($this->user)->postJson(route('telegram.generate-link'), [
+        'type' => 'custom',
+    ]);
 
     $response->assertJson(['success' => true]);
 
@@ -1067,7 +1096,7 @@ test('web linking page redirects to canales with success flash when token is val
     $response = $this->get(route('telegram.vincular', $token->token));
 
     $response->assertRedirect(route('channel-credentials.index'));
-    $response->assertSessionHas('success', 'Enlace generado. Por favor confirma en Telegram.');
+    $response->assertSessionHas('success', 'Enlace generado. Por favor confirma enviando el comando /start en Telegram.');
 });
 
 test('web linking page redirects with error flash when token is invalid or expired', function () {
@@ -1090,4 +1119,84 @@ test('web linking page redirects with error flash when token does not exist', fu
     $response->assertRedirect(route('channel-credentials.index'));
     $response->assertSessionHas('error', 'El enlace de vinculación es inválido o ha expirado.');
     $this->assertDatabaseMissing('telegram_linking_tokens', ['token' => 'nonexistent_token']);
+});
+
+test('webhook links account from flat n8n-relayed payload with chat_id and text', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_token' => 'test:token',
+        'telegram_bot_username' => 'test_bot',
+    ]);
+
+    $token = TelegramLinkingToken::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'user_id' => $this->user->id,
+        'token' => 'flat_text_token',
+        'expires_at' => now()->addMinutes(15),
+    ]);
+
+    Http::fake([
+        'api.telegram.org/*' => Http::response(['ok' => true], 200),
+    ]);
+
+    $response = $this->postJson('/api/canales/telegram/webhook', [
+        'chat_id' => 424242,
+        'text' => '/start flat_text_token',
+    ]);
+
+    $response->assertOk();
+    $response->assertJson(['status' => 'ok']);
+
+    $this->assertDatabaseHas('channel_credentials', [
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_chat_id' => '424242',
+    ]);
+
+    $token->refresh();
+    expect($token->used_at)->not->toBeNull();
+});
+
+test('webhook links account from flat n8n-relayed payload with separate token field', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_token' => 'test:token',
+        'telegram_bot_username' => 'test_bot',
+    ]);
+
+    $token = TelegramLinkingToken::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'user_id' => $this->user->id,
+        'token' => 'flat_token_field',
+        'expires_at' => now()->addMinutes(15),
+    ]);
+
+    Http::fake([
+        'api.telegram.org/*' => Http::response(['ok' => true], 200),
+    ]);
+
+    $response = $this->postJson('/api/canales/telegram/webhook', [
+        'chat_id' => 434343,
+        'token' => 'flat_token_field',
+        'user_message' => 'Mensaje relayeado por n8n',
+    ]);
+
+    $response->assertOk();
+    $response->assertJson(['status' => 'ok']);
+
+    $this->assertDatabaseHas('channel_credentials', [
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_chat_id' => '434343',
+    ]);
+
+    $token->refresh();
+    expect($token->used_at)->not->toBeNull();
+});
+
+test('webhook ignores flat payload without chat_id', function () {
+    $response = $this->postJson('/api/canales/telegram/webhook', [
+        'text' => '/start any_token',
+    ]);
+
+    $response->assertOk();
+    $response->assertJson(['status' => 'ok']);
 });

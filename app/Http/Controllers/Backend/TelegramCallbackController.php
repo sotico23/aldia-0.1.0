@@ -99,7 +99,8 @@ class TelegramCallbackController extends Controller
             return null;
         }
 
-        return TelegramLinkingToken::valid()
+        return TelegramLinkingToken::whereNull('used_at')
+            ->where('expires_at', '>', now())
             ->where('token', $tokenStr)
             ->first();
     }

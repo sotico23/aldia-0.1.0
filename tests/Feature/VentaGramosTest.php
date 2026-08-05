@@ -227,6 +227,7 @@ test('update accepts decimal quantity', function () {
         'cliente_id' => $this->cliente->id,
         'owner_id' => $this->user->getOwnerId(),
         'almacen_id' => $this->almacen->id,
+        'estado' => 'pendiente',
     ]);
 
     $response = $this->actingAs($this->user)

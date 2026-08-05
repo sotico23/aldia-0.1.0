@@ -48,6 +48,17 @@ class ChannelCredentialController extends Controller
                 'api_version' => $n8nConfig->whatsapp_api_version ?? 'v22.0',
                 'is_active' => $n8nConfig->is_active,
             ] : null,
+            'global_n8n' => [
+                'base_url' => $n8nConfig?->base_url ?? null,
+                'webhook_url' => $n8nConfig?->webhook_url ?? null,
+                'telegram_proxy_url' => $n8nConfig?->telegram_proxy_url ?? null,
+                'is_active' => $n8nConfig?->is_active ?? false,
+            ],
+            'n8n_config' => [
+                'n8n_base_url' => $credentials?->n8n_base_url ?? '',
+                'n8n_telegram_proxy_webhook_url' => $credentials?->n8n_telegram_proxy_webhook_url ?? '',
+                'has_api_key' => $credentials?->n8n_api_key !== null,
+            ],
             'app_name' => $webSettings->app_name ?? 'Aldia',
             'automation' => $automation ? [
                 'channel' => $automation->channel,

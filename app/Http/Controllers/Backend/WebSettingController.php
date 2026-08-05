@@ -649,4 +649,154 @@ class WebSettingController extends Controller implements HasMiddleware
             ], 422);
         }
     }
+
+    public function setTelegramWebhook(Request $request): JsonResponse
+    {
+        $settings = WebSetting::getSettings();
+        $botToken = $request->input('bot_token') ?: $settings->global_telegram_bot_token;
+
+        if (! $botToken) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay un token de bot de Telegram configurado. Completa el formulario y guárdalo o envía el token.',
+            ], 422);
+        }
+
+        try {
+            $response = Http::timeout(10)
+                ->connectTimeout(5)
+                ->withOptions(['verify' => false])
+                ->post('https://api.telegram.org/bot'.$botToken.'/setWebhook', [
+                    'url' => route('webhooks.telegram'),
+                    'drop_pending_updates' => true,
+                ]);
+
+            $body = $response->json();
+
+            if ($response->successful() && ($body['ok'] ?? false)) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Webhook registrado exitosamente con Telegram.',
+                    'webhook_url' => route('webhooks.telegram'),
+                    'webhook_configured' => true,
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $body['description'] ?? 'Telegram rechazó la configuración del webhook. Verifica el token.',
+            ], 422);
+        } catch (ConnectionException $e) {
+            Log::error('Telegram setWebhook connection exception', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo conectar con la API de Telegram. Verifica tu conexión e inténtalo nuevamente.',
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Telegram setWebhook exception', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al registrar el webhook de Telegram.',
+            ], 422);
+        }
+    }
+
+    public function setWhatsAppWebhook(Request $request): JsonResponse
+    {
+        $settings = WebSetting::getSettings();
+
+        $accessToken = $request->input('access_token') ?: $settings->whatsapp_access_token;
+        $businessId = $request->input('business_id') ?: $settings->whatsapp_business_id;
+        $apiVersion = $request->input('api_version') ?: $settings->whatsapp_api_version ?: 'v22.0';
+        $webhookUrl = $request->input('webhook_url') ?: $settings->whatsapp_webhook_url;
+
+        if (! $accessToken) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay un Access Token de WhatsApp configurado. Completa el formulario y guárdalo o envía el token.',
+            ], 422);
+        }
+
+        if (! $businessId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay un Business ID de WhatsApp configurado. Completa el formulario y guárdalo o envía el ID.',
+            ], 422);
+        }
+
+        if (! $webhookUrl) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay una URL de webhook de WhatsApp configurada. Completa el formulario y guárdalo o envía la URL.',
+            ], 422);
+        }
+
+        try {
+            $webhookCheck = Http::timeout(10)
+                ->connectTimeout(5)
+                ->withOptions(['verify' => false])
+                ->get($webhookUrl);
+
+            if (! $webhookCheck->successful()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo conectar con la URL del webhook. Verifica la URL.',
+                ], 422);
+            }
+        } catch (ConnectionException $e) {
+            Log::error('WhatsApp setWebhook connection exception (url)', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo conectar con la URL del webhook. Verifica la URL e inténtalo nuevamente.',
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('WhatsApp setWebhook exception (url)', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'El webhook de WhatsApp ingresado no es válido o no está disponible.',
+            ], 422);
+        }
+
+        try {
+            $response = Http::timeout(15)
+                ->connectTimeout(5)
+                ->withToken($accessToken)
+                ->post("https://graph.facebook.com/{$apiVersion}/{$businessId}/subscribed_apps");
+
+            $result = $response->json();
+
+            if ($response->successful() && ($result['success'] ?? false)) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Webhook registrado exitosamente con WhatsApp.',
+                    'webhook_url' => $webhookUrl,
+                ]);
+            }
+
+            $errorMsg = $result['error']['message'] ?? 'La API de WhatsApp rechazó la suscripción del webhook.';
+
+            return response()->json([
+                'success' => false,
+                'message' => "Error: {$errorMsg}",
+            ], 422);
+        } catch (ConnectionException $e) {
+            Log::error('WhatsApp setWebhook connection exception', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo conectar con la API de WhatsApp. Verifica tu conexión e inténtalo nuevamente.',
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('WhatsApp setWebhook exception', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al registrar el webhook de WhatsApp.',
+            ], 422);
+        }
+    }
 }

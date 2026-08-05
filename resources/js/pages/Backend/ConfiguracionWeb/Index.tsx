@@ -562,6 +562,8 @@ const [testingGoogle, setTestingGoogle] = useState(false);
      const [testingWhatsApp, setTestingWhatsApp] = useState(false);
      const [isTelegramTested, setIsTelegramTested] = useState(false);
      const [isWhatsAppTested, setIsWhatsAppTested] = useState(false);
+     const [settingTelegramWebhook, setSettingTelegramWebhook] = useState(false);
+     const [settingWhatsAppWebhook, setSettingWhatsAppWebhook] = useState(false);
 
 const [n8nConfig, setN8nConfig] = useState({
          provider: 'n8n',
@@ -705,6 +707,62 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
              return;
          }
          window.open(data.whatsapp_webhook_url, '_blank');
+     };
+
+     const setTelegramWebhook = async () => {
+         if (!data.global_telegram_bot_token) {
+             toast.error('Completa el token del bot de Telegram antes de establecer el webhook.');
+             return;
+         }
+
+         setSettingTelegramWebhook(true);
+
+         try {
+             const response = await axios.post('/configuracion-web/set-telegram-webhook', {
+                 bot_token: data.global_telegram_bot_token,
+             });
+
+             if (response.data.success) {
+                 toast.success(response.data.message);
+             } else {
+                 toast.error(response.data.message);
+             }
+         } catch (error: any) {
+             const msg = error.response?.data?.message || 'Error al establecer el webhook de Telegram';
+             toast.error(msg);
+         } finally {
+             setSettingTelegramWebhook(false);
+         }
+     };
+
+     const setWhatsAppWebhook = async () => {
+         if (!data.whatsapp_access_token || !data.whatsapp_business_id) {
+             toast.error('Completa el Access Token y el Business ID de WhatsApp antes de establecer el webhook.');
+             return;
+         }
+
+         setSettingWhatsAppWebhook(true);
+
+         try {
+             const response = await axios.post('/configuracion-web/set-whatsapp-webhook', {
+                 webhook_url: data.whatsapp_webhook_url,
+                 phone_number_id: data.whatsapp_phone_number_id,
+                 access_token: data.whatsapp_access_token,
+                 business_id: data.whatsapp_business_id,
+                 api_version: data.whatsapp_api_version,
+             });
+
+             if (response.data.success) {
+                 toast.success(response.data.message);
+             } else {
+                 toast.error(response.data.message);
+             }
+         } catch (error: any) {
+             const msg = error.response?.data?.message || 'Error al establecer el webhook de WhatsApp';
+             toast.error(msg);
+         } finally {
+             setSettingWhatsAppWebhook(false);
+         }
      };
 
      const handleTelegramChange = (
@@ -1949,11 +2007,25 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
                                                           disabled={!isTelegramTested}
                                                           className="gap-2"
                                                       >
-                                                          <MessageSquare className="h-4 w-4" />
-                                                          Abrir Chat
-                                                      </Button>
-                                                 </div>
-                                             </CardContent>
+                                                           <MessageSquare className="h-4 w-4" />
+                                                           Abrir Chat
+                                                       </Button>
+                                                  </div>
+                                                  <Button
+                                                      type="button"
+                                                      variant="default"
+                                                      onClick={setTelegramWebhook}
+                                                      disabled={settingTelegramWebhook}
+                                                      className="w-full gap-2"
+                                                  >
+                                                      {settingTelegramWebhook ? (
+                                                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                      ) : (
+                                                          <LinkIcon className="h-4 w-4" />
+                                                      )}
+                                                      {settingTelegramWebhook ? 'Estableciendo webhook...' : 'Establecer Webhook Global'}
+                                                  </Button>
+                                              </CardContent>
                                          </Card>
 <Card>
                                              <CardHeader>
@@ -2047,11 +2119,25 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
                                                           disabled={!isWhatsAppTested}
                                                           className="gap-2"
                                                       >
-                                                          <Phone className="h-4 w-4" />
-                                                          Abrir Chat
-                                                      </Button>
-                                                 </div>
-                                             </CardContent>
+                                                           <Phone className="h-4 w-4" />
+                                                           Abrir Chat
+                                                       </Button>
+                                                  </div>
+                                                  <Button
+                                                      type="button"
+                                                      variant="default"
+                                                      onClick={setWhatsAppWebhook}
+                                                      disabled={settingWhatsAppWebhook}
+                                                      className="w-full gap-2"
+                                                  >
+                                                      {settingWhatsAppWebhook ? (
+                                                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                      ) : (
+                                                          <LinkIcon className="h-4 w-4" />
+                                                      )}
+                                                      {settingWhatsAppWebhook ? 'Estableciendo webhook...' : 'Establecer Webhook Global'}
+                                                  </Button>
+                                              </CardContent>
                                          </Card>
                                     </div>
                                 </div>

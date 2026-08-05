@@ -75,9 +75,11 @@ class SendChannelConfigurationToN8n implements ShouldQueue
             $botUsernameClean = ltrim($botUsername, '@');
 
             // Try to find a valid linking token, or generate a new one
-            $tokenModel = TelegramLinkingToken::valid()
+            $tokenModel = TelegramLinkingToken::whereNull('used_at')
+                ->where('expires_at', '>', now())
                 ->where('owner_id', $ownerId)
                 ->where('bot_type', $botType === 'oficial' ? 'global' : 'custom')
+                ->latest()
                 ->first();
 
             if (! $tokenModel) {
@@ -109,9 +111,11 @@ class SendChannelConfigurationToN8n implements ShouldQueue
             'bot_type' => $botType,
         ];
 
-        // Resolve webhook URL: DB takes priority over env
+        // Resolve webhook URL: tenant-specific URL takes priority, then the
+        // global n8n integration values, then env config.
         $n8nIntegration = SystemIntegration::forProvider('n8n')->first();
-        $webhookUrl = $n8nIntegration?->telegram_proxy_url
+        $webhookUrl = $credentials->n8n_telegram_proxy_webhook_url
+            ?: $n8nIntegration?->telegram_proxy_url
             ?: config('services.n8n.telegram_proxy_url');
 
         if (! $webhookUrl) {

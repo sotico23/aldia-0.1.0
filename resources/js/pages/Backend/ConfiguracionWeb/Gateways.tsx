@@ -7,10 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Save, RefreshCw, ChevronDown, ChevronRight, ExternalLink, CreditCard } from 'lucide-react';
+import { Loader2, Save, RefreshCw, ChevronDown, ChevronRight, ExternalLink, CreditCard, KeyRound } from 'lucide-react';
 
 export default function Gateways() {
     const [loading, setLoading] = useState(true);
+    const [autofilling, setAutofilling] = useState(false);
     const [expanded, setExpanded] = useState<string | null>('webpay');
 
     const [webpay, setWebpay] = useState({
@@ -86,6 +87,49 @@ export default function Gateways() {
         }
     };
 
+    const autofillFromIntegrations = async () => {
+        setAutofilling(true);
+        try {
+            const res = await axios.get('/api/v1/tenant-credentials/autocomplete');
+            const data = res.data?.data ?? {};
+
+            if (data.webpay) {
+                setWebpay((prev) => ({
+                    ...prev,
+                    commerce_code: data.webpay.commerce_code || prev.commerce_code,
+                    api_key: data.webpay.api_key || prev.api_key,
+                    environment: data.webpay.environment || prev.environment,
+                }));
+            }
+            if (data.paypal) {
+                setPaypal((prev) => ({
+                    ...prev,
+                    paypal_client_id: data.paypal.paypal_client_id || prev.paypal_client_id,
+                    paypal_client_secret: data.paypal.paypal_client_secret || prev.paypal_client_secret,
+                    paypal_mode: data.paypal.paypal_mode || prev.paypal_mode,
+                }));
+            }
+            if (data.mercadopago) {
+                setMercadopago((prev) => ({
+                    ...prev,
+                    mercadopago_public_key: data.mercadopago.mercadopago_public_key || prev.mercadopago_public_key,
+                    mercadopago_access_token: data.mercadopago.mercadopago_access_token || prev.mercadopago_access_token,
+                    mercadopago_mode: data.mercadopago.mercadopago_mode || prev.mercadopago_mode,
+                }));
+            }
+
+            toast.success('Credenciales cargadas desde Conexiones API.');
+        } catch (error: any) {
+            if (error.response?.status === 403) {
+                toast.error('No tienes permiso para acceder a las integraciones API.');
+            } else {
+                toast.error('No se pudieron cargar las credenciales desde Conexiones API.');
+            }
+        } finally {
+            setAutofilling(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center py-12">
@@ -121,6 +165,15 @@ export default function Gateways() {
 
     return (
         <div className="space-y-4">
+            <div className="mb-4 flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                    Configuración global de pasarelas de pago de la plataforma.
+                </p>
+                <Button variant="outline" onClick={autofillFromIntegrations} disabled={autofilling} className="gap-2">
+                    {autofilling ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+                    Usar mis Conexiones API
+                </Button>
+            </div>
             {/* Webpay */}
             <Accordion id="webpay" title="Webpay Plus (Transbank)" icon={<CreditCard className="h-5 w-5" />} defaultOpen>
                 <div className="space-y-4 pt-4">

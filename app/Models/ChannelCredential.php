@@ -23,6 +23,9 @@ class ChannelCredential extends Model
         'whatsapp_access_token',
         'whatsapp_business_id',
         'whatsapp_api_version',
+        'n8n_base_url',
+        'n8n_telegram_proxy_webhook_url',
+        'n8n_api_key',
     ];
 
     protected function casts(): array
@@ -30,6 +33,7 @@ class ChannelCredential extends Model
         return [
             'telegram_bot_token' => 'encrypted',
             'whatsapp_access_token' => 'encrypted',
+            'n8n_api_key' => 'encrypted',
             'telegram_linked_at' => 'datetime',
         ];
     }

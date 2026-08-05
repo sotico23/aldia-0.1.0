@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\SystemHealthController;
 use App\Http\Controllers\AffiliateController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\Auth\SocialiteController;
+use App\Http\Controllers\Backend\ApiIntegrationController;
 use App\Http\Controllers\Backend\AutomationController;
 use App\Http\Controllers\Backend\AutomationExecutionController;
 use App\Http\Controllers\Backend\ChannelCredentialController;
@@ -26,6 +27,7 @@ use App\Http\Controllers\Backend\SystemIntegrationController;
 use App\Http\Controllers\Backend\TareaController;
 use App\Http\Controllers\Backend\TelegramCallbackController;
 use App\Http\Controllers\Backend\TelegramLinkingController;
+use App\Http\Controllers\Backend\TenantChannelConfigController;
 use App\Http\Controllers\Backend\VentaController;
 use App\Http\Controllers\Backend\WebpayConfigController;
 use App\Http\Controllers\Backend\WebpayController;
@@ -129,6 +131,14 @@ Route::middleware(['auth'])->group(function () {
             ->name('automation.test')
             ->middleware('throttle:10,1');
 
+        Route::get('canales/n8n-config', [TenantChannelConfigController::class, 'show'])
+            ->name('channel-credentials.n8n-config');
+        Route::put('canales/n8n-config', [TenantChannelConfigController::class, 'update'])
+            ->name('channel-credentials.n8n-config.update');
+        Route::post('canales/n8n-config/test', [TenantChannelConfigController::class, 'testConnection'])
+            ->name('channel-credentials.n8n-config.test')
+            ->middleware('throttle:10,1');
+
         Route::get('automatizaciones/historial', [AutomationExecutionController::class, 'index'])
             ->name('automation.history');
         Route::get('automatizaciones/historial/{id}', [AutomationExecutionController::class, 'show'])
@@ -138,6 +148,18 @@ Route::middleware(['auth'])->group(function () {
             ->name('telegram.login-callback');
         Route::post('canales/telegram/generate-link', [TelegramLinkingController::class, 'generateLink'])
             ->name('telegram.generate-link');
+    });
+
+    Route::middleware(['permission:sistema.integraciones.viewAny'])->group(function () {
+        Route::get('integraciones-api', [ApiIntegrationController::class, 'index'])
+            ->name('integraciones-api.index');
+        Route::post('integraciones-api/save', [ApiIntegrationController::class, 'save'])
+            ->name('integraciones-api.save');
+        Route::post('integraciones-api/test/{provider}', [ApiIntegrationController::class, 'test'])
+            ->name('integraciones-api.test')
+            ->middleware('throttle:10,1');
+        Route::get('api/v1/tenant-credentials/autocomplete', [ApiIntegrationController::class, 'autocomplete'])
+            ->name('tenant-credentials.autocomplete');
     });
 
     Route::middleware(['permission:comercial.cotizaciones.viewAny'])->group(function () {

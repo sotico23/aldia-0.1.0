@@ -31,6 +31,8 @@ Route::middleware(['permission:admin.web-settings.viewAny'])->group(function () 
     Route::post('configuracion-web/test-social', [WebSettingController::class, 'testSocialConnection'])->name('configuracion-web.test-social');
     Route::post('configuracion-web/test-telegram', [WebSettingController::class, 'testTelegramConnection'])->name('configuracion-web.test-telegram');
     Route::post('configuracion-web/test-whatsapp', [WebSettingController::class, 'testWhatsAppConnection'])->name('configuracion-web.test-whatsapp');
+    Route::post('configuracion-web/set-telegram-webhook', [WebSettingController::class, 'setTelegramWebhook'])->name('configuracion-web.set-telegram-webhook');
+    Route::post('configuracion-web/set-whatsapp-webhook', [WebSettingController::class, 'setWhatsAppWebhook'])->name('configuracion-web.set-whatsapp-webhook');
 
     Route::middleware('throttle:60,1')->group(function () {
         Route::get('configuracion-web/financial-settings', [FinancialSettingsController::class, 'show'])->name('configuracion-web.financial-settings');

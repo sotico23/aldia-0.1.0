@@ -320,6 +320,7 @@ class PermissionsSeeder extends Seeder
             ],
             'sistema' => [
                 'automatizaciones',
+                'integraciones',
             ],
             'citas' => [
                 'citas',

@@ -174,6 +174,75 @@ class N8nService
     }
 
     /**
+     * Resolve the Telegram proxy URL for a tenant: tenant-specific value wins,
+     * falling back to the global n8n integration values.
+     */
+    public function resolveTenantTelegramProxyUrl(?string $tenantProxyUrl): ?string
+    {
+        return $tenantProxyUrl ?: $this->getTelegramProxyUrl() ?: $this->getWebhookUrl();
+    }
+
+    /**
+     * Test the tenant's n8n Telegram proxy webhook URL. If the tenant has no
+     * URL configured, the global n8n integration values are used as fallback.
+     * When only a Base URL is available, its /healthz endpoint is checked.
+     */
+    public function testTenantConnection(?string $tenantProxyUrl = null, ?string $tenantBaseUrl = null): array
+    {
+        $targetUrl = $this->resolveTenantTelegramProxyUrl($tenantProxyUrl);
+
+        if (! $targetUrl && $tenantBaseUrl) {
+            $targetUrl = rtrim($tenantBaseUrl, '/').'/healthz';
+        }
+
+        if (! $targetUrl) {
+            return [
+                'success' => false,
+                'message' => 'No hay URL de proxy de Telegram configurada. Ingresa tu URL personalizada o configura la URL global en Configuración Web > n8n.',
+            ];
+        }
+
+        try {
+            $isHealthz = str_ends_with($targetUrl, '/healthz');
+            $http = Http::timeout(10)
+                ->connectTimeout(5)
+                ->withOptions(['verify' => false]);
+
+            $response = $isHealthz
+                ? $http->get($targetUrl)
+                : $http->post($targetUrl, $this->buildTestPayload());
+
+            if ($response->successful()) {
+                Log::info('n8n tenant telegram proxy test succeeded', ['url' => $targetUrl, 'status' => $response->status()]);
+
+                return [
+                    'success' => true,
+                    'message' => 'Conexión exitosa con tu proxy de Telegram de n8n (HTTP '.$response->status().').',
+                    'url' => $targetUrl,
+                ];
+            }
+
+            Log::warning('n8n tenant telegram proxy test failed', [
+                'url' => $targetUrl,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'n8n respondió con estado '.$response->status().'. Verifica que el workflow "Webhook Entrada Proxy Laravel" esté activo.',
+            ];
+        } catch (\Exception $e) {
+            Log::error('n8n tenant telegram proxy test error', ['url' => $targetUrl, 'error' => $e->getMessage()]);
+
+            return [
+                'success' => false,
+                'message' => 'No se pudo conectar con tu proxy de Telegram de n8n. Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Payload that the n8n "Webhook Entrada Proxy Laravel" node can recognize:
      * event=test_connection short-circuits the workflow without side effects.
      */
@@ -198,7 +267,8 @@ class N8nService
             // n8n must not generate "phantom" linking rows (used_at/chat_id never
             // filled) that clutter telegram_linking_tokens. Token lifecycle is
             // owned exclusively by the /start deep-link flow.
-            $existingToken = TelegramLinkingToken::valid()
+            $existingToken = TelegramLinkingToken::whereNull('used_at')
+                ->where('expires_at', '>', now())
                 ->where('owner_id', $ownerId)
                 ->latest()
                 ->value('token');

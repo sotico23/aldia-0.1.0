@@ -230,3 +230,129 @@ test('test-whatsapp-connection returns network message on ConnectionException', 
         'message' => 'No se pudo conectar con la URL del webhook. Verifica la URL e inténtalo nuevamente.',
     ]);
 });
+
+test('set-telegram-webhook requires a bot token', function () {
+    $response = $this->actingAs($this->user)->postJson(route('configuracion-web.set-telegram-webhook'), []);
+
+    $response->assertStatus(422);
+    $response->assertJson([
+        'success' => false,
+        'message' => 'No hay un token de bot de Telegram configurado. Completa el formulario y guárdalo o envía el token.',
+    ]);
+});
+
+test('set-telegram-webhook registers the webhook successfully', function () {
+    Http::fake([
+        'api.telegram.org*' => Http::response(['ok' => true, 'result' => true, 'description' => 'Webhook was set'], 200),
+    ]);
+
+    $response = $this->actingAs($this->user)->postJson(route('configuracion-web.set-telegram-webhook'), [
+        'bot_token' => 'valid_token',
+    ]);
+
+    $response->assertStatus(200);
+    $response->assertJson([
+        'success' => true,
+        'message' => 'Webhook registrado exitosamente con Telegram.',
+        'webhook_url' => route('webhooks.telegram'),
+        'webhook_configured' => true,
+    ]);
+});
+
+test('set-telegram-webhook returns error when telegram rejects the webhook', function () {
+    Http::fake([
+        'api.telegram.org*' => Http::response(['ok' => false, 'description' => 'Unauthorized'], 401),
+    ]);
+
+    $response = $this->actingAs($this->user)->postJson(route('configuracion-web.set-telegram-webhook'), [
+        'bot_token' => 'bad_token',
+    ]);
+
+    $response->assertStatus(422);
+    $response->assertJson([
+        'success' => false,
+        'message' => 'Unauthorized',
+    ]);
+});
+
+test('set-telegram-webhook returns network message on ConnectionException', function () {
+    Http::fake(function () {
+        throw new ConnectionException('cURL error 6: Could not resolve host');
+    });
+
+    $response = $this->actingAs($this->user)->postJson(route('configuracion-web.set-telegram-webhook'), [
+        'bot_token' => 'valid_token',
+    ]);
+
+    $response->assertStatus(422);
+    $response->assertJson([
+        'success' => false,
+        'message' => 'No se pudo conectar con la API de Telegram. Verifica tu conexión e inténtalo nuevamente.',
+    ]);
+});
+
+test('set-whatsapp-webhook requires credentials', function () {
+    $response = $this->actingAs($this->user)->postJson(route('configuracion-web.set-whatsapp-webhook'), []);
+
+    $response->assertStatus(422);
+});
+
+test('set-whatsapp-webhook subscribes the business account successfully', function () {
+    Http::fake([
+        'https://valid-url.example.com/*' => Http::response([], 200),
+        'graph.facebook.com/*' => Http::response(['success' => true], 200),
+    ]);
+
+    $response = $this->actingAs($this->user)->postJson(route('configuracion-web.set-whatsapp-webhook'), [
+        'webhook_url' => 'https://valid-url.example.com/webhook',
+        'access_token' => 'valid_token',
+        'business_id' => '123456789',
+        'api_version' => 'v22.0',
+    ]);
+
+    $response->assertStatus(200);
+    $response->assertJson([
+        'success' => true,
+        'message' => 'Webhook registrado exitosamente con WhatsApp.',
+        'webhook_url' => 'https://valid-url.example.com/webhook',
+    ]);
+});
+
+test('set-whatsapp-webhook returns error when webhook url is unreachable', function () {
+    Http::fake([
+        'https://unreachable.example.com/*' => Http::response([], 404),
+    ]);
+
+    $response = $this->actingAs($this->user)->postJson(route('configuracion-web.set-whatsapp-webhook'), [
+        'webhook_url' => 'https://unreachable.example.com/webhook',
+        'access_token' => 'valid_token',
+        'business_id' => '123456789',
+    ]);
+
+    $response->assertStatus(422);
+    $response->assertJson([
+        'success' => false,
+        'message' => 'No se pudo conectar con la URL del webhook. Verifica la URL.',
+    ]);
+});
+
+test('set-whatsapp-webhook returns error when subscription fails', function () {
+    Http::fake([
+        'https://valid-url.example.com/*' => Http::response([], 200),
+        'graph.facebook.com/*' => Http::response([
+            'error' => ['message' => 'Invalid OAuth access token'],
+        ], 400),
+    ]);
+
+    $response = $this->actingAs($this->user)->postJson(route('configuracion-web.set-whatsapp-webhook'), [
+        'webhook_url' => 'https://valid-url.example.com/webhook',
+        'access_token' => 'bad_token',
+        'business_id' => '123456789',
+    ]);
+
+    $response->assertStatus(422);
+    $response->assertJson([
+        'success' => false,
+        'message' => 'Error: Invalid OAuth access token',
+    ]);
+});
