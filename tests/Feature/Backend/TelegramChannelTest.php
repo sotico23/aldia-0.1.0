@@ -1200,3 +1200,44 @@ test('webhook ignores flat payload without chat_id', function () {
     $response->assertOk();
     $response->assertJson(['status' => 'ok']);
 });
+
+test('check-linking returns is_linked true with owner_id when chat_id is linked', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_username' => 'test_bot',
+        'telegram_chat_id' => '123456789',
+        'telegram_linked_at' => now(),
+    ]);
+
+    $response = $this->postJson('/api/v1/telegram/check-linking', [
+        'chat_id' => '123456789',
+    ]);
+
+    $response->assertOk()
+        ->assertJson([
+            'is_linked' => true,
+            'owner_id' => $this->user->getOwnerId(),
+        ]);
+});
+
+test('check-linking returns is_linked false when chat_id is not linked', function () {
+    $response = $this->postJson('/api/v1/telegram/check-linking', [
+        'chat_id' => '999999999',
+    ]);
+
+    $response->assertOk()
+        ->assertJson([
+            'is_linked' => false,
+            'owner_id' => null,
+        ]);
+});
+
+test('check-linking returns 422 when chat_id is missing', function () {
+    $response = $this->postJson('/api/v1/telegram/check-linking');
+
+    $response->assertStatus(422)
+        ->assertJson([
+            'is_linked' => false,
+            'owner_id' => null,
+        ]);
+});

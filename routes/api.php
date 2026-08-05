@@ -28,6 +28,9 @@ Route::group(['prefix' => 'v1'], function () {
     Route::post('tracking/update', [TrackingController::class, 'updateLocation'])
         ->middleware(['auth:sanctum', 'active', 'throttle:60,1']);
 
+    Route::post('telegram/check-linking', [TelegramWebhookController::class, 'checkLinking'])
+        ->name('api.telegram.check-linking');
+
     // Endpoints internos para n8n (autenticados con API Key global)
     Route::middleware(['verify-n8n-api-key', 'throttle:60,1'])->group(function () {
         Route::get('automation/config/{businessId}', [InternalAutomationController::class, 'getConfig'])

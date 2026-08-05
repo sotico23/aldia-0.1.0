@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Webhooks;
 
 use App\Http\Controllers\Controller;
+use App\Models\ChannelCredential;
 use App\Services\TelegramWebhookService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,5 +27,29 @@ class TelegramWebhookController extends Controller
         ]);
 
         return response()->json(['status' => 'ok'], 200);
+    }
+
+    /**
+     * Permite a n8n verificar si un chat_id de Telegram está vinculado a un
+     * owner/tenant. Un chat_id NO null en channel_credentials es la señal de
+     * vinculación activa (la columna is_telegram_active no existe en el esquema).
+     */
+    public function checkLinking(Request $request): JsonResponse
+    {
+        $chatId = $request->input('chat_id');
+
+        if (! $chatId) {
+            return response()->json([
+                'is_linked' => false,
+                'owner_id' => null,
+            ], 422);
+        }
+
+        $credential = ChannelCredential::where('telegram_chat_id', (string) $chatId)->first();
+
+        return response()->json([
+            'is_linked' => $credential !== null,
+            'owner_id' => $credential?->owner_id,
+        ]);
     }
 }
