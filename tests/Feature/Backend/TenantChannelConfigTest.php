@@ -189,6 +189,56 @@ test('test connection falls back to the global n8n webhook url', function () {
     $response->assertOk()->assertJson(['success' => true]);
 });
 
+test('test connection sends flow payload with is_test=false when a chat is linked', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_chat_id' => '555444333',
+    ]);
+
+    Http::fake([
+        'https://tenant.example.com/*' => Http::response(['status' => 'ok'], 200),
+    ]);
+
+    $response = $this->actingAs($this->user)->postJson(route('channel-credentials.n8n-config.test'), [
+        'n8n_telegram_proxy_webhook_url' => 'https://tenant.example.com/webhook/proxy',
+    ]);
+
+    $response->assertOk()->assertJson(['success' => true]);
+
+    Http::assertSent(function ($request) {
+        $body = $request->data();
+
+        return $request->url() === 'https://tenant.example.com/webhook/proxy'
+            && $body['event'] === 'message'
+            && $body['is_test'] === false
+            && $body['chat_id'] === '555444333'
+            && $body['is_linked'] === true
+            && $body['text'] === 'Inicio de prueba de flujo';
+    });
+});
+
+test('test connection downgrades to short-circuit when no chat is linked', function () {
+    Http::fake([
+        'https://tenant.example.com/*' => Http::response(['status' => 'ok'], 200),
+    ]);
+
+    $response = $this->actingAs($this->user)->postJson(route('channel-credentials.n8n-config.test'), [
+        'n8n_telegram_proxy_webhook_url' => 'https://tenant.example.com/webhook/proxy',
+    ]);
+
+    $response->assertOk()->assertJson(['success' => true]);
+
+    Http::assertSent(function ($request) {
+        $body = $request->data();
+
+        return $request->url() === 'https://tenant.example.com/webhook/proxy'
+            && $body['event'] === 'test_connection'
+            && $body['is_test'] === true
+            && $body['chat_id'] === null
+            && $body['is_linked'] === false;
+    });
+});
+
 test('update saves n8n base url', function () {
     $response = $this->actingAs($this->user)->putJson(route('channel-credentials.n8n-config.update'), [
         'n8n_base_url' => 'https://mi-n8n.ejemplo.com',

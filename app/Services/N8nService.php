@@ -70,7 +70,7 @@ class N8nService
 
                 $response = $isHealthz
                     ? $http->get($targetUrl)
-                    : $http->post($targetUrl, $this->buildTestPayload());
+                    : $http->post($targetUrl, $this->buildTestPayload(false));
 
                 if ($response->successful()) {
                     $config = $this->getConfig();
@@ -186,8 +186,13 @@ class N8nService
      * Test the tenant's n8n Telegram proxy webhook URL. If the tenant has no
      * URL configured, the global n8n integration values are used as fallback.
      * When only a Base URL is available, its /healthz endpoint is checked.
+     * The tenant API key (when provided) is sent as X-N8N-TOKEN; the global
+     * n8n API key is sent as X-API-Key so protected workflows accept the test.
+     *
+     * With $isTest = false the payload mirrors a real inbound message
+     * (is_test=false) so the workflow runs through its validation nodes.
      */
-    public function testTenantConnection(?string $tenantProxyUrl = null, ?string $tenantBaseUrl = null): array
+    public function testTenantConnection(?string $tenantProxyUrl = null, ?string $tenantBaseUrl = null, ?string $tenantApiKey = null, bool $isTest = true): array
     {
         $targetUrl = $this->resolveTenantTelegramProxyUrl($tenantProxyUrl);
 
@@ -208,9 +213,19 @@ class N8nService
                 ->connectTimeout(5)
                 ->withOptions(['verify' => false]);
 
+            $apiKey = $tenantApiKey ?: config('services.n8n.token');
+            if ($apiKey) {
+                $http = $http->withHeaders(['X-N8N-TOKEN' => $apiKey]);
+            }
+
+            $globalApiKey = $this->getConfig()?->api_key;
+            if ($globalApiKey) {
+                $http = $http->withHeaders(['X-API-Key' => $globalApiKey]);
+            }
+
             $response = $isHealthz
                 ? $http->get($targetUrl)
-                : $http->post($targetUrl, $this->buildTestPayload());
+                : $http->post($targetUrl, $this->buildTestPayload($isTest));
 
             if ($response->successful()) {
                 Log::info('n8n tenant telegram proxy test succeeded', ['url' => $targetUrl, 'status' => $response->status()]);
@@ -243,10 +258,18 @@ class N8nService
     }
 
     /**
-     * Payload that the n8n "Webhook Entrada Proxy Laravel" node can recognize:
-     * event=test_connection short-circuits the workflow without side effects.
+     * Payload that the n8n "Webhook Entrada Proxy Laravel" node can recognize.
+     *
+     * With $isTest = true the payload short-circuits the workflow (is_test=true,
+     * event=test_connection) without side effects.
+     *
+     * With $isTest = false the payload mirrors a real inbound message so the
+     * workflow can proceed through its validation nodes end to end. This only
+     * happens when the tenant has a linked telegram_chat_id: without one the
+     * payload is downgraded to the short-circuit connection test, because a
+     * simulated message without chat_id would break the workflow.
      */
-    private function buildTestPayload(): array
+    private function buildTestPayload(bool $isTest = true): array
     {
         $ownerId = auth()->user()?->getOwnerId();
         $credential = $ownerId ? ChannelCredential::where('owner_id', $ownerId)->first() : ChannelCredential::first();
@@ -278,17 +301,37 @@ class N8nService
             }
         }
 
+        $chatId = $credential?->telegram_chat_id;
+
+        // Sin un chat_id vinculado nunca se debe simular un mensaje real en
+        // n8n: se degrada a la prueba corta de conexión (is_test=true). Los
+        // tokens de vinculación solo se generan explícitamente desde la UI
+        // (telegram.generate-link), nunca en pruebas automáticas o de conexión.
+        if (! $isTest && ! $chatId) {
+            $isTest = true;
+        }
+
+        $message = $isTest
+            ? 'Prueba de conexión desde la plataforma'
+            : 'Inicio de prueba de flujo';
+
         return [
-            'event' => 'test_connection',
-            'message' => 'Prueba de conexión desde la plataforma',
+            'type' => $isTest ? 'test_connection' : 'message',
+            'event' => $isTest ? 'test_connection' : 'message',
+            'message' => $isTest ? $message : ['text' => $message],
             'tenant_id' => $ownerId ?? 1,
+            'owner_id' => $ownerId ?? 1,
             'bot_token' => $botToken,
             'bot_username' => $botUsername,
-            'chat_id' => $credential?->telegram_chat_id,
+            'chat_id' => $chatId,
+            'message.chat.id' => $chatId,
             'bot_type' => $credential?->bot_type ?? 'oficial',
-            'is_linked' => (bool) $credential?->telegram_chat_id,
+            'is_linked' => (bool) $chatId,
             'linking_url' => $linkingUrl,
-            'is_test' => true,
+            'is_test' => $isTest,
+            'text' => $message,
+            'user_message' => $message,
+            'timestamp' => now()->toIso8601String(),
             'callback_url' => route('api.canales.telegram.webhook'),
             'webhook_url' => route('api.canales.telegram.webhook'),
         ];

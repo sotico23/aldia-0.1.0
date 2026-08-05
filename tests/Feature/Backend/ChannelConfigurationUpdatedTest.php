@@ -196,6 +196,11 @@ test('test connection API sends POST request to telegram_proxy_url', function ()
         'https://n8n.example.com/webhook/telegram-proxy' => Http::response(['status' => 'ok'], 200),
     ]);
 
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_chat_id' => '123456789',
+    ]);
+
     SystemIntegration::create([
         'provider' => 'n8n',
         'base_url' => 'https://n8n.example.com',
@@ -211,6 +216,7 @@ test('test connection API sends POST request to telegram_proxy_url', function ()
     Http::assertSent(function ($request) {
         return $request->method() === 'POST'
             && $request->url() === 'https://n8n.example.com/webhook/telegram-proxy'
-            && $request['event'] === 'test_connection';
+            && $request['event'] === 'message'
+            && $request['is_test'] === false;
     });
 });

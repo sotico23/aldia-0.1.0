@@ -33,10 +33,15 @@ class TelegramWebhookController extends Controller
      * Permite a n8n verificar si un chat_id de Telegram está vinculado a un
      * owner/tenant. Un chat_id NO null en channel_credentials es la señal de
      * vinculación activa (la columna is_telegram_active no existe en el esquema).
+     *
+     * Soporta de forma transparente tanto el payload estándar de Telegram
+     * (message.chat.id) como el payload plano de prueba de conexión (chat_id
+     * en la raíz), incluyendo wrappers producidos por n8n (body / data, con el
+     * contenido opcionalmente serializado como JSON string).
      */
     public function checkLinking(Request $request): JsonResponse
     {
-        $chatId = $request->input('chat_id');
+        $chatId = $this->extractChatId($request->input());
 
         if (! $chatId) {
             return response()->json([
@@ -51,5 +56,33 @@ class TelegramWebhookController extends Controller
             'is_linked' => $credential !== null,
             'owner_id' => $credential?->owner_id,
         ]);
+    }
+
+    private function extractChatId(array $payload): mixed
+    {
+        $payload = $this->unwrap($payload);
+
+        if (isset($payload['chat_id']) && $payload['chat_id'] !== '') {
+            return $payload['chat_id'];
+        }
+
+        return $payload['message']['chat']['id'] ?? null;
+    }
+
+    private function unwrap(array $payload): array
+    {
+        $payload = $payload['body'] ?? $payload['data'] ?? $payload;
+
+        if (is_string($payload)) {
+            $decoded = json_decode($payload, true);
+
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+
+            return [];
+        }
+
+        return $payload;
     }
 }

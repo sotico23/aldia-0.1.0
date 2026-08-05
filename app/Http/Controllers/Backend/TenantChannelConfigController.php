@@ -88,7 +88,7 @@ class TenantChannelConfigController extends Controller
         $tenantUrl = $request->input('n8n_telegram_proxy_webhook_url')
             ?: $credentials?->n8n_telegram_proxy_webhook_url;
 
-        $result = $n8n->testTenantConnection($tenantUrl, $tenantBaseUrl);
+        $result = $n8n->testTenantConnection($tenantUrl, $tenantBaseUrl, null, isTest: false);
 
         return response()->json($result, $result['success'] ? 200 : 422);
     }

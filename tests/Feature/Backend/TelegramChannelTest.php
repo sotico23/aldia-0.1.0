@@ -1241,3 +1241,117 @@ test('check-linking returns 422 when chat_id is missing', function () {
             'owner_id' => null,
         ]);
 });
+
+test('check-linking accepts standard telegram payload with message.chat.id', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_username' => 'test_bot',
+        'telegram_chat_id' => '123456789',
+        'telegram_linked_at' => now(),
+    ]);
+
+    $response = $this->postJson('/api/v1/telegram/check-linking', [
+        'update_id' => 12345,
+        'message' => [
+            'chat' => ['id' => 123456789],
+            'text' => 'Hello',
+        ],
+    ]);
+
+    $response->assertOk()
+        ->assertJson([
+            'is_linked' => true,
+            'owner_id' => $this->user->getOwnerId(),
+        ]);
+});
+
+test('check-linking accepts n8n wrapper payload with body.message.chat.id', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_username' => 'test_bot',
+        'telegram_chat_id' => '888777666',
+    ]);
+
+    $response = $this->postJson('/api/v1/telegram/check-linking', [
+        'body' => [
+            'message' => [
+                'chat' => ['id' => 888777666],
+                'text' => 'Hello',
+            ],
+        ],
+    ]);
+
+    $response->assertOk()
+        ->assertJson([
+            'is_linked' => true,
+            'owner_id' => $this->user->getOwnerId(),
+        ]);
+});
+
+test('check-linking accepts body delivered as JSON string', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_username' => 'test_bot',
+        'telegram_chat_id' => '555444333',
+    ]);
+
+    $response = $this->postJson('/api/v1/telegram/check-linking', [
+        'body' => '{"message":{"chat":{"id":555444333},"text":"Hello"}}',
+    ]);
+
+    $response->assertOk()
+        ->assertJson([
+            'is_linked' => true,
+            'owner_id' => $this->user->getOwnerId(),
+        ]);
+});
+
+test('check-linking accepts flat test_connection payload from connection test', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_username' => 'test_bot',
+        'telegram_chat_id' => '424242424',
+    ]);
+
+    $response = $this->postJson('/api/v1/telegram/check-linking', [
+        'type' => 'test_connection',
+        'chat_id' => '424242424',
+        'bot_token' => 'test:token',
+        'owner_id' => $this->user->getOwnerId(),
+    ]);
+
+    $response->assertOk()
+        ->assertJson([
+            'is_linked' => true,
+            'owner_id' => $this->user->getOwnerId(),
+        ]);
+});
+
+test('check-linking with standard payload returns is_linked false for unknown chat', function () {
+    $response = $this->postJson('/api/v1/telegram/check-linking', [
+        'message' => [
+            'chat' => ['id' => 999999999],
+            'text' => 'Hello',
+        ],
+    ]);
+
+    $response->assertOk()
+        ->assertJson([
+            'is_linked' => false,
+            'owner_id' => null,
+        ]);
+});
+
+test('check-linking returns 422 when standard payload has no chat object', function () {
+    $response = $this->postJson('/api/v1/telegram/check-linking', [
+        'message' => [
+            'text' => 'Hello',
+        ],
+    ]);
+
+    $response->assertStatus(422)
+        ->assertJson([
+            'is_linked' => false,
+            'owner_id' => null,
+        ]);
+});

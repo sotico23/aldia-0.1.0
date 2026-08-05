@@ -167,13 +167,63 @@ test('test-telegram posts test_connection payload to n8n telegram proxy url and 
 
         return $request->url() === 'https://n8n.example.com/webhook/telegram-proxy'
             && $request->method() === 'POST'
+            && $body['type'] === 'test_connection'
             && $body['event'] === 'test_connection'
             && $body['is_test'] === true
             && $body['tenant_id'] === $this->user->getOwnerId()
+            && $body['owner_id'] === $this->user->getOwnerId()
             && $body['bot_token'] === 'test:token'
             && $body['bot_username'] === 'test_bot'
             && $body['is_linked'] === false
+            && array_key_exists('message.chat.id', $body)
+            && array_key_exists('timestamp', $body)
             && $body['callback_url'] === route('api.canales.telegram.webhook');
+    });
+});
+
+test('test-telegram uses the tenant personal n8n webhook and sends tenant api key header', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_token' => 'test:token',
+        'telegram_bot_username' => 'test_bot',
+        'telegram_chat_id' => '123456789',
+        'n8n_base_url' => 'https://personal.example.com',
+        'n8n_telegram_proxy_webhook_url' => 'https://personal.example.com/webhook/telegram-proxy',
+        'n8n_api_key' => 'tenant-secret-key',
+    ]);
+
+    Http::fake([
+        'api.telegram.org*' => Http::response([
+            'ok' => true,
+            'result' => ['id' => 1, 'username' => 'test_bot', 'first_name' => 'Test Bot'],
+        ], 200),
+        'personal.example.com/*' => Http::response(['status' => 'ok'], 200),
+    ]);
+
+    $response = $this->actingAs($this->user)->post(route('channel-credentials.test-telegram'), [
+        'telegram_bot_token' => 'test:token',
+    ], ['Accept' => 'application/json']);
+
+    $response->assertJson([
+        'success' => true,
+        'bot_username' => 'test_bot',
+    ]);
+
+    Http::assertSent(function ($request) {
+        $body = $request->data();
+
+        return $request->url() === 'https://personal.example.com/webhook/telegram-proxy'
+            && $request->method() === 'POST'
+            && in_array('tenant-secret-key', (array) $request->header('X-N8N-TOKEN'), true)
+            && $body['type'] === 'test_connection'
+            && $body['chat_id'] === '123456789'
+            && $body['bot_token'] === 'test:token'
+            && $body['owner_id'] === $this->user->getOwnerId()
+            && $body['is_linked'] === true;
+    });
+
+    Http::assertNotSent(function ($request) {
+        return str_contains($request->url(), 'n8n.example.com');
     });
 });
 

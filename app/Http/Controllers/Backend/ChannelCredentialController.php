@@ -154,7 +154,12 @@ class ChannelCredentialController extends Controller
         $webhookUrl = route('webhooks.telegram');
         $service->setWebhook($webhookUrl);
 
-        $n8nResult = (new N8nService)->testTelegramProxy();
+        $credentials = ChannelCredential::where('owner_id', $ownerId)->first();
+        $n8nResult = (new N8nService)->testTenantConnection(
+            $credentials?->n8n_telegram_proxy_webhook_url,
+            $credentials?->n8n_base_url,
+            $credentials?->n8n_api_key,
+        );
 
         return response()->json([
             'success' => $n8nResult['success'],

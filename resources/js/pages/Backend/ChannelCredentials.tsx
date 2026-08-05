@@ -1888,6 +1888,17 @@ export default function ChannelCredentials({
                                 )}
                             </div>
 
+                            {!isLinked && (
+                                <p className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                                    <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
+                                    No tienes un chat de Telegram vinculado:
+                                    esta prueba solo verificará la conexión con
+                                    n8n. Vincula tu chat con los botones de la
+                                    sección Telegram para probar el flujo
+                                    completo.
+                                </p>
+                            )}
+
                             {n8nHasApiKey && (
                                 <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                                     <ShieldCheck className="h-3 w-3" />

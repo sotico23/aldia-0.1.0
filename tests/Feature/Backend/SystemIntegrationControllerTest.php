@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ChannelCredential;
 use App\Models\SystemIntegration;
 use App\Models\TelegramLinkingToken;
 use App\Models\User;
@@ -133,13 +134,20 @@ test('test connection returns error when no url configured', function () {
     ]);
 });
 
-test('test connection posts test_connection payload to webhook url', function () {
+test('test connection posts flow payload to webhook url', function () {
     SystemIntegration::create([
         'provider' => 'n8n',
         'base_url' => 'https://n8n.example.com',
         'webhook_url' => 'https://n8n.example.com/webhook/test',
         'api_key' => 'secret',
         'is_active' => true,
+    ]);
+
+    ChannelCredential::create([
+        'owner_id' => $this->admin->getOwnerId(),
+        'telegram_bot_token' => 'test:token',
+        'telegram_bot_username' => 'test_bot',
+        'telegram_chat_id' => '123456789',
     ]);
 
     $config = SystemIntegration::forProvider('n8n')->first();
@@ -160,15 +168,21 @@ test('test connection posts test_connection payload to webhook url', function ()
 
         return $request->method() === 'POST'
             && $request->url() === 'https://n8n.example.com/webhook/test'
-            && $body['event'] === 'test_connection'
-            && $body['is_test'] === true
+            && $body['event'] === 'message'
+            && $body['type'] === 'message'
+            && $body['is_test'] === false
+            && $body['chat_id'] === '123456789'
+            && $body['is_linked'] === true
             && $body['linking_url'] === null
+            && $body['text'] === 'Inicio de prueba de flujo'
+            && $body['user_message'] === 'Inicio de prueba de flujo'
+            && $body['message'] === ['text' => 'Inicio de prueba de flujo']
             && array_key_exists('bot_token', $body)
             && array_key_exists('bot_username', $body);
     });
 });
 
-test('test connection does NOT create phantom linking tokens', function () {
+test('test connection does NOT create phantom linking tokens and downgrades to short-circuit when no chat is linked', function () {
     WebSetting::create([
         'app_name' => 'Aldia',
         'global_telegram_bot_username' => 'aldia_global_bot',
@@ -196,7 +210,12 @@ test('test connection does NOT create phantom linking tokens', function () {
 
         return $request->url() === 'https://n8n.example.com/webhook/test'
             && $body['event'] === 'test_connection'
-            && $body['linking_url'] === null;
+            && $body['type'] === 'test_connection'
+            && $body['is_test'] === true
+            && $body['message'] === 'Prueba de conexión desde la plataforma'
+            && $body['linking_url'] === null
+            && $body['chat_id'] === null
+            && $body['is_linked'] === false;
     });
 
     // A connection test must NOT mint linking tokens (used_at/chat_id stay NULL).

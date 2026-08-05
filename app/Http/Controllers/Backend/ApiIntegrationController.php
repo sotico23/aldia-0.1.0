@@ -258,7 +258,7 @@ class ApiIntegrationController extends Controller
     {
         $proxyUrl = (string) ($credentials['telegram_proxy_url'] ?? '');
 
-        return $n8n->testTenantConnection($proxyUrl ?: null);
+        return $n8n->testTenantConnection($proxyUrl ?: null, isTest: false);
     }
 
     /**
