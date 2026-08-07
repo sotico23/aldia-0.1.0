@@ -23,6 +23,7 @@ import {
     Radio,
     Copy,
     Zap,
+    Unlink,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -579,14 +580,56 @@ export default function ChannelCredentials({
                     cleared = true;
                     clearInterval(poll);
                     setLinkingStatus('success');
+                    setLinkingLink('');
+                    setLinkingToken('');
                     toast.success(
                         '¡Cuenta de Telegram vinculada exitosamente!',
                     );
+                    router.reload({
+                        only: ['credentials', 'has_credentials'],
+                        onSuccess: () => {
+                            toast.success(
+                                '¡Cuenta de Telegram vinculada exitosamente!',
+                            );
+                        },
+                    });
                 }
             } catch {
                 // Silently ignore poll errors
             }
         }, 2000);
+    };
+
+    const unlinkTelegram = async () => {
+        try {
+            const resp = await fetch('/canales/telegram/unlink', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            const result = await resp.json().catch(() => null);
+
+            if (resp.ok && result?.success) {
+                setLinkingStatus('idle');
+                toast.success(
+                    result.message ??
+                        'Cuenta de Telegram desvinculada correctamente.',
+                );
+                router.reload({
+                    only: ['credentials', 'has_credentials'],
+                });
+            } else {
+                toast.error(
+                    result?.message ?? 'Error al desvincular Telegram.',
+                );
+            }
+        } catch {
+            toast.error('Error de conexión con el servidor.');
+        }
     };
 
     const testWhatsapp = async () => {
@@ -789,19 +832,33 @@ export default function ChannelCredentials({
 
                                             {/* Connection status */}
                                             {isLinked ? (
-                                                <div className="flex items-center gap-2 text-xs text-emerald-600">
-                                                    <CheckCircle2 className="h-3.5 w-3.5" />
-                                                    Cuenta vinculada (chat:{' '}
-                                                    {
-                                                        credentials?.telegram_chat_id
-                                                    }
-                                                    )
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                                        Telegram Vinculado (ID:{' '}
+                                                        {
+                                                            credentials?.telegram_chat_id
+                                                        }
+                                                        )
+                                                    </span>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-7 gap-1.5 px-2 text-xs text-destructive hover:text-destructive"
+                                                        onClick={
+                                                            unlinkTelegram
+                                                        }
+                                                    >
+                                                        <Unlink className="h-3.5 w-3.5" />
+                                                        Desvincular
+                                                    </Button>
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
                                                     <AlertCircle className="h-3.5 w-3.5" />
-                                                    Cuenta no vinculada
-                                                </div>
+                                                    Telegram No Vinculado
+                                                </span>
                                             )}
 
                                             {/* Action buttons for global mode */}
@@ -826,10 +883,24 @@ export default function ChannelCredentials({
 
                                             {/* Linking section for global mode */}
                                             {isLinked ? (
-                                                <div className="flex items-center gap-2 text-xs text-emerald-600">
-                                                    <CheckCircle2 className="h-3.5 w-3.5" />
-                                                    ¡Cuenta vinculada
-                                                    exitosamente!
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                                        ¡Cuenta de Telegram
+                                                        vinculada exitosamente!
+                                                    </span>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-7 gap-1.5 px-2 text-xs text-destructive hover:text-destructive"
+                                                        onClick={
+                                                            unlinkTelegram
+                                                        }
+                                                    >
+                                                        <Unlink className="h-3.5 w-3.5" />
+                                                        Desvincular
+                                                    </Button>
                                                 </div>
                                             ) : (
                                                 <div className="space-y-2 border-t pt-2">
@@ -1119,14 +1190,28 @@ export default function ChannelCredentials({
                                                 botUsername && (
                                                     <div className="space-y-2 border-t pt-2">
                                                         {credentials?.telegram_chat_id ? (
-                                                            <div className="flex items-center gap-2 text-xs text-emerald-600">
-                                                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                                                Cuenta vinculada
-                                                                (chat:{' '}
-                                                                {
-                                                                    credentials.telegram_chat_id
-                                                                }
-                                                                )
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                                                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                                                    Telegram
+                                                                    Vinculado (ID:{' '}
+                                                                    {
+                                                                        credentials.telegram_chat_id
+                                                                    }
+                                                                    )
+                                                                </span>
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-7 gap-1.5 px-2 text-xs text-destructive hover:text-destructive"
+                                                                    onClick={
+                                                                        unlinkTelegram
+                                                                    }
+                                                                >
+                                                                    <Unlink className="h-3.5 w-3.5" />
+                                                                    Desvincular
+                                                                </Button>
                                                             </div>
                                                         ) : (
                                                             <>

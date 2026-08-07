@@ -148,6 +148,8 @@ Route::middleware(['auth'])->group(function () {
             ->name('telegram.login-callback');
         Route::post('canales/telegram/generate-link', [TelegramLinkingController::class, 'generateLink'])
             ->name('telegram.generate-link');
+        Route::post('canales/telegram/unlink', [TelegramLinkingController::class, 'unlinkTelegram'])
+            ->name('telegram.unlink');
     });
 
     Route::middleware(['permission:sistema.integraciones.viewAny'])->group(function () {
@@ -358,6 +360,9 @@ Route::group(['prefix' => 'auth/{provider}'], function () {
     Route::get('/redirect', [SocialiteController::class, 'redirect'])->name('socialite.redirect');
     Route::get('/callback', [SocialiteController::class, 'callback'])->name('socialite.callback');
 });
+
+Route::get('/auth/telegram/email', [SocialiteController::class, 'showTelegramEmailForm'])->name('socialite.telegram.email-form')->middleware('guest');
+Route::post('/auth/telegram/email', [SocialiteController::class, 'completeTelegramEmail'])->name('socialite.telegram.email-store')->middleware('guest');
 
 Route::get('/tienda', [MarketplaceController::class, 'index'])->name('marketplace.index');
 Route::get('/tienda/{slug}', [MarketplaceController::class, 'show'])->name('marketplace.show');

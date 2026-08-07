@@ -13,7 +13,6 @@ import {
     Ticket,
 } from 'lucide-react';
 import { useState } from 'react';
-import { useCountry } from '@/hooks/use-country';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,6 +24,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useCountry } from '@/hooks/use-country';
 
 interface Prize {
     id: number;

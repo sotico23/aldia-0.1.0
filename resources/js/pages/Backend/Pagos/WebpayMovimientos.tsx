@@ -1,8 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
 import { CreditCard, RefreshCw, FileText, Activity } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { usePermissions } from '@/hooks/use-permissions';
 import { useCountry } from '@/hooks/use-country';
+import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import { sanitize } from '@/lib/sanitize';
 

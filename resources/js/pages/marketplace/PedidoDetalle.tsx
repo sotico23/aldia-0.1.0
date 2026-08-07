@@ -15,8 +15,6 @@ import {
     RefreshCw,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useCountry } from '@/hooks/use-country';
-import { formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,7 +35,9 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import echo from '@/echo';
+import { useCountry } from '@/hooks/use-country';
 import AppLayout from '@/layouts/app-layout';
+import { formatCurrency } from '@/lib/utils';
 
 interface PedidoItem {
     id: number;

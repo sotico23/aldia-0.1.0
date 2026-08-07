@@ -1085,6 +1085,118 @@ test('generate-link returns the linking token alongside the url', function () {
     expect($data['token'])->not->toBeEmpty();
 });
 
+test('generate-link invalidates previous unused tokens for the same owner', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_token' => 'test:token',
+        'telegram_bot_username' => 'test_bot',
+    ]);
+
+    $previousToken = TelegramLinkingToken::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'user_id' => $this->user->id,
+        'token' => 'stale_token_123',
+        'bot_type' => 'custom',
+        'expires_at' => now()->addMinutes(10),
+    ]);
+
+    $response = $this->actingAs($this->user)->postJson(route('telegram.generate-link'), [
+        'type' => 'custom',
+    ]);
+
+    $response->assertJson(['success' => true]);
+
+    $previousToken->refresh();
+    expect($previousToken->isUsed())->toBeFalse();
+    expect($previousToken->isExpired())->toBeTrue();
+
+    // El nuevo token es el único activo (no usado, sin expirar) del owner.
+    $active = TelegramLinkingToken::where('owner_id', $this->user->getOwnerId())
+        ->whereNull('used_at')
+        ->where('expires_at', '>', now())
+        ->count();
+    expect($active)->toBe(1);
+});
+
+test('generate-link keeps previously used tokens untouched', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_token' => 'test:token',
+        'telegram_bot_username' => 'test_bot',
+    ]);
+
+    $usedToken = TelegramLinkingToken::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'user_id' => $this->user->id,
+        'token' => 'used_token_456',
+        'bot_type' => 'custom',
+        'expires_at' => now()->addMinutes(10),
+        'used_at' => now(),
+        'telegram_chat_id' => '123456789',
+    ]);
+
+    $response = $this->actingAs($this->user)->postJson(route('telegram.generate-link'), [
+        'type' => 'custom',
+    ]);
+
+    $response->assertJson(['success' => true]);
+
+    $usedToken->refresh();
+    expect($usedToken->used_at)->not->toBeNull();
+    expect($usedToken->telegram_chat_id)->toBe('123456789');
+});
+
+test('unlink clears telegram_chat_id and telegram_linked_at', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_token' => 'test:token',
+        'telegram_bot_username' => 'test_bot',
+        'telegram_chat_id' => '123456789',
+        'telegram_linked_at' => now(),
+    ]);
+
+    $response = $this->actingAs($this->user)->postJson(route('telegram.unlink'));
+
+    $response->assertOk()
+        ->assertJson(['success' => true]);
+
+    $this->assertDatabaseHas('channel_credentials', [
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_chat_id' => null,
+        'telegram_linked_at' => null,
+    ]);
+});
+
+test('unlink invalidates pending linking tokens', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_token' => 'test:token',
+        'telegram_bot_username' => 'test_bot',
+        'telegram_chat_id' => '123456789',
+    ]);
+
+    $pendingToken = TelegramLinkingToken::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'user_id' => $this->user->id,
+        'token' => 'pending_token_789',
+        'bot_type' => 'custom',
+        'expires_at' => now()->addMinutes(10),
+    ]);
+
+    $this->actingAs($this->user)->postJson(route('telegram.unlink'))->assertOk();
+
+    $pendingToken->refresh();
+    expect($pendingToken->isExpired())->toBeTrue();
+    expect($pendingToken->isUsed())->toBeFalse();
+});
+
+test('unlink succeeds when no credentials exist', function () {
+    $response = $this->actingAs($this->user)->postJson(route('telegram.unlink'));
+
+    $response->assertOk()
+        ->assertJson(['success' => true]);
+});
+
 test('web linking page redirects to canales with success flash when token is valid', function () {
     $token = TelegramLinkingToken::create([
         'owner_id' => $this->user->getOwnerId(),

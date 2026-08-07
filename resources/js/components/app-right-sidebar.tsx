@@ -52,8 +52,8 @@ import {
     SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { UserInfo } from '@/components/user-info';
-import { usePermissions } from '@/hooks/use-permissions';
 import { useCountry } from '@/hooks/use-country';
+import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
 import { logout } from '@/routes';
 import { edit as editAppearance } from '@/routes/appearance';

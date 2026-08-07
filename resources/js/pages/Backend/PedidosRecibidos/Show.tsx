@@ -19,8 +19,6 @@ import {
 } from 'lucide-react';
 import { MessageCircle } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useCountry } from '@/hooks/use-country';
-import { formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -48,8 +46,10 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import echo from '@/echo';
-import AppLayout from '@/layouts/app-layout';
+import { useCountry } from '@/hooks/use-country';
 import { usePermissions } from '@/hooks/use-permissions';
+import AppLayout from '@/layouts/app-layout';
+import { formatCurrency } from '@/lib/utils';
 import type { BreadcrumbItem } from '@/types';
 
 interface PedidoItem {

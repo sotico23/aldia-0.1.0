@@ -1,5 +1,14 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import {
+    format,
+    startOfMonth,
+    endOfMonth,
+    subMonths,
+    startOfWeek,
+    endOfWeek,
+} from 'date-fns';
+import { es } from 'date-fns/locale';
+import {
     BarChart3,
     Plus,
     ArrowLeft,
@@ -31,17 +40,9 @@ import {
     Pie,
     Cell,
 } from 'recharts';
-import {
-    format,
-    startOfMonth,
-    endOfMonth,
-    subMonths,
-    startOfWeek,
-    endOfWeek,
-} from 'date-fns';
-import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Calendar as CalendarPicker } from '@/components/ui/calendar';
 import {
     Card,
     CardContent,
@@ -58,12 +59,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useCountry } from '@/hooks/use-country';
-import { usePermissions } from '@/hooks/use-permissions';
-import AppLayout from '@/layouts/app-layout';
-import { formatCurrency, formatNumberLocale } from '@/lib/utils';
-import type { BreadcrumbItem } from '@/types';
-import { Calendar as CalendarPicker } from '@/components/ui/calendar';
 import {
     Popover,
     PopoverContent,
@@ -76,13 +71,18 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
 import {
     Tooltip as ShadcnTooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useCountry } from '@/hooks/use-country';
+import { usePermissions } from '@/hooks/use-permissions';
+import AppLayout from '@/layouts/app-layout';
+import { formatCurrency, formatNumberLocale } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import type { BreadcrumbItem } from '@/types';
 
 interface GrupoItem {
     id: number;

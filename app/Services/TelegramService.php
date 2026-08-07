@@ -3,6 +3,9 @@
 namespace App\Services;
 
 use App\Models\ChannelCredential;
+use App\Models\TelegramLinkingToken;
+use App\Models\WebSetting;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -150,6 +153,106 @@ class TelegramService
                 'message' => 'Error de conexión al configurar el webhook.',
             ];
         }
+    }
+
+    /**
+     * Genera un token de vinculación de 15 minutos para el owner, invalidando
+     * cualquier token previo activo (no usado y no expirado) del mismo owner.
+     *
+     * Resuelve el bot según el tipo: 'global' usa el bot oficial configurado en
+     * Configuración Web; cualquier otro valor usa el bot personalizado del
+     * tenant (con fallback al bot oficial si no tiene bot propio).
+     *
+     * @return array{success: bool, message?: string, telegram_url?: string, token?: string, bot_username?: string, bot_type?: string, expires_at?: Carbon}
+     */
+    public function generateLinkingToken(int $ownerId, string $botType = 'custom', ?int $userId = null): array
+    {
+        // 1. Invalidar tokens anteriores sin usar para este owner (expiran en
+        //    el pasado para preservar auditoría y que la búsqueda del webhook
+        //    no los considere válidos nunca más).
+        $invalidated = TelegramLinkingToken::query()
+            ->where('owner_id', $ownerId)
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now())
+            ->update(['expires_at' => now()->subSecond()]);
+
+        if ($invalidated > 0) {
+            Log::info('Telegram: tokens previos invalidados', [
+                'owner_id' => $ownerId,
+                'count' => $invalidated,
+            ]);
+        }
+
+        // 2. Crear el nuevo token con vigencia de 15 minutos.
+        $token = TelegramLinkingToken::generateToken();
+        $expiresAt = now()->addMinutes(15);
+
+        TelegramLinkingToken::create([
+            'owner_id' => $ownerId,
+            'user_id' => $userId,
+            'token' => $token,
+            'bot_type' => $botType,
+            'expires_at' => $expiresAt,
+        ]);
+
+        // 3. Resolver el username del bot para construir el deep link.
+        if ($botType === 'global' || $botType === 'oficial') {
+            $botUsername = WebSetting::getSettings()?->global_telegram_bot_username
+                ?? config('services.telegram.default_bot_username');
+
+            if (! $botUsername) {
+                Log::warning('Telegram: no global bot configured for linking', [
+                    'owner_id' => $ownerId,
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => 'No hay un bot oficial configurado en la plataforma. Por favor configúralo en Configuración Web.',
+                ];
+            }
+        } else {
+            $credentials = ChannelCredential::where('owner_id', $ownerId)->first();
+            $botUsername = $credentials?->telegram_bot_username;
+
+            // Fallback al bot oficial si el tenant no tiene bot personalizado.
+            if (! $botUsername) {
+                $botUsername = WebSetting::getSettings()?->global_telegram_bot_username
+                    ?? config('services.telegram.default_bot_username');
+
+                if (! $botUsername) {
+                    Log::warning('Telegram: no bot configured for linking', [
+                        'owner_id' => $ownerId,
+                    ]);
+
+                    return [
+                        'success' => false,
+                        'message' => 'No hay un bot de Telegram configurado. Guarda las credenciales del bot primero.',
+                    ];
+                }
+
+                $botType = 'global';
+            }
+        }
+
+        $telegramUrl = 'https://t.me/'.ltrim($botUsername, '@')."?start={$token}";
+
+        Log::info('Telegram linking token generated', [
+            'owner_id' => $ownerId,
+            'user_id' => $userId,
+            'token' => $token,
+            'bot_type' => $botType,
+            'bot_username' => $botUsername,
+            'expires_at' => $expiresAt->toIso8601String(),
+        ]);
+
+        return [
+            'success' => true,
+            'telegram_url' => $telegramUrl,
+            'token' => $token,
+            'bot_username' => $botUsername,
+            'bot_type' => $botType,
+            'expires_at' => $expiresAt,
+        ];
     }
 
     public function sendMessage(string $chatId, string $message, array $options = []): array

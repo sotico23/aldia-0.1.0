@@ -1,5 +1,4 @@
 import { Head, useForm, router } from '@inertiajs/react';
-import { CURRENCY_OPTIONS } from '@/lib/currencies';
 
 import {
     Check,
@@ -26,12 +25,11 @@ import {
     MessageCircle,
 } from 'lucide-react';
 import { useState, useMemo, useRef } from 'react';
-import { toast } from 'sonner';
-import { useCountry } from '@/hooks/use-country';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell,
 } from 'recharts';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -66,8 +64,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { WhatsAppButton } from '@/components/whatsapp-button';
+import { useCountry } from '@/hooks/use-country';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
+import { CURRENCY_OPTIONS } from '@/lib/currencies';
 import { formatCurrency, formatDateCLP, formatRut, getLocalDateString } from '@/lib/utils';
 import type { BreadcrumbItem } from '@/types';
 

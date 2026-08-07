@@ -36,6 +36,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use SocialiteProviders\Manager\SocialiteWasCalled;
+use SocialiteProviders\Telegram\Provider as TelegramProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -74,6 +76,11 @@ class AppServiceProvider extends ServiceProvider
 
         // Override OAuth config from database settings (if available)
         $this->overrideOAuthConfig();
+
+        // Register the Telegram login provider (community Socialite provider)
+        Event::listen(SocialiteWasCalled::class, function (SocialiteWasCalled $event) {
+            $event->extendSocialite('telegram', TelegramProvider::class);
+        });
 
         // Super Admin and Master bypass all permission checks
         Gate::before(function ($user, $ability) {
@@ -167,6 +174,14 @@ class AppServiceProvider extends ServiceProvider
                     'services.facebook.client_id' => $settings->facebook_client_id,
                     'services.facebook.client_secret' => $settings->facebook_client_secret,
                     'services.facebook.redirect' => $settings->facebook_redirect_uri ?? config('services.facebook.redirect'),
+                ]);
+            }
+
+            if ($settings && $settings->telegram_login_bot_name) {
+                config([
+                    'services.telegram.bot' => $settings->telegram_login_bot_name,
+                    'services.telegram.client_secret' => $settings->telegram_login_bot_token,
+                    'services.telegram.redirect' => $settings->telegram_login_redirect_uri ?? config('services.telegram.redirect'),
                 ]);
             }
         } catch (\Throwable $e) {

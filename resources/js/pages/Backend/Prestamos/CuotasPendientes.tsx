@@ -2,7 +2,6 @@ import { Head, Link } from '@inertiajs/react';
 import { router } from '@inertiajs/react';
 import { ArrowLeft, DollarSign, Banknote, Calendar, User, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
-import { formatCurrency } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -27,6 +26,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
+import { formatCurrency } from '@/lib/utils';
 import { getLocalDateString } from '@/lib/utils';
 import type { BreadcrumbItem } from '@/types';
 

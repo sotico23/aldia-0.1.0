@@ -1,0 +1,199 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram-proxy",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-840, 480],
+      "id": "f1a2b3c4-d5e6-4f78-9a0b-1c2d3e4f5a01",
+      "name": "Webhook Entrada Proxy Laravel",
+      "webhookId": "a3f1ca38-3970-452f-9c98-7fb28f84ff22"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            { "value1": "={{ $json.body.is_test ?? false }}", "value2": true }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [-600, 480],
+      "id": "f1a2b3c4-d5e6-4f78-9a0b-1c2d3e4f5a02",
+      "name": "¿Es Prueba de Conexión?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{ $json.body.chat_id }}", "operation": "isNotEmpty" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [-340, 320],
+      "id": "f1a2b3c4-d5e6-4f78-9a0b-1c2d3e4f5a03",
+      "name": "¿Test Tiene Chat ID?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $('Webhook Entrada Proxy Laravel').item.json.body.bot_token }}/sendMessage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [ { "name": "Content-Type", "value": "application/json" } ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"{{ $('Webhook Entrada Proxy Laravel').item.json.body.chat_id }}\",\n  \"text\": \"✅ ¡Conexión exitosa con el bot de Telegram desde Al Día!\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-40, 320],
+      "id": "f1a2b3c4-d5e6-4f78-9a0b-1c2d3e4f5a04",
+      "name": "Respuesta Test Conexión"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            { "value1": "={{ $json.body.is_linked ?? false }}", "value2": true }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [-340, 640],
+      "id": "f1a2b3c4-d5e6-4f78-9a0b-1c2d3e4f5a05",
+      "name": "¿Usuario Vinculado?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1c2d3e4f-5a06-4b7c-8d9e-0f1a2b3c4d5e",
+              "name": "user_message",
+              "type": "string",
+              "value": "={{ $('Webhook Entrada Proxy Laravel').item.json.body.user_message }}"
+            },
+            {
+              "id": "2d3e4f5a-6b07-4c8d-9e0f-1a2b3c4d5e6f",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Webhook Entrada Proxy Laravel').item.json.body.chat_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-40, 560],
+      "id": "f1a2b3c4-d5e6-4f78-9a0b-1c2d3e4f5a06",
+      "name": "Preparar Mensaje Agente"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [280, 560],
+      "id": "f1a2b3c4-d5e6-4f78-9a0b-1c2d3e4f5a07",
+      "name": "Agente IA Al Día"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $('Webhook Entrada Proxy Laravel').item.json.body.bot_token }}/sendMessage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [ { "name": "Content-Type", "value": "application/json" } ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"{{ $json.chat_id }}\",\n  \"text\": \"{{ $json.output }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [560, 560],
+      "id": "f1a2b3c4-d5e6-4f78-9a0b-1c2d3e4f5a08",
+      "name": "Respuesta Agente a Telegram"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{ $json.body.chat_id }}", "operation": "isNotEmpty" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [-40, 800],
+      "id": "f1a2b3c4-d5e6-4f78-9a0b-1c2d3e4f5a09",
+      "name": "¿Existe Chat ID?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $('Webhook Entrada Proxy Laravel').item.json.body.bot_token }}/sendMessage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [ { "name": "Content-Type", "value": "application/json" } ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"{{ $('Webhook Entrada Proxy Laravel').item.json.body.chat_id }}\",\n  \"text\": \"⚠️ Tu cuenta no está vinculada a la plataforma. Ingresa aquí para vincularla: {{ $('Webhook Entrada Proxy Laravel').item.json.body.linking_url }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [280, 800],
+      "id": "f1a2b3c4-d5e6-4f78-9a0b-1c2d3e4f5a10",
+      "name": "Enviar Enlace de Vinculación"
+    }
+  ],
+  "connections": {
+    "Webhook Entrada Proxy Laravel": {
+      "main": [ [ { "node": "¿Es Prueba de Conexión?", "type": "main", "index": 0 } ] ]
+    },
+    "¿Es Prueba de Conexión?": {
+      "main": [
+        [ { "node": "¿Test Tiene Chat ID?", "type": "main", "index": 0 } ],
+        [ { "node": "¿Usuario Vinculado?", "type": "main", "index": 0 } ]
+      ]
+    },
+    "¿Test Tiene Chat ID?": {
+      "main": [ [ { "node": "Respuesta Test Conexión", "type": "main", "index": 0 } ] ]
+    },
+    "¿Usuario Vinculado?": {
+      "main": [
+        [ { "node": "Preparar Mensaje Agente", "type": "main", "index": 0 } ],
+        [ { "node": "¿Existe Chat ID?", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Preparar Mensaje Agente": {
+      "main": [ [ { "node": "Agente IA Al Día", "type": "main", "index": 0 } ] ]
+    },
+    "Agente IA Al Día": {
+      "main": [ [ { "node": "Respuesta Agente a Telegram", "type": "main", "index": 0 } ] ]
+    },
+    "¿Existe Chat ID?": {
+      "main": [ [ { "node": "Enviar Enlace de Vinculación", "type": "main", "index": 0 } ] ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "9d54b2483d1937dcad646d47fdf20de3d654b4b845c45fc4c0d31c1285de0ea7"
+  }
+}

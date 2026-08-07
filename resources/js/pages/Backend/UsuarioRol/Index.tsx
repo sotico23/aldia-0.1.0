@@ -68,7 +68,6 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Switch } from '@/components/ui/switch';
 import {
     Dialog,
     DialogContent,
@@ -83,6 +82,7 @@ import { Progress } from '@/components/ui/progress';
 import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Tooltip,
@@ -90,10 +90,10 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { mainNavItems, adminNavItems } from '@/config/navigation';
 import { useCountry } from '@/hooks/use-country';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
-import { mainNavItems, adminNavItems } from '@/config/navigation';
 import type { BreadcrumbItem } from '@/types';
 
 interface User {

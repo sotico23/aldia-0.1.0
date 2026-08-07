@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ModalShow } from '@/components/ui/ModalShow';
 import {
     Select,
     SelectContent,
@@ -41,7 +42,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { ModalShow } from '@/components/ui/ModalShow';
 import '@/components/ui/textarea';
 import {
     Tooltip,

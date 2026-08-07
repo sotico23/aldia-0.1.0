@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use App\Models\ChannelCredential;
 use App\Models\TelegramLinkingToken;
-use App\Models\WebSetting;
+use App\Services\TelegramService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,7 +40,7 @@ class TelegramLinkingController extends Controller
     /**
      * Genera el token y la URL profunda de Telegram (https://t.me/bot?start=token)
      */
-    public function generateLink(Request $request): JsonResponse
+    public function generateLink(Request $request, TelegramService $telegramService): JsonResponse
     {
         try {
             $ownerId = Auth::user()->getOwnerId();
@@ -48,90 +48,23 @@ class TelegramLinkingController extends Controller
             // Sincroniza 'type' o 'bot_type' enviados por Axios en el frontend
             $type = $request->input('bot_type', $request->input('type', 'global'));
 
-            $token = TelegramLinkingToken::generateToken();
-            $expiresAt = now()->addMinutes(15);
+            $result = $telegramService->generateLinkingToken($ownerId, $type, Auth::id());
 
-            TelegramLinkingToken::create([
-                'owner_id' => $ownerId,
-                'user_id' => Auth::id(),
-                'token' => $token,
-                'bot_type' => $type,
-                'expires_at' => $expiresAt,
-            ]);
-
-            // CASO 1: BOT OFICIAL / GLOBAL
-            if ($type === 'global' || $type === 'oficial') {
-                $webSettings = WebSetting::getSettings();
-                $globalBotUsername = $webSettings->global_telegram_bot_username ?? config('services.telegram.default_bot_username');
-
-                if (! $globalBotUsername) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'No hay un bot oficial configurado en la plataforma. Por favor configúralo en Configuración Web.',
-                    ], 422);
-                }
-
-                $botUsername = ltrim($globalBotUsername, '@');
-                $link = "https://t.me/{$botUsername}?start={$token}";
-
-                Log::info('Telegram global linking token generated', [
-                    'owner_id' => $ownerId,
-                    'token' => $token,
-                    'expires_at' => $expiresAt,
-                    'bot_username' => $globalBotUsername,
-                ]);
-
-                return response()->json([
-                    'success' => true,
-                    'telegram_url' => $link,
-                    'token' => $token,
-                    'bot_username' => $globalBotUsername,
-                    'bot_type' => 'global',
-                ]);
-            }
-
-            // CASO 2: BOT PERSONALIZADO (CUSTOM)
-            $credentials = ChannelCredential::where('owner_id', $ownerId)->first();
-
-            if (! $credentials || ! $credentials->telegram_bot_username) {
-                // Fallback: si no tiene bot custom guardado pero intenta generar, usar el global si está disponible
-                $webSettings = WebSetting::getSettings();
-                if (! empty($webSettings->global_telegram_bot_username)) {
-                    $globalBotUsername = ltrim($webSettings->global_telegram_bot_username, '@');
-                    $link = "https://t.me/{$globalBotUsername}?start={$token}";
-
-                    return response()->json([
-                        'success' => true,
-                        'telegram_url' => $link,
-                        'token' => $token,
-                        'bot_username' => $webSettings->global_telegram_bot_username,
-                        'bot_type' => 'global',
-                    ]);
-                }
-
+            if (! ($result['success'] ?? false)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No hay un bot de Telegram configurado. Guarda las credenciales del bot primero.',
+                    'message' => $result['message'] ?? 'Error al generar el enlace de vinculación.',
                 ], 422);
             }
 
-            $botUsername = ltrim($credentials->telegram_bot_username, '@');
-            $link = "https://t.me/{$botUsername}?start={$token}";
-
-            Log::info('Telegram custom linking token generated', [
-                'owner_id' => $ownerId,
-                'token' => $token,
-                'expires_at' => $expiresAt,
-            ]);
-
             return response()->json([
                 'success' => true,
-                'telegram_url' => $link,
-                'token' => $token,
-                'bot_username' => $credentials->telegram_bot_username,
-                'bot_type' => 'custom',
+                'telegram_url' => $result['telegram_url'],
+                'token' => $result['token'],
+                'bot_username' => $result['bot_username'],
+                'bot_type' => $result['bot_type'],
+                'expires_at' => $result['expires_at']?->toIso8601String(),
             ]);
-
         } catch (\Exception $e) {
             Log::error('Telegram linking error', [
                 'error' => $e->getMessage(),
@@ -143,5 +76,41 @@ class TelegramLinkingController extends Controller
                 'message' => 'Error interno al generar el enlace de vinculación: '.$e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Desvincula la cuenta de Telegram del owner: limpia el chat_id vinculado
+     * en ChannelCredential. Los tokens existentes del owner se invalidan para
+     * que ningún /start pendiente vuelva a vincular la cuenta.
+     */
+    public function unlinkTelegram(): JsonResponse
+    {
+        $ownerId = Auth::user()->getOwnerId();
+
+        $credentials = ChannelCredential::where('owner_id', $ownerId)->first();
+
+        if ($credentials) {
+            $credentials->update([
+                'telegram_chat_id' => null,
+                'telegram_linked_at' => null,
+            ]);
+        }
+
+        // Invalidar cualquier token activo pendiente del owner.
+        $invalidated = TelegramLinkingToken::query()
+            ->where('owner_id', $ownerId)
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now())
+            ->update(['expires_at' => now()->subSecond()]);
+
+        Log::info('Telegram account unlinked', [
+            'owner_id' => $ownerId,
+            'invalidated_tokens' => $invalidated,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cuenta de Telegram desvinculada correctamente.',
+        ]);
     }
 }

@@ -55,6 +55,10 @@ return [
 
     'telegram' => [
         'default_chat_id' => env('TELEGRAM_DEFAULT_CHAT_ID'),
+        'bot' => env('TELEGRAM_LOGIN_BOT_NAME'),
+        'client_id' => null,
+        'client_secret' => env('TELEGRAM_LOGIN_BOT_TOKEN'),
+        'redirect' => env('TELEGRAM_LOGIN_REDIRECT_URI', env('APP_URL').'/auth/telegram/callback'),
     ],
 
     'whatsapp' => [

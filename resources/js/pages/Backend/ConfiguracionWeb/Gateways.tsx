@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Loader2, Save, RefreshCw, ChevronDown, ChevronRight, ExternalLink, CreditCard, KeyRound } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Save, RefreshCw, ChevronDown, ChevronRight, ExternalLink, CreditCard, KeyRound } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 
 export default function Gateways() {
     const [loading, setLoading] = useState(true);

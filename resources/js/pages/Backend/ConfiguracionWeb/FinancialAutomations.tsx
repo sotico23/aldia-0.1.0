@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Loader2, Save, Zap, Bot, MessageSquare, Mail, Smartphone } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Loader2, Save, Zap, Bot, MessageSquare, Mail, Smartphone } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 
 interface AutomationEvent {
     event: string;

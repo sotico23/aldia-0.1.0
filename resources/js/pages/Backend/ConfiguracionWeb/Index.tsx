@@ -17,6 +17,7 @@ LayoutGrid,
 } from 'lucide-react';
 import { lazy, Suspense, useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
+import ErrorBoundary from '@/components/error-boundary';
 import RichEditor from '@/components/rich-editor';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,7 +32,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import '@/components/ui/textarea';
-import ErrorBoundary from '@/components/error-boundary';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
@@ -104,6 +104,9 @@ interface WebSetting {
     facebook_client_id?: string;
     facebook_client_secret?: string;
     facebook_redirect_uri?: string;
+    telegram_login_bot_name?: string;
+    telegram_login_bot_token?: string;
+    telegram_login_redirect_uri?: string;
     global_telegram_bot_username?: string;
     global_telegram_bot_token?: string;
     whatsapp_webhook_url?: string;
@@ -170,7 +173,10 @@ interface FormFields {
     facebook_client_id: string;
     facebook_client_secret: string;
     facebook_redirect_uri: string;
-global_telegram_bot_username: string;
+    telegram_login_bot_name: string;
+    telegram_login_bot_token: string;
+    telegram_login_redirect_uri: string;
+    global_telegram_bot_username: string;
      global_telegram_bot_token: string;
      whatsapp_webhook_url: string;
      whatsapp_phone_number_id: string;
@@ -465,7 +471,8 @@ function ImageUploadField({
     );
 }
 
-import CountriesTab, { Country } from './CountriesTab';
+import type { Country } from './CountriesTab';
+import CountriesTab from './CountriesTab';
 
 export default function Index({
     settings,
@@ -546,6 +553,9 @@ export default function Index({
         facebook_client_id: settings.facebook_client_id || '',
         facebook_client_secret: settings.facebook_client_secret || '',
         facebook_redirect_uri: settings.facebook_redirect_uri || '',
+        telegram_login_bot_name: settings.telegram_login_bot_name || '',
+        telegram_login_bot_token: settings.telegram_login_bot_token || '',
+        telegram_login_redirect_uri: settings.telegram_login_redirect_uri || '',
 global_telegram_bot_username: settings.global_telegram_bot_username || '',
          global_telegram_bot_token: settings.global_telegram_bot_token || '',
          whatsapp_webhook_url: settings.whatsapp_webhook_url || '',
@@ -1933,6 +1943,48 @@ const testSocialConnection = async (provider: 'google' | 'facebook') => {
                                                 )}
                                                 {testingFacebook ? 'Probando conexión...' : 'Probar Conexión con Facebook'}
                                             </Button>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="flex items-center gap-2">
+                                                <span>✈️ Telegram Login</span>
+                                            </CardTitle>
+                                            <CardDescription>
+                                                Credenciales del bot para el inicio de sesión con Telegram. Crea el bot en @BotFather
+                                                y ejecuta <code className="rounded bg-muted px-1">/setdomain</code> con el dominio de la app
+                                                (requiere HTTPS).
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="telegram_login_bot_name">Bot Username</Label>
+                                                <Input
+                                                    id="telegram_login_bot_name"
+                                                    value={data.telegram_login_bot_name}
+                                                    onChange={(e) => setData('telegram_login_bot_name', e.target.value)}
+                                                    placeholder="mi_plataforma_bot"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="telegram_login_bot_token">Bot Token</Label>
+                                                <Input
+                                                    id="telegram_login_bot_token"
+                                                    type="password"
+                                                    value={data.telegram_login_bot_token}
+                                                    onChange={(e) => setData('telegram_login_bot_token', e.target.value)}
+                                                    placeholder="123456789:AA..."
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="telegram_login_redirect_uri">Redirect URI</Label>
+                                                <Input
+                                                    id="telegram_login_redirect_uri"
+                                                    value={data.telegram_login_redirect_uri}
+                                                    onChange={(e) => setData('telegram_login_redirect_uri', e.target.value)}
+                                                    placeholder="https://tu-dominio.cl/auth/telegram/callback"
+                                                />
+                                            </div>
                                         </CardContent>
                                     </Card>
                                 </div>
