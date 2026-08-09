@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
 const GoogleIcon = () => (
@@ -55,9 +56,66 @@ const TelegramIcon = () => (
 
 interface SocialLoginButtonsProps {
     className?: string;
+    telegramBotUsername?: string | null;
 }
 
-export function SocialLoginButtons({ className }: SocialLoginButtonsProps) {
+export function SocialLoginButtons({
+    className,
+    telegramBotUsername,
+}: SocialLoginButtonsProps) {
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const container = containerRef.current;
+        const username = telegramBotUsername?.replace(/^@/, '');
+
+        if (!container || !username) {
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://telegram.org/js/telegram-widget.js?22';
+        script.setAttribute('data-telegram-login', username);
+        script.setAttribute('data-size', 'large');
+        script.setAttribute(
+            'data-auth-url',
+            `${window.location.origin}/auth/telegram/callback`,
+        );
+        script.setAttribute('data-request-access', 'write');
+
+        container.appendChild(script);
+
+        return () => {
+            container.replaceChildren();
+        };
+    }, [telegramBotUsername]);
+
+    const renderTelegramButton = () => {
+        if (!telegramBotUsername) {
+            return (
+                <a
+                    href="/auth/telegram/redirect"
+                    className={cn(
+                        'inline-flex h-9 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium whitespace-nowrap text-[#229ED9] shadow-xs transition-[color,box-shadow] outline-none hover:bg-accent hover:text-accent-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-[>svg]:px-4 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 sm:col-span-2',
+                    )}
+                >
+                    <TelegramIcon />
+                    Telegram
+                </a>
+            );
+        }
+
+return (
+            <div className="sm:col-span-2">
+                <div
+                    ref={containerRef}
+                    className="flex min-h-11 items-center justify-center rounded-md border border-input bg-white px-2 py-1.5 shadow-xs"
+                />
+            </div>
+        );
+    };
+
     return (
         <div className={cn('space-y-3', className)}>
             <div className="relative">
@@ -90,15 +148,7 @@ export function SocialLoginButtons({ className }: SocialLoginButtonsProps) {
                     <FacebookIcon />
                     Facebook
                 </a>
-                <a
-                    href="/auth/telegram/redirect"
-                    className={cn(
-                        'inline-flex h-9 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium whitespace-nowrap text-[#229ED9] shadow-xs transition-[color,box-shadow] outline-none hover:bg-accent hover:text-accent-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-[>svg]:px-4 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 sm:col-span-2',
-                    )}
-                >
-                    <TelegramIcon />
-                    Telegram
-                </a>
+                {renderTelegramButton()}
             </div>
         </div>
     );

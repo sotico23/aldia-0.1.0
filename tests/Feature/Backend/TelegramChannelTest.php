@@ -323,6 +323,8 @@ test('webhook handle forwards messages to n8n after linking', function () {
             && $request['tenant_id'] === $this->user->getOwnerId()
             && $request['chat_id'] === '999888'
             && $request['user_message'] === 'Hello from Telegram'
+            && $request['message'] === 'Hello from Telegram'
+            && $request['text'] === 'Hello from Telegram'
             && $request['event'] === 'message';
     });
 });
@@ -495,6 +497,8 @@ test('webhook forwards to n8n includes bot_type and app_name', function () {
             && $body['bot_type'] === 'oficial'
             && $body['event'] === 'message'
             && $body['user_message'] === 'Hello from Telegram'
+            && $body['message'] === 'Hello from Telegram'
+            && $body['text'] === 'Hello from Telegram'
             && $body['callback_url'] === route('api.canales.telegram.webhook')
             && $body['webhook_url'] === route('api.canales.telegram.webhook');
     });
@@ -595,6 +599,9 @@ test('api canales telegram webhook forwards unlinked message to n8n with is_link
             && $body['event'] === 'send_linking_code'
             && $body['tenant_id'] === null
             && $body['chat_id'] === '555444'
+            && $body['user_message'] === 'Hello from Telegram'
+            && $body['message'] === 'Hello from Telegram'
+            && $body['text'] === 'Hello from Telegram'
             && $body['linking_url'] === config('app.url').'/canales'
             && array_key_exists('bot_token', $body)
             && array_key_exists('bot_username', $body);
@@ -866,7 +873,9 @@ test('proxy gate forwards normal message from linked chat with is_linked=true', 
             && $body['is_linked'] === true
             && $body['tenant_id'] === $this->user->getOwnerId()
             && $body['chat_id'] === '321654'
-            && $body['user_message'] === 'Hello from linked chat';
+            && $body['user_message'] === 'Hello from linked chat'
+            && $body['message'] === 'Hello from linked chat'
+            && $body['text'] === 'Hello from linked chat';
     });
 });
 
@@ -907,7 +916,9 @@ test('webhook handle extracts chat_id from callback_query nested chat', function
 
         return str_contains($request->url(), 'n8n.example.com')
             && $body['chat_id'] === '555666'
-            && $body['user_message'] === 'some_callback_data';
+            && $body['user_message'] === 'some_callback_data'
+            && $body['message'] === 'some_callback_data'
+            && $body['text'] === 'some_callback_data';
     });
 });
 

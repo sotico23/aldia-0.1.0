@@ -21,7 +21,9 @@ class TelegramAuthService
      */
     public function verify(Request $request): array
     {
-        $data = $request->query();
+        // El widget oficial envía el payload firmado por POST al data-auth-url;
+        // pero se aceptan también los parámetros GET (redirecciones/API con hash).
+        $data = array_merge($request->request->all(), $request->query());
         $hash = $data['hash'] ?? null;
 
         if (! is_string($hash) || strlen($hash) !== 64) {

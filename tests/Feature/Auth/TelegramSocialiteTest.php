@@ -1,8 +1,10 @@
 <?php
 
 use App\Models\User;
+use App\Models\WebSetting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
@@ -113,6 +115,62 @@ test('telegram callback logs in an existing telegram user directly', function ()
         ->assertRedirect(route('dashboard'));
 
     $this->assertAuthenticatedAs($user);
+});
+
+test('telegram widget posts the signed payload to the callback and logs in the user', function () {
+    $user = User::factory()->create([
+        'telegram_id' => '777777777',
+        'telegram_username' => 'widgetuser',
+        'email_verified_at' => now(),
+    ]);
+
+    $query = telegramSignedQuery([
+        'auth_date' => time(),
+        'first_name' => 'Widget',
+        'id' => '777777777',
+        'username' => 'widgetuser',
+    ]);
+
+    $this->post('/auth/telegram/callback', $query)
+        ->assertRedirect(route('dashboard'));
+
+    $this->assertAuthenticatedAs($user);
+});
+
+test('telegram callback creates a user from a POST payload with email', function () {
+    $payload = telegramSignedQuery([
+        'auth_date' => time(),
+        'email' => 'post@example.com',
+        'first_name' => 'Post',
+        'id' => '424242424',
+        'username' => 'postuser',
+    ]);
+
+    $this->post('/auth/telegram/callback', $payload)
+        ->assertRedirect(route('dashboard'));
+
+    $this->assertAuthenticated();
+
+    $user = User::where('email', 'post@example.com')->first();
+
+    expect($user)->not->toBeNull();
+    expect($user->telegram_id)->toBe('424242424');
+    expect($user->telegram_username)->toBe('postuser');
+});
+
+test('login page exposes the telegram bot username from web settings', function () {
+    WebSetting::factory()->create([
+        'telegram_login_bot_name' => '@redcliente_login_bot',
+        'telegram_login_bot_token' => '123456789:AAExampleToken',
+        'telegram_login_redirect_uri' => 'https://example.test/auth/telegram/callback',
+    ]);
+
+    $this->get('/login')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('auth/login')
+            ->where('telegramBotUsername', 'redcliente_login_bot'),
+        );
 });
 
 test('telegram callback creates a new user when telegram provides an email', function () {

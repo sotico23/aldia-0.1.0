@@ -358,11 +358,13 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Telegram Login Widget: rutas dedicadas, antes del grupo genérico para darles prioridad.
-// /auth/telegram/redirect también procesa el payload cuando `hash` está presente,
-// porque es el endpoint configurado como data-auth-url del widget en producción.
+// El widget incrustado en la página de login envía su payload firmado (GET o POST) al
+// callback, que verifica el HMAC y autentica sin pantallas intermedias. /redirect se
+// mantiene como fallback para el enlace clásico de Socialite (acepta el payload si
+// llega con `hash`, por compatibilidad con widgets configurados anteriormente).
 Route::prefix('/auth/telegram')->name('telegram.')->middleware('guest')->group(function () {
     Route::get('/redirect', [TelegramAuthController::class, 'redirect'])->name('redirect');
-    Route::get('/callback', [TelegramAuthController::class, 'callback'])->name('callback');
+    Route::match(['get', 'post'], '/callback', [TelegramAuthController::class, 'callback'])->name('callback');
     Route::get('/email', [TelegramAuthController::class, 'showTelegramEmailForm'])->name('email-form');
     Route::post('/email', [TelegramAuthController::class, 'completeTelegramEmail'])->name('email-store');
 });

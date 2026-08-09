@@ -159,7 +159,7 @@ test('assistant keeps conversation memory across messages', function () {
     });
 });
 
-test('webhook routes linked chat message to Laravel assistant when llm enabled', function () {
+test('webhook routes linked chat message to n8n even when llm is enabled', function () {
     config([
         'services.n8n.telegram_proxy_url' => 'https://n8n.redcliente.cl/webhook/telegram-proxy',
         'services.llm.enabled' => true,
@@ -190,13 +190,8 @@ test('webhook routes linked chat message to Laravel assistant when llm enabled',
     $response->assertOk();
     $response->assertJson(['status' => 'ok']);
 
-    Http::assertSent(fn ($request) => $request->url() === 'https://llm.example.com/v1/chat/completions');
-    Http::assertNotSent(fn ($request) => str_contains($request->url(), 'n8n.redcliente.cl'));
+    Http::assertSent(fn ($request) => str_contains($request->url(), 'n8n.redcliente.cl'));
+    Http::assertNotSent(fn ($request) => $request->url() === 'https://llm.example.com/v1/chat/completions');
 
-    $this->assertDatabaseHas('telegram_conversations', [
-        'owner_id' => $this->user->getOwnerId(),
-        'chat_id' => '321654',
-        'role' => 'user',
-        'content' => '¿Cuánto vendí hoy?',
-    ]);
+    $this->assertDatabaseCount('telegram_conversations', 0);
 });

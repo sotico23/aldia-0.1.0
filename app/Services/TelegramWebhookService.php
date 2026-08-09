@@ -82,23 +82,6 @@ class TelegramWebhookService
             $tenantId = $credential->owner_id;
         }
 
-        if ($isLinked && config('services.llm.enabled')) {
-            $botToken = $credential->telegram_bot_token
-                ?: (WebSetting::getSettings()?->global_telegram_bot_token
-                ?: config('services.telegram.bot_token'));
-
-            if ($botToken) {
-                app(TelegramAssistantService::class)->handleMessage($tenantId, $botToken, $chatIdStr, $text);
-
-                Log::info('TelegramWebhookService: message handled by Laravel assistant', [
-                    'chat_id' => $chatIdStr,
-                    'tenant_id' => $tenantId,
-                ]);
-
-                return ['status' => 'ok'];
-            }
-        }
-
         $payload = $this->buildPayload($isLinked, $tenantId, $credential, $chatIdStr, $text, $update);
 
         Log::info('TelegramWebhookService: forwarding message to n8n as proxy', [
@@ -353,6 +336,8 @@ class TelegramWebhookService
             'bot_token' => $botToken,
             'bot_username' => $botUsername,
             'user_message' => $text ?: 'Inicialización de canal',
+            'message' => $text ?: 'Inicialización de canal',
+            'text' => $text ?: 'Inicialización de canal',
             'is_linked' => $isLinked,
             'linking_url' => $linkingUrl,
             'bot_type' => $botType === 'custom' ? 'personal' : 'oficial',

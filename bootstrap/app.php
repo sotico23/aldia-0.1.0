@@ -33,6 +33,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'webhooks/*',
             'canales/telegram/webhook',
+            // El widget de Telegram Login envía su payload firmado (HMAC) por
+            // POST al callback; la firma reemplaza la protección CSRF.
+            'auth/telegram/callback',
         ]);
 
         $middleware->alias([

@@ -17,12 +17,14 @@ type Props = {
     status?: string;
     canResetPassword: boolean;
     canRegister: boolean;
+    telegramBotUsername?: string | null;
 };
 
 export default function Login({
     status,
     canResetPassword,
     canRegister,
+    telegramBotUsername,
 }: Props) {
     return (
         <AuthLayout
@@ -102,7 +104,9 @@ export default function Login({
                             </Button>
                         </div>
 
-                        <SocialLoginButtons />
+                        <SocialLoginButtons
+                            telegramBotUsername={telegramBotUsername}
+                        />
 
                         {canRegister && (
                             <div className="text-center text-sm text-muted-foreground">
