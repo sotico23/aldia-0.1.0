@@ -59,6 +59,8 @@ return [
         'client_id' => null,
         'client_secret' => env('TELEGRAM_LOGIN_BOT_TOKEN'),
         'redirect' => env('TELEGRAM_LOGIN_REDIRECT_URI', env('APP_URL').'/auth/telegram/callback'),
+        // Max age, en segundos, de un auth_date de Telegram Login Widget para evitar ataques replay.
+        'login_max_age' => env('TELEGRAM_LOGIN_MAX_AGE', 300),
     ],
 
     'whatsapp' => [

@@ -27,7 +27,7 @@ class WebSettingController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:admin.web-settings.edit', only: ['edit', 'update']),
+            new Middleware('permission:admin.web-settings.edit', only: ['edit', 'update', 'disconnectTelegramLogin']),
         ];
     }
 
@@ -208,9 +208,9 @@ class WebSettingController extends Controller implements HasMiddleware
             'facebook_client_id' => 'nullable|string|max:255',
             'facebook_client_secret' => 'nullable|string',
             'facebook_redirect_uri' => 'nullable|string|max:255',
-            'telegram_login_bot_name' => 'nullable|string|max:255',
-            'telegram_login_bot_token' => 'nullable|string',
-            'telegram_login_redirect_uri' => 'nullable|string|max:255',
+            'telegram_login_bot_name' => 'nullable|string|max:255|required_with:telegram_login_bot_token,telegram_login_redirect_uri',
+            'telegram_login_bot_token' => 'nullable|string|required_with:telegram_login_bot_name,telegram_login_redirect_uri',
+            'telegram_login_redirect_uri' => 'nullable|string|max:255|required_with:telegram_login_bot_name,telegram_login_bot_token',
             'global_telegram_bot_username' => 'nullable|string|max:255',
             'global_telegram_bot_token' => 'nullable|string|max:255',
             'whatsapp_webhook_url' => 'nullable|string|max:255',
@@ -267,6 +267,24 @@ class WebSettingController extends Controller implements HasMiddleware
             'footer' => 'nullable|array',
             'footer.*' => 'nullable|string|max:1000',
         ]);
+
+        // Sanitize Telegram Login credentials: strip the leading @ from the
+        // bot username and never persist empty values.
+        $telegramLoginFields = [
+            'telegram_login_bot_name',
+            'telegram_login_bot_token',
+            'telegram_login_redirect_uri',
+        ];
+
+        foreach ($telegramLoginFields as $telegramLoginField) {
+            $value = trim((string) ($validated[$telegramLoginField] ?? ''));
+
+            if ($telegramLoginField === 'telegram_login_bot_name') {
+                $value = ltrim($value, '@');
+            }
+
+            $validated[$telegramLoginField] = $value !== '' ? $value : null;
+        }
 
         // Handle logo file upload
         if ($request->hasFile('app_logo_file')) {
@@ -444,6 +462,87 @@ class WebSettingController extends Controller implements HasMiddleware
         }
 
         return redirect()->route('configuracion-web.index')->with('success', 'Configuración guardada.');
+    }
+
+    public function disconnectTelegramLogin(): JsonResponse
+    {
+        $settings = WebSetting::getSettings();
+
+        $settings->update([
+            'telegram_login_bot_name' => null,
+            'telegram_login_bot_token' => null,
+            'telegram_login_redirect_uri' => null,
+        ]);
+
+        WebSetting::clearCache();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Bot de Telegram desvinculado correctamente. El inicio de sesión con Telegram ha sido desactivado.',
+        ]);
+    }
+
+    public function testTelegramLogin(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'bot_token' => 'required|string',
+            'bot_username' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            $response = Http::timeout(10)
+                ->connectTimeout(5)
+                ->withOptions(['verify' => false])
+                ->get('https://api.telegram.org/bot'.$validated['bot_token'].'/getMe');
+
+            if ($response->successful() && $response->json('ok')) {
+                $botInfo = $response->json('result');
+
+                if (($botInfo['is_bot'] ?? false) !== true) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El Token de Telegram ingresado no es válido o expiró.',
+                    ], 422);
+                }
+
+                $username = $botInfo['username'] ?? '';
+
+                if (($validated['bot_username'] ?? '') !== '' && ltrim($validated['bot_username'], '@') !== $username) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El username del bot no coincide con el token proporcionado.',
+                    ], 422);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Conexión con Telegram exitosa. El bot es válido y está activo.',
+                    'bot_username' => $username,
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'El Token de Telegram ingresado no es válido o expiró.',
+            ], 422);
+        } catch (ConnectionException $e) {
+            Log::error('Telegram login test connection exception', [
+                'error' => $e->getMessage(),
+                'type' => 'connection',
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo conectar con la API de Telegram. Verifica tu conexión e inténtalo nuevamente.',
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Telegram login test exception', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'El Token de Telegram ingresado no es válido o expiró.',
+            ], 422);
+        }
     }
 
     public function testSocialConnection(Request $request): JsonResponse

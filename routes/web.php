@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\SystemHealthController;
 use App\Http\Controllers\AffiliateController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\Auth\SocialiteController;
+use App\Http\Controllers\Auth\TelegramAuthController;
 use App\Http\Controllers\Backend\ApiIntegrationController;
 use App\Http\Controllers\Backend\AutomationController;
 use App\Http\Controllers\Backend\AutomationExecutionController;
@@ -356,13 +357,20 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
+// Telegram Login Widget: rutas dedicadas, antes del grupo genérico para darles prioridad.
+// /auth/telegram/redirect también procesa el payload cuando `hash` está presente,
+// porque es el endpoint configurado como data-auth-url del widget en producción.
+Route::prefix('/auth/telegram')->name('telegram.')->middleware('guest')->group(function () {
+    Route::get('/redirect', [TelegramAuthController::class, 'redirect'])->name('redirect');
+    Route::get('/callback', [TelegramAuthController::class, 'callback'])->name('callback');
+    Route::get('/email', [TelegramAuthController::class, 'showTelegramEmailForm'])->name('email-form');
+    Route::post('/email', [TelegramAuthController::class, 'completeTelegramEmail'])->name('email-store');
+});
+
 Route::group(['prefix' => 'auth/{provider}'], function () {
     Route::get('/redirect', [SocialiteController::class, 'redirect'])->name('socialite.redirect');
     Route::get('/callback', [SocialiteController::class, 'callback'])->name('socialite.callback');
 });
-
-Route::get('/auth/telegram/email', [SocialiteController::class, 'showTelegramEmailForm'])->name('socialite.telegram.email-form')->middleware('guest');
-Route::post('/auth/telegram/email', [SocialiteController::class, 'completeTelegramEmail'])->name('socialite.telegram.email-store')->middleware('guest');
 
 Route::get('/tienda', [MarketplaceController::class, 'index'])->name('marketplace.index');
 Route::get('/tienda/{slug}', [MarketplaceController::class, 'show'])->name('marketplace.show');

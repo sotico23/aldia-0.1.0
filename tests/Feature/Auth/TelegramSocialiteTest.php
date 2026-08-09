@@ -3,57 +3,138 @@
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-use Laravel\Socialite\Facades\Socialite;
 
 uses(RefreshDatabase::class);
 
-function telegramSocialiteUser(string $id): Laravel\Socialite\Contracts\User
-{
-    $socialiteUser = Mockery::mock(Laravel\Socialite\Contracts\User::class);
-    $socialiteUser->shouldReceive('getId')->andReturn($id);
-    $socialiteUser->shouldReceive('getEmail')->andReturn(null);
-    $socialiteUser->shouldReceive('getName')->andReturn('Telegram User');
-    $socialiteUser->shouldReceive('getNickName')->andReturn('telegramuser');
-    $socialiteUser->shouldReceive('getAvatar')->andReturn('https://example.com/telegram.png');
+const TELEGRAM_BOT_TOKEN = '123456789:AAAaAaAaAaAaAaAaAaAaAaA';
 
-    return $socialiteUser;
+function telegramSignedQuery(array $data, string $token = TELEGRAM_BOT_TOKEN): array
+{
+    $dataCheckString = collect($data)
+        ->except('hash')
+        ->map(fn (mixed $value, string $key): string => "{$key}={$value}")
+        ->sort()
+        ->values()
+        ->join("\n");
+
+    $secretKey = hash('sha256', $token, true);
+
+    return $data + ['hash' => hash_hmac('sha256', $dataCheckString, $secretKey)];
 }
 
-test('telegram redirect renders the telegram login widget', function () {
-    $response = $this->get('/auth/telegram/redirect');
-
-    $response->assertStatus(200);
-    $response->assertSee('telegram-widget.js');
+beforeEach(function () {
+    config(['services.telegram.client_secret' => TELEGRAM_BOT_TOKEN]);
 });
 
-test('telegram callback without email asks for email and does not create the user', function () {
-    $socialiteUser = telegramSocialiteUser('123456789');
+test('telegram redirect renders the login widget when no hash is present', function () {
+    $this->get('/auth/telegram/redirect')
+        ->assertSuccessful()
+        ->assertSee('telegram-widget.js');
+});
 
-    Socialite::shouldReceive('driver->user')->andReturn($socialiteUser);
+test('telegram redirect processes the widget payload and logs in an existing user', function () {
+    $user = User::factory()->create([
+        'telegram_id' => '5301396120',
+        'telegram_username' => 'RedCliente',
+        'email_verified_at' => now(),
+    ]);
 
-    $this->get('/auth/telegram/callback')
-        ->assertRedirect(route('socialite.telegram.email-form'));
+    $query = telegramSignedQuery([
+        'auth_date' => time(),
+        'first_name' => 'Ezequiel',
+        'id' => '5301396120',
+        'last_name' => 'Soto',
+        'photo_url' => 'https://example.com/photo.png',
+        'username' => 'RedCliente',
+    ]);
 
+    $this->get('/auth/telegram/redirect?'.http_build_query($query))
+        ->assertRedirect(route('dashboard'));
+
+    $this->assertAuthenticatedAs($user);
+});
+
+test('telegram callback rejects a callback with an invalid hash', function () {
+    $query = telegramSignedQuery([
+        'auth_date' => time(),
+        'first_name' => 'Ezequiel',
+        'id' => '5301396120',
+    ]);
+
+    $query['id'] = '9999999999';
+
+    $this->get('/auth/telegram/callback?'.http_build_query($query))
+        ->assertRedirect(route('login'))
+        ->assertSessionHas('error');
+
+    $this->assertGuest();
     expect(User::count())->toBe(0);
-    expect(session('telegram_pending.id'))->toBe('123456789');
 });
 
-test('telegram callback completes registration with a valid email', function () {
-    $socialiteUser = telegramSocialiteUser('123456789');
+test('telegram callback rejects an expired auth_date to prevent replay attacks', function () {
+    $query = telegramSignedQuery([
+        'auth_date' => time() - 600,
+        'first_name' => 'Ezequiel',
+        'id' => '5301396120',
+    ]);
 
-    Socialite::shouldReceive('driver->user')->andReturn($socialiteUser);
+    $this->get('/auth/telegram/callback?'.http_build_query($query))
+        ->assertRedirect(route('login'))
+        ->assertSessionHas('error');
 
-    $this->get('/auth/telegram/callback');
+    $this->assertGuest();
+    expect(User::count())->toBe(0);
+});
 
-    $response = $this->post('/auth/telegram/email', ['email' => 'telegram@example.com']);
+test('telegram callback without hash is rejected gracefully', function () {
+    $this->get('/auth/telegram/callback')
+        ->assertRedirect(route('login'))
+        ->assertSessionHas('error');
 
-    $response->assertRedirect(route('dashboard'));
+    $this->assertGuest();
+});
 
-    $user = User::where('telegram_id', '123456789')->first();
+test('telegram callback logs in an existing telegram user directly', function () {
+    $user = User::factory()->create([
+        'telegram_id' => '555555555',
+        'telegram_username' => 'telegramuser',
+        'email_verified_at' => now(),
+    ]);
+
+    $query = telegramSignedQuery([
+        'auth_date' => time(),
+        'first_name' => 'Telegram',
+        'id' => '555555555',
+        'last_name' => 'User',
+        'username' => 'telegramuser',
+    ]);
+
+    $this->get('/auth/telegram/callback?'.http_build_query($query))
+        ->assertRedirect(route('dashboard'));
+
+    $this->assertAuthenticatedAs($user);
+});
+
+test('telegram callback creates a new user when telegram provides an email', function () {
+    $query = telegramSignedQuery([
+        'auth_date' => time(),
+        'email' => 'nuevo@example.com',
+        'first_name' => 'Telegram',
+        'id' => '123456789',
+        'last_name' => 'User',
+        'username' => 'telegramuser',
+    ]);
+
+    $this->get('/auth/telegram/callback?'.http_build_query($query))
+        ->assertRedirect(route('dashboard'));
+
+    $this->assertAuthenticated();
+
+    $user = User::where('email', 'nuevo@example.com')->first();
+
     expect($user)->not->toBeNull();
-    expect($user->email)->toBe('telegram@example.com');
+    expect($user->telegram_id)->toBe('123456789');
     expect($user->telegram_username)->toBe('telegramuser');
-    expect($user->profile_photo_path)->toBe('https://example.com/telegram.png');
     expect($user->email_verified_at)->not->toBeNull();
     expect(Hash::check('', $user->password))->toBeFalse();
 });
@@ -61,11 +142,76 @@ test('telegram callback completes registration with a valid email', function () 
 test('telegram callback links the telegram id to an existing account with the same email', function () {
     $user = User::factory()->create(['email' => 'existing@example.com']);
 
-    $socialiteUser = telegramSocialiteUser('987654321');
+    $query = telegramSignedQuery([
+        'auth_date' => time(),
+        'email' => 'existing@example.com',
+        'first_name' => 'Telegram',
+        'id' => '987654321',
+        'username' => 'telegramuser',
+    ]);
 
-    Socialite::shouldReceive('driver->user')->andReturn($socialiteUser);
+    $this->get('/auth/telegram/callback?'.http_build_query($query))
+        ->assertRedirect(route('dashboard'));
 
-    $this->get('/auth/telegram/callback');
+    $this->assertAuthenticatedAs($user);
+
+    expect(User::count())->toBe(1);
+    expect($user->fresh()->telegram_id)->toBe('987654321');
+    expect($user->fresh()->telegram_username)->toBe('telegramuser');
+});
+
+test('telegram callback without an email stores the pending data and asks for an email', function () {
+    $query = telegramSignedQuery([
+        'auth_date' => time(),
+        'first_name' => 'Telegram',
+        'id' => '123456789',
+        'last_name' => 'User',
+        'photo_url' => 'https://example.com/telegram.png',
+        'username' => 'telegramuser',
+    ]);
+
+    $this->get('/auth/telegram/callback?'.http_build_query($query))
+        ->assertRedirect(route('telegram.email-form'));
+
+    expect(User::count())->toBe(0);
+    expect(session('telegram_pending.id'))->toBe('123456789');
+    expect(session('telegram_pending.username'))->toBe('telegramuser');
+    expect(session('telegram_pending.name'))->toBe('Telegram User');
+});
+
+test('telegram callback completes registration with a valid email', function () {
+    $query = telegramSignedQuery([
+        'auth_date' => time(),
+        'first_name' => 'Telegram',
+        'id' => '123456789',
+        'username' => 'telegramuser',
+    ]);
+
+    $this->get('/auth/telegram/callback?'.http_build_query($query));
+
+    $this->post('/auth/telegram/email', ['email' => 'telegram@example.com'])
+        ->assertRedirect(route('dashboard'));
+
+    $user = User::where('telegram_id', '123456789')->first();
+
+    expect($user)->not->toBeNull();
+    expect($user->email)->toBe('telegram@example.com');
+    expect($user->telegram_username)->toBe('telegramuser');
+    expect($user->email_verified_at)->not->toBeNull();
+    expect(Hash::check('', $user->password))->toBeFalse();
+});
+
+test('telegram email completion links the telegram id to an existing account', function () {
+    $user = User::factory()->create(['email' => 'existing@example.com']);
+
+    $query = telegramSignedQuery([
+        'auth_date' => time(),
+        'first_name' => 'Telegram',
+        'id' => '987654321',
+        'username' => 'telegramuser',
+    ]);
+
+    $this->get('/auth/telegram/callback?'.http_build_query($query));
 
     $this->post('/auth/telegram/email', ['email' => 'existing@example.com'])
         ->assertRedirect(route('dashboard'));
@@ -75,25 +221,8 @@ test('telegram callback links the telegram id to an existing account with the sa
     expect($user->fresh()->telegram_username)->toBe('telegramuser');
 });
 
-test('telegram callback logs in an existing telegram user directly', function () {
-    $user = User::factory()->create([
-        'telegram_id' => '555555555',
-        'telegram_username' => 'pepe',
-        'email_verified_at' => now(),
-    ]);
-
-    $socialiteUser = telegramSocialiteUser('555555555');
-
-    Socialite::shouldReceive('driver->user')->andReturn($socialiteUser);
-
-    $this->get('/auth/telegram/callback')
-        ->assertRedirect(route('dashboard'));
-
-    $this->assertAuthenticatedAs($user);
-});
-
 test('telegram email form requires a pending telegram session', function () {
-    $this->get(route('socialite.telegram.email-form'))
+    $this->get(route('telegram.email-form'))
         ->assertRedirect(route('login'));
 });
 
