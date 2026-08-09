@@ -42,10 +42,11 @@ class ClienteService
 
     public function buscarClientes(string $termino)
     {
-        return Cliente::where('nombre', 'like', "%{$termino}%")
+        return Cliente::where(fn ($q) => $q
+            ->where('nombre', 'like', "%{$termino}%")
             ->orWhere('nit', 'like', "%{$termino}%")
             ->orWhere('email', 'like', "%{$termino}%")
-            ->orWhere('telefono', 'like', "%{$termino}%")
+            ->orWhere('telefono', 'like', "%{$termino}%"))
             ->limit(20)
             ->get();
     }

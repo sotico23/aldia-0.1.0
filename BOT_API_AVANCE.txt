@@ -1,0 +1,253 @@
+================================================================================
+AL DIA - AVANCE PROYECTO: AUTENTICACION TELEGRAM + CAPA BOT API (n8n / IA)
+Fecha: 2026-08-09
+================================================================================
+
+INDICE
+  1. Contexto del proyecto
+  2. Lo completado (1): Refactor autenticacion Telegram
+  3. Lo completado (2): Capa Bot API /api/v1/bot (modulo Clientes)
+  4. Arquitectura de la capa Bot
+  5. Contrato JSON para LLM/n8n
+  6. Tests y verificacion
+  7. Hallazgos y decisiones importantes
+  8. Lo que falta (pendiente)
+  9. Como conectar n8n (paso a paso)
+
+================================================================================
+1. CONTEXTO DEL PROYECTO
+================================================================================
+- Plataforma: Laravel 12 (PHP 8.5), MySQL, React + Inertia 2, Pest 4, Tailwind 4.
+- Multi-tenant: cada registro de negocio pertenece a un dueño via owner_id.
+- Aislamiento base: trait App\Traits\BelongsToOwner + global scope
+  App\Scopes\OwnerScope (filtra por Auth::user()->getOwnerId()).
+  Master / Super Admin tienen BYPASS total del scope.
+- Integracion n8n: el agente IA de n8n consumira CRUDs de la plataforma.
+
+================================================================================
+2. LO COMPLETADO (1): REFACTOR AUTENTICACION TELEGRAM
+================================================================================
+Problema original: se dependia de Socialite/Telegram; el middleware regional
+inyectaba _country_settings al query y rompia el data_check_string (HMAC).
+
+Archivos creados:
+- app/Exceptions/TelegramAuthException.php
+- app/Services/TelegramAuthService.php
+  * Valida la firma oficial HMAC-SHA256 de Telegram (hash_equals).
+  * Allowlist de campos permitidos: id, first_name, last_name, username,
+    photo_url, auth_date, email (ignora _country_settings y extras).
+  * Replay protection: auth_date no puede ser mas antiguo que
+    services.telegram.login_max_age (env TELEGRAM_LOGIN_MAX_AGE, default 300s).
+- app/Http/Controllers/Auth/TelegramAuthController.php
+  * redirect: muestra el widget o procesa el hash recibido.
+  * callback: 3 casos de negocio
+      1) usuario con telegram_id existente -> login.
+      2) email presente -> crea/vincule usuario -> login.
+      3) sin email -> sesion pendiente -> formulario de email.
+  * showTelegramEmailForm / completeTelegramEmail.
+
+Archivos modificados:
+- routes/web.php: grupo 'telegram.' (redirect, callback, email) con guest,
+  registrado ANTES del grupo generico auth/{provider}.
+- config/services.php: bloque telegram con client_secret, bot, redirect,
+  login_max_age.
+- app/Http/Controllers/Auth/SocialiteController.php: limpiado (solo
+  google/facebook; Telegram ya no pasa por Socialite).
+
+Tests: tests/Feature/Auth/TelegramSocialiteTest.php reescrito con firmas
+HMAC reales (helper telegramSignedQuery + const TELEGRAM_BOT_TOKEN).
+Resultado: 13/13 passing.
+
+================================================================================
+3. LO COMPLETADO (2): CAPA BOT API /api/v1/bot (MODULO CLIENTES)
+================================================================================
+Objetivo: exponer CRUD de la plataforma a un agente IA (n8n) con aislamiento
+multi-tenant ESTRICTO y respuestas JSON pensadas para LLM.
+
+Archivos nuevos:
+- app/Support/BotContext.php
+  Value object inmutable (ownerId, actingUserId) del request actual.
+- app/Http/Middleware/Bot/ResolveBotTenant.php  (alias: bot-api)
+  Autenticacion + resolucion de tenant:
+  * Authorization: Bearer <api_token>  -> User::where('api_token', ...)
+  * X-Owner-ID obligatorio y numerico.
+  * Si la key es de Master/Super Admin: NO se hace bypass, el contexto se
+    resuelve SIEMPRE al tenant indicado en X-Owner-ID.
+  * Si la key es de un usuario normal: X-Owner-ID debe coincidir con
+    getOwnerId() del usuario.
+  * X-User-ID opcional: debe existir, estar activo y pertenecer al tenant
+    (se usa como auditoria / user_id en creaciones).
+  * Auth::setUser(tenant) -> activa OwnerScope y auto-asignacion de owner_id.
+- app/Http/Controllers/Api/Bot/BotBaseController.php
+  Helpers: ok(), created(), notFound(), error() con contrato
+  {status, message, data?, errors?}.
+- app/Http/Controllers/Api/Bot/ClienteBotController.php
+- app/Http/Requests/Api/Bot/StoreClienteRequest.php
+- app/Http/Requests/Api/Bot/UpdateClienteRequest.php
+  Validacion: nombre required; email unico GLOBAL (ver seccion 7); rut/nit
+  unicos POR TENANT; categoria_id debe existir y pertenecer al tenant.
+- app/Services/Api/Bot/ClienteBotService.php
+  paginate (search agrupado, filtro activo, limit<=100, offset), find con
+  where('owner_id') explicito (defensa en profundidad), create (setea
+  user_id=actingUserId y owner_id), update, disable (activo=false),
+  serialize (payload LLM, sin campos tecnicos).
+- app/Support/OpenApi/BotOpenApi.php
+  Documento OpenAPI 3.1 generado en codigo (sin dependencias) para importar
+  en n8n como "Tools via OpenAPI".
+- app/Http/Controllers/Api/Bot/OpenApiController.php
+  GET /api/v1/bot/openapi (publico, no expone datos).
+
+Archivos modificados:
+- routes/api.php: grupo Route::prefix('v1/bot')->middleware(['bot-api',
+  'throttle:bot']) con 5 endpoints de clientes + openapi fuera del grupo.
+- bootstrap/app.php:
+  * alias 'bot-api' => ResolveBotTenant::class
+  * withExceptions: ModelNotFoundException -> 404 y ValidationException ->
+    422 con contrato JSON SOLO para rutas api/v1/bot/*.
+- app/Providers/AppServiceProvider.php:
+  RateLimiter::for('bot', Limit::perMinute(120)->by(X-Owner-ID|ip)).
+- app/Services/ClienteService.php:
+  FIX DE SEGURIDAD: buscarClientes() usaba orWhere sin agrupar, lo que
+  generaba WHERE owner_id = X AND nombre LIKE ... OR nit LIKE ... -> las
+  clausulas OR escapaban el filtro de tenant (fuga cross-tenant). Ahora el
+  where se agrupa en un closure.
+
+Endpoints activos (php artisan route:list --path=v1/bot):
+  GET    api/v1/bot/clientes          -> listar (search, activo, limit, offset)
+  POST   api/v1/bot/clientes          -> crear (201)
+  GET    api/v1/bot/clientes/{cliente}-> detalle
+  PUT    api/v1/bot/clientes/{cliente}-> actualizar (parcial)
+  DELETE api/v1/bot/clientes/{cliente}-> desactivar (activo=false, reversible)
+  GET    api/v1/bot/openapi           -> especificacion OpenAPI 3.1
+
+================================================================================
+4. ARQUITECTURA DE LA CAPA BOT (patron para los 12 modulos restantes)
+================================================================================
+Por cada modulo (ventas, inventario, caja, ...):
+  1. Endpoints en routes/api.php dentro del grupo v1/bot (ya protegido).
+  2. XxxBotController extends BotBaseController (controlador delgado).
+  3. XxxBotService en app/Services/Api/Bot/ (logica + owner filter explicito).
+  4. Store/Update Form Requests en app/Http/Requests/Api/Bot/.
+  5. Serializar para LLM: payload corto, nombres claros, sin owner_id ni
+     created_at/updated_at.
+  6. Sumar schemas a BotOpenApi (paths + components).
+  7. Tests: CRUD feliz + 401/403/422/404 + aislamiento cross-tenant.
+
+Reglas de seguridad (inalterables):
+  - Toda consulta en XxxBotService incluye ->where('owner_id', $ownerId)
+    explicito (el OwnerScope es refuerzo, no la unica defensa).
+  - X-Owner-ID SIEMPRE obligatorio; los tokens Master/Super Admin no
+    desactivan el aislamiento.
+  - Validaciones de unicidad: email global (BD), resto por tenant.
+  - Rate limit por tenant (120/min).
+
+================================================================================
+5. CONTRATO JSON PARA LLM/n8n
+================================================================================
+Exito:
+  { "status": "success", "message": "Clientes obtenidos.",
+    "data": { "items": [ { "id": 1, "nombre": "...", "rut": null, ... } ],
+               "total": 1, "limit": 50, "offset": 0 } }
+
+Creado (201):
+  { "status": "success", "message": "Cliente creado.", "data": { ... } }
+
+Error validacion (422):
+  { "status": "error", "message": "Datos invalidos.",
+    "errors": { "email": ["El campo correo electronico ya ha sido registrado."] } }
+
+No encontrado (404):
+  { "status": "error", "message": "Cliente no encontrado.", "errors": [] }
+
+Auth (401): token faltante/invalido, X-Owner-ID faltante, token-tenant
+  desajustado, X-User-ID ajeno. 403: cuenta desactivada.
+
+================================================================================
+6. TESTS Y VERIFICACION
+================================================================================
+Nuevos:
+- tests/Feature/Api/Bot/ClienteBotApiTest.php        (CRUD, auth, validacion)
+- tests/Feature/Api/Bot/TenantIsolationTest.php      (REGLA CRITICA: aislamiento
+  multi-tenant + regresion orWhere de ClienteService)
+
+Resultados (2026-08-09):
+- tests/Feature/Api/Bot             : 23 passed (71 aserciones)
+- tests/Feature/Api + Internal      : 68 passed
+- Auth + VerifyTenantTokenSecurity  : 103 passed
+- Pint (vendor/bin/pint --dirty)    : limpio
+
+Nota de calidad: se encontraron 2 defectos heredados en el camino:
+  1. ClienteService::buscarClientes -> fuga cross-tenant (CORREGIDO).
+  2. El factory ClienteFactory genera activo aleatorio (90% true) que hacia
+     flakys los tests de filtros (los fixtures ahora son deterministicos).
+
+================================================================================
+7. HALLAZGOS Y DECISIONES IMPORTANTES
+================================================================================
+- clientes.email tiene INDICE UNICO GLOBAL en BD (migracion
+  2026_04_19_003221_add_unique_index_to_clientes_email.php). Consecuencia:
+  la unicidad de email es GLOBAL (no por tenant). La validacion del bot
+  replica la BD para no generar 500 por UniqueConstraintViolation.
+  SI SE QUIERE email unico por tenant, hay que modificar esa migracion
+  (crear indice compuesto owner_id+email) - requiere decision del producto
+  y nueva migracion (no se hizo).
+- rut/nit: sin indice unico en BD -> validacion de unicidad POR TENANT a
+  nivel de Form Request (sin conflicto con la BD).
+- NO existe Laravel Sanctum instalado (routes/api.php lo usa solo en
+  /user y tracking con auth:sanctum, que no se toca).
+- Se eligio soft-delete (activo=false) para DELETE: reversible ante errores
+  del agente IA.
+- OpenAPI generado a mano (sin dependencias nuevas, regla del proyecto:
+  no cambiar dependencias sin aprobacion).
+- El rate limiter 'bot' (120/min) usa X-Owner-ID como clave.
+
+================================================================================
+8. LO QUE FALTA (PENDIENTE)
+================================================================================
+Modulos de la plataforma a exponer en /api/v1/bot (13 en total; 1 hecho):
+
+  1. [HECHO] Gestion Comercial - Clientes (CRUD completo + OpenAPI + tests)
+  2. Gestion Comercial - Cotizaciones (CRUD)
+  3. Gestion Comercial - Ventas (CRUD + detalle + estados + totales)
+  4. Gestion Comercial - Facturacion / DTE / SII
+  5. Gestion Comercial - Caja / Tesoreria / Pagos / Cobranzas
+  6. Inventario - Productos (CRUD + stock, alertas de stock bajo)
+  7. Inventario - Compras / Proveedores
+  8. RRHH - Empleados, asistencias, nomina, grupos de trabajo
+  9. CRM - Prospectos / Oportunidades / Campanas
+  10. Citas / Agenda (Appointments)
+  11. Mensajeria / Canales (Telegram, WhatsApp, Email) - solo lectura de estado
+  12. Reportes / Dashboard (resumenes agregados por periodo)
+  13. Configuracion / Maestros (categorias, almacenes, impuestos, etc.)
+
+Pendientes tecnicos generales:
+  - Definir con el cliente los permisos por rol via X-User-ID (hoy es solo
+    auditoria/validacion, no restringe acciones).
+  - Decidir politica de unicidad de email por tenant (ver seccion 7).
+  - Endpoints de acciones de negocio (no solo CRUD): p.ej. registrar una
+    venta ajustando stock, marcar pago, generar DTE. Requieren transacciones
+    y reglas de negocio del dominio (VentaService, InventarioService, SII).
+  - Paginacion por cursor si los listados crecen.
+  - Rate limiter: separar lectura (GET, 120/min) vs escritura (POST/PUT/
+    DELETE, 30/min) si el agente es agresivo.
+  - Subir a produccion: configurar APP_URL/https, revisar CORS si n8n esta
+    en otro dominio, proteger /api/v1/bot/openapi? (hoy publico y sin datos).
+  - Tests de performance para listados grandes (N+1 en relaciones).
+
+================================================================================
+9. COMO CONECTAR N8N (PASO A PASO)
+================================================================================
+1. En n8n: crear credencial "OpenAPI" apuntando a
+   https://<dominio>/api/v1/bot/openapi  (o importar el JSON del endpoint).
+2. Activar "Tools via OpenAPI" para que el agente (LangChain agent) vea las
+   tools: al_dia_clientes_listar, _obtener, _crear, _actualizar, _desactivar.
+3. En cada Tool/HTTP Request, incluir headers:
+     Authorization: Bearer <api_token_del_tenant>
+     X-Owner-ID: <id_del_tenant>
+     X-User-ID: <id_del_usuario>   (opcional, recomendado para auditoria)
+4. Guardar el api_token del tenant en las variables de entorno de n8n
+   (no en el workflow).
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================

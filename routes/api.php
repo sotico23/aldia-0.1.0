@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\Admin\SystemHealthController;
+use App\Http\Controllers\Api\Bot\ClienteBotController;
+use App\Http\Controllers\Api\Bot\OpenApiController;
+use App\Http\Controllers\Api\Bot\VentaBotController;
 use App\Http\Controllers\Api\InternalAutomationController;
 use App\Http\Controllers\Api\InternalAutomationSendController;
 use App\Http\Controllers\Api\TenantDataController;
@@ -46,6 +49,24 @@ Route::group(['prefix' => 'v1'], function () {
             ->name('api.internal.automation.health');
     });
 });
+
+// Bot API for AI agents (n8n) — strict multi-tenant isolation
+Route::prefix('v1/bot')->middleware(['bot-api', 'throttle:bot'])->group(function () {
+    Route::get('clientes', [ClienteBotController::class, 'index']);
+    Route::post('clientes', [ClienteBotController::class, 'store']);
+    Route::get('clientes/{cliente}', [ClienteBotController::class, 'show']);
+    Route::put('clientes/{cliente}', [ClienteBotController::class, 'update']);
+    Route::delete('clientes/{cliente}', [ClienteBotController::class, 'destroy']);
+
+    Route::get('ventas', [VentaBotController::class, 'index']);
+    Route::post('ventas', [VentaBotController::class, 'store']);
+    Route::get('ventas/{venta}', [VentaBotController::class, 'show']);
+    Route::put('ventas/{venta}', [VentaBotController::class, 'update']);
+    Route::delete('ventas/{venta}', [VentaBotController::class, 'destroy']);
+});
+
+// OpenAPI contract for n8n "Tools via OpenAPI" import
+Route::get('v1/bot/openapi', [OpenApiController::class, 'index']);
 
 // Internal API for n8n — protected by X-N8N-TOKEN header
 Route::prefix('internal')->middleware(['verify-n8n-token', 'throttle:60,1'])->group(function () {

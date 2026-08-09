@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\Bot\ResolveBotTenant;
 use App\Http\Middleware\CheckActive;
 use App\Http\Middleware\CheckOwnership;
 use App\Http\Middleware\CheckPermission;
@@ -14,10 +15,13 @@ use App\Http\Middleware\TrackPageViews;
 use App\Http\Middleware\VerifyN8nApiKey;
 use App\Http\Middleware\VerifyN8nToken;
 use App\Http\Middleware\VerifyTenantToken;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -46,6 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'verify-n8n-api-key' => VerifyN8nApiKey::class,
             'verify-n8n-token' => VerifyN8nToken::class,
             'verify-tenant-token' => VerifyTenantToken::class,
+            'bot-api' => ResolveBotTenant::class,
         ]);
 
         $middleware->web(append: [
@@ -61,5 +66,23 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (ModelNotFoundException $e, Request $request) {
+            if ($request->is('api/v1/bot/*')) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Recurso no encontrado.',
+                    'errors' => [],
+                ], 404);
+            }
+        });
+
+        $exceptions->render(function (ValidationException $e, Request $request) {
+            if ($request->is('api/v1/bot/*')) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Datos inválidos.',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+        });
     })->create();

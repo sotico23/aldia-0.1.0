@@ -154,6 +154,10 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('dashboard', function (Request $request) {
             return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
         });
+
+        RateLimiter::for('bot', function (Request $request) {
+            return Limit::perMinute(120)->by($request->header('X-Owner-ID', $request->ip()));
+        });
     }
 
     protected function overrideOAuthConfig(): void
