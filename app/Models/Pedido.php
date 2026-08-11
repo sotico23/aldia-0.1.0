@@ -34,6 +34,15 @@ class Pedido extends Model
         'nombre_cliente',
         'telefono_cliente',
         'direccion_cliente',
+        'destino_lat',
+        'destino_lng',
+        'distancia_km',
+        'pool_reenvios',
+        'pool_entrada_at',
+        'hora_aceptado',
+        'hora_recogido',
+        'hora_entregado',
+        'repartidor_id',
         'metodo_pago',
         'fecha_confirmacion',
         'fecha_entrega',
@@ -56,6 +65,14 @@ class Pedido extends Model
             'fecha_entrega' => 'datetime',
             'erp_synced_at' => 'datetime',
             'payment_data' => 'array',
+            'destino_lat' => 'float',
+            'destino_lng' => 'float',
+            'distancia_km' => 'decimal:2',
+            'pool_reenvios' => 'integer',
+            'pool_entrada_at' => 'datetime',
+            'hora_aceptado' => 'datetime',
+            'hora_recogido' => 'datetime',
+            'hora_entregado' => 'datetime',
         ];
     }
 
@@ -91,5 +108,20 @@ class Pedido extends Model
     public function conversacion(): HasOne
     {
         return $this->hasOne(Conversacion::class);
+    }
+
+    public function repartidor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'repartidor_id');
+    }
+
+    /**
+     * Pedidos listos para entrar en el pool de reparto del tenant.
+     */
+    public function scopeDisponibleEnPool($query): void
+    {
+        $query->where('estado', 'preparando')
+            ->whereNull('repartidor_id')
+            ->whereNull('hora_aceptado');
     }
 }

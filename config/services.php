@@ -68,6 +68,8 @@ return [
         'verify_token' => env('WHATSAPP_VERIFY_TOKEN'),
     ],
 
+    'http_verify_tls' => env('HTTP_VERIFY_TLS', true),
+
     'n8n' => [
         'token' => env('N8N_API_TOKEN'),
         'webhook_url' => env('N8N_WEBHOOK_URL'),

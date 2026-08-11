@@ -428,7 +428,7 @@ class WebSettingController extends Controller implements HasMiddleware
             try {
                 $setWebhook = Http::timeout(10)
                     ->connectTimeout(5)
-                    ->withOptions(['verify' => false])
+                    ->withOptions(['verify' => config('services.http_verify_tls')])
                     ->post("https://api.telegram.org/bot{$globalBotToken}/setWebhook", [
                         'url' => $webhookUrl,
                         'drop_pending_updates' => true,
@@ -492,7 +492,7 @@ class WebSettingController extends Controller implements HasMiddleware
         try {
             $response = Http::timeout(10)
                 ->connectTimeout(5)
-                ->withOptions(['verify' => false])
+                ->withOptions(['verify' => config('services.http_verify_tls')])
                 ->get('https://api.telegram.org/bot'.$validated['bot_token'].'/getMe');
 
             if ($response->successful() && $response->json('ok')) {
@@ -647,7 +647,7 @@ class WebSettingController extends Controller implements HasMiddleware
         try {
             $response = Http::timeout(10)
                 ->connectTimeout(5)
-                ->withOptions(['verify' => false])
+                ->withOptions(['verify' => config('services.http_verify_tls')])
                 ->get('https://api.telegram.org/bot'.$validated['bot_token'].'/getMe');
 
             if ($response->successful() && $response->json('ok')) {
@@ -671,7 +671,7 @@ class WebSettingController extends Controller implements HasMiddleware
                 // are forwarded here (this is what closes the linking cycle).
                 $webhookResult = Http::timeout(10)
                     ->connectTimeout(5)
-                    ->withOptions(['verify' => false])
+                    ->withOptions(['verify' => config('services.http_verify_tls')])
                     ->post('https://api.telegram.org/bot'.$validated['bot_token'].'/setWebhook', [
                         'url' => route('webhooks.telegram'),
                         'drop_pending_updates' => true,
@@ -721,7 +721,7 @@ class WebSettingController extends Controller implements HasMiddleware
         try {
             $response = Http::timeout(10)
                 ->connectTimeout(5)
-                ->withOptions(['verify' => false])
+                ->withOptions(['verify' => config('services.http_verify_tls')])
                 ->get($validated['webhook_url']);
 
             if ($response->successful()) {
@@ -767,7 +767,7 @@ class WebSettingController extends Controller implements HasMiddleware
         try {
             $response = Http::timeout(10)
                 ->connectTimeout(5)
-                ->withOptions(['verify' => false])
+                ->withOptions(['verify' => config('services.http_verify_tls')])
                 ->post('https://api.telegram.org/bot'.$botToken.'/setWebhook', [
                     'url' => route('webhooks.telegram'),
                     'drop_pending_updates' => true,
@@ -838,7 +838,7 @@ class WebSettingController extends Controller implements HasMiddleware
         try {
             $webhookCheck = Http::timeout(10)
                 ->connectTimeout(5)
-                ->withOptions(['verify' => false])
+                ->withOptions(['verify' => config('services.http_verify_tls')])
                 ->get($webhookUrl);
 
             if (! $webhookCheck->successful()) {

@@ -26,7 +26,10 @@ class TelegramWebhookController extends Controller
             'outcome' => $result['status'] ?? 'ok',
         ]);
 
-        return response()->json(['status' => 'ok'], 200);
+        return response()->json([
+            'status' => 'ok',
+            'handled_by' => $result['handled_by'] ?? null,
+        ], 200);
     }
 
     /**

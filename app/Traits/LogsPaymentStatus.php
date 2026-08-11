@@ -21,6 +21,17 @@ trait LogsPaymentStatus
                     'gateway' => $model->metodo_pago,
                 ]);
             }
+
+            if ($model->estado !== null) {
+                PedidoStatusLog::create([
+                    'pedido_id' => $model->id,
+                    'field' => 'estado',
+                    'from' => null,
+                    'to' => $model->estado,
+                    'changed_by' => Auth::id(),
+                    'gateway' => $model->metodo_pago,
+                ]);
+            }
         });
 
         static::updated(function ($model) {
@@ -36,6 +47,22 @@ trait LogsPaymentStatus
                         'field' => 'payment_status',
                         'from' => $from instanceof \BackedEnum ? $from->value : $from,
                         'to' => $to instanceof \BackedEnum ? $to->value : $to,
+                        'changed_by' => Auth::id(),
+                        'gateway' => $model->metodo_pago,
+                    ]);
+                }
+            }
+
+            if (array_key_exists('estado', $dirty)) {
+                $from = $model->getOriginal('estado');
+                $to = $dirty['estado'];
+
+                if ($from !== $to) {
+                    PedidoStatusLog::create([
+                        'pedido_id' => $model->id,
+                        'field' => 'estado',
+                        'from' => $from,
+                        'to' => $to,
                         'changed_by' => Auth::id(),
                         'gateway' => $model->metodo_pago,
                     ]);

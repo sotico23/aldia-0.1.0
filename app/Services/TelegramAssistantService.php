@@ -23,7 +23,7 @@ REGLAS CRÍTICAS DE OPERACIÓN:
 4. Tono: Mantén un tono amigable, servicial, directo y enfocado en la productividad del negocio del usuario. No inventes datos financieros ni de ventas; si no tienes la información exacta en el contexto proporcionado, indícalo educadamente y sugiere consultar la plataforma web.
 PROMPT;
 
-    public function handleMessage(int $tenantId, string $botToken, string $chatId, string $text): array
+    public function handleMessage(int $tenantId, string $botToken, string $chatId, string $text, bool $sendFallbackMessage = true): array
     {
         $history = $this->getHistory($chatId);
 
@@ -50,7 +50,9 @@ PROMPT;
         if (! $reply) {
             $reply = '😔 En este momento no puedo consultar tu información. Por favor, intenta nuevamente en unos minutos.';
 
-            $this->sendTelegramMessage($botToken, $chatId, $reply);
+            if ($sendFallbackMessage) {
+                $this->sendTelegramMessage($botToken, $chatId, $reply);
+            }
 
             return ['success' => false, 'reply' => $reply];
         }
@@ -165,7 +167,7 @@ PROMPT;
         try {
             Http::timeout(10)
                 ->connectTimeout(5)
-                ->withOptions(['verify' => false])
+                ->withOptions(['verify' => config('services.http_verify_tls')])
                 ->post("https://api.telegram.org/bot{$botToken}/sendMessage", [
                     'chat_id' => $chatId,
                     'text' => $text,

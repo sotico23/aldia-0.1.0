@@ -4,16 +4,23 @@ namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
 use App\Models\ChannelCredential;
-use App\Models\TelegramLinkingToken;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 
 class TelegramCallbackController extends Controller
 {
+    /**
+     * Verifica la firma HMAC del widget de Telegram solo con fines de login.
+     *
+     * Este endpoint NO vincula el canal: la vinculación del chat se completa
+     * exclusivamente con el deep link `/start TOKEN` (TelegramWebhookService).
+     * Se conserva la validación de la firma para que el botón del widget no
+     * produzca efectos silenciosos y para mantener la compatibilidad con
+     * clientes existentes.
+     */
     public function handle(Request $request): JsonResponse|RedirectResponse
     {
         $authData = $request->all();
@@ -26,12 +33,7 @@ class TelegramCallbackController extends Controller
             ]);
         }
 
-        // The optional linking token must NEVER participate in Telegram's
-        // hash verification: it is not part of the signed auth payload.
-        $linkingToken = $this->resolveLinkingToken($authData);
-
-        unset($authData['hash']);
-        unset($authData['token']);
+        unset($authData['hash'], $authData['token']);
 
         $botToken = $this->resolveBotToken($request);
 
@@ -56,53 +58,8 @@ class TelegramCallbackController extends Controller
             ]);
         }
 
-        $telegramUserId = $authData['id'];
-
-        DB::transaction(function () use ($telegramUserId, $linkingToken) {
-            $ownerId = Auth::user()?->getOwnerId();
-
-            // 1. Persistir el chat_id en las credenciales del canal.
-            if ($ownerId) {
-                $credentials = ChannelCredential::where('owner_id', $ownerId)->first();
-
-                if ($credentials) {
-                    $credentials->update([
-                        'telegram_chat_id' => (string) $telegramUserId,
-                        'telegram_linked_at' => now(),
-                    ]);
-                }
-            }
-
-            // 2. Marcar el token de vinculación como usado SOLO cuando llega el token
-            //    explícito. El widget de login web no debe consumir tokens del flujo
-            //    /start, que es quien cierra el ciclo de vinculación del chat.
-            if ($linkingToken) {
-                $linkingToken->update([
-                    'telegram_chat_id' => (string) $telegramUserId,
-                    'used_at' => now(),
-                ]);
-            }
-        });
-
         return Redirect::to('/canales')
-            ->with('success', '¡Cuenta de Telegram vinculada exitosamente! Ya puedes enviar mensajes de prueba.');
-    }
-
-    /**
-     * Resolve the linking token from the request (query param or body), if present.
-     */
-    private function resolveLinkingToken(array $authData): ?TelegramLinkingToken
-    {
-        $tokenStr = $authData['token'] ?? null;
-
-        if (! $tokenStr) {
-            return null;
-        }
-
-        return TelegramLinkingToken::whereNull('used_at')
-            ->where('expires_at', '>', now())
-            ->where('token', $tokenStr)
-            ->first();
+            ->with('info', 'Autenticación de Telegram verificada. Para vincular tu chat usa "Abrir Chat en Telegram" y confirma el comando /start TOKEN en el bot.');
     }
 
     /**

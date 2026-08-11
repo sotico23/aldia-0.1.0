@@ -127,7 +127,7 @@ class SendChannelConfigurationToN8n implements ShouldQueue
         try {
             $response = Http::timeout(30)
                 ->connectTimeout(10)
-                ->withOptions(['verify' => false])
+                ->withOptions(['verify' => config('services.http_verify_tls')])
                 ->post($webhookUrl, $payload);
 
             if (! $response->successful()) {

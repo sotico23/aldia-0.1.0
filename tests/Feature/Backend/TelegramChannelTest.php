@@ -15,6 +15,8 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->user = User::factory()->create();
+
+    config(['services.n8n.token' => 'test-n8n-token']);
 });
 
 test('send-test-message returns error when no token saved', function () {
@@ -117,7 +119,7 @@ test('login-callback returns 403 when hash verification fails', function () {
     ]);
 });
 
-test('login-callback controller stores telegram_chat_id when hash is valid', function () {
+test('login-callback validates hash but does not link the channel', function () {
     config(['services.telegram.bot_token' => 'test:bot_token']);
 
     ChannelCredential::create([
@@ -153,10 +155,8 @@ test('login-callback controller stores telegram_chat_id when hash is valid', fun
     expect($response->getStatusCode())->toBe(302);
     $this->assertDatabaseHas('channel_credentials', [
         'owner_id' => $this->user->getOwnerId(),
-        'telegram_chat_id' => $telegramUserId,
+        'telegram_chat_id' => null,
     ]);
-
-    expect(ChannelCredential::where('owner_id', $this->user->getOwnerId())->first()->telegram_linked_at)->not->toBeNull();
 });
 
 test('generate-link returns error when no bot username configured', function () {
@@ -950,7 +950,7 @@ test('webhook handle links account when body arrives as JSON string (n8n wrapped
     expect($token->used_at)->not->toBeNull();
 });
 
-test('telegram login callback with token in body still validates hash and marks token as used', function () {
+test('telegram login callback never consumes a linking token', function () {
     config(['services.telegram.bot_token' => 'test:bot_token']);
 
     ChannelCredential::create([
@@ -993,9 +993,16 @@ test('telegram login callback with token in body still validates hash and marks 
 
     expect($response->getStatusCode())->toBe(302);
 
+    // El login callback nunca consume tokens: la vinculación solo ocurre
+    // vía /start TOKEN en el webhook.
     $linkingToken->refresh();
-    expect($linkingToken->telegram_chat_id)->toBe($telegramUserId);
-    expect($linkingToken->used_at)->not->toBeNull();
+    expect($linkingToken->telegram_chat_id)->toBeNull();
+    expect($linkingToken->used_at)->toBeNull();
+
+    $this->assertDatabaseHas('channel_credentials', [
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_chat_id' => null,
+    ]);
 });
 
 test('webhook treats a re-delivered /start TOKEN for the same chat as linked (idempotent)', function () {
@@ -1027,7 +1034,7 @@ test('webhook treats a re-delivered /start TOKEN for the same chat as linked (id
     expect(json_decode($response->getContent(), true)['status'])->toBe('ok');
 });
 
-test('telegram login-callback without a token does not mark any linking token as used', function () {
+test('telegram login-callback without a token does not link the channel', function () {
     config(['services.telegram.bot_token' => 'test:bot_token']);
 
     ChannelCredential::create([
@@ -1073,7 +1080,7 @@ test('telegram login-callback without a token does not mark any linking token as
 
     $this->assertDatabaseHas('channel_credentials', [
         'owner_id' => $this->user->getOwnerId(),
-        'telegram_chat_id' => $telegramUserId,
+        'telegram_chat_id' => null,
     ]);
 });
 
@@ -1334,7 +1341,7 @@ test('check-linking returns is_linked true with owner_id when chat_id is linked'
 
     $response = $this->postJson('/api/v1/telegram/check-linking', [
         'chat_id' => '123456789',
-    ]);
+    ], ['X-N8N-TOKEN' => 'test-n8n-token']);
 
     $response->assertOk()
         ->assertJson([
@@ -1346,7 +1353,7 @@ test('check-linking returns is_linked true with owner_id when chat_id is linked'
 test('check-linking returns is_linked false when chat_id is not linked', function () {
     $response = $this->postJson('/api/v1/telegram/check-linking', [
         'chat_id' => '999999999',
-    ]);
+    ], ['X-N8N-TOKEN' => 'test-n8n-token']);
 
     $response->assertOk()
         ->assertJson([
@@ -1356,7 +1363,7 @@ test('check-linking returns is_linked false when chat_id is not linked', functio
 });
 
 test('check-linking returns 422 when chat_id is missing', function () {
-    $response = $this->postJson('/api/v1/telegram/check-linking');
+    $response = $this->postJson('/api/v1/telegram/check-linking', [], ['X-N8N-TOKEN' => 'test-n8n-token']);
 
     $response->assertStatus(422)
         ->assertJson([
@@ -1379,7 +1386,7 @@ test('check-linking accepts standard telegram payload with message.chat.id', fun
             'chat' => ['id' => 123456789],
             'text' => 'Hello',
         ],
-    ]);
+    ], ['X-N8N-TOKEN' => 'test-n8n-token']);
 
     $response->assertOk()
         ->assertJson([
@@ -1402,7 +1409,7 @@ test('check-linking accepts n8n wrapper payload with body.message.chat.id', func
                 'text' => 'Hello',
             ],
         ],
-    ]);
+    ], ['X-N8N-TOKEN' => 'test-n8n-token']);
 
     $response->assertOk()
         ->assertJson([
@@ -1420,7 +1427,7 @@ test('check-linking accepts body delivered as JSON string', function () {
 
     $response = $this->postJson('/api/v1/telegram/check-linking', [
         'body' => '{"message":{"chat":{"id":555444333},"text":"Hello"}}',
-    ]);
+    ], ['X-N8N-TOKEN' => 'test-n8n-token']);
 
     $response->assertOk()
         ->assertJson([
@@ -1441,7 +1448,7 @@ test('check-linking accepts flat test_connection payload from connection test', 
         'chat_id' => '424242424',
         'bot_token' => 'test:token',
         'owner_id' => $this->user->getOwnerId(),
-    ]);
+    ], ['X-N8N-TOKEN' => 'test-n8n-token']);
 
     $response->assertOk()
         ->assertJson([
@@ -1456,7 +1463,7 @@ test('check-linking with standard payload returns is_linked false for unknown ch
             'chat' => ['id' => 999999999],
             'text' => 'Hello',
         ],
-    ]);
+    ], ['X-N8N-TOKEN' => 'test-n8n-token']);
 
     $response->assertOk()
         ->assertJson([
@@ -1470,11 +1477,92 @@ test('check-linking returns 422 when standard payload has no chat object', funct
         'message' => [
             'text' => 'Hello',
         ],
-    ]);
+    ], ['X-N8N-TOKEN' => 'test-n8n-token']);
 
     $response->assertStatus(422)
         ->assertJson([
             'is_linked' => false,
             'owner_id' => null,
+        ]);
+});
+
+test('webhook rejects linking a chat already owned by another tenant', function () {
+    $otherOwner = User::factory()->create();
+
+    ChannelCredential::create([
+        'owner_id' => $otherOwner->getOwnerId(),
+        'telegram_bot_token' => 'other:token',
+        'telegram_bot_username' => 'other_bot',
+        'telegram_chat_id' => '555666777',
+    ]);
+
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_token' => 'test:token',
+        'telegram_bot_username' => 'test_bot',
+    ]);
+
+    $token = TelegramLinkingToken::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'user_id' => $this->user->id,
+        'token' => 'steal_token_999',
+        'expires_at' => now()->addMinutes(15),
+    ]);
+
+    Http::fake([
+        'api.telegram.org/*' => Http::response(['ok' => true], 200),
+    ]);
+
+    $response = $this->postJson(route('telegram.webhook'), [
+        'message' => [
+            'chat' => ['id' => 555666777],
+            'text' => '/start steal_token_999',
+        ],
+    ]);
+
+    $response->assertOk();
+
+    // El chat sigue perteneciendo al owner original.
+    $this->assertDatabaseHas('channel_credentials', [
+        'owner_id' => $otherOwner->getOwnerId(),
+        'telegram_chat_id' => '555666777',
+    ]);
+
+    $this->assertDatabaseMissing('channel_credentials', [
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_chat_id' => '555666777',
+    ]);
+
+    // El token no se consume.
+    $token->refresh();
+    expect($token->used_at)->toBeNull();
+});
+
+test('check-linking returns 401 without X-N8N-TOKEN header', function () {
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_username' => 'test_bot',
+        'telegram_chat_id' => '123456789',
+        'telegram_linked_at' => now(),
+    ]);
+
+    $response = $this->postJson('/api/v1/telegram/check-linking', [
+        'chat_id' => '123456789',
+    ]);
+
+    $response->assertStatus(401)
+        ->assertJson([
+            'success' => false,
+        ]);
+});
+
+test('check-linking returns 401 with invalid X-N8N-TOKEN header', function () {
+    $response = $this->postJson('/api/v1/telegram/check-linking', [
+        'chat_id' => '123456789',
+    ], ['X-N8N-TOKEN' => 'wrong-token']);
+
+    $response->assertStatus(401)
+        ->assertJson([
+            'success' => false,
         ]);
 });

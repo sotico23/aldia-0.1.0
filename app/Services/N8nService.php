@@ -66,7 +66,7 @@ class N8nService
         foreach ($urlsToTry as $targetUrl) {
             try {
                 $isHealthz = str_ends_with($targetUrl, '/healthz');
-                $http = Http::timeout(10)->connectTimeout(5)->withOptions(['verify' => false]);
+                $http = Http::timeout(10)->connectTimeout(5)->withOptions(['verify' => config('services.http_verify_tls')]);
 
                 $response = $isHealthz
                     ? $http->get($targetUrl)
@@ -133,7 +133,7 @@ class N8nService
         try {
             $response = Http::timeout(10)
                 ->connectTimeout(5)
-                ->withOptions(['verify' => false])
+                ->withOptions(['verify' => config('services.http_verify_tls')])
                 ->post($targetUrl, $this->buildTestPayload());
 
             if ($response->successful()) {
@@ -159,9 +159,14 @@ class N8nService
                 'body' => $response->body(),
             ]);
 
+            $hint = '';
+            if ($response->status() === 404) {
+                $hint = ' Activa el workflow "telegram-proxy" en n8n (la URL de producción debe estar registrada con un webhook activo).';
+            }
+
             return [
                 'success' => false,
-                'message' => 'n8n respondió con estado '.$response->status().'. Verifica que el workflow "Webhook Entrada Proxy Laravel" esté activo.',
+                'message' => 'n8n respondió con estado '.$response->status().'. Verifica que el workflow "Webhook Entrada Proxy Laravel" esté activo.'.$hint,
             ];
         } catch (\Exception $e) {
             Log::error('n8n telegram proxy test error', ['url' => $targetUrl, 'error' => $e->getMessage()]);
@@ -211,7 +216,7 @@ class N8nService
             $isHealthz = str_ends_with($targetUrl, '/healthz');
             $http = Http::timeout(10)
                 ->connectTimeout(5)
-                ->withOptions(['verify' => false]);
+                ->withOptions(['verify' => config('services.http_verify_tls')]);
 
             $apiKey = $tenantApiKey ?: config('services.n8n.token');
             if ($apiKey) {
@@ -243,9 +248,14 @@ class N8nService
                 'body' => $response->body(),
             ]);
 
+            $hint = '';
+            if ($response->status() === 404) {
+                $hint = ' Activa el workflow "telegram-proxy" en n8n (la URL de producción debe estar registrada con un webhook activo).';
+            }
+
             return [
                 'success' => false,
-                'message' => 'n8n respondió con estado '.$response->status().'. Verifica que el workflow "Webhook Entrada Proxy Laravel" esté activo.',
+                'message' => 'n8n respondió con estado '.$response->status().'. Verifica que el workflow "Webhook Entrada Proxy Laravel" esté activo.'.$hint,
             ];
         } catch (\Exception $e) {
             Log::error('n8n tenant telegram proxy test error', ['url' => $targetUrl, 'error' => $e->getMessage()]);

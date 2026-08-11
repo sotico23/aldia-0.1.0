@@ -82,6 +82,31 @@ class TelegramWebhookService
             $tenantId = $credential->owner_id;
         }
 
+        if ($isLinked && config('services.llm.enabled') && $text !== '') {
+            $botToken = $credential?->telegram_bot_token
+                ?: (WebSetting::getSettings()?->global_telegram_bot_token
+                ?: config('services.telegram.bot_token'));
+
+            if ($botToken) {
+                $result = app(TelegramAssistantService::class)
+                    ->handleMessage($tenantId, $botToken, $chatIdStr, $text, sendFallbackMessage: false);
+
+                if ($result['success']) {
+                    Log::info('TelegramWebhookService: message handled by LLM assistant', [
+                        'chat_id' => $chatIdStr,
+                        'tenant_id' => $tenantId,
+                    ]);
+
+                    return ['status' => 'ok', 'handled_by' => 'llm'];
+                }
+
+                Log::warning('TelegramWebhookService: LLM assistant failed, falling back to n8n proxy', [
+                    'chat_id' => $chatIdStr,
+                    'tenant_id' => $tenantId,
+                ]);
+            }
+        }
+
         $payload = $this->buildPayload($isLinked, $tenantId, $credential, $chatIdStr, $text, $update);
 
         Log::info('TelegramWebhookService: forwarding message to n8n as proxy', [
@@ -232,6 +257,32 @@ class TelegramWebhookService
 
         // --- VINCULACIÓN EXITOSA ---
 
+        // Evitar el "robo" del chat en un entorno multi-tenant: si el chat ya
+        // está vinculado a OTRO owner, se rechaza la vinculación aunque el
+        // token sea válido (el dueño original debe desvincular primero).
+        $chatOwner = ChannelCredential::where('telegram_chat_id', $chatId)->first();
+
+        if ($chatOwner && $chatOwner->owner_id !== $linkingToken->owner_id) {
+            Log::warning('TelegramWebhookService: chat ya vinculado a otro owner, se rechaza la vinculación', [
+                'chat_id' => $chatId,
+                'owner_id' => $linkingToken->owner_id,
+                'existing_owner_id' => $chatOwner->owner_id,
+            ]);
+
+            $botToken = $chatOwner->telegram_bot_token
+                ?: (WebSetting::getSettings()?->global_telegram_bot_token
+                ?: config('services.telegram.bot_token'));
+
+            if ($botToken) {
+                $this->sendTelegramMessage($botToken, $chatId, '⚠️ Este chat ya está vinculado a otra cuenta en Al Día. Desvincula la cuenta anterior antes de vincularlo aquí.');
+            }
+
+            return [
+                'status' => 'conflict',
+                'message' => 'El chat ya está vinculado a otra cuenta.',
+            ];
+        }
+
         // 1. Asignar el chat_id en las credenciales del negocio/owner
         $credential = ChannelCredential::updateOrCreate(
             ['owner_id' => $linkingToken->owner_id],
@@ -364,7 +415,7 @@ class TelegramWebhookService
         try {
             $response = Http::timeout(10)
                 ->connectTimeout(5)
-                ->withOptions(['verify' => false])
+                ->withOptions(['verify' => config('services.http_verify_tls')])
                 ->post($webhookUrl, $payload);
 
             if (! $response->successful()) {
@@ -400,7 +451,7 @@ class TelegramWebhookService
         try {
             Http::timeout(10)
                 ->connectTimeout(5)
-                ->withOptions(['verify' => false])
+                ->withOptions(['verify' => config('services.http_verify_tls')])
                 ->post($url, [
                     'chat_id' => $chatId,
                     'text' => $text,

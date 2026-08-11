@@ -92,46 +92,9 @@ interface PageProps {
     } | null;
 }
 
-interface TelegramLoginWidgetProps {
-    botUsername: string;
-}
-
 const sanitizeTelegramUsername = (
     username: string | null | undefined,
 ): string => (username ?? '').trim().replace(/^@+/, '');
-
-function TelegramLoginWidget({ botUsername }: TelegramLoginWidgetProps) {
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        if (document.querySelector('script[src*="telegram-widget.js"]')) return;
-
-        const script = document.createElement('script');
-        script.async = true;
-        script.src = 'https://telegram.org/js/telegram-widget.js?22';
-        script.setAttribute('data-telegram-login', botUsername);
-        script.setAttribute('data-size', 'large');
-        script.setAttribute('data-radius', '8');
-        script.setAttribute('data-auth-url', '/telegram/login-callback');
-        script.setAttribute('data-request-access', 'write');
-        document.body.appendChild(script);
-
-        return () => {
-            document.body.removeChild(script);
-        };
-    }, [botUsername]);
-
-    return (
-        <div
-            id="telegram-login-widget"
-            data-telegram-login={botUsername}
-            data-size="large"
-            data-radius="8"
-            data-auth-url="/telegram/login-callback"
-            data-request-access="write"
-            style={{ display: 'block', width: '100%' }}
-        />
-    );
-}
 
 export default function ChannelCredentials({
     credentials,
@@ -241,18 +204,31 @@ export default function ChannelCredentials({
                 const creds = result?.data ?? {};
                 const patch: Record<string, string> = {};
 
-                if (creds.telegram?.telegram_bot_username && !data.telegram_bot_username) {
-                    patch.telegram_bot_username = creds.telegram.telegram_bot_username;
+                if (
+                    creds.telegram?.telegram_bot_username &&
+                    !data.telegram_bot_username
+                ) {
+                    patch.telegram_bot_username =
+                        creds.telegram.telegram_bot_username;
                 }
                 if (creds.whatsapp) {
-                    if (creds.whatsapp.whatsapp_phone_number_id && !data.whatsapp_phone_number_id) {
-                        patch.whatsapp_phone_number_id = creds.whatsapp.whatsapp_phone_number_id;
+                    if (
+                        creds.whatsapp.whatsapp_phone_number_id &&
+                        !data.whatsapp_phone_number_id
+                    ) {
+                        patch.whatsapp_phone_number_id =
+                            creds.whatsapp.whatsapp_phone_number_id;
                     }
-                    if (creds.whatsapp.whatsapp_business_id && !data.whatsapp_business_id) {
-                        patch.whatsapp_business_id = creds.whatsapp.whatsapp_business_id;
+                    if (
+                        creds.whatsapp.whatsapp_business_id &&
+                        !data.whatsapp_business_id
+                    ) {
+                        patch.whatsapp_business_id =
+                            creds.whatsapp.whatsapp_business_id;
                     }
                     if (creds.whatsapp.whatsapp_api_version) {
-                        patch.whatsapp_api_version = creds.whatsapp.whatsapp_api_version;
+                        patch.whatsapp_api_version =
+                            creds.whatsapp.whatsapp_api_version;
                     }
                 }
 
@@ -846,9 +822,7 @@ export default function ChannelCredentials({
                                                         variant="ghost"
                                                         size="sm"
                                                         className="h-7 gap-1.5 px-2 text-xs text-destructive hover:text-destructive"
-                                                        onClick={
-                                                            unlinkTelegram
-                                                        }
+                                                        onClick={unlinkTelegram}
                                                     >
                                                         <Unlink className="h-3.5 w-3.5" />
                                                         Desvincular
@@ -894,9 +868,7 @@ export default function ChannelCredentials({
                                                         variant="ghost"
                                                         size="sm"
                                                         className="h-7 gap-1.5 px-2 text-xs text-destructive hover:text-destructive"
-                                                        onClick={
-                                                            unlinkTelegram
-                                                        }
+                                                        onClick={unlinkTelegram}
                                                     >
                                                         <Unlink className="h-3.5 w-3.5" />
                                                         Desvincular
@@ -1194,7 +1166,8 @@ export default function ChannelCredentials({
                                                                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                                                                     <CheckCircle2 className="h-3.5 w-3.5" />
                                                                     Telegram
-                                                                    Vinculado (ID:{' '}
+                                                                    Vinculado
+                                                                    (ID:{' '}
                                                                     {
                                                                         credentials.telegram_chat_id
                                                                     }
@@ -1873,16 +1846,12 @@ export default function ChannelCredentials({
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="n8n_api_key">
-                                    n8n API Key
-                                </Label>
+                                <Label htmlFor="n8n_api_key">n8n API Key</Label>
                                 <div className="relative">
                                     <Input
                                         id="n8n_api_key"
                                         type={
-                                            showN8nApiKey
-                                                ? 'text'
-                                                : 'password'
+                                            showN8nApiKey ? 'text' : 'password'
                                         }
                                         value={n8nForm.api_key}
                                         onChange={(e) =>
@@ -1951,8 +1920,7 @@ export default function ChannelCredentials({
                                     variant="default"
                                     onClick={saveN8nConfig}
                                     disabled={
-                                        n8nSaving ||
-                                        (!n8nDirty && !n8nTested)
+                                        n8nSaving || (!n8nDirty && !n8nTested)
                                     }
                                     className="gap-2"
                                 >
@@ -1992,33 +1960,6 @@ export default function ChannelCredentials({
                             )}
                         </CardContent>
                     </Card>
-
-                    {/* Telegram Login Widget */}
-                    {has_credentials && botUsername && (
-                        <Card className="border-sky-200/50 bg-sky-50/30 dark:bg-sky-900/10">
-                            <CardHeader>
-                                <div className="flex items-center gap-2">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400">
-                                        <Bot className="h-4 w-4" />
-                                    </div>
-                                    <CardTitle className="text-base">
-                                        Iniciar Sesión con Telegram
-                                    </CardTitle>
-                                </div>
-                                <CardDescription>
-                                    Login web opcional con Telegram. No vincula
-                                    el canal; usa los botones de "Abrir Chat en
-                                    Telegram" arriba para vincular el chat del
-                                    bot.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <TelegramLoginWidget
-                                    botUsername={botUsername}
-                                />
-                            </CardContent>
-                        </Card>
-                    )}
 
                     <Separator />
 

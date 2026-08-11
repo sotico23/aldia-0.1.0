@@ -1,0 +1,161 @@
+============================================================================
+AL DIA - RESUMEN INTEGRACION TELEGRAM + PLAN DE PRODUCCION
+Fecha: 2026-08-10
+============================================================================
+
+PARTE 1: RESUMEN DEL ESTADO ACTUAL
+============================================================================
+
+ARQUITECTURA (4 flujos)
+1. Vinculacion de canal (deep link + token):
+   Canales -> "Abrir Chat en Telegram" -> generateLink crea token
+   (32 chars, 15 min, un solo uso, invalida tokens previos del owner) ->
+   https://t.me/bot?start=TOKEN -> webhook recibe /start TOKEN ->
+   linkAccount valida token (existe, no usado, no expirado, chat no
+   pertenece a otro tenant) -> persiste telegram_chat_id.
+   [CORREGIDO] El callback del widget ya NO vincula el canal sin token.
+
+2. Login con Telegram (widget HMAC):
+   TelegramAuthService::verify valida HMAC-SHA256 (hash_equals) +
+   anti-replay (auth_date max 300s) + allowlist de campos.
+   Login con email o formulario de email pendiente.
+
+3. Asistente IA por mensajes:
+   Webhook -> si chat vinculado -> reenvia a n8n (telegram-proxy) con
+   is_linked, tenant_id, bot_token, linking_url. n8n responde al chat.
+   TelegramAssistantService (LLM directo PHP) quedo HUERFANO (solo tests).
+
+4. Configuracion global:
+   Configuracion Web: bot oficial (token/username/webhook/test), bot login
+   (test/disconnect). Tenants usan bot global o personalizado.
+
+SEGURIDAD - EVALUACION 7/10
+  OK  Firma HMAC widget + anti-replay (hash_equals, max_age 300s)
+  OK  Tokens de vinculacion: aleatorios, expiran, un solo uso,
+      1 activo por owner, invalidados al desvincular
+  OK  Aislamiento multi-tenant (OwnerScope + anti-robo de chat en linkAccount)
+  OK  Tokens de bot cifrados en BD (cast encrypted)
+  OK  CSRF excluido correctamente en webhooks (payload firmado)
+  FALLA  TLS deshabilitado (verify => false) en 20 llamadas salientes
+  FALLA  /api/v1/telegram/check-linking publico: expone owner_id
+  FALLA  Webhook sin throttle ni secret_token
+  RIESGO  Login por email sin verificacion (patron estandar social login)
+  RIESGO  Webhook compartido entre bots (Telegram no identifica el bot)
+
+FLUJO - EVALUACION 7/10
+  OK  Ciclo completo de vinculacion funcional (131 tests verdes)
+  OK  Idempotencia en reentregas de /start
+  OK  Desvinculacion + invalidacion de tokens
+  FALLA  Proxy n8n en produccion responde 404 (workflow no activo)
+  FALLA  .env.production incompleto (sin LLM_*, N8N_API_TOKEN sin confirmar)
+  FALLA  LLM_ENABLED deshabilitado y asistente PHP desconectado
+  OK  UI Canales con botones vincular/desvincular/enviar prueba + polling
+
+NOTAS PRODUCCION
+  Flujo:      7/10 (codigo solido; proxy n8n caido + envs sin verificar)
+  Seguridad:  7/10 (HMAC/tokens bien; TLS off, checkLinking publico)
+
+============================================================================
+PARTE 2: PLAN POR FASES PARA PRODUCCION
+============================================================================
+
+FASE 1 - Seguridad TLS (habilitar verificacion de certificados)
+  [CODIGO]
+  1. config/services.php: agregar 'http_verify_tls' => env('HTTP_VERIFY_TLS', true)
+  2. Reemplazar los 20 'verify' => false por
+     ['verify' => config('services.http_verify_tls')] en 7 archivos:
+     - app/Services/TelegramWebhookService.php (2)
+     - app/Services/TelegramService.php (4)
+     - app/Services/TelegramAssistantService.php (1)
+     - app/Console/Commands/TelegramSetWebhookCommand.php (2)
+     - app/Services/N8nService.php (3)
+     - app/Listeners/SendChannelConfigurationToN8n.php (1)
+     - app/Http/Controllers/Backend/WebSettingController.php (7)
+  3. .env local: HTTP_VERIFY_TLS=false (dev Windows sin CA bundle)
+  Produccion: default true (verificacion activa).
+  Tests: sin cambio de comportamiento (Http::fake).
+
+FASE 2 - Proteger /api/v1/telegram/check-linking
+  [CODIGO]
+  1. routes/api.php: middleware ['verify-n8n-token', 'throttle:60,1']
+     en la ruta api.telegram.check-linking.
+  2. Tests (TelegramChannelTest): los 6 tests de check-linking envian
+     header X-N8N-TOKEN; nuevo test de 401 sin header.
+  [OPERACIONAL - n8n]
+  3. Los workflows n8n que llaman a check-linking deben enviar:
+     X-N8N-TOKEN: <N8N_API_TOKEN>
+  4. Confirmar N8N_API_TOKEN poblado en .env.production (si no, 401).
+
+FASE 3 - Reconectar asistente LLM con fallback a n8n
+  [CODIGO]
+  1. TelegramWebhookService::processUpdate: si chat vinculado y
+     config('services.llm.enabled') = true:
+     - Llamar TelegramAssistantService::handleMessage(...)
+     - Si el LLM responde OK -> responder y NO reenviar a n8n
+     - Si el LLM falla -> reenviar a n8n (fallback, sin perder mensaje)
+  2. Sin LLM habilitado (default) el flujo n8n actual no cambia.
+  3. Tests: nuevo test con LLM_ENABLED=true (mensaje atendido por
+     asistente, NO reenviado a n8n); conservar TelegramAssistantTest.
+
+FASE 4 - Activar proxy n8n (OPERACIONAL, sin codigo)
+  1. Importar docs/n8n/telegram-proxy.json en n8n.redcliente.cl
+  2. ACTIVAR el workflow (toggle).
+  3. Verificar URL de produccion registrada:
+     https://n8n.redcliente.cl/webhook/telegram-proxy
+  4. Probar con "Probar Conexion" en Canales (ya muestra hint de 404).
+
+FASE 5 - Documentar y completar envs
+  [CODIGO]
+  1. Crear .env.example (no existe) con TELEGRAM_*, N8N_*, LLM_*,
+     HTTP_VERIFY_TLS documentados sin secretos.
+  [OPERACIONAL]
+  2. .env.production: agregar LLM_ENABLED/LLM_ENDPOINT/LLM_API_KEY
+     solo si activan el asistente; confirmar N8N_API_TOKEN;
+     HTTP_VERIFY_TLS ausente (default true).
+
+FASE 6 - Verificacion final
+  1. vendor/bin/pint --dirty
+  2. Tests: TelegramChannelTest, TelegramAssistantTest,
+     SystemIntegrationControllerTest, ChannelCredentialsTest,
+     TenantChannelConfigTest, TelegramSetWebhookCommandTest,
+     TelegramSocialiteTest.
+
+RIESGOS Y MITIGACIONES
+  1. verify-n8n-token rompe flujos n8n actuales hasta agregar header
+     -> incluido en runbook Fase 2.
+  2. TLS activo en local sin CA bundle falla
+     -> HTTP_VERIFY_TLS=false en .env local.
+  3. LLM conectado y endpoint caido
+     -> fallback automatico a n8n (Fase 3).
+
+RESUMEN DE IMPACTO ESPERADO
+  Antes:  Flujo 7/10 - Seguridad 7/10
+  Despues: Flujo 9/10 (proxy activo + asistente opcional)
+          Seguridad 9/10 (TLS on + checkLinking protegido)
+  Pendiente permanente: decidir politica email-por-tenant, y opcional
+  secret_token + throttle en webhook de Telegram.
+
+============================================================================
+FIN DEL DOCUMENTO
+============================================================================
+
+
+   Plan ejecutado completo. Resumen:                                                                         Context                              █  
+                                                                                                               86,831 tokens                        █  
+     Fase 1 - TLS ✅  config/services.php:71 (http_verify_tls, default true) + 20 reemplazos en 7 archivos      43% usd                             █  
+     + HTTP_VERIFY_TLS=false solo en .env local.                                                               $0.00 spent                          █  
+                                                                                                                                                    █  
+     Fase 2 - checkLinking protegido ✅  routes/api.php:36 con ['verify-n8n-token', 'throttle:60,1']; 9         MCP                                 ▀  
+     tests actualizados con X-N8N-TOKEN + 2 tests nuevos (401 sin header / token inválido).                    • laravel-boost Operation timed out     
+                                                                                                                 after 30000ms                         
+     Fase 3 - Asistente LLM reconectado ✅  TelegramWebhookService::processUpdate enruta a                                                             
+     TelegramAssistantService si llm.enabled y chat vinculado; si el LLM falla, reenvía a n8n (fallback        LSP                                     
+     sin mensaje de error duplicado vía sendFallbackMessage: false). 3 tests nuevos (LLM atiende y salta             
+     n8n / fallback a n8n / LLM desactivado → n8n).                                                                                                    
+                                                                                                                 ⬖ Getting started                ✕    
+     Fase 5 - .env.example ✅  creado con TELEGRAM, N8N, LLM, HTTP_VERIFY_TLS y SII documentados.                                                      
+                                                                                                                   OpenCode includes free models       
+     Fase 6 - Verificación ✅  pint limpio + 870 tests pasando (2901 assertions).                                   soyou can start immediately.       
+                                                                                                                                                       
+     Pendiente operacional (ustedes): Fase 4 — activar el workflow telegram-proxy en n8n.redcliente.cl y           Connect from 75+ providers to       
+     confirmar N8N_API_TOKEN poblado en producción, o checkLinking devolverá 401.

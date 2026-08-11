@@ -46,6 +46,10 @@ class PermissionsSeeder extends Seeder
             'general.tareas.edit',
             'general.tareas.delete',
             'admin.roles.custom',
+            // Delivery - zona de repartidores
+            'delivery.repartos.accept',
+            'delivery.repartos.pickup',
+            'delivery.repartos.deliver',
             // Public Profile / Tiendas management
             'admin.public-profiles.toggle-status',
             'admin.public-profiles.toggle-official',
@@ -215,6 +219,21 @@ class PermissionsSeeder extends Seeder
         $usuarioPermissions[] = 'comercial.categorias.edit';
         $roleUsuario->syncPermissions($usuarioPermissions);
 
+        // 7. Repartidor (Level 3) — zona de reparto B2C
+        $roleRepartidor = Role::firstOrCreate(['name' => 'Repartidor'], ['owner_id' => null]);
+        $roleRepartidor->level = 3;
+        $roleRepartidor->owner_id = null;
+        $roleRepartidor->save();
+
+        $repartidorPermissions = [
+            'delivery.repartos.viewAny',
+            'delivery.repartos.view',
+            'delivery.repartos.accept',
+            'delivery.repartos.pickup',
+            'delivery.repartos.deliver',
+        ];
+        $roleRepartidor->syncPermissions($repartidorPermissions);
+
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
@@ -298,6 +317,11 @@ class PermissionsSeeder extends Seeder
                 'entregas',
                 'cargas',
                 'grupos-trabajo',
+            ],
+            'delivery' => [
+                'repartos',
+                'repartidores',
+                'config',
             ],
             'ventas' => [
                 'ventas',

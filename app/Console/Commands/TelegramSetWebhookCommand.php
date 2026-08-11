@@ -66,7 +66,7 @@ class TelegramSetWebhookCommand extends Command
         try {
             $response = Http::timeout(10)
                 ->connectTimeout(5)
-                ->withOptions(['verify' => false])
+                ->withOptions(['verify' => config('services.http_verify_tls')])
                 ->post("https://api.telegram.org/bot{$botToken}/setWebhook", [
                     'url' => $webhookUrl,
                     'drop_pending_updates' => true,
@@ -101,7 +101,7 @@ class TelegramSetWebhookCommand extends Command
         try {
             $response = Http::timeout(10)
                 ->connectTimeout(5)
-                ->withOptions(['verify' => false])
+                ->withOptions(['verify' => config('services.http_verify_tls')])
                 ->get("https://api.telegram.org/bot{$botToken}/getWebhookInfo");
 
             $body = $response->json();

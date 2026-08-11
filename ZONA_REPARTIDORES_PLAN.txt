@@ -1,0 +1,274 @@
+================================================================================
+AL DIA - ZONA DE REPARTIDORES (DELIVERY B2C) - PLAN DE IMPLEMENTACION
+Fecha: 2026-08-11
+================================================================================
+
+PARTE 1: CONTEXTO Y ESTADO ACTUAL
+================================================================================
+
+MODELO DE NEGOCIO ACTUAL
+  - SaaS multi-tenant: cada negocio (owner_id) tiene sus usuarios, ventas,
+    pedidos e inventario. Aislamiento via OwnerScope (Master/Super Admin
+    hacen bypass).
+  - Pedidos (tabla pedidos): estados pendiente -> confirmado -> preparando
+    -> enviado -> entregado -> cancelado. Solo direccion_cliente (texto
+    libre). NO tienen lat/lng ni repartidor asignado.
+  - Ventas (tabla ventas): flujo ERP + Entrega (flota) ligada a la venta
+    (no al pedido).
+  - Modulo Flota (back-office): vehiculos (con lat/lng + IMEI + tracking),
+    conductores (modelo propio, SIN login), entregas, cargas diarias
+    (autoventa B2B en ruta), grupos de trabajo.
+  - Tracking: POST /api/v1/tracking/update actualiza vehiculos.lat/lng por
+    IMEI (dispositivo GPS externo). No hay historico de posiciones.
+  - Chat por pedido: conversaciones creadas automaticamente al hacer el
+    pedido (comprador <-> vendedor), con Reverb (Pusher).
+  - Roles (Spatie + nivel): Master(0), Super Admin(1), Administrador(2),
+    Empleado(3), Cliente(3), Proveedor(3), Usuario(3). NO existe rol
+    Repartidor.
+  - Notificaciones: database + mail (Laravel Notifications). NO hay push
+    (sin FCM, sin Web Push). Telegram/WhatsApp directo via N8nService.
+  - NO existe app movil ni PWA. Mapas: componente MapaVehiculos
+    (@react-google-maps/api) con VITE_GOOGLE_MAPS_API_KEY.
+
+QUE FALTA PARA UN MODELO TIPO UBER EATS / RAPPI / GLOVO
+  1. Rol repartidor con login (hoy los conductores no inician sesion).
+  2. Geolocalizacion del destino: pedidos y clientes sin lat/lng.
+  3. Tabla de posiciones en vivo del repartidor + broadcast en tiempo real.
+  4. Vinculacion explicita pedido <-> repartidor (hoy la entrega depende
+     de la venta y solo si su numero empieza con 'PEDIDO-').
+  5. Pool de pedidos con aceptacion/rechazo y timeout de re-asignacion.
+  6. Notificaciones push al repartidor (Web Push + Telegram fallback).
+  7. PWA movil para el repartidor + zona admin con mapa en vivo.
+
+DECISIONES TOMADAS (2026-08-11)
+  - Plataforma: PWA web movil ahora; arquitectura API-first para que una
+    app nativa (React Native/Expo) se conecte despues sin rehacer backend.
+  - Alcance: SOLO delivery B2C (pedidos de tienda/marketplace entregados
+    al consumidor final). No incluye rutas B2B ni autoventa.
+  - Asignacion: AMBOS modos configurables por negocio:
+      pool + aceptacion (estilo Rappi) y asignacion manual por admin.
+  - Notificaciones: Web Push (VAPID, gratis) + bot de Telegram existente
+    como fallback. Sin Firebase por ahora.
+
+================================================================================
+PARTE 2: ARQUITECTURA OBJETIVO
+================================================================================
+
+  Repartidor (PWA movil) --API sanctum--> /api/v1/delivery/* --> Laravel
+  Admin/vendedor (web React) --mapa en vivo--> Reverb canal privado
+      delivery.{owner_id}.positions y delivery.{owner_id}.orders
+  Web Push (VAPID) + Telegram bot --> notifican al repartidor
+  Google Geocoding API --> geocodifica direccion_cliente -> lat/lng
+
+FLUJO DE REPARTO (pool)
+  checkout (lat/lng destino) -> pendiente -> confirmado -> preparando
+    -> [entra al pool] -> repartidor acepta (lockForUpdate) -> enviado
+    -> entregado / cancelado
+  El enum de pedidos NO cambia: hora_aceptado marca el punto intermedio.
+
+================================================================================
+PARTE 3: PLAN POR FASES
+================================================================================
+
+FASE 1 - Datos y modelo base
+  [CODIGO]
+  1. Migraciones nuevas:
+     - repartidores: user_id (FK users, unique), owner_id, estado
+       (disponible/ocupado/offline), lat/lng (10,7), vehiculo_id nullable,
+       radio_km (default 10), telegram_chat_id nullable, last_position_at.
+     - delivery_positions: repartidor_id, owner_id, lat, lng, created_at
+       (historico; poda a 24h en scheduler).
+     - push_subscriptions: user_id, endpoint (unique), keys_json,
+       user_agent, created_at.
+     - delivery_configs: owner_id unique, modo (pool/manual/ambos),
+       pool_timeout_min (default 10), pool_reenvio_min (default 30).
+  2. Migracion alter a pedidos: repartidor_id nullable FK,
+     destino_lat/destino_lng (10,7) nullable, distancia_km decimal(6,2),
+     hora_aceptado/hora_recogido/hora_entregado nullable,
+     pool_entrada_at nullable. Indice compuesto (owner_id, estado,
+     repartidor_id) para el pool.
+  3. Activar log de campo 'estado' en pedido_status_logs (hoy solo se
+     registra payment_status; la tabla ya tiene el campo 'field').
+  4. Seeder PermissionsSeeder: rol Repartidor (level 3) + permisos
+     delivery.repartos.viewAny / accept / pickup / deliver y
+     delivery.config.edit (solo admin).
+  5. Modelos: Repartidor, DeliveryPosition, PushSubscription,
+     DeliveryConfig; Pedido: scope disponibleEnPool() (estado preparando,
+     repartidor_id null, owner), relaciones repartidor() y activos.
+  [TEST]
+  6. Factories + tests: scope de pool, aislamiento multi-tenant,
+     cast/validaciones.
+
+FASE 2 - API movil /api/v1/delivery/* (API-first, lista para app nativa)
+  [CODIGO]
+  1. Middleware nuevo 'delivery' (rol Repartidor + is_active) y grupo en
+     routes/api.php: prefix v1/delivery, middleware auth:sanctum + delivery
+     + throttle propio.
+  2. Endpoints:
+     - POST /location           heartbeat GPS: valida lat/lng, actualiza
+                                repartidores, inserta delivery_positions,
+                                broadcast Reverb. throttle 60/1min.
+     - GET  /me                 estado, radio, pedido activo, config pool.
+     - POST /availability       toggle disponible/ocupado (libera pedido
+                                activo si aplica).
+     - GET  /orders             pool (preparando sin repartidor, dentro del
+                                radio) + mis pedidos activos (por
+                                repartidor_id).
+     - POST /orders/{pedido}/accept   transaccion + lockForUpdate para
+                                evitar doble aceptacion; setea
+                                repartidor_id, hora_aceptado, estado no
+                                cambia (sigue preparando hasta pickup);
+                                broadcast + notifica vendedor.
+     - POST /orders/{pedido}/pickup   estado=enviado, hora_recogido,
+                                notifica comprador (estado enviado).
+     - POST /orders/{pedido}/delivered estado=entregado, fecha_entrega,
+                                hora_entregado, libera disponibilidad.
+     - POST /orders/{pedido}/reject   devuelve al pool con log y motivo.
+  3. Controlador DeliveryOrdenController + Requests de validacion.
+  [TEST]
+  4. Doble aceptacion simultanea (lock), reject al pool, pickup/delivered
+     solo del repartidor asignado, aislamiento por owner, 401/403 sin rol.
+
+FASE 3 - Geolocalizacion del destino
+  [CODIGO]
+  1. Servicio GeocodingService (Google Geocoding API): geocodifica
+     direccion_cliente al hacer checkout (PedidoController::crear) ->
+     destino_lat/lng; cache Redis 7 dias por direccion; timeout 5s y
+     fallback null (el vendedor ubica manualmente en mapa).
+  2. Nueva env: GOOGLE_GEOCODING_API_KEY (distinta de la Maps JS key;
+     requiere cuenta de Google con billing).
+  3. Modal "ubicar en mapa" para pedidos sin coordenadas (panel vendedor).
+  [TEST]
+  4. Tests con Http::fake para geocoding OK / timeout / direccion vacia.
+
+FASE 4 - Zona admin (web React, mapa en vivo)
+  [CODIGO]
+  1. routes/modules/delivery.php (permitir en routes/web.php y sidebar):
+     - index (mapa en vivo + cola de asignacion) - delivery.config.edit
+     - repartidores CRUD (vincular User -> Repartidor, activar/desactivar,
+       radio) - delivery.repartidores.viewAny/edit
+     - pedidos del pool + asignacion manual (click repartidor cercano) o
+       publicar en pool.
+  2. Paginas:
+     - Backend/Repartidores/Index.tsx: mapa en vivo reutilizando el patron
+       de MapaVehiculos (@react-google-maps/api), markers de repartidores
+       (Reverb delivery.{owner}.positions) + pedidos del pool con destino.
+     - Backend/Repartidores/Asignacion.tsx: cola de pedidos preparando ->
+       asignar (manual) / publicar en pool.
+     - Backend/Repartidores/Config.tsx: modo de asignacion y timeouts.
+  3. Broadcast: subscription a canales privados delivery.{owner_id}.* en
+     resources/js/echo.ts.
+  [TEST]
+  4. Tests de rutas/permisos y de la asignacion manual.
+
+FASE 5 - PWA del repartidor
+  [CODIGO]
+  1. Grupo de rutas /repartidor/* (role:Repartidor, layout mobile-first).
+  2. Paginas resources/js/pages/Delivery/:
+     - Home: toggle disponible/ocupado + pedido activo con estado.
+     - Cola: pool de pedidos (tarjetas estilo Rappi: distancia, direccion,
+       total, metodo pago).
+     - Detalle: mapa destino + "abrir en Google Maps" (enlace externo) +
+       botones Aceptar / Recolgi / Entregado.
+     - Historial: pedidos entregados del dia (resumen de repartos).
+  3. Service worker + manifest.json (public/) + registro de Web Push:
+     - Paquete composer: minishlink/web-push.
+     - VAPID keys en .env (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY,
+       VAPID_SUBJECT).
+     - Endpoint de suscripcion (guardar en push_subscriptions) y de
+       envio/borrado de suscripciones.
+  4. Echo/Reverb: aviso en vivo cuando llega un pedido al pool mientras la
+     app esta abierta.
+  [TEST]
+  5. Tests de registro y envio de push (fake), validacion de endpoint.
+
+FASE 6 - Timeout y re-asignacion (scheduler)
+  [CODIGO]
+  1. Comando delivery:check-timeouts (agregar a routes/console.php cada
+     2-3 minutos):
+     - Pedido aceptado sin pickup despues de X min -> re-pool + notifica.
+     - Pedido en pool sin aceptar despues de Y min -> re-publica con
+       prioridad (campo pool_reenvios o similar) + push a repartidores
+       cercanos.
+     - Poda de delivery_positions mayores a 24h.
+  [TEST]
+  2. Tests con Carbon::setTestNow para cada regla de timeout.
+
+FASE 7 - Notificaciones (Web Push + Telegram fallback)
+  [CODIGO]
+  1. Servicio PushService (VAPID): enviar a push_subscriptions del
+     repartidor; manejar endpoints 410 (eliminar suscripcion).
+  2. Eventos que notifican al repartidor:
+     - Nueva orden en pool (a repartidores disponibles dentro del radio).
+     - Asignacion manual (a ese repartidor).
+     - Timeout de recogida (recordatorio).
+  3. Telegram fallback: extender vinculacion para asociar
+     telegram_chat_id al Repartidor (no al owner) -> mensajes del bot
+     global "tienes un pedido en el pool" si el repartidor no tiene
+     suscripcion Web Push.
+  4. Comprador: al aceptar (enviado) y al entregar, reutilizar
+     ActualizacionEstadoPedidoNotification.
+  [TEST]
+  5. Tests: push con suscripcion invalida (410), selector de repartidores
+     en radio, prioridad de canal (push > telegram).
+
+FASE 8 - Verificacion final y despliegue
+  1. vendor/bin/pint --dirty
+  2. Suite completa: php artisan test --compact (todas las fases + suite
+     existente 870+ tests).
+  3. .env.production: GOOGLE_GEOCODING_API_KEY, VAPID_* y REVERB_* (REVERB
+     hoy vacio = bloqueador de broadcast en produccion).
+  4. Recordatorio: deploy.sh DEBE instalar crontab (php artisan
+     schedule:run cada minuto) y ejecutar queue:restart tras cada deploy;
+     de lo contrario los timeouts, backups y jobs del delivery no corren.
+
+================================================================================
+PARTE 4: BLOQUEADORES DE PRODUCCION HEREDADOS (auditoria 2026-08-11)
+================================================================================
+El delivery depende de infraestructura que hoy NO esta operativa en
+produccion. Antes o durante la Fase 8 hay que resolver:
+
+  🔴 Scheduler no instalado en produccion (deploy/deploy.sh no crea
+     crontab; production-check.sh solo warn). Sin esto: sin timeouts,
+     sin backups (backup:database), sin automatizaciones.
+  🔴 .env.production es plantilla: APP_KEY vacio, N8N_API_TOKEN vacio,
+     REVERB_* vacios, DB/REDIS_PASSWORD=CHANGE_ME, TELEGRAM_LOGIN_BOT_TOKEN
+     vacio.
+  🔴 Webhook Telegram publico sin throttle ni secret_token (spam del bot,
+     forja de payloads planos n8n).
+  🔴 Deploy sin queue:restart y workers de cola inconsistentes
+     (queue-worker.conf legacy no se instala).
+  🟠 Fuga de tokens de vinculacion en logs; telegram_chat_id sin indice;
+     telegram_conversations sin poda; openapi publico; generate-link sin
+     throttle.
+
+================================================================================
+PARTE 5: RIESGOS Y MITIGACIONES
+================================================================================
+  1. Google Geocoding requiere billing -> fallback manual en mapa y cache;
+     si falla la geocodificacion el pedido entra al pool solo si el
+     vendedor ubica el destino (o con coords null y distancia calculada
+     por el repartidor en aceptacion).
+  2. Doble aceptacion del mismo pedido -> lockForUpdate + transaccion +
+     verificacion de repartidor_id null dentro de la transaccion.
+  3. Repartidor offline con pedido aceptado -> timeout de recogida
+     (Fase 6) re-publique y bloquee aceptacion si last_position_at > 10min.
+  4. Web Push exige HTTPS -> ok (aldiaproyect.com cumple).
+  5. Reverb caido -> GPS y pool siguen funcionando por polling; solo se
+     pierde la vista en vivo (UI degrada a refresh manual).
+
+================================================================================
+PARTE 6: RESUMEN DE IMPACTO ESPERADO
+================================================================================
+  Antes:  no existe zona de repartidores; entregas solo back-office por
+          IMEI; pedidos sin geolocalizacion.
+  Despues: pool de repartos B2C con aceptacion, asignacion manual,
+          geolocalizacion, posiciones en vivo en mapa admin, PWA del
+          repartidor, Web Push + Telegram, timeouts automaticos.
+  Pendiente futuro: app nativa (React Native/Expo) reutilizando
+          /api/v1/delivery/*; rutas B2B multi-parada; pagos/ganancias del
+          repartidor.
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================

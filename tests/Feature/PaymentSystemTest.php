@@ -82,14 +82,18 @@ test('pedido status change creates audit log entry', function () {
         'payment_status' => 'pending',
     ]);
 
-    expect(PedidoStatusLog::count())->toBe(1);
+    expect(PedidoStatusLog::count())->toBe(2);
 
-    $log = PedidoStatusLog::first();
+    $log = PedidoStatusLog::where('field', 'payment_status')->first();
     expect($log->pedido_id)->toBe($pedido->id);
-    expect($log->field)->toBe('payment_status');
     expect($log->from)->toBeNull();
     expect($log->to)->toBe('pending');
     expect($log->gateway)->toBe('paypal');
+
+    $estadoLog = PedidoStatusLog::where('field', 'estado')->first();
+    expect($estadoLog->pedido_id)->toBe($pedido->id);
+    expect($estadoLog->from)->toBeNull();
+    expect($estadoLog->to)->toBe('pendiente');
 });
 
 test('pedido status update logs the transition', function () {

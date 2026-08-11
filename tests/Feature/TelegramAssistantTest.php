@@ -159,7 +159,7 @@ test('assistant keeps conversation memory across messages', function () {
     });
 });
 
-test('webhook routes linked chat message to n8n even when llm is enabled', function () {
+test('webhook routes linked chat message to LLM assistant when enabled and skips n8n', function () {
     config([
         'services.n8n.telegram_proxy_url' => 'https://n8n.redcliente.cl/webhook/telegram-proxy',
         'services.llm.enabled' => true,
@@ -177,6 +177,76 @@ test('webhook routes linked chat message to n8n even when llm is enabled', funct
             'choices' => [['message' => ['content' => '¡Hola! ¿En qué te ayudo?']]],
         ], 200),
         'api.telegram.org/*' => Http::response(['ok' => true], 200),
+        'n8n.redcliente.cl/*' => Http::response(['status' => 'ok'], 200),
+    ]);
+
+    $response = $this->postJson(route('telegram.webhook'), [
+        'message' => [
+            'chat' => ['id' => 321654],
+            'text' => '¿Cuánto vendí hoy?',
+        ],
+    ]);
+
+    $response->assertOk();
+    $response->assertJson(['status' => 'ok', 'handled_by' => 'llm']);
+
+    Http::assertSent(fn ($request) => $request->url() === 'https://llm.example.com/v1/chat/completions');
+    Http::assertNotSent(fn ($request) => str_contains($request->url(), 'n8n.redcliente.cl'));
+
+    expect(TelegramConversation::where('role', 'user')->first()->content)->toBe('¿Cuánto vendí hoy?');
+});
+
+test('webhook falls back to n8n when LLM assistant fails', function () {
+    config([
+        'services.n8n.telegram_proxy_url' => 'https://n8n.redcliente.cl/webhook/telegram-proxy',
+        'services.llm.enabled' => true,
+    ]);
+
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_token' => 'test:token',
+        'telegram_bot_username' => 'test_bot',
+        'telegram_chat_id' => '321654',
+    ]);
+
+    Http::fake([
+        'https://llm.example.com/*' => Http::response(null, 500),
+        'api.telegram.org/*' => Http::response(['ok' => true], 200),
+        'n8n.redcliente.cl/*' => Http::response(['status' => 'ok'], 200),
+    ]);
+
+    $response = $this->postJson(route('telegram.webhook'), [
+        'message' => [
+            'chat' => ['id' => 321654],
+            'text' => '¿Cuánto vendí hoy?',
+        ],
+    ]);
+
+    $response->assertOk();
+    $response->assertJson(['status' => 'ok']);
+
+    Http::assertSent(fn ($request) => $request->url() === 'https://llm.example.com/v1/chat/completions');
+    Http::assertSent(fn ($request) => str_contains($request->url(), 'n8n.redcliente.cl'));
+
+    Http::assertNotSent(function ($request) {
+        return str_contains($request->url(), 'api.telegram.org') && str_contains($request['text'], '😔');
+    });
+});
+
+test('webhook routes linked chat message to n8n when llm is disabled', function () {
+    config([
+        'services.n8n.telegram_proxy_url' => 'https://n8n.redcliente.cl/webhook/telegram-proxy',
+        'services.llm.enabled' => false,
+    ]);
+
+    ChannelCredential::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'telegram_bot_token' => 'test:token',
+        'telegram_bot_username' => 'test_bot',
+        'telegram_chat_id' => '321654',
+    ]);
+
+    Http::fake([
         'n8n.redcliente.cl/*' => Http::response(['status' => 'ok'], 200),
     ]);
 
