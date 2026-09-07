@@ -2,7 +2,8 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\AutomationConfig;
+use App\Models\User;
+use App\Scopes\OwnerScope;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,25 +23,46 @@ class VerifyN8nToken
 
         $businessId = $request->route('business');
 
+        // If route has {business} parameter, verify token matches that business
         if ($businessId) {
-            $businessToken = AutomationConfig::where('owner_id', $businessId)
-                ->whereNotNull('n8n_token')
-                ->value('n8n_token');
+            $owner = User::withoutGlobalScope(OwnerScope::class)
+                ->where('id', $businessId)
+                ->whereNotNull('n8n_api_key')
+                ->first();
 
-            if ($businessToken && hash_equals($businessToken, $token)) {
-                return $next($request);
+            if (! $owner) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Negocio no encontrado o sin API key configurada.',
+                ], 404);
+            }
+
+            if (! hash_equals((string) $owner->n8n_api_key, (string) $token)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Token de n8n inválido para este negocio.',
+                ], 401);
+            }
+        } else {
+            // For routes without {business} param (e.g., check-linking), find owner by token
+            $owner = User::withoutGlobalScope(OwnerScope::class)
+                ->whereNotNull('n8n_api_key')
+                ->get()
+                ->first(function ($user) use ($token) {
+                    return hash_equals((string) $user->n8n_api_key, (string) $token);
+                });
+
+            if (! $owner) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Token de n8n inválido.',
+                ], 401);
             }
         }
 
-        $globalToken = config('services.n8n.token');
+        // Attach business owner to request for downstream use
+        $request->merge(['n8n_business_owner' => $owner]);
 
-        if ($globalToken && hash_equals($globalToken, $token)) {
-            return $next($request);
-        }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Token de n8n inválido.',
-        ], 401);
+        return $next($request);
     }
 }

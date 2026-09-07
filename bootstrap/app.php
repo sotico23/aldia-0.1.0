@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\Bot\ResolveBotTenant;
 use App\Http\Middleware\CheckActive;
+use App\Http\Middleware\CheckDelivery;
 use App\Http\Middleware\CheckOwnership;
 use App\Http\Middleware\CheckPermission;
 use App\Http\Middleware\CheckRole;
@@ -47,6 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => CheckPermission::class,
             'ownership' => CheckOwnership::class,
             'active' => CheckActive::class,
+            'delivery' => CheckDelivery::class,
             'verify-n8n-api-key' => VerifyN8nApiKey::class,
             'verify-n8n-token' => VerifyN8nToken::class,
             'verify-tenant-token' => VerifyTenantToken::class,

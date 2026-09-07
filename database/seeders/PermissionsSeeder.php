@@ -50,6 +50,7 @@ class PermissionsSeeder extends Seeder
             'delivery.repartos.accept',
             'delivery.repartos.pickup',
             'delivery.repartos.deliver',
+            'delivery.repartidor.mapa',
             // Public Profile / Tiendas management
             'admin.public-profiles.toggle-status',
             'admin.public-profiles.toggle-official',
@@ -94,6 +95,7 @@ class PermissionsSeeder extends Seeder
             'admin.email-config.create',
             'admin.email-config.edit',
             'admin.email-config.delete',
+            'delivery.repartidor.mapa',
         ];
         $roleAdmin->syncPermissions(
             Permission::whereNotIn('name', $adminExcluded)->get()
@@ -231,6 +233,7 @@ class PermissionsSeeder extends Seeder
             'delivery.repartos.accept',
             'delivery.repartos.pickup',
             'delivery.repartos.deliver',
+            'delivery.repartidor.mapa',
         ];
         $roleRepartidor->syncPermissions($repartidorPermissions);
 

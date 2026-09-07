@@ -14,9 +14,9 @@ use Illuminate\Support\Facades\Http;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
-
-    config(['services.n8n.token' => 'test-n8n-token']);
+    $this->user = User::factory()->create([
+        'n8n_api_key' => 'test-n8n-api-key-123',
+    ]);
 });
 
 test('send-test-message returns error when no token saved', function () {
@@ -1341,7 +1341,7 @@ test('check-linking returns is_linked true with owner_id when chat_id is linked'
 
     $response = $this->postJson('/api/v1/telegram/check-linking', [
         'chat_id' => '123456789',
-    ], ['X-N8N-TOKEN' => 'test-n8n-token']);
+    ], ['X-N8N-TOKEN' => $this->user->n8n_api_key]);
 
     $response->assertOk()
         ->assertJson([
@@ -1353,7 +1353,7 @@ test('check-linking returns is_linked true with owner_id when chat_id is linked'
 test('check-linking returns is_linked false when chat_id is not linked', function () {
     $response = $this->postJson('/api/v1/telegram/check-linking', [
         'chat_id' => '999999999',
-    ], ['X-N8N-TOKEN' => 'test-n8n-token']);
+    ], ['X-N8N-TOKEN' => $this->user->n8n_api_key]);
 
     $response->assertOk()
         ->assertJson([
@@ -1363,7 +1363,7 @@ test('check-linking returns is_linked false when chat_id is not linked', functio
 });
 
 test('check-linking returns 422 when chat_id is missing', function () {
-    $response = $this->postJson('/api/v1/telegram/check-linking', [], ['X-N8N-TOKEN' => 'test-n8n-token']);
+    $response = $this->postJson('/api/v1/telegram/check-linking', [], ['X-N8N-TOKEN' => $this->user->n8n_api_key]);
 
     $response->assertStatus(422)
         ->assertJson([
@@ -1386,7 +1386,7 @@ test('check-linking accepts standard telegram payload with message.chat.id', fun
             'chat' => ['id' => 123456789],
             'text' => 'Hello',
         ],
-    ], ['X-N8N-TOKEN' => 'test-n8n-token']);
+    ], ['X-N8N-TOKEN' => $this->user->n8n_api_key]);
 
     $response->assertOk()
         ->assertJson([
@@ -1409,7 +1409,7 @@ test('check-linking accepts n8n wrapper payload with body.message.chat.id', func
                 'text' => 'Hello',
             ],
         ],
-    ], ['X-N8N-TOKEN' => 'test-n8n-token']);
+    ], ['X-N8N-TOKEN' => $this->user->n8n_api_key]);
 
     $response->assertOk()
         ->assertJson([
@@ -1427,7 +1427,7 @@ test('check-linking accepts body delivered as JSON string', function () {
 
     $response = $this->postJson('/api/v1/telegram/check-linking', [
         'body' => '{"message":{"chat":{"id":555444333},"text":"Hello"}}',
-    ], ['X-N8N-TOKEN' => 'test-n8n-token']);
+    ], ['X-N8N-TOKEN' => $this->user->n8n_api_key]);
 
     $response->assertOk()
         ->assertJson([
@@ -1448,7 +1448,7 @@ test('check-linking accepts flat test_connection payload from connection test', 
         'chat_id' => '424242424',
         'bot_token' => 'test:token',
         'owner_id' => $this->user->getOwnerId(),
-    ], ['X-N8N-TOKEN' => 'test-n8n-token']);
+    ], ['X-N8N-TOKEN' => $this->user->n8n_api_key]);
 
     $response->assertOk()
         ->assertJson([
@@ -1463,7 +1463,7 @@ test('check-linking with standard payload returns is_linked false for unknown ch
             'chat' => ['id' => 999999999],
             'text' => 'Hello',
         ],
-    ], ['X-N8N-TOKEN' => 'test-n8n-token']);
+    ], ['X-N8N-TOKEN' => $this->user->n8n_api_key]);
 
     $response->assertOk()
         ->assertJson([
@@ -1477,7 +1477,7 @@ test('check-linking returns 422 when standard payload has no chat object', funct
         'message' => [
             'text' => 'Hello',
         ],
-    ], ['X-N8N-TOKEN' => 'test-n8n-token']);
+    ], ['X-N8N-TOKEN' => $this->user->n8n_api_key]);
 
     $response->assertStatus(422)
         ->assertJson([

@@ -35,7 +35,7 @@ class NuevoMensajeInternoNotification extends Notification implements ShouldQueu
 
     public function preferenceKey(): string
     {
-        return 'mensaje_chat';
+        return 'mensaje_chat_interno';
     }
 
     public function templateSlug(): string

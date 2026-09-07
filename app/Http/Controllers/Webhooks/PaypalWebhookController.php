@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Webhooks;
 
 use App\Enums\Currency;
 use App\Events\PaymentSuccessful;
+use App\Events\WebhookReceived;
 use App\Http\Controllers\Controller;
 use App\Models\PaymentConfig;
 use App\Models\Pedido;
@@ -43,6 +44,10 @@ class PaypalWebhookController extends Controller
 
             return response()->json(['status' => 'duplicate_ignored']);
         }
+
+        // Dispatch webhook received event for logging/auditing
+        $businessId = $this->extractBusinessIdFromPayload($payload);
+        event(new WebhookReceived('paypal', $eventType, $payload, $businessId));
 
         if (! $this->verifySignature($request)) {
             Log::warning('PayPal webhook: signature verification failed', [
@@ -121,12 +126,15 @@ class PaypalWebhookController extends Controller
                 }
             }
 
-            // Fallback to global config if tenant not found (for backwards compatibility)
+            // Fallback: try to resolve platform (Master) config for webhook verification
             if (! $config) {
-                $config = PaymentConfig::withoutGlobalScope(OwnerScope::class)
-                    ->whereNotNull('paypal_client_id')
-                    ->where('paypal_active', true)
+                $master = User::withoutGlobalScope(OwnerScope::class)
+                    ->role('Master')
                     ->first();
+
+                if ($master) {
+                    $config = PaymentConfig::resolveForOwner($master->id);
+                }
             }
 
             if (! $config) {
@@ -417,5 +425,22 @@ class PaypalWebhookController extends Controller
         }
 
         return Currency::default();
+    }
+
+    protected function extractBusinessIdFromPayload(array $payload): ?int
+    {
+        $resource = $payload['resource'] ?? [];
+        $customId = $resource['custom_id'] ?? $resource['invoice_id'] ?? null;
+
+        if (! $customId) {
+            return null;
+        }
+
+        $pedido = Pedido::withoutGlobalScope(OwnerScope::class)
+            ->where('numero_pedido', $customId)
+            ->orWhere('id', $customId)
+            ->first();
+
+        return $pedido?->owner_id;
     }
 }

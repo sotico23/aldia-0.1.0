@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Webhooks;
 
+use App\Events\WebhookReceived;
 use App\Http\Controllers\Controller;
+use App\Models\ChannelCredential;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -20,6 +22,12 @@ class WhatsAppWebhookController extends Controller
         }
 
         if ($request->isMethod('POST')) {
+            $payload = $request->all();
+            $eventType = $payload['entry'][0]['changes'][0]['field'] ?? 'unknown';
+            $businessId = $this->extractBusinessIdFromPayload($payload);
+
+            event(new WebhookReceived('whatsapp', $eventType, $payload, $businessId));
+
             $entry = $request->input('entry', []);
 
             foreach ($entry as $entryItem) {
@@ -72,5 +80,26 @@ class WhatsAppWebhookController extends Controller
             'success' => false,
             'message' => 'Método no soportado.',
         ], 405);
+    }
+
+    protected function extractBusinessIdFromPayload(array $payload): ?int
+    {
+        // Extract phone number from webhook payload to find the business
+        $entry = $payload['entry'][0] ?? [];
+        $changes = $entry['changes'][0] ?? [];
+        $value = $changes['value'] ?? [];
+        $metadata = $value['metadata'] ?? [];
+        $phoneNumberId = $metadata['phone_number_id'] ?? null;
+
+        if (! $phoneNumberId) {
+            return null;
+        }
+
+        // Find business by WhatsApp phone number ID
+        $config = ChannelCredential::where('whatsapp_phone_number_id', $phoneNumberId)
+            ->whereNotNull('whatsapp_phone_number_id')
+            ->first();
+
+        return $config?->owner_id;
     }
 }

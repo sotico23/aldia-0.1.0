@@ -11,6 +11,7 @@ class VerifyTenantToken
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // Only accept Bearer token from Authorization header (not query string)
         $token = $request->bearerToken();
 
         if (! $token) {
@@ -20,7 +21,10 @@ class VerifyTenantToken
             ], 401);
         }
 
-        $user = User::where('api_token', $token)->first();
+        // Constant-time comparison to prevent timing attacks
+        $user = User::whereNotNull('api_token')->get()->first(function ($u) use ($token) {
+            return hash_equals((string) $u->api_token, (string) $token);
+        });
 
         if (! $user) {
             return response()->json([

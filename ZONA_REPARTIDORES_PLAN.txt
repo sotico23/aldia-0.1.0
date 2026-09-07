@@ -1,274 +1,377 @@
-================================================================================
-AL DIA - ZONA DE REPARTIDORES (DELIVERY B2C) - PLAN DE IMPLEMENTACION
-Fecha: 2026-08-11
-================================================================================
+ZONA DE REPARTIDORES - PLAN Y REPORTE DE PROGRESO
+====================================================
+Fecha: 2026-08-11 (ultima actualizacion 2026-08-18)
+Proyecto: aldia-0.1.0
 
-PARTE 1: CONTEXTO Y ESTADO ACTUAL
-================================================================================
+------------------------------------------------------------------------------
+FASE 1 - BASE DEL CIRCUITO DE REPARTO (COMPLETADA)
+------------------------------------------------------------------------------
+CREADO:
+  [x] Middleware CheckDelivery (alias 'delivery') registrado en bootstrap/app.php
+  [x] Form Requests: UpdateLocationRequest, UpdateAvailabilityRequest,
+      RejectOrderRequest (app/Http/Requests/Delivery/)
+  [x] Controlador DeliveryOrdenController con 8 endpoints:
+      - POST /api/v1/delivery/location      (heartbeat GPS + historico + broadcast)
+      - GET  /api/v1/delivery/me            (perfil + config pool + pedido activo)
+      - POST /api/v1/delivery/availability  (toggle estado, libera pedido si aplica)
+      - GET  /api/v1/delivery/orders        (pool dentro del radio + activos)
+      - POST /api/v1/delivery/orders/{pedido}/accept     (con lockForUpdate)
+      - POST /api/v1/delivery/orders/{pedido}/pickup     (estado enviado)
+      - POST /api/v1/delivery/orders/{pedido}/delivered  (estado entregado)
+      - POST /api/v1/delivery/orders/{pedido}/reject     (pool + log con motivo)
+  [x] Eventos de broadcast: DeliveryPositionUpdated,
+      DeliveryOrderPoolUpdated (rutas en routes/channels.php)
+  [x] Notificacion DeliveryPedidoAceptadoNotification (via NotificationHelper)
+  [x] Migracion: columna `motivo` en pedido_status_logs
+  [x] RateLimiter 'delivery' registrado en AppServiceProvider
+  [x] Repartidor::distanciaA() (haversine) y User::repartidor()
+  [x] Sanctum activado para API: trait HasApiTokens en User,
+      guard 'sanctum' en config/auth.php, SanctumServiceProvider en
+      bootstrap/providers.php, autoloader PSR-4 reparado
+  [x] Tests DeliveryApiTest: 22 tests verdes (74 aserciones)
 
-MODELO DE NEGOCIO ACTUAL
-  - SaaS multi-tenant: cada negocio (owner_id) tiene sus usuarios, ventas,
-    pedidos e inventario. Aislamiento via OwnerScope (Master/Super Admin
-    hacen bypass).
-  - Pedidos (tabla pedidos): estados pendiente -> confirmado -> preparando
-    -> enviado -> entregado -> cancelado. Solo direccion_cliente (texto
-    libre). NO tienen lat/lng ni repartidor asignado.
-  - Ventas (tabla ventas): flujo ERP + Entrega (flota) ligada a la venta
-    (no al pedido).
-  - Modulo Flota (back-office): vehiculos (con lat/lng + IMEI + tracking),
-    conductores (modelo propio, SIN login), entregas, cargas diarias
-    (autoventa B2B en ruta), grupos de trabajo.
-  - Tracking: POST /api/v1/tracking/update actualiza vehiculos.lat/lng por
-    IMEI (dispositivo GPS externo). No hay historico de posiciones.
-  - Chat por pedido: conversaciones creadas automaticamente al hacer el
-    pedido (comprador <-> vendedor), con Reverb (Pusher).
-  - Roles (Spatie + nivel): Master(0), Super Admin(1), Administrador(2),
-    Empleado(3), Cliente(3), Proveedor(3), Usuario(3). NO existe rol
-    Repartidor.
-  - Notificaciones: database + mail (Laravel Notifications). NO hay push
-    (sin FCM, sin Web Push). Telegram/WhatsApp directo via N8nService.
-  - NO existe app movil ni PWA. Mapas: componente MapaVehiculos
-    (@react-google-maps/api) con VITE_GOOGLE_MAPS_API_KEY.
+FALTA / PENDIENTE (Fase 1):
+  [x] Enviar el pedido al pool automaticamente cuando el vendedor confirma
+      [COMPLETADO 2026-08-15: PedidoPoolService::ingresarAlPool en
+      PedidoRecibidoController::actualizarEstado al pasar a 'preparando':
+      pool_entrada_at + broadcast 'nuevo' + rehabilitacion de bloqueados]
+  [x] Timeout automatico de pedidos aceptados sin recoger
+      [COMPLETADO: PoolTimeout + delivery:pool-timeout + scheduler]
+  [x] Limite de reenvios (pool_reenvios) y logica de bloqueo de pedidos rechazados
+      [COMPLETADO 2026-08-15: columna pool_reenvios_max en delivery_configs
+      (default 3, null = ilimitado) + pool_bloqueado en pedidos. Se bloquea en
+      reject/timeout al alcanzar el limite; los bloqueados quedan fuera del
+      scope, no aceptables y logueados con motivo 'bloqueado_*'.]
+  [x] Mapa PWA del repartidor (frontend React/Inertia)
+      [COMPLETADO 2026-08-16: PASO 4 - Delivery/Mapa.tsx]
+  [ ] Migrar pruebas a Redis/broadcast real en entorno productivo
+      [DESPLIEGUE PENDIENTE: worker Horizon, Redis cache/broadcast, Reverb]
 
-QUE FALTA PARA UN MODELO TIPO UBER EATS / RAPPI / GLOVO
-  1. Rol repartidor con login (hoy los conductores no inician sesion).
-  2. Geolocalizacion del destino: pedidos y clientes sin lat/lng.
-  3. Tabla de posiciones en vivo del repartidor + broadcast en tiempo real.
-  4. Vinculacion explicita pedido <-> repartidor (hoy la entrega depende
-     de la venta y solo si su numero empieza con 'PEDIDO-').
-  5. Pool de pedidos con aceptacion/rechazo y timeout de re-asignacion.
-  6. Notificaciones push al repartidor (Web Push + Telegram fallback).
-  7. PWA movil para el repartidor + zona admin con mapa en vivo.
+------------------------------------------------------------------------------
+FASE 2 - GESTION DE ZONAS (COMPLETADA)
+------------------------------------------------------------------------------
+CREADO:
+  [x] Modelo Zone (app/Models/Zone.php) con BelongsToOwner, casts,
+      scope activa, distanciaA() y contiene() (haversine)
+  [x] Migracion create_zones_table: owner_id, name, lat, lng, radio_km,
+      capacidad_max, activa + indice por owner
+  [x] ZoneFactory con estado inactiva
+  [x] Form Requests StoreZoneRequest y UpdateZoneRequest (validacion completa)
+  [x] ZoneController CRUD (app/Http/Controllers/Api/Delivery/ZoneController.php)
+  [x] Rutas API: GET/POST /api/v1/zones, PUT/DELETE /api/v1/zones/{zone}
+      (auth:sanctum + active + throttle:60,1)
+  [x] Aislamiento multi-tenant por OwnerScope + ruta model binding
+  [x] Tests ZoneApiTest: 11 tests verdes (36 aserciones)
 
-DECISIONES TOMADAS (2026-08-11)
-  - Plataforma: PWA web movil ahora; arquitectura API-first para que una
-    app nativa (React Native/Expo) se conecte despues sin rehacer backend.
-  - Alcance: SOLO delivery B2C (pedidos de tienda/marketplace entregados
-    al consumidor final). No incluye rutas B2B ni autoventa.
-  - Asignacion: AMBOS modos configurables por negocio:
-      pool + aceptacion (estilo Rappi) y asignacion manual por admin.
-  - Notificaciones: Web Push (VAPID, gratis) + bot de Telegram existente
-    como fallback. Sin Firebase por ahora.
+FALTA / PENDIENTE (Fase 2):
+  [x] Endpoint para asignar manualmente un pedido del pool a un repartidor o zona
+      [COMPLETADO 2026-08-15: POST /api/v1/zones/pool/{pedido}/asignar
+      (sanctum+active). Asigna a repartidor concreto o a la mejor opcion de
+      una zona (capacidad + proximidad). Valida tenant, cooldown/bloqueo,
+      repartidor ocupado, zona llena/fuera; log 'asignado_manual', broadcast
+      y notificacion al vendedor. Funciona tambien en modo 'manual'.]
+  [x] Frontend de administracion de zonas (pagina Inertia/React)
+      [COMPLETADO 2026-08-16: PASO 4 - Backend/ZonaReparto/Index.tsx]
+  [x] Edicion visual de zonas sobre mapa (drawing de circulos/poligonos)
+      [COMPLETADO 2026-08-16: PASO 4 - Google DrawingManager en el admin]
 
-================================================================================
-PARTE 2: ARQUITECTURA OBJETIVO
-================================================================================
+------------------------------------------------------------------------------
+FASE 3 - ANALITICA Y MONITOREO (COMPLETADA)
+------------------------------------------------------------------------------
+CREADO:
+  [x] Servicio ZoneAnalytics (app/Services/ZoneAnalytics.php):
+      - pedidosEnCircuito(): pedidos activos con coordenadas por tenant
+      - resumenZona(): pedidos_en_zona, pedidos_activos, uso_percent
+      - resumen(): metricas agregadas con Cache::remember (60s)
+  [x] Endpoints:
+      - GET /api/v1/zones/resumen  -> zonas + capacidad + uso + repartidores
+      - GET /api/v1/zones          -> lista con estado de uso por zona
+  [x] Invalidacion de cache al crear/actualizar/eliminar zonas
+  [x] Tests de analitica: conteo por radio, aislamiento por tenant,
+      recuento de repartidores disponibles, cache por tenant
 
-  Repartidor (PWA movil) --API sanctum--> /api/v1/delivery/* --> Laravel
-  Admin/vendedor (web React) --mapa en vivo--> Reverb canal privado
-      delivery.{owner_id}.positions y delivery.{owner_id}.orders
-  Web Push (VAPID) + Telegram bot --> notifican al repartidor
-  Google Geocoding API --> geocodifica direccion_cliente -> lat/lng
+FALTA / PENDIENTE (Fase 3):
+  [ ] Reporte semanal/historico (persistencia de metricas en tabla aparte)
+      [OPCIONAL: el rendimiento de 30 dias ya se calcula en vivo con cache 60s]
+  [x] Vista de mapa en tiempo real (Leaflet + eventos broadcast)
+      [COMPLETADO 2026-08-16: PASO 4 - Google Maps + listener Echo en admin y PWA]
+  [x] Alertas automaticas de zona llena (notification o webhook)
+      [COMPLETADO 2026-08-17: FASE 6 - DeliverySaturacionNotification con cooldown]
+  [x] Dashboard admin (pagina Inertia con graficos)
+      [COMPLETADO 2026-08-16/17: ZonaReparto/Index.tsx con KPIs + recharts]
 
-FLUJO DE REPARTO (pool)
-  checkout (lat/lng destino) -> pendiente -> confirmado -> preparando
-    -> [entra al pool] -> repartidor acepta (lockForUpdate) -> enviado
-    -> entregado / cancelado
-  El enum de pedidos NO cambia: hora_aceptado marca el punto intermedio.
+------------------------------------------------------------------------------
+FASE 4 - ASIGNACION AUTOMATICA POR ZONA (COMPLETADA)
+------------------------------------------------------------------------------
+CREADO:
+  [x] Servicio ZoneAssignment (app/Services/ZoneAssignment.php):
+      - asignacion del pool a la zona que contiene el destino (proximidad
+        al centro de la zona, radio_km de la zona)
+      - respeta capacidad_max de cada zona (solo cuentan pedidos en curso,
+        con repartidor asignado)
+      - elige el repartidor disponible mas cercano al destino y dentro de
+        su propio radio_km
+      - respeta modo 'manual' de DeliveryConfig (no asigna)
+      - aislamiento multi-tenant explicito (sin global scopes)
+      - broadcast DeliveryOrderPoolUpdated (motivo 'auto_asignado')
+      - notifica al vendedor (DeliveryPedidoAceptadoNotification)
+  [x] Comando `delivery:auto-assign` (app/Console/Commands/DeliveryAutoAssign.php)
+  [x] Scheduler cada minuto en routes/console.php (withoutOverlapping,
+      onOneServer, runInBackground)
+  [x] Tests ZoneAssignmentTest: 11 tests verdes (17 aserciones)
+  [x] Suite completa: 928 tests verdes (3064 aserciones)
 
-================================================================================
-PARTE 3: PLAN POR FASES
-================================================================================
+FALTA / PENDIENTE (Fase 4):
+  [x] Worker de timeouts del pool (aceptado sin recoger en pool_timeout_min
+      -> liberar automaticamente) [COMPLETADO: PoolTimeout + delivery:pool-timeout]
+  [x] Limite de reenvios (pool_reenvios >= N -> pedido fuera del pool)
+      [COMPLETADO 2026-08-15: pool_reenvios_max + pool_bloqueado + tests]
+  [x] Cooldown de reingreso (pool_reenvio_min antes de volver a aparecer en pool)
+      [COMPLETADO 2026-08-15: pool_visible_at = ahora + pool_reenvio_min,
+      excluido del scope hasta que pasa, guard en accept]
+  [x] GeoJSON endpoint para el mapa administrativo
+      [COMPLETADO 2026-08-15: GET /api/v1/zones/geojson -> FeatureCollection
+      RFC 7946 con zonas (Point + estadisticas de uso) y repartidores con
+      posicion en vivo y pedidos activos; aislado por tenant]
+  [x] Paneles frontend: mapa del repartidor y dashboard de zonas (React/Inertia)
+      [COMPLETADO 2026-08-16/17: PASO 4 + FASE 6]
+  [x] Pruebas de concurrencia (dos schedules simultaneos sobre el mismo pool)
+      [COMPLETADO 2026-08-17: FASE 6 - ConcurrenciaAsignacionTest]
 
-FASE 1 - Datos y modelo base
-  [CODIGO]
-  1. Migraciones nuevas:
-     - repartidores: user_id (FK users, unique), owner_id, estado
-       (disponible/ocupado/offline), lat/lng (10,7), vehiculo_id nullable,
-       radio_km (default 10), telegram_chat_id nullable, last_position_at.
-     - delivery_positions: repartidor_id, owner_id, lat, lng, created_at
-       (historico; poda a 24h en scheduler).
-     - push_subscriptions: user_id, endpoint (unique), keys_json,
-       user_agent, created_at.
-     - delivery_configs: owner_id unique, modo (pool/manual/ambos),
-       pool_timeout_min (default 10), pool_reenvio_min (default 30).
-  2. Migracion alter a pedidos: repartidor_id nullable FK,
-     destino_lat/destino_lng (10,7) nullable, distancia_km decimal(6,2),
-     hora_aceptado/hora_recogido/hora_entregado nullable,
-     pool_entrada_at nullable. Indice compuesto (owner_id, estado,
-     repartidor_id) para el pool.
-  3. Activar log de campo 'estado' en pedido_status_logs (hoy solo se
-     registra payment_status; la tabla ya tiene el campo 'field').
-  4. Seeder PermissionsSeeder: rol Repartidor (level 3) + permisos
-     delivery.repartos.viewAny / accept / pickup / deliver y
-     delivery.config.edit (solo admin).
-  5. Modelos: Repartidor, DeliveryPosition, PushSubscription,
-     DeliveryConfig; Pedido: scope disponibleEnPool() (estado preparando,
-     repartidor_id null, owner), relaciones repartidor() y activos.
-  [TEST]
-  6. Factories + tests: scope de pool, aislamiento multi-tenant,
-     cast/validaciones.
+-------------------------------------------------------------------------------
+PASO 4 - FRONTEND: ADMIN DE ZONAS + MAPA PWA DEL REPARTIDOR (COMPLETADO 2026-08-16)
+-------------------------------------------------------------------------------
+Fecha: 2026-08-16
+Contexto: se detecto trabajo parcial previo (migracion de permisos,
+controlador con bug y stub de pagina). Se corrigio y se continua.
 
-FASE 2 - API movil /api/v1/delivery/* (API-first, lista para app nativa)
-  [CODIGO]
-  1. Middleware nuevo 'delivery' (rol Repartidor + is_active) y grupo en
-     routes/api.php: prefix v1/delivery, middleware auth:sanctum + delivery
-     + throttle propio.
-  2. Endpoints:
-     - POST /location           heartbeat GPS: valida lat/lng, actualiza
-                                repartidores, inserta delivery_positions,
-                                broadcast Reverb. throttle 60/1min.
-     - GET  /me                 estado, radio, pedido activo, config pool.
-     - POST /availability       toggle disponible/ocupado (libera pedido
-                                activo si aplica).
-     - GET  /orders             pool (preparando sin repartidor, dentro del
-                                radio) + mis pedidos activos (por
-                                repartidor_id).
-     - POST /orders/{pedido}/accept   transaccion + lockForUpdate para
-                                evitar doble aceptacion; setea
-                                repartidor_id, hora_aceptado, estado no
-                                cambia (sigue preparando hasta pickup);
-                                broadcast + notifica vendedor.
-     - POST /orders/{pedido}/pickup   estado=enviado, hora_recogido,
-                                notifica comprador (estado enviado).
-     - POST /orders/{pedido}/delivered estado=entregado, fecha_entrega,
-                                hora_entregado, libera disponibilidad.
-     - POST /orders/{pedido}/reject   devuelve al pool con log y motivo.
-  3. Controlador DeliveryOrdenController + Requests de validacion.
-  [TEST]
-  4. Doble aceptacion simultanea (lock), reject al pool, pickup/delivered
-     solo del repartidor asignado, aislamiento por owner, 401/403 sin rol.
+HECHO:
+  [x] Migracion 2026_08_15_235959_add_zonas_reparto_permissions.php crea
+      permisos zonas-reparto.view / create / edit / delete (guard web)
+  [x] ZonaRepartoController (Backend) reescrito y corregido:
+      - Bug: acceso a $resumen['zonas'][$zona->id] (lista numerica) ->
+        collect(...)->firstWhere('id', $zona->id)
+      - implements HasMiddleware con permisos create/edit/delete por accion
+      - index pasa props: owner_id, zonas (con uso), repartidores (posicion
+        en vivo), resumen (estadisticas del dashboard)
+      - purga cache ZoneAnalytics (olvidarResumen) en store/update/destroy
+  [x] routes/modules/zonas-reparto.php: Route::resource('zonas-reparto')
+      ->except(show,create,edit) con permission:zonas-reparto.view en el
+      grupo y middleware('ownership:zona') (params ['zonas-reparto'=>'zona'])
+  [x] web.php: require del modulo + imports DeliveryOrdenController y
+      MapaRepartidorController
+  [x] Rutas web PWA repartidor (prefix 'repartidor', middleware
+      auth+active+delivery-CheckDelivery):
+      GET  mapa, POST ubicacion, POST disponibilidad,
+      POST pedidos/{pedido}/aceptar|recoger|entregar|rechazar
+      (reutilizan DeliveryOrdenController; CSRF via Inertia)
+  [x] MapaRepartidorController (Backend): pagina Delivery/Mapa con
+      repartidor, config, pool (radio del repartidor) y pedidos activos
+  [x] Backend/ZonaReparto/Index.tsx: stats del resumen, tabla CRUD + dialog,
+      mapa Google con circulos + DrawingManager (crear/editar dibujando),
+      marcadores de repartidores + listener Echo delivery.{owner}.positions
+  [x] Delivery/Mapa.tsx (PWA): geolocalizacion -> POST /repartidor/ubicacion
+      (throttle 10s), toggle disponible/ocupado, acciones del pool y activos
+      desde marcadores/InfoWindow, listener Echo delivery.{owner}.orders con
+      router.reload({only:[pool,activos,repartidor]})
+  [x] navigation.ts: item 'Zonas de Reparto' en grupo Logistica y Flota
+      (href /zonas-reparto, permission zonas-reparto.view)
+  [x] Verificacion: 94 tests delivery verdes, vendor/bin/pint aplicado,
+      npm run build OK, npm run types (tsc --noEmit) OK
+      (fixes TS: ReloadOptions no admite preserveScroll/preserveState en
+      Inertia v2; AppLayout solo recibe breadcrumbs, no title)
 
-FASE 3 - Geolocalizacion del destino
-  [CODIGO]
-  1. Servicio GeocodingService (Google Geocoding API): geocodifica
-     direccion_cliente al hacer checkout (PedidoController::crear) ->
-     destino_lat/lng; cache Redis 7 dias por direccion; timeout 5s y
-     fallback null (el vendedor ubica manualmente en mapa).
-  2. Nueva env: GOOGLE_GEOCODING_API_KEY (distinta de la Maps JS key;
-     requiere cuenta de Google con billing).
-  3. Modal "ubicar en mapa" para pedidos sin coordenadas (panel vendedor).
-  [TEST]
-  4. Tests con Http::fake para geocoding OK / timeout / direccion vacia.
+NOTAS:
+  - Convencion real del proyecto verificada: rutas de modulo resource con
+    permisos 'modulo.recurso.viewAny' en grupo + ownership por route binding.
+  - CheckDelivery (alias 'delivery') funciona para web: exige auth, is_active,
+    rol Repartidor y deja $request->attributes->get('delivery.repartidor').
+  - El admin de zonas se sirve con Inertia en /zonas-reparto (sin prefijo).
 
-FASE 4 - Zona admin (web React, mapa en vivo)
-  [CODIGO]
-  1. routes/modules/delivery.php (permitir en routes/web.php y sidebar):
-     - index (mapa en vivo + cola de asignacion) - delivery.config.edit
-     - repartidores CRUD (vincular User -> Repartidor, activar/desactivar,
-       radio) - delivery.repartidores.viewAny/edit
-     - pedidos del pool + asignacion manual (click repartidor cercano) o
-       publicar en pool.
-  2. Paginas:
-     - Backend/Repartidores/Index.tsx: mapa en vivo reutilizando el patron
-       de MapaVehiculos (@react-google-maps/api), markers de repartidores
-       (Reverb delivery.{owner}.positions) + pedidos del pool con destino.
-     - Backend/Repartidores/Asignacion.tsx: cola de pedidos preparando ->
-       asignar (manual) / publicar en pool.
-     - Backend/Repartidores/Config.tsx: modo de asignacion y timeouts.
-  3. Broadcast: subscription a canales privados delivery.{owner_id}.* en
-     resources/js/echo.ts.
-  [TEST]
-  4. Tests de rutas/permisos y de la asignacion manual.
+-------------------------------------------------------------------------------
+FASE 5 - CAPACIDAD POR REPARTIDOR + COLA DE ASIGNACION + HISTORICO
+        (COMPLETADO 2026-08-16)
+-------------------------------------------------------------------------------
+  [x] Worker de timeouts del pool con scheduler: ya existia via
+      delivery:pool-timeout (PoolTimeout) cada minuto (routes/console.php)
+  [x] Regla de capacidad por repartidor:
+      - Migracion add_capacidad_max_to_repartidores (unsignedInteger default 1)
+      - Repartidor: fillable/cast capacidad_max + pedidosActivos()/tieneCapacidad()
+      - ZoneAssignment::assignPending: capacidadRestantePorRepartidor() (pedidos
+        en curso + asignados en el mismo run) -> no sobre-asigna al conductor
+      - asignarUnPedido(): count de activos < capacidad_max (antes: exists)
+      - DeliveryOrdenController::accept: rechaza con 409 'capacidad_maxima' si
+        el repartidor ya llego a su cupo (repartidorCapacidadLlena)
+      - API /me expone capacidad_max del repartidor
+  [x] Cola (queue) para la asignacion:
+      - AsignacionAutomaticaJob (ShouldQueue + ShouldBeUniqueUntilProcessing,
+        uniqueId 'asignacion:{pedido}', tries 3, backoff [10,60], failed() con
+        Log::error)
+      - ZoneAssignment::asignarSiPosible(Pedido): asigna un pedido concreto si
+        hay zona con cupo + repartidor con capacidad dentro del radio; respeta
+        modo manual, cooldown (pool_visible_at) y bloqueos
+      - PedidoRecibidoController::actualizarEstado: al pasar a 'preparando',
+        tras ingresarAlPool(), dispatch(AsignacionAutomaticaJob)
+      - El tick delivery:auto-assign queda como respaldo (reintentos)
+  [x] Historico de asignaciones:
+      - Migracion create_delivery_asignaciones (owner_id, pedido_id,
+        repartidor_id=user, zona_id nullable, asignador_id nullable, motivo)
+      - DeliveryAsignacion + factory (tabla explicita delivery_asignaciones,
+        Laravel no pluraliza 'asignacion' => 'asignaciones' por si solo)
+      - Se registra en: asignacion automatica (assignPending/asignarSiPosible),
+        asignacion manual (asignador_id + zona) y aceptacion del pool
+        (motivo 'aceptado_pool' + zona detectada por destino)
+      - ZonaRepartoController::index: prop 'historial' (ultimas 50 con
+        pedido/repartidor/zona/asignador/motivo/fecha)
+      - Index.tsx: Card 'Historial de asignaciones' (tabla con badges de motivo)
+[x] Verificacion: 114 tests Delivery verdes (20 nuevos en
+       AsignacionColaTest, CapacidadRepartidorTest, DeliveryAsignacionHistorialTest;
+       2 tests de zona actualizados con capacidad_max del repartidor),
+       vendor/bin/pint, migrate local OK, npm run types OK, npm run build OK
 
-FASE 5 - PWA del repartidor
-  [CODIGO]
-  1. Grupo de rutas /repartidor/* (role:Repartidor, layout mobile-first).
-  2. Paginas resources/js/pages/Delivery/:
-     - Home: toggle disponible/ocupado + pedido activo con estado.
-     - Cola: pool de pedidos (tarjetas estilo Rappi: distancia, direccion,
-       total, metodo pago).
-     - Detalle: mapa destino + "abrir en Google Maps" (enlace externo) +
-       botones Aceptar / Recolgi / Entregado.
-     - Historial: pedidos entregados del dia (resumen de repartos).
-  3. Service worker + manifest.json (public/) + registro de Web Push:
-     - Paquete composer: minishlink/web-push.
-     - VAPID keys en .env (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY,
-       VAPID_SUBJECT).
-     - Endpoint de suscripcion (guardar en push_subscriptions) y de
-       envio/borrado de suscripciones.
-  4. Echo/Reverb: aviso en vivo cuando llega un pedido al pool mientras la
-     app esta abierta.
-  [TEST]
-  5. Tests de registro y envio de push (fake), validacion de endpoint.
+-------------------------------------------------------------------------------
+FASE 6 - BLINDAJE DE CONCURRENCIA + ADMIN DE REPARTIDORES + ACCESO DEL
+         REPARTIDOR AL MAPA + METRICAS DEL HISTORICO + ALERTAS DE SATURACION
+         (COMPLETADO 2026-08-17)
+-------------------------------------------------------------------------------
+Alcance acordado con el usuario: A + B + C, luego item 2 (metricas del
+historico) y despues alertas de saturacion. Suite completa: 1005 tests verdes
+(3366 aserciones).
 
-FASE 6 - Timeout y re-asignacion (scheduler)
-  [CODIGO]
-  1. Comando delivery:check-timeouts (agregar a routes/console.php cada
-     2-3 minutos):
-     - Pedido aceptado sin pickup despues de X min -> re-pool + notifica.
-     - Pedido en pool sin aceptar despues de Y min -> re-publica con
-       prioridad (campo pool_reenvios o similar) + push a repartidores
-       cercanos.
-     - Poda de delivery_positions mayores a 24h.
-  [TEST]
-  2. Tests con Carbon::setTestNow para cada regla de timeout.
+BLOQUE A - CONCURRENCIA (blinde de la asignacion):
+  [x] ZoneAssignment::asignarPedido (app/Services/ZoneAssignment.php):
+      DB::transaction + lockForUpdate en zonas/repartidores + revalidacion
+      (repartidor_id === null && hora_aceptado === null) antes de asignar;
+      devuelve bool y refresca $pedido tras la asignacion (mantiene el JSON
+      de la API correcto). AssignPending/asignarUnPedido/asignarSiPosible
+      adaptados al nuevo contrato.
+  [x] Tests ConcurrenciaAsignacionTest (3): job + tick no duplican, la
+      revalidacion rechaza instancias obsoletas, doble corrida -> 1 sola
+      asignacion/evento/log. (lockForUpdate es no-op en SQLite: la carrera se
+      prueba con revalidacion.)
+  [x] Scheduler ya blindado de antes: delivery:auto-assign y
+      delivery:pool-timeout con withoutOverlapping + onOneServer +
+      runInBackground (routes/console.php).
 
-FASE 7 - Notificaciones (Web Push + Telegram fallback)
-  [CODIGO]
-  1. Servicio PushService (VAPID): enviar a push_subscriptions del
-     repartidor; manejar endpoints 410 (eliminar suscripcion).
-  2. Eventos que notifican al repartidor:
-     - Nueva orden en pool (a repartidores disponibles dentro del radio).
-     - Asignacion manual (a ese repartidor).
-     - Timeout de recogida (recordatorio).
-  3. Telegram fallback: extender vinculacion para asociar
-     telegram_chat_id al Repartidor (no al owner) -> mensajes del bot
-     global "tienes un pedido en el pool" si el repartidor no tiene
-     suscripcion Web Push.
-  4. Comprador: al aceptar (enviado) y al entregar, reutilizar
-     ActualizacionEstadoPedidoNotification.
-  [TEST]
-  5. Tests: push con suscripcion invalida (410), selector de repartidores
-     en radio, prioridad de canal (push > telegram).
+BLOQUE B - ADMIN DE REPARTIDORES (backend + UI):
+  [x] RepartidorController (Backend): Index con pedidos_activos en vivo,
+      Store/Update con middleware delivery.repartidores.create/edit;
+      valida que el usuario vinculado pertenezca al tenant (getOwnerId) y
+      asigna el rol Repartidor via syncRoles.
+  [x] routes/modules/repartidores.php: Route::resource('repartidores')
+      ->except(destroy) con permission:delivery.repartidores.viewAny + 
+      middleware('ownership:repartidor'); require en routes/web.php.
+  [x] Backend/Repartidores/Index.tsx: tabla + dialog de alta/edicion
+      (nombre, telefono, usuario vinculado, radio_km, capacidad_max).
+  [x] Tests RepartidorAdminTest (6): forbiden sin permiso, store crea + rol,
+      usuario repetido 422, usuario de otro tenant 403, update, pedidos_activos.
 
-FASE 8 - Verificacion final y despliegue
-  1. vendor/bin/pint --dirty
-  2. Suite completa: php artisan test --compact (todas las fases + suite
-     existente 870+ tests).
-  3. .env.production: GOOGLE_GEOCODING_API_KEY, VAPID_* y REVERB_* (REVERB
-     hoy vacio = bloqueador de broadcast en produccion).
-  4. Recordatorio: deploy.sh DEBE instalar crontab (php artisan
-     schedule:run cada minuto) y ejecutar queue:restart tras cada deploy;
-     de lo contrario los timeouts, backups y jobs del delivery no corren.
+BLOQUE C - ACCESO DEL REPARTIDOR AL MAPA:
+  [x] Permiso delivery.repartidor.mapa en PermissionsSeeder (special +
+      repartidor + excluido de Administrador via $adminExcluded).
+      NOTA DESPLIEGUE: re-ejecutar php artisan db:seed --class=PermissionsSeeder.
+  [x] navigation.ts: grupo 'Reparto -> Mapa de Reparto' (icono Truck,
+      href /repartidor/mapa, permiso delivery.repartidor.mapa).
 
-================================================================================
-PARTE 4: BLOQUEADORES DE PRODUCCION HEREDADOS (auditoria 2026-08-11)
-================================================================================
-El delivery depende de infraestructura que hoy NO esta operativa en
-produccion. Antes o durante la Fase 8 hay que resolver:
+ITEM 2 - METRICAS DEL HISTORICO:
+  [x] ZoneAnalytics::rendimiento(int $ownerId, int $dias = 30) con cache 60s
+      (zones.rendimiento.{owner}): asignaciones, por_motivo, entregadas,
+      en_curso, tiempo_medio_pool_min (pool_entrada_at -> hora_aceptado),
+      en_pool_sin_repartidor, por_dia (14 dias) y por_repartidor (nombres
+      en vivo via User).
+  [x] ZonaRepartoController@index expone la prop 'rendimiento'.
+  [x] ZonaReparto/Index.tsx: seccion 'Rendimiento del reparto (30 dias)':
+      5 KPIs + grafico de barras recharts por dia + tabla por repartidor.
+  [x] Tests DeliveryAnalyticsTest (6): agregaciones por motivo/repartidor,
+      tiempo medio, pool sin repartidor, por dia, entregadas y prop en index.
 
-  🔴 Scheduler no instalado en produccion (deploy/deploy.sh no crea
-     crontab; production-check.sh solo warn). Sin esto: sin timeouts,
-     sin backups (backup:database), sin automatizaciones.
-  🔴 .env.production es plantilla: APP_KEY vacio, N8N_API_TOKEN vacio,
-     REVERB_* vacios, DB/REDIS_PASSWORD=CHANGE_ME, TELEGRAM_LOGIN_BOT_TOKEN
-     vacio.
-  🔴 Webhook Telegram publico sin throttle ni secret_token (spam del bot,
-     forja de payloads planos n8n).
-  🔴 Deploy sin queue:restart y workers de cola inconsistentes
-     (queue-worker.conf legacy no se instala).
-  🟠 Fuga de tokens de vinculacion en logs; telegram_chat_id sin indice;
-     telegram_conversations sin poda; openapi publico; generate-link sin
-     throttle.
+ALERTAS DE SATURACION (zona llena / sin repartidor):
+  [x] DeliverySaturacionNotification (App\Notifications): via database, tipo
+      'delivery_saturacion', payload titulo/message/pendientes/link a
+      /zonas-reparto; ShouldQueue con tries 5 + backoff 120.
+  [x] DeliveryAutoAssign: tras assignPending(), agrupa por tenant los pedidos
+      que siguen en el pool (disponibleEnPool + coords) y notifica al User
+      dueno del tenant con cooldown de 30 min via Cache::add por owner
+      (zones.saturacion.alerta.{ownerId}) -> una sola alerta por ventana.
+  [x] Tests DeliverySaturacionAlertTest (6): alerta al tenant correcto,
+      cooldown entre corridas, re-disparo al expirar, silencio si todo se
+      asigna, silencio sin pool, aislamiento entre tenants.
 
-================================================================================
-PARTE 5: RIESGOS Y MITIGACIONES
-================================================================================
-  1. Google Geocoding requiere billing -> fallback manual en mapa y cache;
-     si falla la geocodificacion el pedido entra al pool solo si el
-     vendedor ubica el destino (o con coords null y distancia calculada
-     por el repartidor en aceptacion).
-  2. Doble aceptacion del mismo pedido -> lockForUpdate + transaccion +
-     verificacion de repartidor_id null dentro de la transaccion.
-  3. Repartidor offline con pedido aceptado -> timeout de recogida
-     (Fase 6) re-publique y bloquee aceptacion si last_position_at > 10min.
-  4. Web Push exige HTTPS -> ok (aldiaproyect.com cumple).
-  5. Reverb caido -> GPS y pool siguen funcionando por polling; solo se
-     pierde la vista en vivo (UI degrada a refresh manual).
+VERIFICACION FINAL (2026-08-17):
+  [x] php artisan test --compact -> 1005 passed (3366 assertions)
+  [x] vendor/bin/pint aplicado; npm run build OK (los avisos de eslint en
+      ZonaReparto/Index.tsx son pre-existentes: orden de imports y un
+      setState en effect del codigo original de 2026-08-16)
 
-================================================================================
-PARTE 6: RESUMEN DE IMPACTO ESPERADO
-================================================================================
-  Antes:  no existe zona de repartidores; entregas solo back-office por
-          IMEI; pedidos sin geolocalizacion.
-  Despues: pool de repartos B2C con aceptacion, asignacion manual,
-          geolocalizacion, posiciones en vivo en mapa admin, PWA del
-          repartidor, Web Push + Telegram, timeouts automaticos.
-  Pendiente futuro: app nativa (React Native/Expo) reutilizando
-          /api/v1/delivery/*; rutas B2B multi-parada; pagos/ganancias del
-          repartidor.
+-------------------------------------------------------------------------------
+ANEXO - RUTAS DISPONIBLES DEL CIRCUITO DE REPARTO (2026-08-18)
+-------------------------------------------------------------------------------
+Verificadas con `php artisan route:list`. Suite al dia: 1005 tests verdes
+(3366 aserciones).
 
-================================================================================
-FIN DEL DOCUMENTO
-================================================================================
+API v1 - DELIVERY (prefix /api/v1/delivery, middleware
+auth:sanctum + delivery + throttle:delivery):
+  [x] POST /api/v1/delivery/location                (heartbeat GPS + historico + broadcast)
+  [x] GET  /api/v1/delivery/me                       (perfil + config pool + pedido activo)
+  [x] POST /api/v1/delivery/availability             (toggle estado, libera pedido si aplica)
+  [x] GET  /api/v1/delivery/orders                   (pool dentro del radio + activos)
+  [x] POST /api/v1/delivery/orders/{pedido}/accept   (con lockForUpdate)
+  [x] POST /api/v1/delivery/orders/{pedido}/pickup   (estado enviado)
+  [x] POST /api/v1/delivery/orders/{pedido}/delivered(estado entregado)
+  [x] POST /api/v1/delivery/orders/{pedido}/reject   (pool + log con motivo)
+
+API v1 - ZONAS (prefix /api/v1/zones, middleware
+auth:sanctum + active + throttle:60,1):
+  [x] GET    /api/v1/zones                  (lista con estado de uso por zona)
+  [x] POST   /api/v1/zones                  (crear zona)
+  [x] PUT    /api/v1/zones/{zone}           (actualizar zona)
+  [x] DELETE /api/v1/zones/{zone}           (eliminar zona)
+  [x] GET    /api/v1/zones/resumen          (zonas + capacidad + uso + repartidores)
+  [x] GET    /api/v1/zones/geojson          (FeatureCollection RFC 7946 para el mapa)
+  [x] POST   /api/v1/zones/pool/{pedido}/asignar (asignacion manual del pool)
+
+WEB - PWA REPARTIDOR (prefix /repartidor, middleware auth + active + delivery,
+CSRF via Inertia, reutilizan DeliveryOrdenController):
+  [x] GET  /repartidor/mapa                         repartidor.mapa
+  [x] POST /repartidor/ubicacion                    repartidor.ubicacion (throttle 10s)
+  [x] POST /repartidor/disponibilidad               repartidor.disponibilidad
+  [x] POST /repartidor/pedidos/{pedido}/aceptar     repartidor.pedidos.aceptar
+  [x] POST /repartidor/pedidos/{pedido}/recoger     repartidor.pedidos.recoger
+  [x] POST /repartidor/pedidos/{pedido}/entregar    repartidor.pedidos.entregar
+  [x] POST /repartidor/pedidos/{pedido}/rechazar    repartidor.pedidos.rechazar
+
+WEB - ADMIN DE ZONAS (permiso zonas-reparto.view + ownership:zona):
+  [x] GET    /zonas-reparto                 zonas-reparto.index (KPIs + rendimiento + historial)
+  [x] POST   /zonas-reparto                 zonas-reparto.store
+  [x] PUT    /zonas-reparto/{zona}          zonas-reparto.update
+  [x] DELETE /zonas-reparto/{zona}          zonas-reparto.destroy
+
+WEB - ADMIN DE REPARTIDORES (permiso delivery.repartidores.viewAny +
+ownership:repartidor, sin destroy):
+  [x] GET  /repartidores                    repartidores.index (pedidos_activos en vivo)
+  [x] POST /repartidores                    repartidores.store
+  [x] PUT  /repartidores/{repartidor}       repartidores.update
+
+BROADCAST CHANNELS (routes/channels.php):
+  [x] delivery.{ownerId}.positions   (posicion en vivo de repartidores)
+  [x] delivery.{ownerId}.orders      (pool/estado de pedidos)
+
+COMANDOS + SCHEDULER (routes/console.php, cada minuto con
+withoutOverlapping + onOneServer + runInBackground):
+  [x] delivery:auto-assign   (asigna el pool a la mejor zona y repartidor)
+  [x] delivery:pool-timeout  (libera aceptados sin recoger en pool_timeout_min)
+
+OTRAS RUTAS RELACIONADAS:
+  [x] GET /notifications (web) + POST /notifications/mark-as-read +
+      DELETE /notifications/{id} (notificaciones database de delivery:
+      aceptado, saturacion, etc.)
+
+-------------------------------------------------------------------------------
+PROXIMO (despliegue y opcionales)
+----------------------------------------------------------------------------
+  [ ] DESPLIEGUE: re-ejecutar PermissionsSeeder (permiso delivery.repartidor.mapa),
+      worker de cola (Horizon) en produccion, Redis para cache (cooldown de
+      alertas y metricas) y broadcast real (Reverb/Pusher) para el mapa en vivo
+  [ ] Reporte semanal/historico persistente (tabla de metricas) - opcional, el
+      rendimiento en vivo ya cubre 30 dias
+  [ ] Webhook de saturacion (en vez de/con la notificacion database)

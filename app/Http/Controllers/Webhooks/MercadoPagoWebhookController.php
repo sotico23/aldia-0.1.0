@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Webhooks;
 
 use App\Enums\Currency;
 use App\Events\PaymentSuccessful;
+use App\Events\WebhookReceived;
 use App\Http\Controllers\Controller;
 use App\Models\PaymentConfig;
 use App\Models\Pedido;
@@ -39,6 +40,10 @@ class MercadoPagoWebhookController extends Controller
 
             return response()->json(['status' => 'duplicate_ignored']);
         }
+
+        // Dispatch webhook received event for logging/auditing
+        $businessId = $this->extractBusinessIdFromPayload($payload);
+        event(new WebhookReceived('mercadopago', $type, $payload, $businessId));
 
         if (! $this->verifyOrigin($request)) {
             Log::warning('MercadoPago webhook: origin verification failed');
@@ -77,7 +82,8 @@ class MercadoPagoWebhookController extends Controller
         }
 
         // Fetch payment details to get external_reference (tenant identifier)
-        $payment = $this->fetchPaymentDetails($dataId);
+        // Use fallback config for initial fetch since we don't know the tenant yet
+        $payment = $this->fetchPaymentDetails($dataId, null, true);
         if (! $payment) {
             Log::warning('MercadoPago webhook: could not fetch payment details for verification', [
                 'data_id' => $dataId,
@@ -184,11 +190,28 @@ class MercadoPagoWebhookController extends Controller
         ]);
     }
 
-    protected function fetchPaymentDetails(string $paymentId): ?array
+    protected function fetchPaymentDetails(string $paymentId, ?int $ownerId = null, bool $allowFallback = false): ?array
     {
-        $config = PaymentConfig::withoutGlobalScope(OwnerScope::class)
-            ->whereNotNull('mercadopago_access_token')->first();
-        if (! $config) {
+        $config = null;
+
+        if ($ownerId) {
+            $config = PaymentConfig::resolveForOwner($ownerId);
+        }
+
+        // Allow fallback to first available config ONLY for initial fetch to get external_reference
+        if (! $config && $allowFallback) {
+            $config = PaymentConfig::withoutGlobalScope(OwnerScope::class)
+                ->whereNotNull('mercadopago_access_token')
+                ->where('mercadopago_active', true)
+                ->first();
+        }
+
+        if (! $config || ! $config->mercadopago_access_token) {
+            Log::warning('MercadoPago: no payment config found for owner', [
+                'owner_id' => $ownerId,
+                'allow_fallback' => $allowFallback,
+            ]);
+
             return null;
         }
 
@@ -224,9 +247,30 @@ class MercadoPagoWebhookController extends Controller
             return response()->json(['error' => 'No data ID'], 400);
         }
 
-        $payment = $this->fetchPaymentDetails($dataId);
+        // Fetch payment first to get external_reference and determine tenant
+        // Use fallback for initial fetch since we don't know tenant yet
+        $payment = $this->fetchPaymentDetails($dataId, null, true);
         if (! $payment) {
             return response()->json(['error' => 'Could not fetch payment'], 502);
+        }
+
+        $externalRef = $payment['external_reference'] ?? null;
+        $ownerId = null;
+
+        if ($externalRef) {
+            $pedido = Pedido::withoutGlobalScope(OwnerScope::class)
+                ->where('numero_pedido', $externalRef)
+                ->orWhere('id', $externalRef)
+                ->first();
+            if ($pedido) {
+                $ownerId = $pedido->owner_id;
+            }
+        }
+
+        // Re-fetch with tenant-specific config for accurate payment details
+        $payment = $this->fetchPaymentDetails($dataId, $ownerId);
+        if (! $payment) {
+            return response()->json(['error' => 'Could not fetch payment with tenant config'], 502);
         }
 
         $status = $payment['status'] ?? 'unknown';
@@ -370,5 +414,30 @@ class MercadoPagoWebhookController extends Controller
         }
 
         return Currency::default();
+    }
+
+    protected function extractBusinessIdFromPayload(array $payload): ?int
+    {
+        $dataId = $payload['data']['id'] ?? null;
+        if (! $dataId) {
+            return null;
+        }
+
+        $payment = $this->fetchPaymentDetails($dataId, null, true);
+        if (! $payment) {
+            return null;
+        }
+
+        $externalRef = $payment['external_reference'] ?? null;
+        if (! $externalRef) {
+            return null;
+        }
+
+        $pedido = Pedido::withoutGlobalScope(OwnerScope::class)
+            ->where('numero_pedido', $externalRef)
+            ->orWhere('id', $externalRef)
+            ->first();
+
+        return $pedido?->owner_id;
     }
 }

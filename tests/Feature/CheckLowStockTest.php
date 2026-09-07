@@ -1,20 +1,22 @@
 <?php
 
+use App\Events\LowStock;
 use App\Models\Almacen;
 use App\Models\Inventario;
 use App\Models\Producto;
 use App\Models\User;
-use App\Notifications\StockLowNotification;
+use App\Notifications\LowStockNotification;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
     Notification::fake();
+    Event::fake();
 });
 
-test('stock:check-low sends notification when products are below minimum', function () {
+test('stock:check-low dispatches LowStock event for products below minimum', function () {
     $user = User::factory()->create();
-    $user->givePermissionTo(Permission::firstOrCreate(['name' => 'inventario.inventarios.viewAny']));
 
     $almacen = Almacen::factory()->create(['owner_id' => $user->id]);
 
@@ -33,19 +35,15 @@ test('stock:check-low sends notification when products are below minimum', funct
 
     Artisan::call('stock:check-low');
 
-    Notification::assertSentTo(
-        $user,
-        StockLowNotification::class,
-        function (StockLowNotification $notification) use ($producto) {
-            return count($notification->productos) === 1
-                && $notification->productos[0]['producto_id'] === $producto->id;
-        }
-    );
+    Event::assertDispatched(LowStock::class, function ($event) use ($producto, $user) {
+        return $event->producto->id === $producto->id
+            && $event->stockActual < $event->stockMinimo
+            && $event->producto->owner_id === $user->id;
+    });
 });
 
-test('stock:check-low does not notify when stock is above minimum', function () {
+test('stock:check-low does not dispatch event when stock is above minimum', function () {
     $user = User::factory()->create();
-    $user->givePermissionTo(Permission::firstOrCreate(['name' => 'inventario.inventarios.viewAny']));
 
     $almacen = Almacen::factory()->create(['owner_id' => $user->id]);
 
@@ -64,32 +62,46 @@ test('stock:check-low does not notify when stock is above minimum', function () 
 
     Artisan::call('stock:check-low');
 
-    Notification::assertNothingSent();
+    Event::assertNotDispatched(LowStock::class);
 });
 
-test('stock:check-low only notifies users with inventory permission', function () {
-    $userWithPerm = User::factory()->create();
-    $userWithPerm->givePermissionTo(Permission::firstOrCreate(['name' => 'inventario.inventarios.viewAny']));
+test('stock:check-low dispatches event for each low stock product', function () {
+    $user = User::factory()->create();
 
-    $userWithoutPerm = User::factory()->create();
+    $almacen = Almacen::factory()->create(['owner_id' => $user->id]);
 
-    $almacen = Almacen::factory()->create(['owner_id' => $userWithPerm->id]);
+    // Product with low stock
+    $productoLow = Producto::factory()->create([
+        'owner_id' => $user->id,
+        'stock_minimo' => 10,
+        'categoria_id' => null,
+    ]);
+    Inventario::factory()->create([
+        'producto_id' => $productoLow->id,
+        'almacen_id' => $almacen->id,
+        'cantidad' => 3,
+        'cantidad_minima' => 10,
+        'owner_id' => $user->id,
+    ]);
 
-    $producto = Producto::factory()->create([
-        'owner_id' => $userWithPerm->id,
+    // Product with normal stock
+    $productoNormal = Producto::factory()->create([
+        'owner_id' => $user->id,
         'stock_minimo' => 5,
         'categoria_id' => null,
     ]);
     Inventario::factory()->create([
-        'producto_id' => $producto->id,
+        'producto_id' => $productoNormal->id,
         'almacen_id' => $almacen->id,
-        'cantidad' => 1,
+        'cantidad' => 20,
         'cantidad_minima' => 5,
-        'owner_id' => $userWithPerm->id,
+        'owner_id' => $user->id,
     ]);
 
     Artisan::call('stock:check-low');
 
-    Notification::assertSentTo($userWithPerm, StockLowNotification::class);
-    Notification::assertNotSentTo($userWithoutPerm, StockLowNotification::class);
+    Event::assertDispatchedTimes(LowStock::class, 1);
+    Event::assertDispatched(LowStock::class, function ($event) use ($productoLow) {
+        return $event->producto->id === $productoLow->id;
+    });
 });

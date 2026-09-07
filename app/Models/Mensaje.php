@@ -1,38 +1,79 @@
 <?php
+/**
+ * Message Model
+ */
 
 namespace App\Models;
 
-use App\Traits\BelongsToOwner;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Migrations\Migration;
 
-class Mensaje extends Model
+class Mensaje
 {
-    use BelongsToOwner, HasFactory;
+    /**
+     * The message text
+     */
+    protected ?string $texto = null;
 
-    protected $fillable = [
-        'conversacion_id',
-        'user_id',
-        'owner_id',
-        'contenido',
-        'leido',
-    ];
+    /**
+     * Type of message
+     */
+    protected ?string $tipo_mensaje = null;
 
-    protected function casts(): array
+    /**
+     * Related conversation
+     */
+    protected ?int $conversacion_id = null;
+
+    /**
+     * Author of the message
+     */
+    protected ?string $autor = null;
+
+    /**
+     * Read status
+     */
+    protected ?bool $leido = null;
+
+    /**
+     * Casts method for Eloquent
+     */
+    public function casts(): array
     {
         return [
-            'leido' => 'boolean',
+            'tipo_mensaje' => 'tipo_mensaje',
+            'leido' => 'leido',
         ];
     }
 
-    public function conversacion(): BelongsTo
+    /**
+     * Fill from DB
+     */
+    public function fillFromDb(): void
     {
-        return $this->belongsTo(Conversacion::class);
+        $this->texto = $this->attributes->get('texto');
+        $this->tipo_mensaje = $this->attributes->get('tipo_mensaje');
+        $this->conversacion_id = $this->attributes->get('conversacion_id');
+        $this->autor = $this->attributes->get('autor');
+        $this->leido = $this->attributes->get('leido');
     }
 
-    public function user(): BelongsTo
+    /**
+     * Get common fields for nested relations
+     */
+    public function getCommonFields(): array
     {
-        return $this->belongsTo(User::class);
+        return [
+            'id' => $this->id,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            'data' => [
+                'id' => $this->id,
+                'conversacion_id' => $this->conversacion_id,
+                'autor' => $this->autor,
+                'texto' => $this->texto,
+                'tipo_mensaje' => $this->tipo_mensaje,
+                'leido' => $this->leido,
+            ],
+        ];
     }
 }

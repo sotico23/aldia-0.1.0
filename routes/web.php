@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\SystemHealthController;
 use App\Http\Controllers\AffiliateController;
+use App\Http\Controllers\Api\Delivery\DeliveryOrdenController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\Auth\TelegramAuthController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Backend\CotizacionController;
 use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\FollowerController;
 use App\Http\Controllers\Backend\GlobalSearchController;
+use App\Http\Controllers\Backend\MapaRepartidorController;
 use App\Http\Controllers\Backend\MensajeController;
 use App\Http\Controllers\Backend\MercadoPagoConfigController;
 use App\Http\Controllers\Backend\OnboardingController;
@@ -201,6 +203,8 @@ Route::middleware(['auth'])->group(function () {
     require __DIR__.'/modules/proyectos.php';
     require __DIR__.'/modules/uptime.php';
     require __DIR__.'/modules/flota.php';
+    require __DIR__.'/modules/zonas-reparto.php';
+    require __DIR__.'/modules/repartidores.php';
     // Admin system health
     Route::middleware(['permission:admin.web-settings.edit'])->group(function () {
         Route::get('/admin/system/health', [SystemHealthController::class, 'dashboard'])
@@ -392,7 +396,7 @@ Route::get('/booking/{slug}/webpay/{pedido}', [BookingController::class, 'webpay
 require __DIR__.'/settings.php';
 
 // Webhooks (sin autenticación — verificados por firma)
-Route::prefix('webhooks')->name('webhooks.')->group(function () {
+Route::prefix('webhooks')->name('webhooks.')->middleware('throttle:60,1')->group(function () {
     Route::post('paypal', [PaypalWebhookController::class, 'handle'])->name('paypal');
     Route::post('mercadopago', [MercadoPagoWebhookController::class, 'handle'])->name('mercadopago');
     Route::post('whatsapp', [WhatsAppWebhookController::class, 'handle'])->name('whatsapp');
@@ -401,9 +405,21 @@ Route::prefix('webhooks')->name('webhooks.')->group(function () {
 
 // Alias del webhook de Telegram sin prefijo /api (compatibilidad con flujos n8n existentes)
 Route::post('canales/telegram/webhook', [TelegramWebhookController::class, 'handle'])
+    ->middleware('throttle:60,1')
     ->name('canales.telegram.webhook');
 
 // Página web del enlace de vinculación: nunca deja una pestaña en blanco.
 // El token es la credencial, por lo que la ruta es pública y solo redirige con flash.
 Route::get('canales/telegram/vincular/{token}', [TelegramLinkingController::class, 'confirmLink'])
     ->name('telegram.vincular');
+
+// Zona de repartidores: PWA web del repartidor (vista + acciones, comparte la logica con la API)
+Route::middleware(['auth', 'active', 'delivery'])->prefix('repartidor')->name('repartidor.')->group(function () {
+    Route::get('mapa', [MapaRepartidorController::class, 'show'])->name('mapa');
+    Route::post('ubicacion', [DeliveryOrdenController::class, 'location'])->name('ubicacion');
+    Route::post('disponibilidad', [DeliveryOrdenController::class, 'availability'])->name('disponibilidad');
+    Route::post('pedidos/{pedido}/aceptar', [DeliveryOrdenController::class, 'accept'])->name('pedidos.aceptar');
+    Route::post('pedidos/{pedido}/recoger', [DeliveryOrdenController::class, 'pickup'])->name('pedidos.recoger');
+    Route::post('pedidos/{pedido}/entregar', [DeliveryOrdenController::class, 'delivered'])->name('pedidos.entregar');
+    Route::post('pedidos/{pedido}/rechazar', [DeliveryOrdenController::class, 'reject'])->name('pedidos.rechazar');
+});

@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\SystemHealthController;
 use App\Http\Controllers\Api\Bot\ClienteBotController;
 use App\Http\Controllers\Api\Bot\OpenApiController;
 use App\Http\Controllers\Api\Bot\VentaBotController;
+use App\Http\Controllers\Api\Delivery\DeliveryOrdenController;
+use App\Http\Controllers\Api\Delivery\ZoneController;
 use App\Http\Controllers\Api\InternalAutomationController;
 use App\Http\Controllers\Api\InternalAutomationSendController;
 use App\Http\Controllers\Api\TenantDataController;
@@ -89,11 +91,41 @@ Route::prefix('internal')->middleware(['verify-n8n-token', 'throttle:60,1'])->gr
     Route::get('business/{business}/executions', [N8nController::class, 'executions']);
 });
 
+// Zona de repartidores — API movil (PWA) / api-first
+Route::prefix('v1/delivery')
+    ->middleware(['auth:sanctum', 'delivery', 'throttle:delivery'])
+    ->group(function () {
+        Route::post('location', [DeliveryOrdenController::class, 'location'])
+            ->middleware('throttle:60,1');
+
+        Route::get('me', [DeliveryOrdenController::class, 'me']);
+        Route::post('availability', [DeliveryOrdenController::class, 'availability']);
+        Route::get('orders', [DeliveryOrdenController::class, 'orders']);
+
+        Route::post('orders/{pedido}/accept', [DeliveryOrdenController::class, 'accept']);
+        Route::post('orders/{pedido}/pickup', [DeliveryOrdenController::class, 'pickup']);
+        Route::post('orders/{pedido}/delivered', [DeliveryOrdenController::class, 'delivered']);
+        Route::post('orders/{pedido}/reject', [DeliveryOrdenController::class, 'reject']);
+    });
+
+// Zonas de reparto — administración y analítica por tenant
+Route::prefix('v1/zones')
+    ->middleware(['auth:sanctum', 'active', 'throttle:60,1'])
+    ->group(function () {
+        Route::get('/', [ZoneController::class, 'index']);
+        Route::post('/', [ZoneController::class, 'store']);
+        Route::get('resumen', [ZoneController::class, 'resumen']);
+        Route::get('geojson', [ZoneController::class, 'geojson']);
+        Route::post('pool/{pedido}/asignar', [ZoneController::class, 'asignarPool']);
+        Route::put('{zone}', [ZoneController::class, 'update']);
+        Route::delete('{zone}', [ZoneController::class, 'destroy']);
+    });
+
 Route::post('canales/telegram/webhook', [TelegramWebhookController::class, 'handle'])
     ->name('api.canales.telegram.webhook');
 Route::post('telegram/webhook', [TelegramWebhookController::class, 'handle'])
     ->name('telegram.webhook');
-Route::prefix('tenant')->middleware(['verify-tenant-token', 'active'])->group(function () {
+Route::prefix('tenant')->middleware(['verify-tenant-token', 'active', 'throttle:60,1'])->group(function () {
     Route::get('resumen-completo', [TenantDataController::class, 'resumenCompleto'])
         ->name('api.tenant.resumen-completo');
 });

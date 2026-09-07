@@ -39,6 +39,8 @@ class Pedido extends Model
         'distancia_km',
         'pool_reenvios',
         'pool_entrada_at',
+        'pool_bloqueado',
+        'pool_visible_at',
         'hora_aceptado',
         'hora_recogido',
         'hora_entregado',
@@ -70,6 +72,8 @@ class Pedido extends Model
             'distancia_km' => 'decimal:2',
             'pool_reenvios' => 'integer',
             'pool_entrada_at' => 'datetime',
+            'pool_bloqueado' => 'boolean',
+            'pool_visible_at' => 'datetime',
             'hora_aceptado' => 'datetime',
             'hora_recogido' => 'datetime',
             'hora_entregado' => 'datetime',
@@ -122,6 +126,11 @@ class Pedido extends Model
     {
         $query->where('estado', 'preparando')
             ->whereNull('repartidor_id')
-            ->whereNull('hora_aceptado');
+            ->whereNull('hora_aceptado')
+            ->where('pool_bloqueado', false)
+            ->where(function ($query) {
+                $query->whereNull('pool_visible_at')
+                    ->orWhere('pool_visible_at', '<=', now());
+            });
     }
 }

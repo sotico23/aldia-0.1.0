@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Backend;
 
+use App\Events\OrderStatusChanged;
 use App\Helpers\NotificationHelper;
 use App\Helpers\SearchHelper;
 use App\Http\Controllers\Controller;
+use App\Jobs\AsignacionAutomaticaJob;
 use App\Models\Asiento;
 use App\Models\DetalleVenta;
 use App\Models\Pedido;
@@ -12,6 +14,7 @@ use App\Models\Tesoreria;
 use App\Models\User;
 use App\Models\Venta;
 use App\Notifications\ActualizacionEstadoPedidoNotification;
+use App\Services\PedidoPoolService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -156,6 +159,16 @@ class PedidoRecibidoController extends Controller
 
         $estadoAnterior = $pedido->estado;
         $pedido->update(['estado' => $validated['estado']]);
+
+        // Disparar evento para notificaciones y side effects
+        event(new OrderStatusChanged($pedido, $estadoAnterior, $validated['estado']));
+
+        // Al pasar a preparando, el pedido entra al pool de reparto y se
+        // dispara la asignacion automatica por cola (sin esperar el tick)
+        if ($validated['estado'] === 'preparando') {
+            app(PedidoPoolService::class)->ingresarAlPool($pedido);
+            AsignacionAutomaticaJob::dispatch($pedido->id);
+        }
 
         // Notificar al cliente sobre el cambio de estado
         $cliente = User::find($pedido->cliente_id);

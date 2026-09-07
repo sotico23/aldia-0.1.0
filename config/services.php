@@ -86,4 +86,8 @@ return [
         'memory_window' => env('LLM_MEMORY_WINDOW', 20),
     ],
 
+    'currency' => [
+        'clp_to_usd_rate' => env('CLP_TO_USD_RATE', 0.0011), // ~909 CLP per USD
+    ],
+
 ];

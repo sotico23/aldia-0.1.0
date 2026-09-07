@@ -97,3 +97,15 @@ Schedule::command('horizon:snapshot')
     ->dailyAt('06:30')
     ->withoutOverlapping()
     ->onOneServer();
+
+Schedule::command('delivery:auto-assign')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->runInBackground();
+
+Schedule::command('delivery:pool-timeout')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->runInBackground();

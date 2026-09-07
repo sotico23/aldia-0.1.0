@@ -1,0 +1,470 @@
+============================================================
+PLAN DE DESARROLLO APP ANDROID INTEGRADA CON SISTEMA ALDIA
+============================================================
+
+FECHA: 28 de Agosto de 2026
+VERSION: 1.0
+
+============================================================
+1. ANALISIS DEL SISTEMA ACTUAL (ALDIA)
+============================================================
+
+El sistema Aldia es una aplicacion Laravel 12 que maneja:
+
+* Gestion de Pedidos y Ventas: Sistemas de ventas marketplaces,
+  pedidos, facturacion, ERP sync automatico
+
+* Logistica y Entregas: Asignacion de zonas, repartidores,
+  rutas de entrega, capacidad por zona/repartidor
+
+* Integracion con ERP: Sincronizacion automatica de pedidos a
+  sistemas contables (Ventas, Tesoreria, Contabilidad, Inventario)
+
+* Telegram Bot: Notificaciones, autenticacion, callbacks
+
+* Frontend: InertiaJS v2 (React) para renderizado cliente-servidor
+
+* Arquitectura: Multi-tenant con scopes OwnerScope, roles y permisos
+
+============================================================
+2. ARQUITECTURA GENERAL PROPUESTA
+============================================================
+
++---------------------------------------------------------------+
+|                    ANDROID APP (Kotlin)                       |
+|  +--------------+  +--------------+  +----------------------+  |
+|  | Autenticacion|  |   Dashboard  |  |  Gestion Operativa   |  |
+|  | (Telegram/   |  | (Pedidos,    |  | (Zonas, Reparti-     |  |
+|  |  Credenciales)|  |  Entregas)   |  |  dores, ERP)        |  |
+|  +------+-------+  +------+-------+  +----------+-----------+  |
++---------|----------------|-------------------|-----------------+
+          |                |                   |
+          v                v                   v
++-----------------------------------------------------------------+
+|                  API GATEWAY (LARAVEL 12)                       |
+|  * Routes: api.php, channels.php                                |
+|  * Middleware: verify-tenant-token, bot-api, CORS               |
+|  * Sanctum/JWT para autenticacion API                           |
++-------------------+---------------------------------------------+
+                    |
+        +-----------+-----------+
+        v           v           v
++---------------+ +---------------+ +---------------+
+|  SERVICIOS    | |  SERVICIOS    | |  SERVICIOS    |
+|   CORE        | |  LOGISTICA    | |   EXTERNOS    |
+|               | |               | |               |
+| Pedido        | | ZoneAssign-   | | Telegram      |
+| Venta         | | ment          | | Bot API       |
+| ERP Sync      | | Delivery      | | FCM/Notif     |
+| Inventario    | | Repartidor    | | Google Maps   |
++---------------+ +---------------+ +---------------+
+
+============================================================
+3. COMPONENTES PRINCIPALES DE LA APP ANDROID
+============================================================
+
+3.1 MODULO DE AUTENTICACION
+----------------------------
+* Login con Telegram (OAuth2/WebApp Bot)
+* Login tradicional email/password (Sanctum tokens)
+* Registro de nuevos vendedores/clientes
+* Recuperacion de contrasena
+* Gestion de sesiones y refresh tokens
+* Biometria (huella/FaceID) para acceso rapido
+
+3.2 DASHBOARD PRINCIPAL
+------------------------
+* Resumen de pedidos pendientes/preparando/enviados/entregados
+* Estadisticas en tiempo real (ventas del dia, entregas activas)
+* Alertas y notificaciones push
+* Acceso rapido a acciones frecuentes
+* Filtros por fecha, estado, zona, repartidor
+
+3.3 GESTION DE PEDIDOS
+-----------------------
+* Listado paginado con filtros avanzados
+* Detalle completo de pedido (items, cliente, totales)
+* Creacion de nuevos pedidos (si es vendedor)
+* Cambio de estado: pendiente -> preparando -> enviado -> entregado
+* Sincronizacion manual con ERP
+* Historial de cambios de estado (PedidoStatusLog)
+* Notas internas y comunicacion con cliente
+
+3.4 PANEL DE LOGISTICA Y ENTREGAS
+----------------------------------
+* Mapa interactivo (Google Maps SDK) con:
+  - Zonas de entrega (poligonos/circulos)
+  - Ubicacion actual de repartidores
+  - Pedidos en pool sin asignar
+  - Pedidos asignados en ruta
+* Asignacion automatica (usando algoritmo ZoneAssignment)
+* Asignacion manual por administrador
+* Seguimiento en tiempo real de repartidor
+* Gestion de capacidad por zona y repartidor
+* Cooldown y bloqueos de pool
+
+3.5 GESTION DE REPARTIDORES
+----------------------------
+* Lista de repartidores por estado (disponible, ocupado, offline)
+* Perfil completo: capacidad_max, radio_km, zona asignada
+* Ubicacion actual (lat/lng) con actualizacion periodica
+* Historial de entregas completadas
+* Metricas de performance (tiempo promedio, calificaciones)
+
+3.6 CONFIGURACION Y ADMINISTRACION
+-----------------------------------
+* Configuracion de zonas (radio, capacidad_max, poligono)
+* Configuracion de DeliveryConfig (modo manual/automatico)
+* Gestion de usuarios y roles
+* Configuracion de notificaciones (Telegram, FCM, Email)
+* Webhooks y callbacks para integraciones externas
+
+============================================================
+4. PUNTOS DE INTEGRACION API (ENDPOINTS PROPUESTOS)
+============================================================
+
+AUTENTICACION
+-------------
+POST   /api/v1/auth/login                  # Login email/password
+POST   /api/v1/auth/telegram               # Login via Telegram Bot
+POST   /api/v1/auth/register               # Registro
+POST   /api/v1/auth/logout                 # Cerrar sesion
+POST   /api/v1/auth/refresh                # Refresh token
+GET    /api/v1/auth/user                   # Perfil usuario actual
+
+PEDIDOS
+-------
+GET    /api/v1/pedidos                     # Listado (paginado, filtros)
+POST   /api/v1/pedidos                     # Crear pedido
+GET    /api/v1/pedidos/{id}                # Detalle
+PUT    /api/v1/pedidos/{id}                # Actualizar
+PATCH  /api/v1/pedidos/{id}/estado         # Cambiar estado
+POST   /api/v1/pedidos/{id}/sync-erp       # Sincronizar con ERP
+GET    /api/v1/pedidos/{id}/logs           # Historial estados
+
+ENTREGAS / LOGISTICA
+--------------------
+GET    /api/v1/entregas                    # Listado entregas
+GET    /api/v1/entregas/pool               # Pedidos en pool sin asignar
+POST   /api/v1/entregas/{id}/asignar       # Asignar a repartidor
+POST   /api/v1/entregas/asignar-auto       # Asignacion automatica
+GET    /api/v1/entregas/{id}/tracking      # Tracking en tiempo real
+PATCH  /api/v1/entregas/{id}/estado        # Actualizar estado entrega
+
+ZONAS
+-----
+GET    /api/v1/zones                       # Listado zonas
+POST   /api/v1/zones                       # Crear zona
+GET    /api/v1/zones/{id}                  # Detalle zona
+PUT    /api/v1/zones/{id}                  # Actualizar zona
+DELETE /api/v1/zones/{id}                  # Eliminar zona
+GET    /api/v1/zones/{id}/capacidad        # Capacidad actual/usada
+
+REPARTIDORES
+------------
+GET    /api/v1/repartidores                # Listado
+POST   /api/v1/repartidores                # Crear
+GET    /api/v1/repartidores/{id}           # Detalle
+PUT    /api/v1/repartidores/{id}           # Actualizar
+PATCH  /api/v1/repartidores/{id}/ubicacion # Actualizar lat/lng
+PATCH  /api/v1/repartidores/{id}/estado    # Cambiar estado
+GET    /api/v1/repartidores/{id}/metricas  # Metricas performance
+
+NOTIFICACIONES
+--------------
+GET    /api/v1/notificaciones              # Listado
+PATCH  /api/v1/notificaciones/{id}/leer    # Marcar leida
+POST   /api/v1/notificaciones/token        # Registrar token FCM
+
+WEBHOOKS / CALLBACKS
+--------------------
+POST   /api/v1/webhooks/telegram           # Telegram webhook
+POST   /api/v1/webhooks/n8n                # N8n callbacks
+
+============================================================
+5. TECNOLOGIAS Y HERRAMIENTAS RECOMENDADAS
+============================================================
+
+ANDROID
+-------
+* Lenguaje: Kotlin (100%)
+* UI: Jetpack Compose (Material 3)
+* Arquitectura: MVVM + Clean Architecture
+* DI: Hilt / Koin
+* Red: Retrofit + OkHttp + Kotlin Serialization
+* Base de datos local: Room (cache offline)
+* Imagenes: Coil
+* Mapas: Google Maps SDK for Android / Maps Compose
+* Notificaciones: Firebase Cloud Messaging (FCM)
+* Autenticacion: Firebase Auth / Custom JWT
+* Testing: JUnit, MockK, Espresso, Compose Testing
+
+BACKEND (LARAVEL - YA EXISTENTE)
+--------------------------------
+* Laravel 12 con API Resources
+* Laravel Sanctum para API tokens
+* Laravel Reverb para WebSockets (tiempo real)
+* Wayfinder para rutas TypeScript
+* Pest para testing
+* Laravel Pulse para monitoreo
+
+INFRAESTRUCTURA
+---------------
+* Base de datos: PostgreSQL (ya configurado)
+* Cache: Redis (para sesiones, colas, broadcasting)
+* Colas: Redis + Horizon / Database
+* Storage: S3 compatible (imagenes, documentos)
+* CI/CD: GitHub Actions / GitLab CI
+* Despliegue: Laravel Cloud / Docker + Kubernetes
+
+============================================================
+6. FLUJOS CRITICOS DE INTEGRACION
+============================================================
+
+FLUJO 1: CREACION Y ASIGNACION DE PEDIDO
+-----------------------------------------
+1. Vendedor crea pedido en App Android
+2. POST /api/v1/pedidos -> Laravel valida y guarda
+3. Job/Listener detecta nuevo pedido -> entra a pool
+4. ZoneAssignment::assignPending() ejecuta (scheduler/cron)
+5. Pedido asignado a zona + repartidor optimo
+6. Evento DeliveryOrderPoolUpdated -> Broadcast (Reverb)
+7. App Android recibe push/websocket -> Actualiza UI
+8. Notificacion Telegram al repartidor asignado
+9. Repartidor acepta -> estado "preparando" -> "enviado"
+
+FLUJO 2: SINCRONIZACION ERP
+----------------------------
+1. Pedido marcado como "entregado" o "pagado"
+2. POST /api/v1/pedidos/{id}/sync-erp
+3. ErpSyncTrait::syncPedidoToErp() ejecuta en transaction:
+   - Valida stock (Inventario)
+   - Crea Cliente si no existe
+   - Crea Venta + DetalleVenta
+   - Registra InventoryMovement (EGRESO)
+   - Crea registro Tesoreria (ingreso)
+   - Crea Asiento Contable
+   - Marca pedido.erp_synced_at
+4. Respuesta exitosa -> Notificacion al vendedor
+
+FLUJO 3: TRACKING EN TIEMPO REAL
+---------------------------------
+1. Repartidor abre app -> habilita location updates
+2. Cada 30s: PATCH /api/v1/repartidores/{id}/ubicacion
+3. Laravel actualiza Repartidor.lat/lng
+4. Frontend (Web/Android) escucha canal presence-repartidor.{id}
+5. Mapa actualiza marker en tiempo real
+6. Cliente puede ver ubicacion del repartidor (si habilitado)
+
+FLUJO 4: NOTIFICACIONES TELEGRAM
+---------------------------------
+1. Evento en Laravel (pedido asignado, estado cambiado, etc.)
+2. NotificationHelper::send() -> DeliveryPedidoAceptadoNotification
+3. Canal Telegram envia mensaje formateado
+4. Usuario recibe en Telegram Bot
+5. Botones inline para acciones rapidas (Ver, Aceptar, Rechazar)
+6. Callback query -> POST /api/v1/telegram/callback
+7. Laravel procesa accion -> Actualiza estado -> Respuesta
+
+============================================================
+7. MODELO DE DATOS LOCAL (ROOM) - CACHE OFFLINE
+============================================================
+
+@Entity
+data class PedidoLocal(
+    @PrimaryKey val id: Long,
+    val numeroPedido: String,
+    val estado: String,
+    val clienteNombre: String,
+    val total: Double,
+    val destinoLat: Double?,
+    val destinoLng: Double?,
+    val repartidorId: Long?,
+    val fechaCreacion: Long,
+    val ultimaSync: Long,
+    val dirty: Boolean = false  // Para sync pendiente
+)
+
+@Entity
+data class RepartidorLocal(
+    @PrimaryKey val userId: Long,
+    val nombre: String,
+    val estado: String,
+    val lat: Double?,
+    val lng: Double?,
+    val capacidadMax: Int,
+    val radioKm: Double?,
+    val zonaId: Long?,
+    val ultimaUbicacion: Long
+)
+
+@Entity
+data class ZonaLocal(
+    @PrimaryKey val id: Long,
+    val nombre: String,
+    val radioKm: Double,
+    val capacidadMax: Int,
+    val centroLat: Double,
+    val centroLng: Double,
+    val poligonoGeoJson: String?
+)
+
+============================================================
+8. SEGURIDAD Y AUTENTICACION
+============================================================
+
+* Tokens JWT con expiracion corta (15min) + Refresh tokens (30dias)
+* Almacenamiento seguro: Android Keystore / EncryptedSharedPreferences
+* Pin/Biometria para desbloqueo de la app
+* Certificate Pinning para API endpoints criticos
+* Rate limiting en backend (ya configurado en middleware)
+* Logs de auditoria para acciones sensibles
+* GDPR/LOPD compliance para datos personales
+
+============================================================
+9. ROADMAP DE IMPLEMENTACION
+============================================================
+
+FASE 1: FUNDACION (Semanas 1-3)
+-------------------------------
+[ ] Setup proyecto Android (Kotlin, Compose, Hilt, Retrofit, Room)
+[ ] Configuracion CI/CD basica
+[ ] Pantalla de Login (Telegram + Credenciales)
+[ ] Autenticacion con Sanctum tokens
+[ ] Navegacion principal (Bottom Navigation / Navigation Drawer)
+[ ] Theme Material 3 (Light/Dark mode)
+
+FASE 2: CORE - PEDIDOS (Semanas 4-6)
+------------------------------------
+[ ] Listado de pedidos con paginacion y filtros
+[ ] Detalle de pedido completo
+[ ] Pull-to-refresh y carga infinita
+[ ] Cache offline con Room
+[ ] Sincronizacion background (WorkManager)
+[ ] Estados vacios y skeletons
+
+FASE 3: LOGISTICA Y MAPAS (Semanas 7-10)
+----------------------------------------
+[ ] Integracion Google Maps SDK / Maps Compose
+[ ] Visualizacion de zonas (circulos/poligonos)
+[ ] Marcadores de repartidores en tiempo real
+[ ] Pedidos en pool (markers especiales)
+[ ] Asignacion manual (drag & drop o tap)
+[ ] Tracking de ruta activa
+
+FASE 4: REPARTIDORES Y GESTION (Semanas 11-13)
+-----------------------------------------------
+[ ] Lista y detalle de repartidores
+[ ] Actualizacion de ubicacion (Foreground Service)
+[ ] Cambio de estado (disponible/ocupado/offline)
+[ ] Metricas e historial de entregas
+[ ] Configuracion de capacidad y radio
+
+FASE 5: ADMIN Y CONFIGURACION (Semanas 14-16)
+----------------------------------------------
+[ ] Gestion de zonas (CRUD + mapa editor)
+[ ] Configuracion DeliveryConfig
+[ ] Gestion de usuarios y roles
+[ ] Configuracion de notificaciones
+[ ] Logs y auditoria
+
+FASE 6: PULIDO Y LANZAMIENTO (Semanas 17-20)
+---------------------------------------------
+[ ] Testing exhaustivo (Unit, Integration, UI)
+[ ] Performance optimization
+[ ] Offline-first improvements
+[ ] Accessibility (TalkBack, escalado texto)
+[ ] Beta testing con usuarios reales
+[ ] Documentacion y release notes
+[ ] Publicacion Play Store (Internal -> Closed -> Open -> Production)
+
+============================================================
+10. CONSIDERACIONES TECNICAS ESPECIFICAS
+============================================================
+
+OFFLINE-FIRST
+-------------
+* Room como source of truth local
+* Repository pattern: Local -> Remote -> Merge
+* WorkManager para sync periodica (cada 15min)
+* Cola de operaciones pendientes (dirty flags)
+* Conflict resolution: Server wins (con timestamp)
+
+TIEMPO REAL
+-----------
+* Laravel Reverb (WebSockets) para updates instantaneos
+* Canales privados: private-pedido.{id}, private-repartidor.{id}
+* Canales de presencia: presence-zona.{id}
+* Reconexion automatica con backoff exponencial
+* Fallback a polling si WebSocket falla
+
+PERFORMANCE
+-----------
+* Paginacion cursor-based en listas grandes
+* Imagenes: WebP, thumbnails, lazy loading
+* Compose: keys estables, derivedStateOf, lazy lists
+* Network: Compression (gzip), caching headers
+* Database: Indices en owner_id, estado, fecha
+
+TESTING
+-------
+* Unit: ViewModels, UseCases, Repository (MockK)
+* Integration: API client con MockWebServer
+* UI: Compose Testing (semanticas, screenshots)
+* E2E: Dispositivos reales + Firebase Test Lab
+* Arch: ArchUnit para validar capas Clean Architecture
+
+============================================================
+11. RIESGOS Y MITIGACIONES
+============================================================
+
+| Riesgo                                    | Probabilidad | Impacto | Mitigacion                              |
+|-------------------------------------------|--------------|---------|-----------------------------------------|
+| Cambios breaking en API Laravel           | Media        | Alto    | Versionado API (/v1/), tests contract   |
+| Limites Google Maps API (costos)          | Media        | Medio   | Caching, clustering, limites diarios    |
+| Problemas conectividad repartidores       | Alta         | Alto    | Offline-first, sync diferido            |
+| Complejidad algoritmos asignacion         | Media        | Medio   | Tests unitarios exhaustivos, logging    |
+| Adopcion usuarios (repartidores)          | Media        | Alto    | UX simple, training, soporte dedicado   |
+| Seguridad datos ubicacion (privacidad)    | Baja         | Critico | Consentimiento, anonimizacion, retencion|
+
+============================================================
+12. RECURSOS Y EQUIPO SUGERIDO
+============================================================
+
+* 1 Android Lead (Kotlin, Compose, Architecture)
+* 1 Android Developer (UI, Maps, Offline)
+* 1 Backend Laravel (API endpoints, Reverb, Testing)
+* 1 QA Engineer (Automatizacion, Device farm)
+* 1 DevOps (CI/CD, Infra, Monitoring)
+* 1 Product Owner / UX Designer
+
+============================================================
+13. PROXIMOS PASOS INMEDIATOS
+============================================================
+
+1. [ ] Auditar endpoints API existentes en routes/api.php
+2. [ ] Definir contratos OpenAPI/Swagger para Android
+3. [ ] Crear repositorio Git para app Android
+4. [ ] Setup proyecto base (build.gradle.kts, dependencias)
+5. [ ] Implementar modulo de autenticacion (MVP)
+6. [ ] Conectar con staging backend para pruebas reales
+7. [ ] Definir metricas de exito (KPIs)
+
+============================================================
+14. ARCHIVOS DE REFERENCIA EN SISTEMA ALDIA
+============================================================
+
+* bootstrap/app.php - Configuracion middleware, routing
+* app/Services/ZoneAssignment.php - Logica asignacion entregas
+* app/Traits/ErpSyncTrait.php - Sincronizacion ERP
+* app/Models/Pedido.php - Modelo principal pedidos
+* app/Models/Repartidor.php - Modelo repartidores
+* app/Models/Zone.php - Modelo zonas de entrega
+* app/Events/DeliveryOrderPoolUpdated.php - Evento broadcast
+* routes/api.php - Endpoints API actuales
+* routes/channels.php - Canales broadcasting
+* config/broadcasting.php - Config Reverb/Pusher
+
+============================================================
+FIN DEL DOCUMENTO
+============================================================

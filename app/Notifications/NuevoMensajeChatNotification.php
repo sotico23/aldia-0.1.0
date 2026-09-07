@@ -39,12 +39,12 @@ class NuevoMensajeChatNotification extends Notification implements ShouldQueue
 
     public function preferenceKey(): string
     {
-        return 'mensaje_chat';
+        return 'mensaje_chat_marketplace';
     }
 
     public function templateSlug(): string
     {
-        return 'mensaje_chat';
+        return 'mensaje_chat_marketplace';
     }
 
     public function templateVariables(object $notifiable): array

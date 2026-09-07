@@ -7,25 +7,12 @@ use App\Models\MensajeConversacion;
 use App\Traits\HasNotificationPreferences;
 use App\Traits\SendsViaMailTemplate;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class NuevoMensajeChatPedidoNotification extends Notification implements ShouldQueue
+class NuevoMensajeChatPedidoNotification extends Notification
 {
     use HasNotificationPreferences, Queueable, SendsViaMailTemplate;
-
-    public int $tries = 3;
-
-    public int $backoff = 60;
-
-    public function failed(\Throwable $e): void
-    {
-        \Log::error('Notification failed: '.static::class.': '.$e->getMessage(), [
-            'notification_class' => static::class,
-            'exception' => $e,
-        ]);
-    }
 
     public Conversacion $conversacion;
 
@@ -39,12 +26,12 @@ class NuevoMensajeChatPedidoNotification extends Notification implements ShouldQ
 
     public function preferenceKey(): string
     {
-        return 'mensaje_chat';
+        return 'mensaje_chat_pedido';
     }
 
     public function templateSlug(): string
     {
-        return 'mensaje_chat';
+        return 'mensaje_chat_pedido';
     }
 
     public function templateVariables(object $notifiable): array

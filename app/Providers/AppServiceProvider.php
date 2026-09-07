@@ -2,10 +2,20 @@
 
 namespace App\Providers;
 
+use App\Events\LowStock;
 use App\Events\MailConfigErrorOccurred;
+use App\Events\OrderStatusChanged;
 use App\Events\PaymentSuccessful;
 use App\Events\PedidoCreado;
+use App\Events\SubscriptionExpired;
+use App\Events\SubscriptionRenewed;
+use App\Events\WebhookReceived;
+use App\Listeners\HandleSubscriptionExpired;
+use App\Listeners\HandleSubscriptionRenewed;
 use App\Listeners\LogMailConfigError;
+use App\Listeners\LogWebhookReceived;
+use App\Listeners\NotifyLowStock;
+use App\Listeners\SendOrderStatusChangedNotification;
 use App\Listeners\SendPaymentSuccessfulNotification;
 use App\Listeners\SendPedidoCreadoBuyerNotification;
 use App\Models\Conversacion;
@@ -158,6 +168,10 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('bot', function (Request $request) {
             return Limit::perMinute(120)->by($request->header('X-Owner-ID', $request->ip()));
         });
+
+        RateLimiter::for('delivery', function (Request $request) {
+            return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
+        });
     }
 
     protected function overrideOAuthConfig(): void
@@ -217,6 +231,31 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(
             MailConfigErrorOccurred::class,
             LogMailConfigError::class,
+        );
+
+        Event::listen(
+            OrderStatusChanged::class,
+            SendOrderStatusChangedNotification::class,
+        );
+
+        Event::listen(
+            SubscriptionRenewed::class,
+            HandleSubscriptionRenewed::class,
+        );
+
+        Event::listen(
+            SubscriptionExpired::class,
+            HandleSubscriptionExpired::class,
+        );
+
+        Event::listen(
+            LowStock::class,
+            NotifyLowStock::class,
+        );
+
+        Event::listen(
+            WebhookReceived::class,
+            LogWebhookReceived::class,
         );
     }
 }

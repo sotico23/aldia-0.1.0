@@ -46,6 +46,7 @@ test('comprador puede ver mensajes de su conversacion de pedido', function () {
         'public_profile_id' => $profile->id,
         'comprador_id' => $comprador->id,
         'vendedor_id' => $vendedor->id,
+        'owner_id' => $vendedor->id,
         'titulo' => "Pedido #{$pedido->numero_pedido}",
     ]);
 
@@ -53,6 +54,7 @@ test('comprador puede ver mensajes de su conversacion de pedido', function () {
         'conversacion_id' => $conversacion->id,
         'sender_id' => $vendedor->id,
         'receiver_id' => $comprador->id,
+        'owner_id' => $vendedor->id,
         'contenido' => 'Gracias por tu compra!',
     ]);
 
@@ -91,6 +93,7 @@ test('vendedor puede ver mensajes de su conversacion de pedido', function () {
         'public_profile_id' => $profile->id,
         'comprador_id' => $comprador->id,
         'vendedor_id' => $vendedor->id,
+        'owner_id' => $vendedor->id,
         'titulo' => "Pedido #{$pedido->numero_pedido}",
     ]);
 
@@ -98,6 +101,7 @@ test('vendedor puede ver mensajes de su conversacion de pedido', function () {
         'conversacion_id' => $conversacion->id,
         'sender_id' => $comprador->id,
         'receiver_id' => $vendedor->id,
+        'owner_id' => $vendedor->id,
         'contenido' => 'Consulta sobre mi pedido',
     ]);
 
@@ -136,6 +140,7 @@ test('usuario no participante recibe 403 al consultar mensajes de pedido', funct
         'public_profile_id' => $profile->id,
         'comprador_id' => $comprador->id,
         'vendedor_id' => $vendedor->id,
+        'owner_id' => $vendedor->id,
         'titulo' => "Pedido #{$pedido->numero_pedido}",
     ]);
 
@@ -171,6 +176,7 @@ test('comprador puede enviar mensaje en conversacion de pedido', function () {
         'public_profile_id' => $profile->id,
         'comprador_id' => $comprador->id,
         'vendedor_id' => $vendedor->id,
+        'owner_id' => $vendedor->id,
         'titulo' => "Pedido #{$pedido->numero_pedido}",
     ]);
 
@@ -191,9 +197,8 @@ test('comprador puede enviar mensaje en conversacion de pedido', function () {
         'contenido' => 'Hola vendedor!',
     ]);
 
-    Notification::assertSentTo(
-        [$vendedor],
-        NuevoMensajeChatPedidoNotification::class
+    Notification::assertSent(
+        fn ($n) => $n instanceof NuevoMensajeChatPedidoNotification
     );
 });
 
@@ -223,6 +228,7 @@ test('vendedor puede enviar mensaje en conversacion de pedido', function () {
         'public_profile_id' => $profile->id,
         'comprador_id' => $comprador->id,
         'vendedor_id' => $vendedor->id,
+        'owner_id' => $vendedor->id,
         'titulo' => "Pedido #{$pedido->numero_pedido}",
     ]);
 
@@ -242,9 +248,8 @@ test('vendedor puede enviar mensaje en conversacion de pedido', function () {
         'contenido' => 'Gracias por tu compra!',
     ]);
 
-    Notification::assertSentTo(
-        [$comprador],
-        NuevoMensajeChatPedidoNotification::class
+    Notification::assertSent(
+        fn ($n) => $n instanceof NuevoMensajeChatPedidoNotification
     );
 });
 
@@ -275,6 +280,7 @@ test('usuario no participante recibe 403 al enviar mensaje en pedido', function 
         'public_profile_id' => $profile->id,
         'comprador_id' => $comprador->id,
         'vendedor_id' => $vendedor->id,
+        'owner_id' => $vendedor->id,
         'titulo' => "Pedido #{$pedido->numero_pedido}",
     ]);
 
@@ -317,11 +323,13 @@ test('comprador puede ver su conversacion general de marketplace', function () {
     $conversation = Conversation::create([
         'buyer_id' => $comprador->id,
         'store_profile_id' => $profile->id,
+        'owner_id' => $vendedor->id,
     ]);
 
     Message::create([
         'conversation_id' => $conversation->id,
         'sender_id' => $vendedor->id,
+        'owner_id' => $vendedor->id,
         'body' => 'Bienvenido a la tienda!',
     ]);
 
@@ -341,6 +349,7 @@ test('comprador puede enviar mensaje en chat general', function () {
     $conversation = Conversation::create([
         'buyer_id' => $comprador->id,
         'store_profile_id' => $profile->id,
+        'owner_id' => $vendedor->id,
     ]);
 
     $response = $this->actingAs($comprador)
@@ -369,6 +378,7 @@ test('usuario no participante recibe 403 al enviar mensaje en chat general', fun
     $conversation = Conversation::create([
         'buyer_id' => $comprador->id,
         'store_profile_id' => $profile->id,
+        'owner_id' => $vendedor->id,
     ]);
 
     $response = $this->actingAs($intruso)

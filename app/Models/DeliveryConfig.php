@@ -19,6 +19,7 @@ class DeliveryConfig extends Model
         'modo',
         'pool_timeout_min',
         'pool_reenvio_min',
+        'pool_reenvios_max',
     ];
 
     protected function casts(): array
@@ -26,6 +27,7 @@ class DeliveryConfig extends Model
         return [
             'pool_timeout_min' => 'integer',
             'pool_reenvio_min' => 'integer',
+            'pool_reenvios_max' => 'integer',
         ];
     }
 }

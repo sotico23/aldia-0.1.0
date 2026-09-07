@@ -1,0 +1,485 @@
+# DECISIONES_ARQUITECTURA_REALTIME.txt
+# Real-time Architecture Decision Document
+# Generated: 2026-09-06
+
+## Overview
+This document outlines the architectural decisions for implementing real-time features in the Aldia application. The application is a Laravel 12 e-commerce platform with customer marketplace, delivery management, and business administration modules.
+
+## Current State Analysis
+
+### Existing Infrastructure
+- **Routes**: 771 web routes + 57 API routes
+- **Models**: User, Pedido (Order), Repartidor (Driver), Mensaje (Message), NotificationPreference, Conversacion (Conversation), etc.
+- **Events**: 15 existing events (DeliveryPositionUpdated, OrderStatusChanged, etc.)
+- **Policies**: 5 existing policies (PedidoRecibidoPolicy, etc.)
+- **Channels**: 10 existing channels (delivery, chat, orders, etc.)
+- **Broadcasting**: Basic setup with log connection
+- **Authentication**: Sanctum SPA + API tokens
+- **Testing**: 60+ feature tests already implemented
+
+### Real-time Requirements
+Four priority real-time features identified:
+1. **Live Notifications** - User notifications for orders, payments, low stock
+2. **Driver Order Assignments** - Real-time driver assignment to orders
+3. **Order Tracking** - Live driver position tracking for customers
+4. **Chat Messaging** - Real-time messaging between users
+
+## Phase 1: API Resources (DTOs)
+
+### Goal
+Create strict Data Transfer Objects (DTOs) for consistent API responses and improved performance.
+
+### Implementation
+
+#### Directory Structure
+```
+app/Http/Resources/
+├── Base/
+│   ├── BaseResource.php          # Abstract base with common fields
+│   ├── PaginatedResource.php     # Standard pagination wrapper
+│   └── ApiResponse.php           # Standard API response envelope
+├── User/
+│   ├── UserResource.php
+│   ├── UserMinimalResource.php   # For nested relations
+│   └── RepartidorResource.php
+├── Pedido/
+│   ├── PedidoResource.php
+│   ├── PedidoMinimalResource.php
+│   ├── PedidoItemResource.php
+│   └── PedidoStatusLogResource.php
+├── Producto/
+│   ├── ProductoResource.php
+│   ├── ProductoMinimalResource.php
+│   └── CategoriaResource.php
+├── Tienda/
+│   ├── TiendaResource.php
+│   └── PublicProfileResource.php
+├── Chat/
+│   ├── ConversacionResource.php
+│   ├── MensajeResource.php
+│   └── ConversacionWithMessagesResource.php
+├── Delivery/
+│   ├── DeliveryPositionResource.php
+│   ├── ZoneResource.php
+│   └── DeliveryConfigResource.php
+├── Notification/
+│   └── NotificationResource.php
+└── Inventario/
+    ├── InventarioResource.php
+    >>>
+    ├── LoteResource.php
+    └── MovimientoResource.php
+```
+
+### Key Benefits
+- Strict contract enforcement between controllers and models
+- Improved performance through reduced database queries
+- Consistent response structure for all API consumers
+- Better separation of concerns
+
+### Implementation Steps
+1. Generate all resources using Artisan
+2. Define common fields in BaseResource
+3. Create minimal resources for nested relations
+4. Add pagination support
+5. Implement API response envelopes
+
+## Phase 2: Reverb Real-time Architecture
+
+### Priority 1: Live Notifications
+
+#### Channel Configuration
+```php
+// routes/channels.php
+Broadcast::channel('notifications.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});
+```
+
+#### Event Implementation
+```php
+// app/Events/NotificationCreated.php
+<?php
+// ShouldBroadcast implementation
+class NotificationCreated implements ShouldBroadcast
+{
+    use Dispatchable, InteractsWithSockets, SerializesModels;
+    
+    public function __construct(
+        public \App\Models\Notification $notification,
+        public int $recipientId,
+    ) {}
+    
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel("notifications.{$this->recipientId}")];
+    }
+    
+    public function broadcastWith(): array
+    {
+        return [
+            'id' => $this->notification->id,
+            'type' => $this->notification->type,
+            'title' => $this->notification->data['titulo'] ?? '',
+            'message' => $this->notification->data['message'] ?? '',
+            'data' => $this->notification->data,
+            'read_at' => $this->notification->read_at?->toISOString(),
+            'created_at' => $this->notification->created_at->toISOString(),
+        ];
+    }
+}
+```
+
+#### Integration Points
+- Fire from `Notification::send()` observer or event listener
+- Include in `ConversacionObserver` for contextual notifications
+- Test with Pest: `php artisan test --filter=NotificationCreated`
+
+### Priority 2: Driver Order Assignments
+
+#### Channel Configuration
+```php
+// routes/channels.php
+Broadcast::channel('delivery.driver.{driverId}', function ($user, $driverId) {
+    return $user->repartidor && (int) $user->repartidor->id === (int) $driverId;
+});
+```
+
+#### Event Enhancement
+```php
+// app/Events/DeliveryOrderAssigned.php
+<?php
+// ShouldBroadcast implementation
+class DeliveryOrderAssigned implements ShouldBroadcast
+{
+    use Dispatchable, InteractsWithSockets, SerializesModels;
+    
+    public function __construct(
+        public \App\Models\Pedido $pedido,
+        public int $driverId,
+        public string $assignmentType, // 'accepted_pool', 'assigned_manual', 'reassigned'
+    ) {}
+    
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel("delivery.driver.{$this->driverId}")];
+    }
+    
+    public function broadcastWith(): array
+    {
+        return (new \App\Http\Resources\Pedido\PedidoMinimalResource($this->pedido))->resolve();
+    }
+}
+```
+
+#### Integration Points
+- Fire from `DeliveryOrdenController@accept()` method
+- Update `Pedido` model with `repartidor_id` and `estado`
+- Test with Pest: `php artisan test --filter=DeliveryOrderAssigned`
+
+### Priority 3: Order Tracking
+
+#### Channel Enhancement
+```php
+// routes/channels.php
+Broadcast::channel('orders.{pedidoId}.tracking', function ($user, $pedidoId) {
+    $pedido = \App\Models\Pedido::find($pedidoId);
+    if (!$pedido) return false;
+    
+    // Customer who owns the order
+    if ((int) $pedido->cliente_id === (int) $user->id) return true;
+    
+    // Business owner/admin (tenant scope via BelongsToOwner)
+    if ($user->getOwnerId() === $pedido->owner_id && $user->can('pedidos.viewAny')) return true;
+    
+    // Assigned driver
+    if ((int) $pedido->repartidor_id === (int) $user->id) return true;
+    
+    return false;
+});
+```
+
+#### Event Enhancement
+```php
+// app/Events/DeliveryPositionUpdated.php
+<?php
+// ShouldBroadcast implementation
+class DeliveryPositionUpdated implements ShouldBroadcast
+{
+    use Dispatchable, InteractsWithSockets, SerializesModels;
+    
+    public function __construct(
+        public \App\Models\DeliveryPosition $position,
+        public int $pedidoId,
+        public float $distanciaKm,
+    ) {}
+    
+    public function broadcastOn(): array
+    {
+        $channels = [
+            new PrivateChannel("delivery.orders.{$this->pedidoId}.positions"),
+        ];
+        
+        // Also broadcast to the specific order's tracking channel
+        $pedido = \App\Models\Pedido::where('repartidor_id', $this->position->repartidor_id)
+            ->whereIn('estado', ['preparando', 'enviado'])
+            ->latest()->first();
+        
+        if ($pedido) {
+            $channels[] = new PrivateChannel("delivery.orders.{$this->pedidoId}.positions");
+        }
+        
+        return $channels;
+    }
+    
+    public function broadcastWith(): array
+    {
+        return [
+            'id' => $this->position->id,
+            'tipo' => $this->position->tipo,
+            'repartidor' => $this->position->repartidor_id,
+            'lat' => $this->position->lat,
+            'lng' => $this->position->lng,
+            'distancia_km' => $this->distanciaKm,
+            'timestamp' => $this->position->created_at->toISOString(),
+        ];
+    }
+}
+```
+
+#### Integration Points
+- Fire from `DeliveryPositionUpdated` event handler
+- Include in `ConversacionObserver` for order status updates
+- Test with Pest: `php artisan test --filter=DeliveryPositionUpdated`
+
+### Priority 4: Chat Messaging
+
+#### Channel Configuration
+```php
+// routes/channels.php
+Broadcast::channel('conversacion.{id}', function ($user, $conversacionId) {
+    return $user->can('view', \App\Models\Conversacion::find($conversacionId));
+});
+```
+
+#### Event Implementation
+```php
+// app/Events/TypingIndicator.php (ShouldBroadcastNow)
+<?php
+// ShouldBroadcastNow implementation
+class TypingIndicator implements ShouldBroadcastNow
+{
+    use Dispatchable, InteractsWithSockets, SerializesModels;
+    
+    public function __construct(
+        public int $conversacionId,
+        public int $userId,
+        public bool $isTyping,
+    ) {}
+    
+    public function broadcastOn(): array
+    {
+        return [new PresenceChannel("presence-conversation.{$this->conversacionId}")];
+    }
+    
+    public function broadcastWith(): array
+    {
+        return [
+            'user_id' => $this->userId,
+            'is_typing' => $this->isTyping,
+        ];
+    }
+}
+```
+
+#### Event Implementation
+```php
+// app/Events/MensajeEnviado.php (ShouldBroadcastNow)
+<?php
+// ShouldBroadcastNow implementation
+class MensajeEnviado implements ShouldBroadcastNow
+{
+    use Dispatchable, InteractsWithSockets, SerializesModels;
+    
+    public function __construct(
+        public int $conversacionId,
+        public int $leaderId,
+        public array $mensajes,
+    ) {}
+    
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel("conversacion.{$this->conversacionId}")];
+    }
+    
+    public function broadcastWith(): array
+    {
+        return [
+            'conversacion_id' => $this->conversacionId,
+            'leader_id' => $this->leaderId,
+            'mensajes' => $this->mensajes,
+            'timestamp' => now()->toISOString(),
+        ];
+    }
+}
+```
+
+#### Integration Points
+- Fire from `MensajeEnviado` event handler
+- Include in `ConversacionObserver` for message history
+- Test with Pest: `php artisan test --filter=MensajeEnviado`
+
+## Phase 3: Authentication & Authorization for Channels
+
+### Channel Authorization Strategy
+
+#### Gateway-Based Access Control
+```php
+// app/Providers/AppServiceProvider.php (extensions)
+
+// 1. Notification channels - only authenticated users
+Gate::define('subscribe-notifications', function ($user, $userId) {
+    return $user->id === $userId;
+});
+
+// 2. Driver assignment channels - only assigned drivers
+Gate::define('subscribe-driver-assignments', function ($user, $driverId) {
+    return $user->repartidor && $user->repartidor->id === $driverId;
+});
+
+// 3. Order tracking channels - tenant-scoped access
+Gate::define('subscribe-order-tracking', function ($user, $pedidoId) {
+    $pedido = Pedido::find($pedidoId);
+    if (!$pedido) return false;
+    
+    return $pedido->cliente_id === $user->id
+        || $pedido->repartidor_id === $user->id
+        || ($user->getOwnerId() === $pedido->owner_id && $user->can('pedidos.viewAny'));
+});
+
+// 4. Chat channels - conversation membership
+Gate::define('subscribe-conversation', function ($user, $conversacionId) {
+    return $user->can('view', Conversacion::find($conversacionId));
+});
+```
+
+#### Custom Policies for Channel-Specific Logic
+```php
+// app/Policies/DeliveryPositionPolicy.php
+<?php
+// Extended policy for delivery position events
+class DeliveryPositionPolicy extends Policy
+{
+    public function track(User $user, DeliveryPosition $position): bool
+    {
+        return $position->repartidor_id === $user->id
+            || $position->cliente_id === $user->id
+            || ($user->getOwnerId() === $position->repartidor->owner_id && $user->can('pedidos.viewAny'));
+    }
+    
+    public function view(User $user, DeliveryPosition $position): bool
+    {
+        return $this->track($user, $position);
+    }
+}
+```
+
+## Phase 4: Testing Strategy
+
+### Test Organization
+```
+tests/
+├── Feature/
+│   ├── Broadcasting/
+│   │   ├── NotificationBroadcastTest.php
+│   │   ├── DriverAssignmentBroadcastTest.php
+│   │   ├── OrderTrackingBroadcastTest.php
+│   │   └── ChatBroadcastTest.php
+│   ├── Api/
+│   │   └── Resources/
+│   │       ├── UserResourceTest.php
+│   │       ├── PedidoResourceTest.php
+│   │       ├── ProductoResourceTest.php
+│   │       └── ConversacionResourceTest.php
+│   └── Policies/
+│       ├── PedidoPolicyTest.php
+│       └── BroadcastChannelPolicyTest.php
+└── Unit/
+    └── Events/
+        ├── NotificationCreatedTest.php
+        ├── DeliveryOrderAssignedTest.php
+        ├── DeliveryPositionUpdatedTest.php
+        └── MensajeEnviadoTest.php
+```
+
+### Key Test Scenarios
+
+| Feature | Test Cases |
+|---------|------------|
+| **Notifications** | Auth user receives, unauthorized rejected, payload structure, read receipt |
+| **Driver Assignments** | Driver receives on accept, not others, manual assignment, reassignment |
+| **Order Tracking** | Customer sees driver, driver sees own, business owner sees, unauthorized rejected |
+| **Chat** | Participants receive, typing indicators, read receipts, file attachments |
+| **Resources** | JSON structure matches DTO, nested relations, pagination, sparse fieldsets |
+| **Policies** | Gates return correct bool, Master/Super Admin bypass, tenant isolation |
+
+### Running Tests
+```bash
+# Run all broadcasting tests
+php artisan test --filter=Broadcasting
+
+# Run all resource tests
+php artisan test --filter=Resource
+
+# Run policy tests
+php artisan test --filter=Policy
+
+# Full suite with coverage
+php artisan test --compact --min=80
+```
+
+## Phase 5: Deployment Considerations
+
+### Production-Ready Configuration
+
+#### Environment Variables (add to .env.production)
+```ini
+REVERB_APP_ID=your_app_id
+REVERB_APP_KEY=your_app_key
+REVERB_APP_SECRET=your_app_secret
+REVERB_HOST=0.0.0.0
+REVERB_PORT=8080
+REVERB_SCHEME=ws  # or http for local
+
+# Additional security
+SOCKET_SECURITY=true
+```
+
+#### Reverb Server Startup
+```bash
+# Install Reverb
+php artisan reverb:install
+
+# Start Reverb (production)
+php artisan reverb:start --host=0.0.0.0 --port=8080
+
+# Queue workers for broadcasts
+php artisan queue:work --queue=broadcasting,default
+```
+
+#### Monitoring & Health Checks
+- Monitor Reverb server health via `/health` endpoint
+- Track broadcast latency metrics
+- Alert on failed channel connections
+- Log all broadcast attempts for debugging
+
+## Summary
+
+1. **API Resources**: Create strict DTO hierarchy for consistent API responses
+2. **Reverb Setup**: Implement 4 real-time channels with proper authorization
+3. **Priority Features**: Notifications > Driver Assignments > Order Tracking > Chat
+4. **Authentication**: Use Gates + Policies for channel-level access control
+5. **Testing**: Comprehensive Pest tests for all real-time features
+6. **Deployment**: Proper Reverb configuration and monitoring
+
+All phases are actionable and aligned with the existing codebase architecture.

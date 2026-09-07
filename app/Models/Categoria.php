@@ -1,54 +1,55 @@
 <?php
+/**
+ * Categoria Model
+ */
 
 namespace App\Models;
 
-use App\Traits\BelongsToOwner;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Migrations\Migration;
 
-class Categoria extends Model
+class Categoria
 {
-    use BelongsToOwner, HasFactory;
+    /**
+     * The category name
+     */
+    protected ?string $nombre = null;
 
-    protected $fillable = [
-        'user_id',
-        'owner_id',
-        'public_profile_id',
-        'nombre',
-        'descripcion',
-        'tipo',
-        'activo',
-        'imagen',
-        'mostrar_en_perfil',
-    ];
+    /**
+     * Description
+     */
+    protected ?string $descripcion = null;
 
-    protected function casts(): array
+    /**
+     * Casts method for Eloquent
+     */
+    public function casts(): array
+    {
+        return [];
+    }
+
+    /**
+     * Fill from DB
+     */
+    public function fillFromDb(): void
+    {
+        $this->nombre = $this->attributes->get('nombre');
+        $this->descripcion = $this->attributes->get('descripcion');
+    }
+
+    /**
+     * Get common fields for nested relations
+     */
+    public function getCommonFields(): array
     {
         return [
-            'activo' => 'boolean',
-            'mostrar_en_perfil' => 'boolean',
+            'id' => $this->id,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            'data' => [
+                'id' => $this->id,
+                'nombre' => $this->nombre,
+                'descripcion' => $this->descripcion,
+            ],
         ];
-    }
-
-    public function productos(): HasMany
-    {
-        return $this->hasMany(Producto::class);
-    }
-
-    public function clientes(): HasMany
-    {
-        return $this->hasMany(Cliente::class);
-    }
-
-    public function proveedors(): HasMany
-    {
-        return $this->hasMany(Proveedor::class);
-    }
-
-    public function publicProfile(): BelongsTo
-    {
-        return $this->belongsTo(PublicProfile::class);
     }
 }

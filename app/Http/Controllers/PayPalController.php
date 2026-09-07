@@ -54,6 +54,24 @@ class PayPalController extends Controller
     }
 
     /**
+     * Get CLP to USD exchange rate.
+     */
+    private function getClpToUsdRate(): float
+    {
+        return (float) config('services.currency.clp_to_usd_rate', 0.0011);
+    }
+
+    /**
+     * Convert CLP amount to USD.
+     */
+    private function convertClpToUsd(float $clpAmount): float
+    {
+        $rate = $this->getClpToUsdRate();
+
+        return round($clpAmount * $rate, 2);
+    }
+
+    /**
      * Obtain an access token from PayPal.
      */
     private function getAccessToken(array $credentials): string
@@ -106,10 +124,13 @@ class PayPalController extends Controller
             $accessToken = $this->getAccessToken($credentials);
             $baseUrl = $this->getBaseUrl($credentials['mode']);
 
-            // PayPal requires USD for non-supported currencies. CLP will be
-            // converted by PayPal at their own rate. The original pedido
-            // currency is recorded in the Transaction for accounting purposes.
-            $paypalCurrency = 'USD';
+            // PayPal doesn't support CLP directly. Convert to USD using configured rate.
+            // Original currency is stored in Transaction for accounting.
+            $pedidoCurrency = $pedido->currency ?? $this->resolveCurrencyForPedido($pedido);
+            $paypalCurrency = $pedidoCurrency === 'CLP' ? 'USD' : $pedidoCurrency;
+            $paypalAmount = $pedidoCurrency === 'CLP'
+                ? $this->convertClpToUsd((float) $pedido->total)
+                : (float) $pedido->total;
 
             // Build the PayPal order
             $response = Http::timeout(15)
@@ -121,7 +142,7 @@ class PayPalController extends Controller
                         [
                             'amount' => [
                                 'currency_code' => $paypalCurrency,
-                                'value' => number_format((float) $pedido->total, 2, '.', ''),
+                                'value' => number_format($paypalAmount, 2, '.', ''),
                             ],
                             'reference_id' => $pedido->numero_pedido,
                             'description' => "Pedido #{$pedido->numero_pedido}",
@@ -363,12 +384,16 @@ class PayPalController extends Controller
     {
         $captureData = $capture['purchase_units'][0]['payments']['captures'][0] ?? [];
         $captureId = $captureData['id'] ?? $paypalOrderId;
-        $amount = $captureData['amount']['value'] ?? $pedido->total;
+        $usdAmount = $captureData['amount']['value'] ?? $pedido->total;
         // Use the pedido's original currency for accounting accuracy
         $currency = $pedido->currency ?? $this->resolveCurrencyForPedido($pedido);
         $breakdown = $captureData['seller_receivable_breakdown'] ?? [];
         $fee = (float) ($breakdown['paypal_fee']['value'] ?? 0);
-        $netAmount = (float) ($breakdown['net_amount']['value'] ?? $amount);
+        $netAmount = (float) ($breakdown['net_amount']['value'] ?? $usdAmount);
+
+        // Calculate original amount in pedido currency if different from USD
+        $originalAmount = $currency === 'CLP' ? (float) $pedido->total : (float) $usdAmount;
+        $exchangeRate = $currency === 'CLP' ? $this->getClpToUsdRate() : 1.0;
 
         return Transaction::firstOrCreate(
             [
@@ -382,12 +407,16 @@ class PayPalController extends Controller
                 'type' => 'customer_payment',
                 'status' => 'approved',
                 'currency' => $currency,
-                'amount' => (float) $amount,
-                'fee' => $fee,
-                'net_amount' => $netAmount,
+                'amount' => $originalAmount,
+                'fee' => $currency === 'CLP' ? $this->convertClpToUsd($fee) : $fee,
+                'net_amount' => $currency === 'CLP' ? $this->convertClpToUsd($netAmount) : $netAmount,
                 'metadata' => [
                     'numero_pedido' => $pedido->numero_pedido,
                     'paypal_order_id' => $paypalOrderId,
+                    'exchange_rate' => $exchangeRate,
+                    'usd_amount' => (float) $usdAmount,
+                    'usd_fee' => $fee,
+                    'usd_net_amount' => $netAmount,
                 ],
                 'processed_at' => now(),
             ]

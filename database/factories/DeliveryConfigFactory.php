@@ -23,6 +23,7 @@ class DeliveryConfigFactory extends Factory
             'modo' => 'ambos',
             'pool_timeout_min' => 10,
             'pool_reenvio_min' => 30,
+            'pool_reenvios_max' => 3,
         ];
     }
 }

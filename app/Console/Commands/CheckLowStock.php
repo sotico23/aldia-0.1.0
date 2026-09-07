@@ -2,47 +2,53 @@
 
 namespace App\Console\Commands;
 
-use App\Helpers\NotificationHelper;
+use App\Events\LowStock;
 use App\Models\Inventario;
-use App\Models\User;
-use App\Notifications\StockLowNotification;
+use App\Models\Producto;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class CheckLowStock extends Command
 {
     protected $signature = 'stock:check-low';
-
-    protected $description = 'Notify users with inventory access about products below minimum stock';
+    protected $description = 'Verifica productos con stock bajo y dispara eventos LowStock';
 
     public function handle(): int
     {
-        $productos = Inventario::with('producto')
+        $lowStockProducts = Inventario::with(['producto', 'almacen'])
             ->whereColumn('cantidad', '<=', 'cantidad_minima')
-            ->where('cantidad_minima', '>', 0)
-            ->get()
-            ->map(fn ($inv) => [
-                'producto_id' => $inv->producto_id,
-                'nombre' => $inv->producto?->nombre ?? 'N/A',
-                'cantidad_actual' => (float) $inv->cantidad,
-                'cantidad_minima' => (float) $inv->cantidad_minima,
-                'almacen_id' => $inv->almacen_id,
-            ])
-            ->toArray();
+            ->where('cantidad', '>', 0)
+            ->get();
 
-        if (empty($productos)) {
-            $this->info('No hay productos con stock bajo.');
+        $count = 0;
 
-            return Command::SUCCESS;
+        foreach ($lowStockProducts as $inventario) {
+            $producto = $inventario->producto;
+
+            if (! $producto) {
+                continue;
+            }
+
+            event(new LowStock(
+                $producto,
+                $inventario,
+                (int) $inventario->cantidad,
+                (int) $inventario->cantidad_minima
+            ));
+
+            $count++;
+
+            Log::info('LowStock event dispatched', [
+                'producto_id' => $producto->id,
+                'producto_nombre' => $producto->nombre,
+                'stock_actual' => $inventario->cantidad,
+                'stock_minimo' => $inventario->cantidad_minima,
+                'almacen_id' => $inventario->almacen_id,
+            ]);
         }
 
-        $users = User::permission('inventario.inventarios.viewAny')->get();
+        $this->info("Verificados {$count} productos con stock bajo.");
 
-        foreach ($users as $user) {
-            NotificationHelper::send($user, new StockLowNotification($productos));
-        }
-
-        $this->info('Notificación de stock bajo enviada a '.$users->count().' usuario(s).');
-
-        return Command::SUCCESS;
+        return self::SUCCESS;
     }
 }

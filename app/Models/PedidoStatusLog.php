@@ -14,6 +14,7 @@ class PedidoStatusLog extends Model
         'to',
         'changed_by',
         'gateway',
+        'motivo',
     ];
 
     public function pedido(): BelongsTo

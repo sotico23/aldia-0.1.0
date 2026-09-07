@@ -40,13 +40,24 @@ Broadcast::channel('communication.internal.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
 
+Broadcast::channel('delivery.{ownerId}.positions', function ($user, $ownerId) {
+    return (int) $user->getOwnerId() === (int) $ownerId;
+});
+
+Broadcast::channel('delivery.{ownerId}.orders', function ($user, $ownerId) {
+    return (int) $user->getOwnerId() === (int) $ownerId;
+});
+
 Broadcast::channel('presence-conversation.{id}', function ($user, $id) {
     $conversacion = Conversacion::find($id);
     if ($conversacion) {
         $allowed = (int) $user->id === (int) $conversacion->comprador_id
             || (int) $user->id === (int) $conversacion->vendedor_id;
         if ($allowed) {
-            return ['id' => $user->id, 'name' => $user->name];
+            return [
+                'id' => $user->id, 
+                'name' => $user->name,
+            ];
         }
     }
 
@@ -56,9 +67,37 @@ Broadcast::channel('presence-conversation.{id}', function ($user, $id) {
         $allowed = (int) $user->id === (int) $conversation->buyer_id
             || ($profile && (int) $user->id === (int) $profile->user_id);
         if ($allowed) {
-            return ['id' => $user->id, 'name' => $user->name];
+            return [
+                'id' => $user->id, 
+                'name' => $user->name,
+            ];
         }
     }
 
     return false;
+});
+
+// Real-time channels for new features
+Broadcast::channel('notifications.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});
+
+Broadcast::channel('delivery.driver.{driverId}', function ($user, $driverId) {
+    return (int) $user->repartidor_id === (int) $driverId;
+});
+
+Broadcast::channel('delivery.orders.{orderId}', function ($user, $orderId) {
+    return (int) $user->id === (int) $orderId;
+});
+
+Broadcast::channel('chat.conversation.{id}', function ($user, $id) {
+    $conversacion = Conversacion::find($id);
+    if (! $conversacion) {
+        return false;
+    }
+
+    $profile = PublicProfile::withoutGlobalScope(OwnerScope::class)->find($conversation->store_profile_id);
+
+    return (int) $user->id === (int) $conversacion->comprador_id
+        || (int) $user->id === (int) $conversacion->vendedor_id;
 });

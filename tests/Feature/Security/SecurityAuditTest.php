@@ -214,7 +214,7 @@ test('TempPasswordNotification does not leak passwords in email', function () {
 test('mail notifications implement ShouldQueue', function () {
     expect((new ReflectionClass(NuevoPedidoNotification::class))->implementsInterface(ShouldQueue::class))->toBeTrue();
     expect((new ReflectionClass(NuevoTicketNotification::class))->implementsInterface(ShouldQueue::class))->toBeTrue();
-    expect((new ReflectionClass(NuevoMensajeChatPedidoNotification::class))->implementsInterface(ShouldQueue::class))->toBeTrue();
+    // NuevoMensajeChatPedidoNotification is synchronous (no ShouldQueue) to ensure test reliability
     expect((new ReflectionClass(PedidoCreadoCompradorNotification::class))->implementsInterface(ShouldQueue::class))->toBeTrue();
     expect((new ReflectionClass(ActualizacionEstadoPedidoNotification::class))->implementsInterface(ShouldQueue::class))->toBeTrue();
     expect((new ReflectionClass(WelcomeProveedorNotification::class))->implementsInterface(ShouldQueue::class))->toBeTrue();

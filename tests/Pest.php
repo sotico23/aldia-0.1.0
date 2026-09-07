@@ -1,50 +1,36 @@
 <?php
+/**
+ * Pest Test Configuration
+ */
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+uses()->group('realtime');
 
-/*
-|--------------------------------------------------------------------------
-| Test Case
-|--------------------------------------------------------------------------
-|
-| The closure you provide to your test functions is always bound to a specific PHPUnit test
-| case class. By default, that class is "PHPUnit\Framework\TestCase". Of course, you may
-| need to change it using the "pest()" function to bind a different classes or traits.
-|
-*/
+uses(\Tests\TestCase::class);
 
-pest()->extend(TestCase::class)
-    ->use(RefreshDatabase::class)
-    ->in('Feature');
-
-/*
-|--------------------------------------------------------------------------
-| Expectations
-|--------------------------------------------------------------------------
-|
-| When you're writing tests, you often need to check that values meet certain conditions. The
-| "expect()" function gives you access to a set of "expectations" methods that you can use
-| to assert different things. Of course, you may extend the Expectation API at any time.
-|
-*/
-
-expect()->extend('toBeOne', function () {
-    return $this->toBe(1);
+beforeEach(function () {
+    $this->artisan('migrate:fresh --seed');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Functions
-|--------------------------------------------------------------------------
-|
-| While Pest is very powerful out-of-the-box, you may have some testing code specific to your
-| project that you don't want to repeat in every file. Here you can also expose helpers as
-| global functions to help you to reduce the number of lines of code in your test files.
-|
-*/
+afterEach(function () {
+    // Cleanup
+});
 
-function something()
-{
-    // ..
-}
+/**
+ * Dataset for channel authorization tests
+ */
+dataset('channels', [
+    'notifications' => ['notifications.1', 'user', 1],
+    'delivery_driver' => ['delivery.driver.1', 'driver', 1],
+    'delivery_orders' => ['delivery.orders.1', 'order', 1],
+    'chat_conversation' => ['chat.conversation.1', 'conversation', 1],
+]);
+
+/**
+ * Dataset for event types
+ */
+dataset('events', [
+    'notification_created' => [\App\Events\NotificationCreated::class, 'notifications'],
+    'delivery_order_assigned' => [\App\Events\DeliveryOrderAssigned::class, 'delivery.driver'],
+    'delivery_position_updated' => [\App\Events\DeliveryPositionUpdated::class, 'delivery.orders'],
+    'mensaje_enviado' => [\App\Events\MensajeEnviado::class, 'chat.conversation'],
+]);

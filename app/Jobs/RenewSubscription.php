@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\SubscriptionRenewed;
 use App\Models\Subscription;
 use App\Models\Transaction;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -32,8 +33,10 @@ class RenewSubscription implements ShouldQueue
             return;
         }
 
+        $previousEndsAt = $this->subscription->expires_at?->toDateTimeString();
         $startDate = now();
         $endDate = $plan->billing_cycle === 'yearly' ? now()->addYear() : now()->addMonth();
+        $newEndsAt = $endDate->toDateTimeString();
 
         Transaction::create([
             'business_id' => $this->subscription->business_id,
@@ -62,8 +65,11 @@ class RenewSubscription implements ShouldQueue
         $this->subscription->recordHistory('renewed', [
             'plan_slug' => $plan->slug,
             'amount' => $plan->price,
-            'expires_at' => $endDate->toDateTimeString(),
+            'expires_at' => $newEndsAt,
         ]);
+
+        // Dispatch event for notifications
+        event(new SubscriptionRenewed($this->subscription, $previousEndsAt, $newEndsAt));
 
         Log::info("RenewSubscription: Subscription #{$this->subscription->id} renewed for {$plan->slug}.");
     }

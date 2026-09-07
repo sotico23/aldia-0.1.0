@@ -184,7 +184,7 @@ class ConversacionPedidoController extends Controller
             $mensaje->is_image = in_array(pathinfo($mensaje->file_path, PATHINFO_EXTENSION), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
         }
 
-        broadcast(new MensajeEnviado($mensaje))->toOthers();
+        broadcast(new MensajeEnviado($mensaje, $mensaje->sender))->toOthers();
         broadcast(new CommunicationMessageSent($mensaje, 'order', $conversacion->id, Auth::id()))->toOthers();
 
         return response()->json(['mensaje' => $mensaje], 201);

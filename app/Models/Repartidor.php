@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Scopes\OwnerScope;
 use App\Traits\BelongsToOwner;
 use Database\Factories\RepartidorFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,6 +23,7 @@ class Repartidor extends Model
         'owner_id',
         'user_id',
         'estado',
+        'capacidad_max',
         'lat',
         'lng',
         'vehiculo_id',
@@ -35,6 +37,7 @@ class Repartidor extends Model
         return [
             'lat' => 'float',
             'lng' => 'float',
+            'capacidad_max' => 'integer',
             'radio_km' => 'decimal:2',
             'last_position_at' => 'datetime',
         ];
@@ -58,5 +61,39 @@ class Repartidor extends Model
     public function isDisponible(): bool
     {
         return $this->estado === 'disponible';
+    }
+
+    /**
+     * Pedidos en curso (preparando/enviado) asignados al repartidor.
+     */
+    public function pedidosActivos(): int
+    {
+        return Pedido::query()
+            ->withoutGlobalScope(OwnerScope::class)
+            ->where('owner_id', $this->owner_id)
+            ->where('repartidor_id', $this->user_id)
+            ->whereIn('estado', ['preparando', 'enviado'])
+            ->count();
+    }
+
+    public function tieneCapacidad(int $extra = 0): bool
+    {
+        return $this->pedidosActivos() + $extra < (int) $this->capacidad_max;
+    }
+
+    public function distanciaA(float $lat, float $lng): ?float
+    {
+        if ($this->lat === null || $this->lng === null) {
+            return null;
+        }
+
+        $radioTierra = 6371.0;
+        $dLat = deg2rad($lat - $this->lat);
+        $dLng = deg2rad($lng - $this->lng);
+
+        $a = sin($dLat / 2) ** 2
+            + cos(deg2rad($this->lat)) * cos(deg2rad($lat)) * sin($dLng / 2) ** 2;
+
+        return $radioTierra * 2 * asin(sqrt($a));
     }
 }

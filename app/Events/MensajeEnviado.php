@@ -1,50 +1,53 @@
 <?php
+/**
+ * Message Sent Event - Triggered when a chat message is sent
+ */
 
 namespace App\Events;
 
-use App\Models\MensajeConversacion;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-use Illuminate\Foundation\Events\Dispatchable;
-use Illuminate\Queue\SerializesModels;
+use App\Http\Resources\Base\BaseResource;
 
 class MensajeEnviado implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        parent::__construct();
+    }
 
-    public function __construct(
-        public MensajeConversacion $mensaje,
-    ) {}
+    /**
+     * Create the event
+     */
+    public function create(): MensajeEnviado
+    {
+        return new self();
+    }
 
-    public function broadcastOn(): array
+    /**
+     * Get the event data
+     */
+    public function getEventData(): array
     {
         return [
-            new PrivateChannel('conversacion.'.$this->mensaje->conversacion_id),
+            'id' => uniqid(),
+            'type' => 'chat.message.sent',
+            'conversacion_id' => $this->conversacion->id,
+            'leader_id' => $this->leader->id,
+            'mensaje_id' => $this->mensaje->id,
+            'texto' => $this->mensaje->texto,
+            'tipo_mensaje' => $this->mensaje->tipo_mensaje,
+            'leido_por_usuario' => $this->leido_por_usuario,
+            'created_at' => $this->created_at,
         ];
     }
 
-    public function broadcastWith(): array
+    /**
+     * Get the channel to subscribe to
+     */
+    public function getChannel(): string
     {
-        $data = [
-            'id' => $this->mensaje->id,
-            'conversacion_id' => $this->mensaje->conversacion_id,
-            'sender_id' => $this->mensaje->sender_id,
-            'contenido' => $this->mensaje->contenido,
-            'created_at' => $this->mensaje->created_at->toISOString(),
-            'sender' => [
-                'id' => $this->mensaje->sender->id,
-                'name' => $this->mensaje->sender->name,
-                'profile_photo_path' => $this->mensaje->sender->profile_photo_path,
-            ],
-        ];
-
-        if ($this->mensaje->file_path) {
-            $data['file_url'] = asset('storage/'.$this->mensaje->file_path);
-            $data['file_name'] = basename($this->mensaje->file_path);
-            $data['is_image'] = in_array(pathinfo($this->mensaje->file_path, PATHINFO_EXTENSION), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
-        }
-
-        return $data;
+        return 'chat.conversacion.{conversationId}';
     }
 }

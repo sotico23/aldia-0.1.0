@@ -20,6 +20,18 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     Role::firstOrCreate(['name' => 'Master', 'guard_name' => 'web']);
 
+    $this->master = User::factory()->create();
+    $this->master->assignRole('Master');
+
+    PaymentConfig::create([
+        'owner_id' => $this->master->id,
+        'paypal_client_id' => 'master-client',
+        'paypal_client_secret' => 'master-secret',
+        'paypal_mode' => 'sandbox',
+        'paypal_active' => true,
+        'paypal_webhook_id' => 'master-webhook-id',
+    ]);
+
     $this->vendor = User::factory()->create();
     $this->buyer = User::factory()->create();
 
