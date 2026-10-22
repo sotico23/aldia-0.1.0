@@ -1,0 +1,1154 @@
+================================================================================
+PLAN DE IMPLEMENTACION: API PARA AGENTE DE IA + APP FLUTTER (AL DIA)
+================================================================================
+
+FECHA: 21 de Octubre de 2026
+VERSION: 1.0
+PROYECTO: AlDia (Laravel 12 · multi-tenant · MySQL · Pest 4)
+REPO BACKEND:  C:\proyectos\aldiaproyect
+REPO FLUTTER:  aldia-flutter  (repo separado, se define el contrato aqui)
+
+================================================================================
+0. DECISIONES CONFIRMADAS
+================================================================================
+
+  Ubicacion del agente ......... Backend LLM propio (dentro de Laravel)
+  Autenticacion ................ Sanctum PAT (Personal Access Token) + abilities
+  Alcance MVP ................... Lectura primero (read-only)
+  Modulos ...................... Comercial + Inventario
+                                 Finanzas + Facturacion
+                                 Logistica / Delivery
+                                 Agenda + CRM + Reportes
+                                 (los 4 grupos, secuenciados en olas)
+
+================================================================================
+1. CONTEXTO DEL PROYECTO
+================================================================================
+
+AlDia es un ERP multi-tenant en Laravel 12 con 14 modulos de negocio:
+
+  * CRM / Comercial ....... clientes, prospectos, oportunidades, productos,
+                            categorias, campanas, tickets, call-center
+  * Ventas / POS .......... ventas, variantes, skus, cupones, POS (cierre,
+                            facturacion, promociones, reportes)
+  * Inventario ............ proveedores, compras, inventarios, almacenes, lotes,
+                            movimientos, vacios, inventario-cierre
+  * Finanzas .............. cobranzas, pagos, tesoreria, contabilidad (asientos),
+                            impuestos, facturacion, SII (DTE/CAF/folios)
+  * MRP ................... boms, ordenes-produccion, calidad, planificacion
+  * Proyectos ............. proyectos, hitos, timesheets, gastos-proyecto
+  * RRHH .................. empleados, nominas, asistencia, reclutamiento,
+                            evaluaciones, prestamos
+  * Flota ................. vehiculos, conductores, entregas, cargas-diarias,
+                            grupos-trabajo
+  * Delivery .............. repartidores, zonas-reparto, pool, tracking
+  * LMS ................... cursos, modules, lessons, quizzes
+  * Admin / Plataforma .... configuracion, paises, configuracion-web, usuarios,
+                            roles, permisos, reportes
+  * Marketplace / Rifas ... rifas, prizes, tienda, booking
+  * Uptime ................ uptime/alerts, webhooks
+  * Otros (web.php) ........ appointments, servicios, cotizaciones, tareas,
+                            chat/mensajes, pagos (webpay/paypal/mercadopago)
+
+Stack: PHP 8.2+ / Laravel 12 / Inertia 2 + React / Livewire 4 / Fortify 1.30 /
+Sanctum 4.3 / Spatie Permission 7 / Pest 4 / Tailwind 4 / Reverb / MySQL.
+
+Frontend existente: Inertia+React (web). NO existe app movil.
+
+--------------------------------------------------------------------------------
+1.1 AISLAMIENTO MULTI-TENANT (no tocar, es la base de todo)
+--------------------------------------------------------------------------------
+
+  - Trait:      App\Traits\BelongsToOwner  ->  columna owner_id
+  - Scope:      App\Scopes\OwnerScope       ->  filtra owner_id = Auth::user()->getOwnerId()
+  - Excepcion:  Master / Super Admin tienen BYPASS del scope (Gate::before en
+                AppServiceProvider::boot()).
+  - User::getOwnerId() (app/Models/User.php:243-270) sube por la cadena
+    creator_id hasta la raiz. Un usuario sin creator_id es su propio tenant.
+  - NO existe columna business_id en users. El tenant = raiz de la cadena creator.
+  - En las rutas con token el scope es INERTE (ver hallazgo H5). Por eso el
+    Bot API aplica ->where('owner_id', $ownerId) EXPLICITO en cada query:
+    el scope es refuerzo, la defensa real es el filtro manual.
+
+Roles usados en codigo: Master, Super Admin, Administrador, Usuario, Cliente,
+Proveedor, Repartidor. (Role tiene columna level: 0=Master ... 3=Usuario.)
+
+================================================================================
+2. ANALISIS DE LAS RUTAS (813 rutas totales, 62 en api/*)
+================================================================================
+
+--------------------------------------------------------------------------------
+2.1 SUPERFICIE api/* ACTUAL (7 bloques) - tabla de auditoria
+--------------------------------------------------------------------------------
+
+  BLOQUE              PREFIJO / PATHS                    AUTH                             ESTADO
+  ------------------  --------------------------------  --------------------------------  --------------
+  Bot API             /api/v1/bot/*                     bot-api = users.api_token         PARCIAL
+                                                           + X-Owner-ID (obligatorio)
+                                                           + X-User-ID (opcional)
+  Bot OpenAPI         /api/v1/bot/openapi               (publico)                         OK
+  Delivery movil      /api/v1/delivery/*                auth:sanctum + delivery            ROTO
+                                                           + throttle:delivery              (H1)
+  Tracking            /api/v1/tracking/update           auth:sanctum + active              ROTO (H1)
+  Zonas               /api/v1/zones/*                   auth:sanctum + active              ROTO (H1)
+  Automation (n8n)    /api/v1/automation/*              verify-n8n-api-key (X-API-Key)     MAQUINA
+  Internal (n8n)      /api/internal/*                   verify-n8n-token (X-N8N-TOKEN)    MAQUINA
+  Tenant              /api/tenant/resumen-completo     verify-tenant-token (Bearer)      ORO PURO
+  Telegram webhook    /api/canales/telegram/webhook     (firma HMAC)                      OK
+  SII / global-search /api/sii/*, /api/global-search    grupo web (session)               INACCESIBLE
+                                                           desde cliente token              (H7)
+
+  Detalle de /api/internal/* (util, ya existe, convencion {success:true}):
+    GET  /api/internal/business/{business}/summary
+    GET  /api/internal/business/{business}/inventory
+    GET  /api/internal/business/{business}/sales
+    GET  /api/internal/business/{business}/appointments
+    GET  /api/internal/business/{business}/cash-flow
+    GET  /api/internal/business/{business}/accounts-receivable
+    GET  /api/internal/business/{business}/accounts-payable
+    GET  /api/internal/business/{business}/expenses
+    GET  /api/internal/business/{business}/executions
+    POST /api/internal/webhook/workflow-complete
+
+  Detalle de /api/v1/bot/* (ya existe, unico modulo agent-ready):
+    GET    /api/v1/bot/clientes            listar (search, activo, limit, offset)
+    POST   /api/v1/bot/clientes            crear (201)
+    GET    /api/v1/bot/clientes/{cliente}  detalle
+    PUT    /api/v1/bot/clientes/{cliente}  actualizar
+    DELETE /api/v1/bot/clientes/{cliente}  desactivar (activo=false)
+    GET    /api/v1/bot/ventas              listar
+    POST   /api/v1/bot/ventas              crear (201)
+    GET    /api/v1/bot/ventas/{venta}      detalle
+    PUT    /api/v1/bot/ventas/{venta}      actualizar
+    DELETE /api/v1/bot/ventas/{venta}      cancelar (estado=cancelada)
+    GET    /api/v1/bot/openapi             OpenAPI 3.1 (publico)
+
+--------------------------------------------------------------------------------
+2.2 CONVENCIONES A REUTILIZAR (no reinventar)
+--------------------------------------------------------------------------------
+
+  ENVELOPE (app/Http/Controllers/Api/Bot/BotBaseController.php)
+    Exito   -> { "status":"success", "message":"...", "data": { ... } }
+    Creado  -> { "status":"success", "message":"...", "data": { ... } }   HTTP 201
+    Error   -> { "status":"error",   "message":"...", "errors": { ... } }  HTTP 422
+    404     -> { "status":"error",   "message":"...", "errors": [] }
+    Auth    -> { "status":"error",   "message":"...", "errors": [] }  401 / 403
+
+    OJO: conviven 3 convenciones en el repo:
+      Bot API   -> {status, message, data}          <-- USAR ESTA
+      Delivery/Zones/Internal/Tenant/N8n -> {success:true, ...}
+      api/user  -> objeto crudo sin envelope
+    Para todo lo nuevo bajo /api/v1/bot/* y /api/v1/agent/* usar {status,...}.
+
+  AISLAMIENTO (reglas inalterables del Bot API)
+    - Toda query en XxxBotService lleva ->where('owner_id', $ownerId) EXPLICITO.
+    - X-Owner-ID SIEMPRE obligatorio y numerico.
+    - Tokens Master/Super Admin NO desactivan el aislamiento: el contexto
+      siempre se resuelve al tenant de X-Owner-ID.
+    - Acceso cross-tenant -> HTTP 404, NUNCA 403 (no filtrar existencia).
+
+  PAGINACION
+    - Parametros: limit (default 50, clamp 1..100) y offset (default 0).
+    - Respuesta: { items:[], total:int, limit:int, offset:int }
+
+  DELETE = SOFT DELETE (nunca borrado fisico)
+    - clientes  -> activo = false
+    - ventas    -> estado = 'cancelada'
+
+  SERIALIZACION
+    - Array explicito en serialize(). NUNCA ->toArray() ni ->jsonSerialize().
+    - Payload corto, sin owner_id / created_at / updated_at.
+
+  VALIDACION
+    - Unico por tenant:  Rule::unique($tabla,$col)->where(fn($q)=>$q->where('owner_id',$ownerId))
+    - Existe por tenant: Rule::exists($tabla,'id')->where(fn($q)=>$q->where('owner_id',$ownerId))
+    - OJO: clientes.email tiene indice UNICO GLOBAL en BD (migracion
+      2026_04_19_003221). Verificar indice unico de cada tabla antes de anadir.
+
+  RATE LIMITERS DEFINIDOS (AppServiceProvider.php)
+    api(60/min) bot(120/min) delivery(120/min) search(30/min) dashboard(30/min)
+    messages(30/min) imports(5/min) checkout(10/min) cupon-validate(20/min)
+    login(5/min email|ip) two-factor(5/min) password-reset(3/min) registration(5/min)
+
+  PAGINOS MODELO PARA UN RECURSO NUEVO (5 piezas, ver BOT_API_AVANCE.txt sec.4)
+    1. Rutas en routes/api.php dentro del grupo v1/bot
+    2. XxxBotController extends BotBaseController   (controlador delgado)
+    3. XxxBotService en app/Services/Api/Bot/      (logica + owner filter)
+    4. Store/Update Form Requests en app/Http/Requests/Api/Bot/
+    5. Schemas + paths en app/Support/OpenApi/BotOpenApi.php
+
+================================================================================
+3. HALLAZGOS BLOQUEANTES (verificar y corregir en OLA 0)
+================================================================================
+
+  H1. FALTA LA MIGRACION personal_access_tokens
+      No existe en database/migrations/ (289 archivos revisados).
+      Efecto: auth:sanctum con cabecera Authorization -> HTTP 500
+      (QueryException: table 'personal_access_tokens' doesn't exist), no 401.
+      Rompe: /api/user, /api/v1/delivery/*, /api/v1/tracking/update,
+             /api/v1/zones/* y el auth de Reverb (ReverbAuthMiddleware).
+      Fix: php artisan vendor:publish --tag=sanctum-migrations && php artisan migrate
+      Plantilla: vendor/laravel/sanctum/database/migrations/2019_12_14_000001_create_personal_access_tokens_table.php
+
+  H2. NO EXISTE NINGUN ENDPOINT DE LOGIN para clientes no-browser
+      grep createToken en app/ -> 0 resultados. Fortify v1.30 NO tiene feature
+      api() (verificado en vendor/laravel/fortify/src/Features.php: solo
+      registration, resetPasswords, emailVerification, updateProfileInformation,
+      updatePasswords, twoFactorAuthentication, passkeys).
+      Ademas config/fortify.php tiene middleware ['web'] -> todo Fortify exige
+      session + CSRF. El LoginResponse devuelve {"two_factor":false} en JSON
+      pero NO emite token.
+      Fix: escribir a mano /api/v1/auth/login (ver Ola 1).
+
+  H3. app/Models/Producto.php ESTA CORROMPIDO
+      - No extiende Illuminate\Database\Eloquent\Model.
+      - Usa "?decimal" (tipo inexistente en PHP -> parse error al cargar).
+      - Usa CryptProtectedColumn, Migration, $this->attributes inexistente.
+      - Rompe: productos, /api/global-search (GlobalSearchController:148),
+        VentaBotService (detalles.*.producto_id), DetalleVenta::producto(),
+        ReporteController.
+      - RESTAURABLE: git show 2c739ac:app/Models/Producto.php
+        (commit "Initial commit - Al Dia Project"; la corrupcion es 15215a2 "laster").
+      - Validar el $fillable restaurado contra las migraciones de la tabla
+        productos antes de commitear (si el esquema cambio, ajustar).
+
+  H4. CheckRole / CheckPermission / CheckOwnership RESPONDEN HTML 302
+      Si no hay usuario -> redirect()->route('login'). Un cliente movil recibe
+      HTML en vez de JSON 401.
+      CheckPermission::trialExpiredResponse solo devuelve JSON si viene la
+      cabecera X-Inertia; si no, redirect a planes.index.
+      Fix: variantes JSON-aware para el grupo api.
+
+  H5. OwnerScope ES INERTE EN LAS RUTAS CON TOKEN
+      OwnerScope usa Auth::check() / Auth::user(). VerifyTenantToken y
+      ResolveBotTenant solo hacen $request->setUserResolver(...), nunca
+      Auth::shouldUse() / Auth::setUser(). Resultado: Auth::check() es false
+      y el scope NO filtra. El aislamiento depende de filtros manuales.
+      Fix: el middleware nuevo debe llamar Auth::shouldUse($tenant).
+
+  H6. users.banned_at NUNCA SE COMPRUEBA
+      La columna existe (migracion 2026_06_06_000506) pero ningun middleware
+      la revisa. Un usuario baneado conserva acceso.
+
+  H7. /api/global-search y /api/sii/* ESTAN EN routes/web.php
+      web.php:288 -> '/api/global-search' con middleware web + Authenticate
+      (guard web). Un cliente con Bearer NO puede llamarlos.
+      ademas web.php:289-290 -> /api/sii/consultar/{rut} y /api/sii/validar-rut.
+
+  H8. config/cors.php incompleto + config/sanctum.php ausente
+      CORS allowed_headers no incluye X-Owner-ID, X-User-ID, X-API-Key,
+      X-N8N-TOKEN. CORS_ALLOWED_ORIGINS no esta en .env (cae a APP_URL).
+      max_age = 0. config/sanctum.php NO EXISTE -> defaults vendor:
+      expiration=null (los tokens nunca expiran), stateful no configurado.
+
+  H9. SECRETOS EXPUESTOS
+      .claude/settings.json contiene un token de OpenRouter hardcodeado
+      (ANTHROPIC_BASE_URL=https://openrouter.ai/api/). Rotar y mover a .env.
+      users.api_token y users.n8n_api_key son TEXTO PLANO en BD.
+
+  H10. BotOpenApi::operation() referencia el schema Error en la respuesta 201
+      app/Support/OpenApi/BotOpenApi.php ~linea 255. Corregir al ampliar.
+
+  H11. No hay infraestructura push movil (FCM/firebase): 0 matches en app/.
+      Solo existe Web Push (PushSubscription). No usar FCM en este plan.
+
+  H12. .claude/settings.json / PLAN_ANDROID_APP.txt son planes viejos (Android
+      Kotlin, no Flutter). Este documento los reemplaza para el caso Flutter.
+
+================================================================================
+4. ARQUITECTURA OBJETIVO
+================================================================================
+
+  +-------------------------------------------------------------------------+
+  |  APP FLUTTER  (repo aldia-flutter)                                     |
+  |  Chat con el agente + dashboard + login                                |
+  +------------------+----------------------------+-----------------------+
+                     | HTTPS + Bearer PAT          | SSE (text/event-stream)
+                     v                            v
+  +-------------------------------------------------------------------------+
+  |  LARAVEL  /api/v1/agent/*                                              |
+  |  POST chat (SSE) | GET/DELETE conversations | GET tools | GET openapi   |
+  +---------------------------------+---------------------------------------+
+                                    |
+                     +--------------v---------------+
+                     |  app/Agent/AgentService     |
+                     |  bucle LLM -> tool_call     |
+                     |  + AgentToolRegistry        |
+                     |  + AgentContextBuilder      |
+                     |  + LlmClient (LLM_BASE_URL) |
+                     +--------------+---------------+
+                                    |  llamadas IN-PROCESS (sin HTTP)
+                     +--------------v-------------------------------+
+                     |  app/Services/Api/Bot/*BotService             |
+                     |  <- UNICA FUENTE DE VERDAD                    |
+                     |  (owner_id explicito en cada query)            |
+                     +--------------+-------------------------------+
+                                    |  mismo servicio, via HTTP
+  +---------------------------------v------------------------------------+
+  |  /api/v1/bot/*  (TOOL API HTTP, read-only en esta entrega)          |
+  |  consumible por: n8n, agentes externos, Flutter on-device           |
+  +----------------------------------------------------------------------+
+
+  PRINCIPIO DE DISENO
+    El SERVICE LAYER es la fuente de verdad. La API HTTP es un adaptador
+    delgado. El agente Laravel llama los BotService in-process (sin
+    auto-llamadas HTTP ni round-trip). Un agente externo consume la misma
+    API HTTP con el mismo contrato OpenAPI. Un solo contrato para todos.
+
+  CONTRATO DE TENANT (inalterable, ya existe y funciona)
+    Authorization: Bearer <pat|api_token>
+    X-Owner-ID: <tenant_user_id>      (obligatorio, numerico)
+    X-User-ID: <acting_user_id>       (opcional, auditoria)
+    Accept: application/json
+
+================================================================================
+5. PLAN DE EJECUCION - 6 OLAS
+================================================================================
+
+  Ola 0  Desbloqueo              (H1,H2,H3,H4,H5,H6,H7,H8,H9,H10)
+  Ola 1  Auth API                (login/2FA/refresh/logout/me + abilities)
+  Ola 2  Tool API read-only      (4 dominios + transversales)
+  Ola 3  Backend del agente      (LLM loop, tool registry, SSE)
+  Ola 4  Contrato + cliente Flutter
+  Ola 5  Endurecimiento          (rate limits, audit, observabilidad, docs)
+
+--------------------------------------------------------------------------------
+5.0 OLA 0 - DESBLOQUEO (prerrequisito duro; sin esto nada mas funciona)
+--------------------------------------------------------------------------------
+
+  TAREAS
+    O0.1  Restaurar app/Models/Producto.php (Eloquent, BelongsToOwner,
+          HasFactory, $fillable, casts, relaciones).
+          Fuente: git show 2c739ac:app/Models/Producto.php
+          Verificar $fillable contra las migraciones de la tabla productos.
+          Verificar que el reporte de productos (ReporteController) y el
+          DetalleVenta::producto() vuelvan a funcionar.
+
+    O0.2  Publicar y ejecutar la migracion de Sanctum:
+            php artisan vendor:publish --tag=sanctum-migrations
+            php artisan migrate
+          Verificar que la tabla personal_access_tokens tenga: id, token_hash,
+          name, tokenable_id, tokenable_type, abilities, last_used_at,
+          expires_at, timestamps.
+          (La migracion es nueva y no toca users: riesgo bajo. Aun asi,
+          hacer backup y php artisan migrate --pretend antes.)
+
+    O0.3  Crear config/sanctum.php (publicar y ajustar):
+            'expiration'   => env('SANCTUM_EXPIRATION_MINUTES') ? now()->addMinutes(...) : null
+            'token_prefix' => env('SANCTUM_TOKEN_PREFIX', 'aldia_')
+            'stateful'     => [...] (dejar vacio: esta API es stateless)
+          Anadir a .env y .env.example:
+            SANCTUM_TOKEN_PREFIX=aldia_
+            SANCTUM_EXPIRATION_MINUTES=43200
+
+    O0.4  Crear app/Services/ApiTokenService.php
+          - issue(User $user, string $deviceName, array $abilities, ?int $ttl)
+              -> $user->createToken($deviceName, $abilities, $expiresAt)
+              -> devuelve [plainTextToken, tokenModel, abilities]
+          - revoke(PersonalAccessToken $token)  -> delete del token actual
+          - revokeAllForDevice(User $user, string $deviceName)
+          - rotate(PersonalAccessToken $old, array $abilities)
+          - abilitiesOf(User $user) -> lista de abilities activas
+          Nombre: usar el nombre del dispositivo para poder revocar por equipo.
+
+    O0.5  Crear app/Http/Middleware/Bot/ResolveAgentContext.php
+          Alias: 'agent-api' (registrar en bootstrap/app.php $middleware->alias).
+          Flujo:
+            1) Bearer token -> PersonalAccessToken::findToken($token)
+               -> si no existe: 401 {status:error, message:"Token de API no proporcionado."}
+            2) ->user() del token -> si null: 401 "Token de API invalido."
+            3) si !is_active: 403 "Cuenta desactivada. Contacta al administrador."
+            4) si banned_at !== null: 403 "Cuenta bloqueada."
+            5) exigir ability minima 'agent:read' -> si no: 403
+            6) X-Owner-ID obligatorio y numerico -> si no: 401
+            7) tenant = User::find(ownerId) -> null/inactivo: 401
+            8) token de Master/Super Admin: NO bypassea aislamiento; el contexto
+               se resuelve SIEMPRE al tenant de X-Owner-ID.
+               Token normal: getOwnerId() debe coincidir con ownerId -> si no: 401
+            9) X-User-ID opcional -> debe existir, estar activo y pertenecer al
+               tenant -> si no: 401
+           10) Auth::shouldUse($tenant)   <-- ACTIVA OwnerScope (corrige H5)
+           11) $request->attributes->set('agent_context', new AgentContext(
+                   ownerId, actingUserId, abilities))
+           12) $request->setUserResolver(fn() => $tenant)
+          Errores: {status:"error", message:"...", errors:[]}
+
+    O0.6  Variantes JSON-aware para el grupo api:
+            app/Http/Middleware/Api/CheckApiRole.php
+            app/Http/Middleware/Api/CheckApiPermission.php
+            app/Http/Middleware/Api/CheckApiOwnership.php
+          - usuario ausente -> 401 JSON {status:error, message:"Unauthenticated."}
+          - sin permiso/rol -> 403 JSON
+          - trial expirado -> 403 JSON {status:error, trial_expired:true, message:...}
+          Mantener intactas las versiones web (no romper el frontend Inertia).
+
+    O0.7  Mover /api/global-search al grupo api:
+            - mover la ruta a routes/api.php con middleware
+              ['agent-api','ability:agent:read','throttle:search']
+            - en routes/web.php dejar un redirect 301 a la ruta api (o quitar)
+            - GlobalSearchController:14 usa auth()->user()->getOwnerId();
+              con Auth::shouldUse() ya funciona; aun asi, cambiar a
+              $request->user()->getOwnerId() y revisar el where owner_id de
+              cada modelo (ya lo tiene).
+            - Mismo treatment para /api/sii/consultar/{rut} y /api/sii/validar-rut
+              si se siguen usando desde la app.
+
+    O0.8  CORS:
+            - config/cors.php allowed_headers += X-Owner-ID, X-User-ID,
+              X-API-Key, X-N8N-TOKEN, X-Inertia, X-Idempotency-Key
+            - max_age: 86400
+            - .env: CORS_ALLOWED_ORIGINS=https://<dominio-app>
+            - .env.example: CORS_ALLOWED_ORIGINS=http://localhost:8000
+            (Flutter nativo no depende de CORS; el PWA/web si.)
+
+    O0.9  Rotar el token de OpenRouter de .claude/settings.json -> .env.
+           No volver a hardcodear secretos en archivos del repo.
+
+    O0.10 Rate limiters nuevos en AppServiceProvider:
+            RateLimiter::for('agent-read',  -> Limit::perMinute(120)->by(ownerId|userId|ip))
+            RateLimiter::for('agent-write', -> Limit::perMinute(30)->by(...))
+            RateLimiter::for('agent-chat',  -> Limit::perMinute(20)->by(userId|ip))
+            RateLimiter::for('api-auth',    -> Limit::perMinute(10)->by(email|ip))
+
+    O0.11 bootstrap/app.php:
+            - registrar alias: 'agent-api', 'ability', 'api-role',
+              'api-permission', 'api-ownership'
+            - $middleware->api(append: ['throttle:api'])  (el limiter ya existe)
+            - withExceptions: extender el render JSON de 404/422 de
+              'api/v1/bot/*' a 'api/v1/agent/*' y 'api/v1/auth/*'
+            - NO activar statefulApi() (esta API es stateless)
+
+  CRITERIO DE SALIDA OLA 0
+    - php artisan test  -> verde
+    - GET /api/user con Bearer PAT -> 200 (no 500)
+    - GET /api/global-search?q=venta con PAT -> 200 con scoping por tenant
+    - app/Models/Producto.php carga sin error de sintaxis
+    - vendor/bin/pint --dirty -> limpio
+
+--------------------------------------------------------------------------------
+5.1 OLA 1 - AUTH API (lo que consume Flutter)
+--------------------------------------------------------------------------------
+
+  Prefijo: /api/v1/auth   (routes/api.php, middleware throttle:api-auth / login)
+
+  ENDPOINTS
+
+    POST /api/v1/auth/login
+      Body:  { "email": "...", "password": "...", "device_name": "pixel-8" }
+      200 -> { "status":"success", "message":"Sesion iniciada.",
+               "data": { "token": "<pat>", "token_type":"Bearer",
+                         "abilities":["agent:read","reports:read"],
+                         "expires_at":"2026-11-20T12:00:00Z",
+                         "user": { id, name, email, telefono, direccion, country,
+                                   business_name, business_logo_path,
+                                   business_cover_path, is_active, created_at },
+                         "tenant": { id, name, business_name } } }
+      401 -> credenciales invalidas (NO revelar si el email existe)
+      403 -> cuenta inactiva / bloqueada
+      422 -> { "status":"error", "message":"Codigo 2FA requerido.",
+               "data": { "two_factor_required": true, "challenge_id": "..." } }
+      Rate limit: 5/min por email|ip (reusar RateLimiter::for('login')).
+
+    POST /api/v1/auth/two-factor/verify
+      Body: { "challenge_id":"...", "code":"123456" }
+      200 -> mismo shape que login.
+      (Fortify tiene 2FA habilitado con confirm+confirmPassword y NO tiene ruta
+       JSON. Hay que implementar el desafio.)
+
+    POST /api/v1/auth/refresh
+      Body: { "token":"<pat actual>" }
+      200 -> nuevo PAT + abilities. Revoca el PAT usado (rotacion).
+      401 -> token invalido/expirado.
+
+    POST /api/v1/auth/logout
+      Header: Authorization Bearer <pat>
+      200 -> revoca el PAT actual (y opcionalmente todos del device_name).
+
+    GET /api/v1/auth/me
+      Header: Authorization Bearer <pat>
+      200 -> { user, tenant, abilities, modules: [...], tools_disponibles: [...] }
+
+  ABILITIES (columna abilities de personal_access_tokens, JSON)
+    agent:read        todas las tools de lectura de /api/v1/bot/* y /api/v1/agent/*
+    agent:write       reservado para la Ola 6 (escritura)
+    agent:admin       herramientas administrativas del tenant
+    delivery:read     tools de reparto
+    delivery:write    acciones de reparto (Ola 6)
+    catalog:read      solo catalogo (productos, categorias)
+    reports:read      reportes y dashboards
+    admin:write       administracion de plataforma
+
+  MATRIZ DE ABILITIES MINIMAS POR GRUPO
+    /api/v1/auth/*                 -> (publico, throttle)
+    /api/v1/bot/contexto           -> agent:read
+    /api/v1/bot/resumen            -> agent:read
+    /api/v1/bot/reportes/*         -> reports:read
+    /api/v1/bot/buscar             -> agent:read
+    /api/v1/bot/dashboard/*        -> reports:read
+    /api/v1/bot/{clientes,ventas,productos,...} -> agent:read
+    /api/v1/agent/chat             -> agent:read
+    /api/v1/agent/conversaciones   -> agent:read
+
+  SEGURIDAD
+    - Nunca devolver api_token legacy ni n8n_api_key en ninguna respuesta.
+    - Guardar el PAT en el dispositivo via flutter_secure_storage.
+    - Expiracion por defecto 30 dias + refresh rotativo.
+    - El PAT se nombra con device_name -> revocar por equipo.
+    - Log de login: user_id, ip, device_name, exito/fallo (sin password).
+
+--------------------------------------------------------------------------------
+5.2 OLA 2 - TOOL API READ-ONLY (/api/v1/bot/*)
+--------------------------------------------------------------------------------
+
+  Middleware del grupo:
+    Route::prefix('v1/bot')->middleware(['agent-api','ability:agent:read','throttle:agent-read'])
+
+  Se mantiene 100% compatible con n8n: el middleware agent-api acepta tanto
+  el PAT nuevo como el api_token legacy (Bearer + X-Owner-ID). Si el Bearer
+  es un PAT -> resolve token; si no, fallback a User::where('api_token').
+  (Mantener backwards compatible con los workflows n8n ya desplegados.)
+
+  POR RECURSO (read-only en esta ola):
+    GET /api/v1/bot/{recurso}       lista paginada + filtros
+    GET /api/v1/bot/{recurso}/{id}  detalle
+  Sin POST/PUT/DELETE en esta ola.
+
+  ---- 5.2.1 COMERCIAL + INVENTARIO (ola 2.1, P0) ----
+
+    RECURSO        MODELO         FILTROS SUGERIDOS              NOTAS
+    -------------  -------------  -----------------------------  --------------------
+    clientes       Cliente        search, activo                 ya existe; ampliar
+                                                                serialize()
+    productos      Producto       search, categoria_id, activo,  requiere O0.1
+                                 stock_bajo
+    categorias     Categoria      search                         verificar columna
+                                                                owner_id (tiene
+                                                                columna, NO trait)
+    ventas         Venta+Detalle  search, estado, desde, hasta   ya existe; anadir
+                                                                GET /ventas/{id}/detalle
+    variantes      Variante       producto_id                    matriz SKU
+    skus           Sku            producto_id, variante_id
+    cotizaciones   Cotizacion     estado, cliente_id             importes
+    pedidos        Pedido         estado, zona_id, desde, hasta  origen del flujo
+                                                                delivery
+    proveedores    Proveedor      search, activo
+    compras        Compra         estado, proveedor_id
+    inventarios    Inventario     producto_id, almacen_id,        stock bajo
+                                 stock_bajo
+    almacenes      Almacen        search
+    lotes          Lote           producto_id
+    movimientos    Movimiento      producto_id, tipo, desde, hasta
+    campanas       Campana        search, activo
+    cupones        Cupon          search, activo                 (validacion es
+                                                                escritura -> Ola 6)
+
+  ---- 5.2.2 FINANZAS + FACTURACION (ola 2.2, P1) ----
+
+    RECURSO        MODELO         FILTROS SUGERIDOS              NOTAS
+    -------------  -------------  -----------------------------  --------------------
+    pagos          Pago           ventas_id, metodo, desde, hasta
+    cobranzas      Cobranza       estado, cliente_id, desde, hasta
+    tesoreria      Tesoreria      tipo, desde, hasta             movimientos de caja
+    asientos       Contabilidad   tipo, cuenta, desde, hasta    (param 'asiento'
+                                                                en routes/modules/
+                                                                finanzas.php)
+    impuestos      Impuesto       search, activo                 maestro
+    facturas       Factura        estado, cliente_id, folio,     + GET /facturas/{id}
+                                 desde, hasta                    con detalle
+    sii            Folios/CAF     -                              estado del emisor,
+                                                                ambiente, ultimo
+                                                                folio, vigencia CAF
+                                                                (lectura)
+
+  ---- 5.2.3 LOGISTICA / DELIVERY (ola 2.3, P1) ----
+
+    RECURSO          MODELO        FILTROS SUGERIDOS            NOTAS
+    ---------------  ------------  ---------------------------  --------------------
+    repartidores     Repartidor    estado, zona_id               capacidad, radio,
+                                                            zona, ultima ubicacion
+    zonas            Zone          search                        + GET /zonas/geojson
+                                                            + GET /zonas/resumen
+    entregas         Entrega       estado, repartidor_id
+    cargas-diarias   CargaDiaria   estado, conductor_id          + renovaciones
+    vehiculos        Vehiculo      search, estado                lat/lng actual
+    conductores      Conductor      search, estado
+    pedidos (delivery) Pedido      estado                        pipeline
+                                                            pendiente->asignado->
+                                                            recogido->entregado/
+                                                            rechazado
+
+    Reutilizar el shape de payload ya definido en
+    DeliveryOrdenController::pedidoResource() como referencia canonica.
+
+  ---- 5.2.4 AGENDA + CRM + REPORTES (ola 2.4, P1/P2) ----
+
+    RECURSO          MODELO        FILTROS SUGERIDOS            NOTAS
+    ---------------  ------------  ---------------------------  --------------------
+    appointments     Appointment   estado, desde, hasta          + sincronizacion
+                                                            Google (solo lectura)
+    servicios        Service       search, activo
+    prospectos       Prospecto     estado, search, asignado
+    oportunidades    Oportunidad   etapa, search, valor
+    tickets          Ticket        estado, prioridad, desde, hasta
+    tareas           Tarea         estado, asignado, desde, hasta
+    mensajes         Mensaje       canal, desde, hasta           SOLO lectura de
+                                                            estado (Telegram/
+                                                            WhatsApp/Email)
+    conversaciones   Conversacion  canal, desde, hasta
+
+  ---- 5.2.5 ENDPOINTS TRANSVERSALES (esenciales para el agente) ----
+
+    GET /api/v1/bot/contexto
+      Perfil del tenant + catalogo resumido + fecha/hora actual + moneda (CLP)
+      + modulos y tools disponibles + permisos del usuario + modo de la
+      convencion (fechas ISO-8601, RUT chileno, sin decimales en CLP).
+      -> Es el "system prompt" del agente. Construir con AgentContextBuilder.
+
+    GET /api/v1/bot/resumen
+      Promover TenantDataController::resumenCompleto (hoy en
+      /api/tenant/resumen-completo con verify-tenant-token).
+      Mismo shape, auth agent-api. Shape actual:
+        { success:true, tenant:{id,name,business_name,email},
+          summary:{ sales_today, sales_month, sales_month_total,
+                    inventory_total, inventory_low_stock,
+                    appointments_today, appointments_pending,
+                    customers_total, customers_new_month,
+                    cash_flow_income, cash_flow_expense,
+                    accounts_receivable, accounts_payable,
+                    expenses_month, purchases_month },
+          generated_at }
+      DECISION: normalizar al envelope {status,message,data} y mantener el
+      shape de summary identico.
+
+    GET /api/v1/bot/reportes/{tipo}
+      Promover AutomationReportService (reports es una whitelist de nombres).
+      Tipos: ventas, inventario, cobranzas, finanzas, clientes, etc.
+      Query: ?reports=ventas,inventario&desde=2026-01-01&hasta=2026-12-31
+
+    GET /api/v1/bot/buscar?q=
+      Mover GlobalSearchController al grupo api (O0.7). Cross-modulo:
+      clientes, facturas, productos, etc.
+
+    GET /api/v1/bot/dashboard/resumen
+      KPIs por periodo (ventas, tickets, pipeline de oportunidades, agenda).
+
+    GET /api/v1/bot/openapi
+      Actualizar a OpenAPI 3.1 v2: los 4 dominios + transversales.
+      Corregir el bug del 201 -> Error (H10).
+      Mantenerlo publico (no expone datos) o protegerlo con agent-api.
+
+  VOLUMEN ESTIMADO: ~35 recursos x 2 endpoints = ~70 endpoints + 6 transversales.
+
+--------------------------------------------------------------------------------
+5.3 OLA 3 - BACKEND DEL AGENTE (LLM)
+--------------------------------------------------------------------------------
+
+  Paquete nuevo: app/Agent/
+
+    app/Agent/AgentService.php
+      Orquestador del bucle:
+        - recibe mensaje + conversation_id + AgentContext
+        - arma historial (truncado a los ultimos N turnos)
+        - llama LlmClient->chat(messages, tools)
+        - si la respuesta trae tool_calls: ejecuta cada una via
+          AgentToolRegistry, agrega los resultados y vuelve a llamar al LLM
+        - limite de iteraciones: AGENT_MAX_ITERATIONS (def 8)
+        - devuelve texto final + tool_calls ejecutadas (para la UI)
+        - todo dentro de la tenant del contexto (ownerId), NUNCA del cuerpo
+          de la request
+
+    app/Agent/AgentToolRegistry.php
+      - registra tools: nombre + JSON Schema (function-calling OpenAI)
+      - cada tool tiene: name, description, parameters (JSON Schema), handler
+      - el handler delega en el XxxBotService correspondiente pasando
+        $ownerId explicito (AISLAMIENTO POR DISENO)
+      - nombres sugeridos (estilo n8n Tools via OpenAPI):
+          al_dia_clientes_listar, al_dia_clientes_obtener,
+          al_dia_productos_listar, al_dia_productos_obtener,
+          al_dia_ventas_listar, al_dia_ventas_obtener,
+          al_dia_facturas_listar, al_dia_pagos_listar,
+          al_dia_cobranzas_listar, al_dia_tesoreria_listar,
+          al_dia_inventarios_listar, al_dia_stock_bajo,
+          al_dia_pedidos_listar, al_dia_repartidores_listar,
+          al_dia_zonas_listar, al_dia_agenda_listar,
+          al_dia_prospectos_listar, al_dia_oportunidades_listar,
+          al_dia_tickets_listar,
+          al_dia_buscar, al_dia_resumen, al_dia_reportes,
+          al_dia_contexto
+      - valida argumentos contra el JSON Schema antes de ejecutar
+      - trunca la salida de la tool a AGENT_MAX_TOOL_OUTPUT_CHARS (8000)
+
+    app/Agent/AgentContextBuilder.php
+      Construye el system prompt con:
+        - datos del tenant (nombre, business_name, moneda CLP, zona horaria)
+        - fecha/hora actual (Chile)
+        - catalogo resumido (categorias, warehouses, tipos de documento)
+        - convenciones: fechas ISO-8601, RUT chileno con puntos/guion,
+          CLP sin decimales, soft-delete (activo=false), paginacion limit/offset
+        - herramientas disponibles y sus limites
+        - politica: no inventar datos, usar siempre las tools, pedir
+          confirmacion antes de acciones de escritura
+
+    app/Services/Agent/LlmClient.php
+      Cliente OpenAI-compatible. REUSAR la logica ya existente en
+      app/Services/TelegramAssistantService.php:
+        POST {LLM_BASE_URL}/v1/chat/completions
+      Soporta: streaming, tool_calls, ventana de memoria acotada.
+      Manejo de errores: 429 (backoff), 5xx (retry 1), timeout.
+
+    app/Models/AgentConversation.php + migracion
+      Tabla agent_conversations:
+        id, owner_id, user_id, title, messages (JSON), created_at, updated_at
+      + indice (owner_id, user_id) y (owner_id, updated_at)
+
+    app/Http/Controllers/Api/Agent/AgentChatController.php
+    app/Http/Controllers/Api/Agent/AgentConversationController.php
+    app/Http/Controllers/Api/Agent/AgentToolController.php
+
+  ENDPOINTS PARA FLUTTER (prefijo /api/v1/agent, middleware agent-api +
+  ability:agent:read + throttle:agent-chat)
+
+    POST /api/v1/agent/chat
+      Body: { "message":"...", "conversation_id": 12 }
+      Response: SSE  (Content-Type: text/event-stream)
+      Eventos:
+        event: token        data: {"text":"..."}
+        event: tool_call    data: {"name":"al_dia_ventas_listar","args":{...}}
+        event: tool_result  data: {"name":"...","summary":"...","rows":3}
+        event: done         data: {"conversation_id":12,"message_id":88,"usage":{...}}
+        event: error        data: {"message":"...","code":"..."}
+      POST /api/v1/agent/chat (fallback no-stream) -> JSON con la respuesta
+      completa, util para tests y clientes sin soporte SSE.
+
+    GET    /api/v1/agent/conversations?limit=&offset=
+    GET    /api/v1/agent/conversations/{id}      historial + tool calls
+    DELETE /api/v1/agent/conversations/{id}      soft delete
+    GET    /api/v1/agent/tools                   catalogo de tools (JSON Schema)
+    GET    /api/v1/agent/openapi                 OpenAPI del API de agente
+                                                 (para generar el cliente Dart)
+
+  CONFIGURACION (.env / .env.example)
+    LLM_BASE_URL=https://api.openai.com
+    LLM_API_KEY=sk-...
+    LLM_MODEL=gpt-4o-mini
+    AGENT_MAX_ITERATIONS=8
+    AGENT_MAX_TOOL_OUTPUT_CHARS=8000
+    AGENT_CONVERSATION_RETENTION_DAYS=90
+    AGENT_MAX_MESSAGES_PER_HOUR=60
+
+  GUARDAS OBLIGATORIAS DEL AGENTE
+    - Toda tool recibe el ownerId del contexto del usuario, NUNCA del body.
+    - Sin tools de escritura en esta ola (solo agent:read).
+    - Cada tool call queda registrada en la conversacion (auditoria).
+    - Log estructurado: user_id, conversation_id, tool, duracion_ms, status.
+    - Truncar salidas grandes de tools.
+    - Rechazar tool calls con argumentos que no cumplan el schema.
+
+--------------------------------------------------------------------------------
+5.4 OLA 4 - CONTRATO Y CLIENTE FLUTTER
+--------------------------------------------------------------------------------
+
+  REPO SEPARADO: aldia-flutter (NO dentro del repo Laravel).
+  Este plan define el CONTRATO; el codigo Dart vive en el repo Flutter.
+
+  GENERACION DEL CLIENTE (el repo Laravel NO anade dependencias)
+    # 1. Exportar el contrato
+    curl -H "Authorization: Bearer $TOKEN" https://<host>/api/v1/agent/openapi -o openapi.json
+    # 2. Generar cliente Dart (en el repo Flutter)
+    dart run openapi_generator_cli generate openapi.json \
+      --output lib/data/api --generator dart-dio
+    # 3. Regenerar cuando cambie el backend (CI opcional)
+
+  ESTRUCTURA SUGERIDA FLUTTER
+    lib/
+      core/
+        api/          dio_client.dart, auth_interceptor.dart,
+                      error_mapper.dart (mapea {status,message,errors} -> UI)
+        auth/         auth_repository.dart, session_store.dart
+                      (flutter_secure_storage: Keystore / Keychain)
+        theme/
+      features/
+        chat/         chat_screen.dart, chat_controller.dart,
+                      message_bubble.dart, tool_call_badge.dart
+        conversations/conversation_list.dart
+        dashboard/    kpis del agente
+      data/
+        api/          <generado por openapi_generator>
+        models/
+        repositories/
+
+  REQUISITOS DEL CLIENTE
+    - flutter_secure_storage para el PAT (nunca shared_preferences en claro).
+    - Interceptor 401 -> POST /api/v1/auth/refresh -> reintento; si falla,
+      limpiar sesion y volver a login.
+    - Cliente SSE: dio con ResponseType.stream, o web_socket_channel.
+    - Manejo del caso two_factor_required en el login.
+    - android:usesCleartextTraffic=false en release (HTTPS obligatorio).
+    - Manejo de errores a partir del envelope {status,message,errors}.
+    - Logout: POST /api/v1/auth/logout + borrar PAT del storage.
+
+  NOTA: si en el futuro el agente corre on-device (Flutter llama las tools
+  directamente), el mismo PAT + X-Owner-ID sirve: es el mismo contrato.
+
+--------------------------------------------------------------------------------
+5.5 OLA 5 - ENDURECIMIENTO Y OPERACION
+--------------------------------------------------------------------------------
+
+    Rate limiting diferenciado (AppServiceProvider):
+      agent-read   120/min   por ownerId|userId|ip
+      agent-write   30/min   (Ola 6)
+      agent-chat    20/min   por userId|ip   (el LLM cuesta dinero)
+      api-auth      10/min   por email|ip
+    Coste del LLM:
+      - AGENT_MAX_MESSAGES_PER_HOUR por usuario
+      - registrar tokens consumidos por conversacion
+      - corte automatico si se supera un presupuesto diario del tenant
+    Auditoria:
+      - tabla agent_audit_log (id, owner_id, user_id, conversation_id,
+        tool, args_json, result_size, duration_ms, status, created_at)
+      - log de cada tool call y de cada login
+    Idempotencia (Ola 6):
+      - cabecera Idempotency-Key opcional en tools de escritura
+    Observabilidad:
+      - ObservabilityService / Laravel Pulse: latencia de tools, tasa de error,
+        uso del LLM
+    Hardening de middleware:
+      - JSON-aware en el grupo api (O0.6)
+      - comprobacion de banned_at (H6)
+      - Auth::shouldUse en todas las rutas con token (H5)
+    Secretos:
+      - .env para todo; .claude/settings.json sin tokens; rotar lo expuesto
+    Documentacion:
+      - docs/api/agent-api.md (contrato + ejemplos curl)
+      - actualizar BOT_API_AVANCE.txt con el estado real de los 13 modulos
+      - este archivo queda como referencia de implementacion
+
+================================================================================
+6. HITOS Y ORDEN DE EJECUCION
+================================================================================
+
+  Ola 0  Desbloqueo  ==================================>  M1
+  Ola 1  Auth API    ==================================>  M2
+  Ola 2  Tool API    ==================================>  M3
+  Ola 3  Agente LLM  ==================================>  M4
+  Ola 4  Flutter      ==================================>  M5
+  Ola 5  Hardening   (continuo)
+
+  El cliente Flutter puede empezar en paralelo desde la Ola 1 (solo necesita
+  el contrato de auth) y regenerar el cliente Dart al cerrar la Ola 2.
+
+  HITOS VERIFICABLES
+    M1 (fin Ola 0)
+      - GET /api/user con Bearer PAT -> 200 (no 500)
+      - GET /api/global-search?q=venta con PAT -> 200 con scoping por tenant
+      - app/Models/Producto.php carga sin error de sintaxis
+      - php artisan test -> verde ; pint --dirty -> limpio
+    M2 (fin Ola 1)
+      - login email/password desde un cliente HTTP devuelve PAT con abilities
+      - refresh rota el token; el token viejo queda revocado
+      - logout revoca; /auth/me despues de logout -> 401
+      - 2FA challenging devuelve 422 two_factor_required y el verify emite PAT
+    M3 (fin Ola 2)
+      - los 4 dominios accesibles en read-only con PAT
+      - token de tenant A sobre recurso de tenant B -> 404 (no 403)
+      - GET /api/v1/bot/openapi contiene los paths de los 4 dominios
+    M4 (fin Ola 3)
+      - POST /api/v1/agent/chat responde SSE y ejecuta tools
+      - el tool call se ejecuta contra el tenant correcto (verificado con
+        fixtures de 2 tenants)
+      - limite de iteraciones y truncado functioning
+    M5 (fin Ola 4)
+      - chat en Flutter con streaming y token persistente
+      - logout limpia el PAT del dispositivo
+
+================================================================================
+7. TESTS (Pest 4, tests/Feature/)
+================================================================================
+
+  SUITE                            QUE CUBRE
+  -------------------------------  --------------------------------------------
+  Api/Auth/ApiAuthTest.php         login, 2FA, refresh, logout, abilities,
+                                   throttle, credenciales invalidas,
+                                   is_active=false, banned_at
+  Api/Bot/ComercialBotApiTest      lista + detalle + filtros + paginacion
+  Api/Bot/FinanzasBotApiTest       idem
+  Api/Bot/DeliveryBotApiTest       idem
+  Api/Bot/AgendaCrmBotApiTest      idem
+  Api/Bot/TenantIsolationTest      token A NO lee/escribe tenant B -> 404;
+                                   X-Owner-ID ausente/invalido -> 401;
+                                   X-User-ID ajeno -> 401
+  Api/Bot/AbilityTest              sin agent:read -> 403
+  Api/Bot/ContextoResumenTest      shape de /contexto y /resumen
+  Agent/AgentServiceTest           Http::fake() del LLM: loop de tools,
+                                   limite de iteraciones, tool call invalida,
+                                   truncado de salida, aislamiento tenant
+  Agent/AgentChatSseTest           Content-Type text/event-stream, secuencia
+                                   de eventos, done al final
+  Api/OpenApiContractTest          el JSON OpenAPI es valido y contiene los
+                                   paths de /api/v1/agent/* y /api/v1/bot/*
+
+  GOTAJA CONOCIDA: el PRIMER usuario creado absorbe el rol Super Admin
+  (User::boot). Los tests que crean tenants deben crear primero un usuario
+  dummy (patron ya usado en tests/Feature/Delivery/DeliveryApiTest.php).
+
+  Patrones helpers a centralizar (hoy duplicados en 3 archivos):
+    botAuthHeaders() / tenantHeaders() -> mover a tests/Pest.php
+      ['Accept'=>'application/json',
+       'Authorization'=>'Bearer '.$owner->api_token,
+       'X-Owner-ID'=>(string)$owner->id]
+
+================================================================================
+8. RIESGOS Y MITIGACIONES
+================================================================================
+
+  RIESGO                                 PROB  IMPACTO  MITIGACION
+  -------------------------------------  ----  -------  ---------------------------
+  Migracion Sanctum con datos existentes  Media Alto     personal_access_tokens
+                                                      esta vacia; migracion nueva
+                                                      no toca users. Backup +
+                                                      --pretend antes.
+  Consumo excesivo de tokens del LLM     Media Alto     throttle agent-chat,
+                                                      AGENT_MAX_ITERATIONS,
+                                                      truncado, registro de uso,
+                                                      presupuesto diario
+  Fuga cross-tenant en un tool nuevo     Media Critico  filtro owner_id
+                                                      explicito + test de
+                                                      aislamiento por modulo
+                                                      (obligatorio en el PR)
+  Producto restaurado no encaja con el  Media Media    comparar $fillable con
+  esquema actual                                     las migraciones de
+                                                      productos antes de
+                                                      restaurar
+  CORS / APP_URL mal en produccion       Media Medio    CORS_ALLOWED_ORIGINS
+                                                      explicito + checklist de
+                                                      deploy
+  Deriva entre OpenAPI y rutas reales    Media Medio    test de contrato que
+                                                      compara route:list con el
+                                                      documento OpenAPI
+  El cliente Flutter es otro repo        Alta   -       este documento define
+                                                      el contrato; el codigo
+                                                      Dart va en aldia-flutter
+  El agente consume tool equivocada del  Baja   Critico  namespace por tenant
+  tenant                                              en el tool registry +
+                                                      test con 2 tenants
+  Exfiltracion de secrets (H9)          Media Critico  rotar OpenRouter, mover
+                                                      a .env, api_token/n8n_api_key
+                                                      en texto plano -> migrar a
+                                                      hash o a la tabla de tokens
+
+================================================================================
+9. FUERA DE ALCANCE (esta entrega)
+================================================================================
+
+    - Escritura via API (POST/PUT/DELETE en tools)  -> Ola 6 con agent:write
+    - Onboarding / registro de usuarios desde la app
+    - Push notifications FCM (no hay infra FCM; solo Web Push)
+    - Offline-first con Drift/Room
+    - Certificate pinning y biometria
+    - App Flutter en si (repo separado: aldia-flutter)
+    - Migrar los workflows n8n existentes al nuevo auth (se mantienen en
+      paralelo con el fallback legacy)
+
+================================================================================
+10. INVENTARIO DE ARCHIVOS
+================================================================================
+
+  ---- NUEVOS (backend) ----
+  app/Http/Middleware/Bot/ResolveAgentContext.php
+  app/Http/Middleware/Api/CheckApiRole.php
+  app/Http/Middleware/Api/CheckApiPermission.php
+  app/Http/Middleware/Api/CheckApiOwnership.php
+  app/Services/ApiTokenService.php
+  app/Agent/AgentService.php
+  app/Agent/AgentToolRegistry.php
+  app/Agent/AgentContextBuilder.php
+  app/Services/Agent/LlmClient.php
+  app/Http/Controllers/Api/Agent/AgentChatController.php
+  app/Http/Controllers/Api/Agent/AgentConversationController.php
+  app/Http/Controllers/Api/Agent/AgentToolController.php
+  app/Models/AgentConversation.php
+  app/Models/AgentAuditLog.php
+  app/Http/Requests/Api/Auth/LoginRequest.php
+  app/Http/Requests/Api/Auth/TwoFactorVerifyRequest.php
+  app/Http/Requests/Api/Auth/RefreshRequest.php
+  app/Support/OpenApi/AgentOpenApi.php
+  database/migrations/*_create_personal_access_tokens_table.php
+  database/migrations/*_create_agent_conversations_table.php
+  database/migrations/*_create_agent_audit_logs_table.php
+  config/sanctum.php
+  docs/api/agent-api.md
+
+  ---- MODIFICADOS (backend) ----
+  app/Models/Producto.php                  <- RESTAURAR (H3)
+  app/Providers/AppServiceProvider.php      <- rate limiters agent-*
+  bootstrap/app.php                         <- alias agent-api/ability/api-*,
+                                              throttle:api, exceptions JSON
+  routes/api.php                            <- /api/v1/auth/*, /api/v1/agent/*,
+                                              ampliar /api/v1/bot/*
+  routes/web.php                            <- mover global-search al grupo api
+  app/Support/OpenApi/BotOpenApi.php        <- OpenAPI v2 + fix del 201 (H10)
+  config/cors.php                           <- headers custom, origins, max_age
+  app/Http/Middleware/CheckRole.php         <- delegar a la version JSON-aware
+  app/Http/Middleware/CheckPermission.php   <- delegar a la version JSON-aware
+  app/Http/Middleware/CheckOwnership.php    <- delegar a la version JSON-aware
+  .env / .env.example                       <- CORS_ALLOWED_ORIGINS,
+                                              SANCTUM_*, LLM_*, AGENT_*
+  BOT_API_AVANCE.txt                        <- estado real de los 13 modulos
+
+  ---- NUEVOS (por modulo, repetidos ~35 veces) ----
+  app/Http/Controllers/Api/Bot/{Xxx}BotController.php
+  app/Services/Api/Bot/{Xxx}BotService.php
+  app/Http/Requests/Api/Bot/{Store,Update}{Xxx}Request.php  (escritura -> Ola 6)
+  tests/Feature/Api/Bot/{Xxx}BotApiTest.php
+
+  ---- MODIFICADOS (tests) ----
+  tests/Pest.php                            <- centralizar botAuthHeaders()
+
+================================================================================
+11. CHECKLIST DE PR (OBLIGATORIO por modulo nuevo)
+================================================================================
+
+  [ ] XxxBotService con ->where('owner_id', $ownerId) EXPLICITO en cada query
+  [ ] serialize() con array explicito (nunca ->toArray())
+  [ ] Paginacion: limit clamp 1..100, offset >= 0
+  [ ] Cross-tenant -> 404 (nunca 403)
+  [ ] Test de aislamiento cross-tenant (Pest, estilo TenantIsolationTest)
+  [ ] Schemas + paths anadidos a BotOpenApi
+  [ ] vendor/bin/pint --dirty limpio
+  [ ] php artisan test verde
+  [ ] SIN dependencias nuevas (regla del proyecto)
+  [ ] Actualizar BOT_API_AVANCE.txt
+
+================================================================================
+12. COMANDOS DE VERIFICACION
+================================================================================
+
+  # Rutas
+  php artisan route:list --path=api/v1/auth
+  php artisan route:list --path=api/v1/agent
+  php artisan route:list --path=api/v1/bot
+
+  # Migraciones
+  php artisan migrate --pretend
+  php artisan migrate
+
+  # Tests
+  php artisan test --filter=ApiAuth
+  php artisan test tests/Feature/Api/Bot
+  php artisan test tests/Feature/Agent
+
+  # Estilo
+  vendor/bin/pint --dirty
+
+  # Contrato OpenAPI
+  php artisan tinker --execute="dump(json_encode(App\Support\OpenApi\BotOpenApi::document()))"
+
+  # Verificacion manual de un PAT
+  php artisan tinker --execute="\$u = App\Models\User::whereNotNull('api_token')->first(); dump(\$u->api_token, \$u->getOwnerId());"
+
+================================================================================
+13. NOTAS DE IMPLEMENTACION - OLA 0 (estado real, 2026-10-21)
+================================================================================
+
+  Ola 0 queda implementada y verificada. Desviaciones respecto del plan
+  original (documentadas para que Olas 1-5 partan de la realidad):
+
+  [1] BUSQUEDA GLOBAL -> /api/v1/global-search (no /api/global-search)
+      Laravel sobrescribe las rutas con el MISMO metodo+URI, y routes/web.php
+      se registra despues que routes/api.php: la ruta web gana. Por eso la
+      variante para API (token) se publico bajo el prefijo v1:
+        GET /api/v1/global-search?q=...   -> agent-api + ability:agent:read
+      La ruta web /api/global-search (session) se mantiene intacta para el
+      frontend Inertia.
+
+  [2] config('sanctum.expiration') es un ENTERO (minutos)
+      Sanctum 4.3.3 hace `now()->subMinutes($this->expiration)`: un objeto
+      Carbon rompe el Guard con "Unsupported operand types: Carbon * int".
+      -> .env: SANCTUM_EXPIRATION_MINUTES=43200 (30 dias).
+      -> ApiTokenService::defaultExpiration() convierte los minutos a fecha
+         absoluta para guardarla en `expires_at`.
+
+  [3] ELIMINADO el trait BelongsToOwner del modelo User
+      El commit corrupto 15215a2 ("laster") agrego `BelongsToOwner` al
+      modelo User. Su OwnerScope filtra por `users.owner_id`, columna que es
+      NULL para el owner del tenant (la jerarquia real de tenants es
+      `creator_id`, ver User::getOwnerId()). Con el scope activo, cualquier
+      User::find() / User::where() devolvia 0 filas para los tenants que no
+      son Master/Super Admin:
+        - no se notificaba al vendedor cuando un repartidor aceptaba el pedido
+        - RepartidorController devolvia 404 al crear/vincular un repartidor
+          y la lista de `candidatos` salia vacia
+      Se restored el estado previo a 15215a2: User NO usa BelongsToOwner,
+      se conserva el hook `creating` que puebla `users.owner_id` y la
+      relacion `owner()`.
+
+  [4] MarkApiRequest: deteccion de "es una peticion de API"
+      routes/web.php declara rutas reales bajo /api/... (api/system-integrations/*,
+      api/v1/tenant-credentials/autocomplete, api/global-search, api/sii/*)
+      que deben redirigir a /login. Los renderers JSON de 401/403 ya no
+      detectan la API por el prefijo de URI: usan el atributo `api_request`
+      que fija el middleware MarkApiRequest (prependido al grupo `api`).
+
+  [5] VerifyN8nApiKey acepta la clave global de n8n
+      Ademas de `users.n8n_api_key`, se acepta la clave global guardada en
+      `system_integrations` (provider = 'n8n', is_active = 1), que es la que
+      describe el propio comentario de la ruta.
+
+  [6] Envolvimiento de respuesta
+      El envelope {status, message, data} / {status, message, errors} ya lo
+      usaba el Bot API existente (BotBaseController::ok()/notFound()). Los
+      endpoints NUEVOS de las Olas 1-5 deben mantener ese mismo contrato.
+      Lo que NO cambia de formato son las rutas del panel web ni los
+      endpoints internos de n8n (api/internal/*, api/v1/delivery/*,
+      api/v1/zones/*), para no romper los workflows ya desplegados.
+
+  [7] SUITE DE TESTS
+      La suite heredada estaba rota (Pest 4, 61 fallos, modelos/eventos
+      corruptos). Estado actual: suite completa en verde.
+      Archivos clave reparados:
+        tests/Pest.php                 -> pest()->extend(TestCase::class)
+                                           ->use(RefreshDatabase::class)
+                                           ->in('Feature','Unit')
+        tests/TestCase.php             -> prepareDatabase() siembra paises y
+                                           4 roles dentro de la transaccion
+        app/Models/User.php            -> sin OwnerScope (ver [3])
+        app/Http/Resources/*           -> eliminados (codigo muerto del
+                                           commit corrupto, 0 referencias)
+        app/Events/*                   -> 4 eventos reescritos
+        database/factories/ProductoFactory.php
+                                        -> 'categoria_id' => Categoria::factory()
+                                           (antes era un id aleatorio 1..10 y
+                                           reventaba la FK de sqlite al azar)
+        tests/Feature/Internal/N8nControllerTest.php
+                                        -> las citas de Appointment usaban
+                                           nombres de columna inexistentes
+                                           (cliente_id, servicio_id, fecha_inicio,
+                                           estado) -> corregidas a las reales
+                                           (client_id, producto_id, start_time,
+                                           status)
+      Archivos de test nuevos:
+        tests/Feature/Api/Agent/AgentApiAuthTest.php  (19 tests, Ola 0)
+
+  [8] NO se aplico `throttle:api` a todo el grupo `api`
+      El plan original (O0.11) pedia `$middleware->api(append: ['throttle:api'])`.
+      El limiter `api` tiene un techo de 60/min, mientras que el Bot API
+      necesita 120/min: aplicarlo al grupo entero habria REDUCIDO el limite
+      de las rutas de lectura existentes. Se aplico `throttle:api` solo a las
+      rutas que no lo tenian (`api/user`, `api/v1/bot/openapi`) y se definieron
+      limiters propios para el agente: agent-read 120/min, agent-write 30/min,
+      agent-chat 20/min, api-auth 10/min.
+
+  [9] La ability minima NO se exige dentro de ResolveAgentContext
+      Se dejó como middleware independiente (`ability:agent:read` /
+      `ability:agent:write`) para poder separar el grupo de lectura del de
+      escritura sin duplicar la resolucion del contexto. El efecto es el
+      mismo: un PAT sin abilities recibe 403 en las rutas de lectura/escritura.
+
+  [10] `laravel/sanctum` se fijo en `^4.3` (antes `*`)
+      Con `*` composer no fijaba la version y el lock podia resolver una
+      mayor/menor incompatible. Sanctum 4.3.3 es la version instalada y la que
+      define el contrato de `config('sanctum.expiration')` en minutos.
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================
