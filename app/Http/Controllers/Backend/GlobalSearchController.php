@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cliente;
 use App\Models\Factura;
 use App\Models\Producto;
+use App\Support\AgentContext;
 use Illuminate\Http\Request;
 
 class GlobalSearchController extends Controller
@@ -18,7 +19,7 @@ class GlobalSearchController extends Controller
             return response()->json([]);
         }
 
-        $ownerId = auth()->user()->getOwnerId();
+        $ownerId = $this->resolveOwnerId($request);
         $results = [];
         $safeQuery = SearchHelper::escapeLike($query);
 
@@ -156,10 +157,28 @@ class GlobalSearchController extends Controller
                 'type' => 'Producto',
                 'href' => '/productos',
                 'icon' => 'Package',
-                'subtitle' => 'Prec. Unit: $'.number_format((float) $p->precio, 0, ',', '.'),
+                'subtitle' => 'Prec. Unit: $'.number_format((float) $p->precio_venta, 0, ',', '.'),
             ];
         }
 
         return response()->json($results);
+    }
+
+    /**
+     * Resuelve el tenant de la busqueda.
+     *
+     * - En las rutas de API (`/api/global-search` con `agent-api`) manda el
+     *   AgentContext, que ya viene validado por el middleware.
+     * - En el panel web manda el usuario de la sesion.
+     */
+    private function resolveOwnerId(Request $request): int
+    {
+        $context = $request->attributes->get('agent_context');
+
+        if ($context instanceof AgentContext) {
+            return $context->ownerId;
+        }
+
+        return (int) auth()->user()->getOwnerId();
     }
 }

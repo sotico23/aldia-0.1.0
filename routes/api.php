@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\InternalAutomationController;
 use App\Http\Controllers\Api\InternalAutomationSendController;
 use App\Http\Controllers\Api\TenantDataController;
 use App\Http\Controllers\Api\TrackingController;
+use App\Http\Controllers\Backend\GlobalSearchController;
+use App\Http\Controllers\Backend\SiiController;
 use App\Http\Controllers\Internal\N8nController;
 use App\Http\Controllers\Webhooks\TelegramWebhookController;
 use Illuminate\Http\Request;
@@ -27,7 +29,7 @@ Route::get('/user', function (Request $request) {
         'business_name', 'business_logo_path', 'business_cover_path',
         'is_active', 'created_at',
     ]);
-})->middleware('auth:sanctum');
+})->middleware(['auth:sanctum', 'throttle:api']);
 
 Route::group(['prefix' => 'v1'], function () {
     Route::post('tracking/update', [TrackingController::class, 'updateLocation'])
@@ -53,23 +55,31 @@ Route::group(['prefix' => 'v1'], function () {
     });
 });
 
-// Bot API for AI agents (n8n) — strict multi-tenant isolation
-Route::prefix('v1/bot')->middleware(['bot-api', 'throttle:bot'])->group(function () {
+// Bot API for AI agents (n8n / agentes de IA) — strict multi-tenant isolation.
+// `agent-api` acepta el Personal Access Token de Sanctum (app Flutter, agentes)
+// y, por compatibilidad, el `users.api_token` legacy que ya usan los workflows
+// de n8n desplegados.
+Route::prefix('v1/bot')->middleware(['agent-api', 'ability:agent:read', 'throttle:agent-read'])->group(function () {
     Route::get('clientes', [ClienteBotController::class, 'index']);
-    Route::post('clientes', [ClienteBotController::class, 'store']);
     Route::get('clientes/{cliente}', [ClienteBotController::class, 'show']);
+    Route::get('ventas', [VentaBotController::class, 'index']);
+    Route::get('ventas/{venta}', [VentaBotController::class, 'show']);
+});
+
+// Escrituras del Bot API: requieren `agent:write`. El token legacy de n8n
+// tiene el wildcard `*` y conserva el acceso completo.
+Route::prefix('v1/bot')->middleware(['agent-api', 'ability:agent:write', 'throttle:agent-write'])->group(function () {
+    Route::post('clientes', [ClienteBotController::class, 'store']);
     Route::put('clientes/{cliente}', [ClienteBotController::class, 'update']);
     Route::delete('clientes/{cliente}', [ClienteBotController::class, 'destroy']);
 
-    Route::get('ventas', [VentaBotController::class, 'index']);
     Route::post('ventas', [VentaBotController::class, 'store']);
-    Route::get('ventas/{venta}', [VentaBotController::class, 'show']);
     Route::put('ventas/{venta}', [VentaBotController::class, 'update']);
     Route::delete('ventas/{venta}', [VentaBotController::class, 'destroy']);
 });
 
 // OpenAPI contract for n8n "Tools via OpenAPI" import
-Route::get('v1/bot/openapi', [OpenApiController::class, 'index']);
+Route::get('v1/bot/openapi', [OpenApiController::class, 'index'])->middleware('throttle:api');
 
 // Internal API for n8n — protected by X-N8N-TOKEN header
 Route::prefix('internal')->middleware(['verify-n8n-token', 'throttle:60,1'])->group(function () {
@@ -129,3 +139,26 @@ Route::prefix('tenant')->middleware(['verify-tenant-token', 'active', 'throttle:
     Route::get('resumen-completo', [TenantDataController::class, 'resumenCompleto'])
         ->name('api.tenant.resumen-completo');
 });
+
+// -----------------------------------------------------------------------------
+// Utilidades para agentes y clientes no-browser
+// -----------------------------------------------------------------------------
+//
+// OJO: las rutas se registran bajo el prefijo `v1/` a proposito. Laravel
+// indexa las rutas por metodo+URI, asi que registrar `api/global-search`
+// aqui SOBREESCRIBIRIA la ruta homonima del panel web (routes/web.php) y
+// esta quedaria anulada. El prefijo `v1` evita la colision.
+
+// Búsqueda global cross-módulo. La versión del panel web sigue en
+// routes/web.php (sesión); esta es la variante para tokens de API.
+Route::get('v1/global-search', [GlobalSearchController::class, 'search'])
+    ->middleware(['agent-api', 'ability:agent:read', 'throttle:search'])
+    ->name('api.global-search.token');
+
+// Validación / consulta de RUT (utilidad pública, no expone datos del tenant).
+Route::get('v1/sii/consultar/{rut}', [SiiController::class, 'validarRut'])
+    ->middleware('throttle:api')
+    ->name('api.sii.consultar.token');
+Route::post('v1/sii/validar-rut', [SiiController::class, 'validarRut'])
+    ->middleware('throttle:api')
+    ->name('api.sii.validar-rut.token');

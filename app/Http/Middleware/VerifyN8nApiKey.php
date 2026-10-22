@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\SystemIntegration;
 use App\Models\User;
 use App\Scopes\OwnerScope;
 use Closure;
@@ -21,7 +22,7 @@ class VerifyN8nApiKey
             ], 401);
         }
 
-        // Find business owner by API key
+        // 1) API key del tenant (`users.n8n_api_key`).
         $owner = User::withoutGlobalScope(OwnerScope::class)
             ->whereNotNull('n8n_api_key')
             ->get()
@@ -29,16 +30,36 @@ class VerifyN8nApiKey
                 return hash_equals((string) $user->n8n_api_key, (string) $apiKey);
             });
 
-        if (! $owner) {
-            return response()->json([
-                'success' => false,
-                'message' => 'API Key inválida.',
-            ], 401);
+        if ($owner) {
+            // Attach business owner to request for downstream use
+            $request->merge(['n8n_business_owner' => $owner]);
+
+            return $next($request);
         }
 
-        // Attach business owner to request for downstream use
-        $request->merge(['n8n_business_owner' => $owner]);
+        // 2) API key global de la integracion n8n (`system_integrations`).
+        $integration = SystemIntegration::query()
+            ->where('provider', 'n8n')
+            ->where('is_active', true)
+            ->get()
+            ->first(function ($integration) use ($apiKey) {
+                $key = (string) $integration->api_key;
 
-        return $next($request);
+                return $key !== '' && hash_equals($key, (string) $apiKey);
+            });
+
+        if ($integration) {
+            $request->merge([
+                'n8n_business_owner' => null,
+                'n8n_global_integration' => $integration,
+            ]);
+
+            return $next($request);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'API Key inválida.',
+        ], 401);
     }
 }

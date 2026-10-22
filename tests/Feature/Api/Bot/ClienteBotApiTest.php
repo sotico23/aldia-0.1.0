@@ -205,8 +205,17 @@ test('clientes endpoints reject requests from a deactivated tenant', function ()
 test('clientes routes are rate limited and protected by the bot middleware', function () {
     $route = Route::getRoutes()->match(request()->create('/api/v1/bot/clientes', 'GET'));
 
-    expect($route->middleware())->toContain('bot-api')
-        ->and($route->middleware())->toContain('throttle:bot');
+    expect($route->middleware())->toContain('agent-api')
+        ->and($route->middleware())->toContain('ability:agent:read')
+        ->and($route->middleware())->toContain('throttle:agent-read');
+});
+
+test('clientes write routes require the write ability', function () {
+    $route = Route::getRoutes()->match(request()->create('/api/v1/bot/clientes', 'POST'));
+
+    expect($route->middleware())->toContain('agent-api')
+        ->and($route->middleware())->toContain('ability:agent:write')
+        ->and($route->middleware())->toContain('throttle:agent-write');
 });
 
 test('openapi document exposes the clientes contract', function () {

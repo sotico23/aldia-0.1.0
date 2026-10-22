@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'internal/*'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'internal/*', 'broadcasting/auth'],
 
     'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
@@ -35,11 +35,19 @@ return [
         'XSRF-TOKEN',
         'Origin',
         'Referer',
+        // Cabeceras propias de la API de agentes y app Flutter.
+        'X-Owner-ID',
+        'X-User-ID',
+        'X-Idempotency-Key',
+        'X-Inertia',
+        // Cabeceras de las integraciones de maquina (n8n).
+        'X-API-Key',
+        'X-N8N-TOKEN',
     ],
 
     'exposed_headers' => [],
 
-    'max_age' => 0,
+    'max_age' => (int) env('CORS_MAX_AGE', 86400),
 
     'supports_credentials' => true,
 

@@ -31,6 +31,7 @@ use App\Observers\MensajeConversacionObserver;
 use App\Observers\MensajeObserver;
 use App\Observers\MessageObserver;
 use App\Policies\PedidoRecibidoPolicy;
+use App\Support\AgentContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
@@ -172,6 +173,49 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('delivery', function (Request $request) {
             return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
         });
+
+        // --- API de agentes de IA y clientes no-browser (app Flutter) ---
+
+        // Lectura de la Tool API (/api/v1/bot/*). Clave por tenant + usuario
+        // + IP para que un token noPueda monopolizar el cuota del tenant.
+        RateLimiter::for('agent-read', function (Request $request) {
+            return Limit::perMinute(120)->by($this->agentRateKey($request));
+        });
+
+        // Escritura de la Tool API. Mas restrictiva que la lectura.
+        RateLimiter::for('agent-write', function (Request $request) {
+            return Limit::perMinute(30)->by($this->agentRateKey($request));
+        });
+
+        // Conversaciones con el agente: consume tokens del LLM, por eso es la
+        // mas restrictiva de todas.
+        RateLimiter::for('agent-chat', function (Request $request) {
+            return Limit::perMinute(20)->by($this->agentRateKey($request));
+        });
+
+        // Endpoints de autenticacion (login / refresh / 2FA).
+        RateLimiter::for('api-auth', function (Request $request) {
+            return Limit::perMinute(10)->by(
+                mb_strtolower((string) $request->input('email')).'|'.$request->ip()
+            );
+        });
+    }
+
+    /**
+     * Clave de rate limiting para la API de agentes.
+     *
+     * Usa el tenant (X-Owner-ID) y el usuario autenticado cuando estan
+     * disponibles; si no, cae a la IP.
+     */
+    private function agentRateKey(Request $request): string
+    {
+        $context = $request->attributes->get('agent_context');
+
+        if ($context instanceof AgentContext) {
+            return $context->ownerId.'|'.$context->actingUserId.'|'.$request->ip();
+        }
+
+        return $request->header('X-Owner-ID', $request->ip());
     }
 
     protected function overrideOAuthConfig(): void
