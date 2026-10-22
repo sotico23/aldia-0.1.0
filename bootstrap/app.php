@@ -4,6 +4,7 @@ use App\Http\Middleware\Api\CheckApiOwnership;
 use App\Http\Middleware\Api\CheckApiPermission;
 use App\Http\Middleware\Api\CheckApiRole;
 use App\Http\Middleware\Api\RequireAbility;
+use App\Http\Middleware\Api\ResolveApiToken;
 use App\Http\Middleware\Bot\ResolveAgentContext;
 use App\Http\Middleware\Bot\ResolveBotTenant;
 use App\Http\Middleware\CheckActive;
@@ -72,6 +73,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'api-role' => CheckApiRole::class,
             'api-permission' => CheckApiPermission::class,
             'api-ownership' => CheckApiOwnership::class,
+            // Resuelve el Personal Access Token de Sanctum de forma explicita
+            // (no delega en el guard) para poder trabajar con sus abilities
+            // y revocar exactamente el token usado.
+            'api-token' => ResolveApiToken::class,
         ]);
 
         // El grupo `api` solo traia SubstituteBindings. NO se agrega

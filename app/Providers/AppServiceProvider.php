@@ -194,11 +194,41 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // Endpoints de autenticacion (login / refresh / 2FA).
+        //
+        // La clave combina el identificador del cliente (email, PAT o IP) con
+        // la IP. No se depende del orden de los middleware: la cabecera
+        // Authorization y el body ya estan disponibles en el limiter.
         RateLimiter::for('api-auth', function (Request $request) {
-            return Limit::perMinute(10)->by(
-                mb_strtolower((string) $request->input('email')).'|'.$request->ip()
+            return Limit::perMinute(10)->by($this->apiAuthRateKey($request));
+        });
+
+        // Verificacion en dos pasos: se limita por desafio para evitar
+        // fuerza bruta sobre un mismo codigo TOTP.
+        RateLimiter::for('two-factor-api', function (Request $request) {
+            return Limit::perMinute(5)->by(
+                '2fa:'.(string) $request->input('challenge_id').'|'.$request->ip()
             );
         });
+    }
+
+    /**
+     * Clave de rate limiting para los endpoints de autenticacion.
+     */
+    private function apiAuthRateKey(Request $request): string
+    {
+        $email = trim((string) $request->input('email', ''));
+
+        if ($email !== '') {
+            return mb_strtolower($email).'|'.$request->ip();
+        }
+
+        $token = $request->bearerToken() ?: $request->input('token');
+
+        if (is_string($token) && $token !== '') {
+            return 'pat:'.substr(hash('sha256', $token), 0, 16).'|'.$request->ip();
+        }
+
+        return 'anon|'.$request->ip();
     }
 
     /**

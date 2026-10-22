@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\SystemHealthController;
+use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Bot\ClienteBotController;
 use App\Http\Controllers\Api\Bot\OpenApiController;
 use App\Http\Controllers\Api\Bot\VentaBotController;
@@ -53,6 +54,35 @@ Route::group(['prefix' => 'v1'], function () {
         Route::get('automation/health', [SystemHealthController::class, 'health'])
             ->name('api.internal.automation.health');
     });
+});
+
+// -----------------------------------------------------------------------------
+// API de autenticacion para clientes no-browser (app Flutter, agentes).
+// -----------------------------------------------------------------------------
+//
+// No crea sesion web: entrega Personal Access Tokens de Sanctum con
+// abilities explicitas. El login exige `throttle:login` (5/min por email|ip)
+// y el grupo aplica `throttle:api-auth` (10/min).
+
+Route::prefix('v1/auth')->middleware(['throttle:api-auth'])->group(function () {
+    Route::post('login', [AuthController::class, 'login'])
+        ->middleware('throttle:login')
+        ->name('api.v1.auth.login');
+
+    Route::post('two-factor/verify', [AuthController::class, 'twoFactorVerify'])
+        ->middleware('throttle:two-factor-api')
+        ->name('api.v1.auth.two-factor.verify');
+
+    Route::post('refresh', [AuthController::class, 'refresh'])
+        ->name('api.v1.auth.refresh');
+
+    Route::post('logout', [AuthController::class, 'logout'])
+        ->middleware('api-token')
+        ->name('api.v1.auth.logout');
+
+    Route::get('me', [AuthController::class, 'me'])
+        ->middleware('api-token')
+        ->name('api.v1.auth.me');
 });
 
 // Bot API for AI agents (n8n / agentes de IA) — strict multi-tenant isolation.

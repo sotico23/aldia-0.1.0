@@ -247,6 +247,53 @@ class PermissionHelper
     }
 
     /**
+     * Devuelve los grupos de modulos (Cards del Sidebar) a los que el usuario
+     * tiene acceso. Se usa la API para que el cliente movil sepa que modulos
+     * del ERP puede mostrar sin tener que consultar el panel web.
+     *
+     * @return array<int, string>
+     */
+    public static function getSidebarGroupsForUser(User $user): array
+    {
+        $permissionIds = $user->getAllPermissions()->pluck('id')->toArray();
+
+        if ($permissionIds === []) {
+            return [];
+        }
+
+        $groups = [];
+
+        foreach (Permission::whereIn('id', $permissionIds)->pluck('name') as $permissionName) {
+            [$group] = self::getSidebarGroup((string) $permissionName);
+            $groups[$group] = true;
+        }
+
+        $groups = array_keys($groups);
+
+        // Mantiene el mismo orden visual que el Sidebar.
+        usort($groups, function (string $a, string $b): int {
+            $posA = array_search($a, self::$sidebarCardOrder);
+            $posB = array_search($b, self::$sidebarCardOrder);
+
+            if ($posA === false && $posB === false) {
+                return strcmp($a, $b);
+            }
+
+            if ($posA === false) {
+                return 1;
+            }
+
+            if ($posB === false) {
+                return -1;
+            }
+
+            return $posA <=> $posB;
+        });
+
+        return $groups;
+    }
+
+    /**
      * Construye la estructura agrupada por Cards de Sidebar
      */
     private static function buildGroupedBySidebar($permissions): array

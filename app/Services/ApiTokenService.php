@@ -38,6 +38,31 @@ class ApiTokenService
     public const ABILITY_ADMIN_WRITE = 'admin:write';
 
     /**
+     * Abilities de solo lectura que recibe por defecto cualquier usuario
+     * autenticado desde la app Flutter o desde un agente externo.
+     *
+     * La primera entrega es read-only: `agent:write` y `admin:write` NO se
+     * otorgan de forma automatica, se reservan para una etapa posterior
+     * (Ola 6) donde exista un flujo explicito para concederlas.
+     */
+    public const DEFAULT_READ_ABILITIES = [
+        self::ABILITY_AGENT_READ,
+        self::ABILITY_CATALOG_READ,
+        self::ABILITY_REPORTS_READ,
+        self::ABILITY_DELIVERY_READ,
+    ];
+
+    /**
+     * Abilities que se otorgan a un usuario al iniciar sesion en la API.
+     *
+     * @return array<int, string>
+     */
+    public function defaultAbilitiesFor(User $user): array
+    {
+        return self::DEFAULT_READ_ABILITIES;
+    }
+
+    /**
      * Emite un token nuevo para un usuario.
      *
      * @param  array<int, string>  $abilities
@@ -171,6 +196,27 @@ class ApiTokenService
     public function can(PersonalAccessToken $token, string $ability): bool
     {
         return $token->can($ability);
+    }
+
+    /**
+     * Indica si un token ya expiro.
+     *
+     * Un token expiro si supero su `expires_at` o la ventana global de
+     * `sanctum.expiration` (medida desde su creacion, en minutos).
+     */
+    public function isExpired(PersonalAccessToken $token): bool
+    {
+        if ($token->expires_at !== null && $token->expires_at->isPast()) {
+            return true;
+        }
+
+        $expiration = config('sanctum.expiration');
+
+        if (is_numeric($expiration) && (int) $expiration > 0 && $token->created_at !== null) {
+            return $token->created_at->addMinutes((int) $expiration)->isPast();
+        }
+
+        return false;
     }
 
     /**

@@ -1150,5 +1150,115 @@ Proveedor, Repartidor. (Role tiene columna level: 0=Master ... 3=Usuario.)
       define el contrato de `config('sanctum.expiration')` en minutos.
 
 ================================================================================
+14. NOTAS DE IMPLEMENTACION - OLA 1 (estado real, 2026-10-21)
+================================================================================
+
+  Ola 0 + Ola 1 quedan implementadas y verificadas. La Ola 1 entrega el
+  contrato de autenticacion que consume la app Flutter. Desviaciones y
+  decisiones respecto del plan original:
+
+  [1] NO se usa `auth:sanctum` en /api/v1/auth/{logout,me}
+      El guard de Sanctum (`Illuminate\Auth\RequestGuard`) cachea el usuario
+      resuelto en la instancia del guard, y esa instancia vive en el
+      AuthManager (singleton del contenedor). En un contenedor persistente
+      (tests, Octane, workers) la peticion N devuelve el usuario de la
+      peticion N-1 aunque el Bearer token sea distinto o este revocado.
+      Se creo el middleware `api-token`
+      (app/Http/Middleware/Api/ResolveApiToken.php) que resuelve el PAT de
+      forma explicita (PersonalAccessToken::findToken), lo deja en el
+      atributo `api_token` de la peticion y fija el user resolver. Con eso:
+        - /logout revoca EXACTAMENTE el token usado (no el cacheado),
+        - /me informa de las abilities reales del token,
+        - el comportamiento es identico en test y en produccion.
+      El resto de rutas que usan `auth:sanctum` (api/user, api/v1/delivery/*,
+      api/v1/zones/*) NO se tocaron.
+
+  [2] Formato del token: "<id>|<token>"
+      Sanctum 4 devuelve `plainTextToken` con el prefijo del id
+      (`1|aldia_XXXX`). El cliente Flutter debe guardar el valor TAL CUAL
+      (con el `id|`) y enviarlo entero en `Authorization: Bearer <valor>`.
+      `PersonalAccessToken::findToken()` acepta ese formato y tambien un
+      token plano sin prefijo.
+
+  [3] 2FA: se implemento el desafio (Fortify no tiene ruta JSON)
+      - Login: si el usuario tiene 2FA confirmado -> 422 con
+        {data:{two_factor_required:true, challenge_id, expires_in}}.
+        NO se emite ningun token en ese paso.
+      - Verify: acepta el codigo TOTP de 6 digitos o un codigo de
+        recuperacion (Fortify TwoFactorAuthenticationProvider::verify()).
+        Un codigo incorrecto -> 422 y el desafio SIGUE VIVO (se puede
+        reintentar); el rate limiter `two-factor-api` (5/min por desafio)
+        es la red de seguridad.
+      - El desafio vive en la cache (5 min) y es de un solo uso.
+      - Codigos de recuperacion: `TwoFactorAuthenticatable::replaceRecoveryCode()`
+        no devuelve bool, asi que la validacion previa del codigo se hace
+        contra `recoveryCodes()`.
+
+  [4] Abilities concedidas por defecto: SOLO LECTURA
+      `ApiTokenService::defaultAbilitiesFor()` ->
+        agent:read, catalog:read, reports:read, delivery:read
+      NO se conceden `agent:write`, `agent:admin` ni `admin:write` de forma
+      automatica (primera entrega read-only, ver plan 5.1). Un PAT emitido
+      por /login NO puede escribir en /api/v1/bot/* (403).
+
+  [5] El limite de la ability es el MINIMO, no el unico
+      Un PAT con `agent:read` puede invocar cualquier ruta protegida por
+      `ability:agent:read`; las rutas de escritura piden `agent:write`.
+      El token legacy de n8n conserva el wildcard `*` y el acceso completo.
+
+  [6] Rate limiting de la auth API
+      - grupo `v1/auth`: `throttle:api-auth` (10/min).
+      - `login`: ademas `throttle:login` (5/min por email|ip, el limiter de
+        Fortify) -> el limite efectivo del login es 5/min.
+      - `two-factor/verify`: `throttle:two-factor-api` (5/min por challenge_id).
+      La clave de `api-auth` se calcula con email > hash del PAT > anon, mas
+      la IP, para no depender del orden de los middleware.
+
+  [7] `logout` acepta tres modos (body)
+      - {} (por defecto): revoca el token de la peticion.
+      - {"all_devices": true}: revoca todos los tokens del usuario.
+      - {"device_name": "pixel-8"}: revoca los tokens de ese dispositivo.
+
+  [8] `me` devuelve mas informacion que el plan original
+      Ademas de user/tenant/abilities/modules/tools_disponibles, devuelve
+      `trial` (is_active, is_expired, days_remaining, ends_at) para que la
+      app muestre el aviso de prueba gratuita sin recalcularlo, y el detalle
+      del token (name, expires_at, last_used_at, created_at).
+      `modules` = grupos del Sidebar a los que el usuario tiene acceso
+      (PermissionHelper::getSidebarGroupsForUser()).
+      `tools_disponibles` = tools de la Tool API que hoy existen; el registro
+      completo llega en la Ola 2.
+
+  [9] Log de acceso
+      `Log::info('api.auth.attempt', [...])` con user_id, email, ip,
+      device_name, stage (credenciales|cuenta|2fa-requerido|2fa|login),
+      success y user_agent. Nunca se registra la contrasena.
+
+  [10] Envoltura de errores
+      `api/v1/auth/*` ya estaba incluido en la lista `$jsonApiRoutes` de
+      bootstrap/app.php, asi que los 404 y los 422 de validacion salen con
+      el envelope {status, message, errors}. El 422 de "2FA requerido" usa
+      {status, message, errors:[], data:{...}}: es el unico caso con `data`
+      en una respuesta de error, y lo necesita el cliente para saber que
+      debe abrir el dialogo de codigo.
+
+  ARCHIVOS NUEVOS (Ola 1)
+    app/Http/Controllers/Api/Auth/AuthController.php
+    app/Http/Middleware/Api/ResolveApiToken.php
+    app/Http/Requests/Api/Auth/LoginRequest.php
+    app/Http/Requests/Api/Auth/TwoFactorVerifyRequest.php
+    app/Http/Requests/Api/Auth/RefreshRequest.php
+    app/Services/Auth/ApiAuthService.php
+    app/Services/Auth/TwoFactorChallengeService.php
+    tests/Feature/Api/Auth/ApiAuthTest.php   (32 tests)
+
+  ARCHIVOS MODIFICADOS (Ola 1)
+    app/Services/ApiTokenService.php    (+ defaultAbilitiesFor, + isExpired)
+    app/Helpers/PermissionHelper.php    (+ getSidebarGroupsForUser)
+    app/Providers/AppServiceProvider.php (api-auth por PAT/anon, two-factor-api)
+    bootstrap/app.php                    (alias `api-token`)
+    routes/api.php                       (grupo v1/auth con 5 endpoints)
+
+================================================================================
 FIN DEL DOCUMENTO
 ================================================================================
