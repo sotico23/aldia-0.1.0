@@ -1,77 +1,88 @@
 <?php
-/**
- * Zone Model
- */
 
 namespace App\Models;
 
-use Illuminate\Database\Migrations\Migration;
+use App\Traits\BelongsToOwner;
+use Database\Factories\ZoneFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Zone
+/**
+ * Zona de reparto (delivery).
+ *
+ * @property int $id
+ * @property int $owner_id
+ * @property string $name
+ * @property float $lat
+ * @property float $lng
+ * @property float $radio_km
+ * @property int $capacidad_max
+ * @property bool $activa
+ */
+class Zone extends Model
 {
-    /**
-     * The zone name
-     */
-    protected ?string $nombre_zona = null;
+    /** @use HasFactory<ZoneFactory> */
+    use BelongsToOwner, HasFactory;
 
-    /**
-     * Address
-     */
-    protected ?string $direccion = null;
+    protected $table = 'zones';
 
-    /**
-     * Central coordinates
-     */
-    protected ?array $coordenadas_centrales = null;
+    protected $fillable = [
+        'owner_id',
+        'name',
+        'lat',
+        'lng',
+        'radio_km',
+        'capacidad_max',
+        'activa',
+    ];
 
-    /**
-     * Maximum coverage area in km
-     */
-    protected ?int $alcance_km = null;
-
-    /**
-     * Active status
-     */
-    protected ?bool $estado_activo = null;
-
-    /**
-     * Casts method for Eloquent
-     */
-    public function casts(): array
+    protected function casts(): array
     {
         return [
-            'estado_activo' => 'estado_activo',
+            'lat' => 'float',
+            'lng' => 'float',
+            'radio_km' => 'float',
+            'capacidad_max' => 'integer',
+            'activa' => 'boolean',
         ];
     }
 
     /**
-     * Fill from DB
+     * Solo las zonas operativas.
      */
-    public function fillFromDb(): void
+    public function scopeActiva(Builder $query): Builder
     {
-        $this->nombre_zona = $this->attributes->get('nombre_zona');
-        $this->direccion = $this->attributes->get('direccion');
-        $this->coordenadas_centrales = $this->attributes->get('coordenadas_centrales');
-        $this->alcance_km = $this->attributes->get('alcance_km');
-        $this->estado_activo = $this->attributes->get('estado_activo');
+        return $query->where('activa', true);
+    }
+
+    public function asignaciones(): HasMany
+    {
+        return $this->hasMany(DeliveryAsignacion::class, 'zona_id');
     }
 
     /**
-     * Get common fields for nested relations
+     * Distancia en kilometros (haversine) entre el centro de la zona y el punto dado.
      */
-    public function getCommonFields(): array
+    public function distanciaA(float $lat, float $lng): float
     {
-        return [
-            'id' => $this->id,
-            'created_at' => $this->created_at,
-            'data' => [
-                'id' => $this->id,
-                'nombre_zona' => $this->nombre_zona,
-                'direccion' => $this->direccion,
-                'coordenadas_centrales' => $this->coordenadas_centrales,
-                'alcance_km' => $this->alcance_km,
-                'estado_activo' => $this->estado_activo,
-            ],
-        ];
+        $radioTierra = 6371.0;
+
+        $dLat = deg2rad($lat - (float) $this->lat);
+        $dLng = deg2rad($lng - (float) $this->lng);
+
+        $a = sin($dLat / 2) ** 2
+            + cos(deg2rad((float) $this->lat)) * cos(deg2rad($lat)) * sin($dLng / 2) ** 2;
+
+        return $radioTierra * 2 * atan2(sqrt($a), sqrt(1 - $a));
+    }
+
+    /**
+     * Indica si el punto cae dentro del radio de la zona.
+     */
+    public function contiene(float $lat, float $lng): bool
+    {
+        return $this->distanciaA($lat, $lng) <= (float) $this->radio_km;
     }
 }

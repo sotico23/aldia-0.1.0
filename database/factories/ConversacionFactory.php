@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Conversacion;
+use App\Models\PublicProfile;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -12,12 +13,10 @@ class ConversacionFactory extends Factory
 
     public function definition(): array
     {
-        $maxUserId = User::max('id') ?: 1;
-
         return [
-            'public_profile_id' => fake()->numberBetween(1, 50),
-            'comprador_id' => fake()->numberBetween(1, $maxUserId),
-            'vendedor_id' => fake()->numberBetween(1, $maxUserId),
+            'public_profile_id' => PublicProfile::factory(),
+            'comprador_id' => User::factory(),
+            'vendedor_id' => User::factory(),
             'titulo' => fake()->sentence(),
             'ultimo_mensaje_at' => fake()->dateTimeBetween('-30 days', 'now'),
         ];

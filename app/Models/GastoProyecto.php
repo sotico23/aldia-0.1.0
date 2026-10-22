@@ -12,10 +12,10 @@ class GastoProyecto extends Model
 
     protected $table = 'gastos_proyecto';
 
-    protected $fillable = ['owner_id', 'proyecto_id', 'categoria', 'descripcion', 'monto', 'fecha', 'referencia', 'aprobado', 'aprobador_id'];
+    protected $fillable = ['owner_id', 'proyecto', 'categoria', 'descripcion', 'monto', 'fecha', 'estado'];
 
     protected function casts(): array
     {
-        return ['monto' => 'decimal:2', 'fecha' => 'date', 'aprobado' => 'boolean'];
+        return ['monto' => 'decimal:2', 'fecha' => 'date'];
     }
 }

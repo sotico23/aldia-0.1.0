@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Categoria;
 use App\Models\Producto;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -29,7 +30,7 @@ class ProductoFactory extends Factory
             'unidad_medida' => fake()->randomElement(['unidad', 'kg', 'lt']),
             'nombre' => fake()->randomElement($tiposProducto).' '.fake()->numberBetween(100, 999),
             'descripcion' => fake()->paragraph(),
-            'categoria_id' => fake()->numberBetween(1, 10),
+            'categoria_id' => Categoria::factory(),
             'precio_compra' => fake()->randomFloat(2, 1000, 50000),
             'precio_venta' => fake()->randomFloat(2, 5000, 100000),
             'stock_minimo' => fake()->numberBetween(5, 50),

@@ -13,13 +13,44 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        $this->prepareDatabase();
+
         // Add trial_starts_at column for tests (SQLite in-memory)
         if (Schema::hasTable('users') && ! Schema::hasColumn('users', 'trial_starts_at')) {
             Schema::table('users', function ($table) {
                 $table->timestamp('trial_starts_at')->nullable()->after('trial_ends_at');
             });
         }
+    }
 
+    /**
+     * Garantiza que el esquema y los datos base existan antes de cada test.
+     *
+     * Con `RefreshDatabase` (aplicado globalmente desde tests/Pest.php) el
+     * esquema se crea una sola vez por proceso y cada test corre dentro de una
+     * transicion que se revierte al terminar. Por eso los datos base de
+     * referencia (paises y roles) se re-crean en cada test.
+     *
+     * Si el test no usa `RefreshDatabase` no existe esquema, asi que se migra
+     * y siembra aqui.
+     */
+    protected function prepareDatabase(): void
+    {
+        if (! Schema::hasTable('countries')) {
+            $this->artisan('migrate:fresh --seed')->run();
+
+            return;
+        }
+
+        $this->seedBaseData();
+    }
+
+    /**
+     * Datos base de referencia: paises (configuracion regional) y roles
+     * (el modelo User los asigna automaticamente al crear usuarios).
+     */
+    protected function seedBaseData(): void
+    {
         $countries = [
             ['code' => 'CL', 'name' => 'Chile', 'currency_code' => 'CLP', 'currency_symbol' => '$', 'currency_decimals' => 0, 'locale' => 'es_CL', 'timezone' => 'America/Santiago', 'phone_code' => '+56', 'tax_name' => 'IVA', 'tax_rate' => 19, 'fiscal_id_label' => 'RUT', 'date_format' => 'd/m/Y', 'is_active' => true],
             ['code' => 'CO', 'name' => 'Colombia', 'currency_code' => 'COP', 'currency_symbol' => '$', 'currency_decimals' => 0, 'locale' => 'es_CO', 'timezone' => 'America/Bogota', 'phone_code' => '+57', 'tax_name' => 'IVA', 'tax_rate' => 19, 'fiscal_id_label' => 'NIT', 'date_format' => 'd/m/Y', 'is_active' => true],

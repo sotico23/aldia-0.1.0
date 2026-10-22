@@ -84,8 +84,8 @@ test('inventory returns inventory items for business', function () {
     Inventario::factory()->create([
         'owner_id' => $business->id,
         'producto_id' => $producto->id,
-        'stock_actual' => 100,
-        'stock_minimo' => 10,
+        'cantidad' => 100,
+        'cantidad_minima' => 10,
     ]);
 
     $response = $this->getJson("/api/internal/business/{$business->id}/inventory", n8nHeaders($business));
@@ -116,14 +116,14 @@ test('inventory marks low stock correctly', function () {
     Inventario::factory()->create([
         'owner_id' => $business->id,
         'producto_id' => $productoNormal->id,
-        'stock_actual' => 50,
-        'stock_minimo' => 10,
+        'cantidad' => 50,
+        'cantidad_minima' => 10,
     ]);
     Inventario::factory()->create([
         'owner_id' => $business->id,
         'producto_id' => $productoBajo->id,
-        'stock_actual' => 5,
-        'stock_minimo' => 10,
+        'cantidad' => 5,
+        'cantidad_minima' => 10,
     ]);
 
     $response = $this->getJson("/api/internal/business/{$business->id}/inventory", n8nHeaders($business));
@@ -173,29 +173,33 @@ test('sales respects limit parameter', function () {
 
 test('appointments returns appointments for business', function () {
     $business = createBusinessWithN8nKey();
-    $categoria = Categoria::factory()->create(['owner_id' => $business->id, 'servicio_tipo' => 'servicio']);
+    $categoria = Categoria::factory()->create(['owner_id' => $business->id, 'tipo' => 'servicio']);
     $servicio = Producto::factory()->create([
         'owner_id' => $business->id,
         'categoria_id' => $categoria->id,
-        'es_servicio' => true,
-        'duracion_minutos' => 30,
+        'is_service' => true,
+        'duracion' => 30,
         'nombre' => 'Corte de pelo',
     ]);
-    $cliente = Cliente::factory()->create(['owner_id' => $business->id]);
+    $cliente = User::factory()->create();
 
     Appointment::factory()->count(2)->create([
         'owner_id' => $business->id,
-        'cliente_id' => $cliente->id,
-        'servicio_id' => $servicio->id,
-        'fecha_inicio' => now()->addDay(),
-        'estado' => 'confirmada',
+        'client_id' => $cliente->id,
+        'provider_id' => $business->id,
+        'producto_id' => $servicio->id,
+        'start_time' => now()->addDay(),
+        'end_time' => now()->addDay()->addHour(),
+        'status' => 'confirmada',
     ]);
     Appointment::factory()->create([
         'owner_id' => $business->id,
-        'cliente_id' => $cliente->id,
-        'servicio_id' => $servicio->id,
-        'fecha_inicio' => now()->addDay(),
-        'estado' => 'cancelada',
+        'client_id' => $cliente->id,
+        'provider_id' => $business->id,
+        'producto_id' => $servicio->id,
+        'start_time' => now()->addDay(),
+        'end_time' => now()->addDay()->addHour(),
+        'status' => 'cancelada',
     ]);
 
     $response = $this->getJson("/api/internal/business/{$business->id}/appointments", n8nHeaders($business));
@@ -210,28 +214,32 @@ test('appointments returns appointments for business', function () {
 
 test('appointments filters by status', function () {
     $business = createBusinessWithN8nKey();
-    $categoria = Categoria::factory()->create(['owner_id' => $business->id, 'servicio_tipo' => 'servicio']);
+    $categoria = Categoria::factory()->create(['owner_id' => $business->id, 'tipo' => 'servicio']);
     $servicio = Producto::factory()->create([
         'owner_id' => $business->id,
         'categoria_id' => $categoria->id,
-        'es_servicio' => true,
-        'duracion_minutos' => 30,
+        'is_service' => true,
+        'duracion' => 30,
     ]);
-    $cliente = Cliente::factory()->create(['owner_id' => $business->id]);
+    $cliente = User::factory()->create();
 
     Appointment::factory()->create([
         'owner_id' => $business->id,
-        'cliente_id' => $cliente->id,
-        'servicio_id' => $servicio->id,
-        'fecha_inicio' => now()->addDay(),
-        'estado' => 'confirmada',
+        'client_id' => $cliente->id,
+        'provider_id' => $business->id,
+        'producto_id' => $servicio->id,
+        'start_time' => now()->addDay(),
+        'end_time' => now()->addDay()->addHour(),
+        'status' => 'confirmada',
     ]);
     Appointment::factory()->create([
         'owner_id' => $business->id,
-        'cliente_id' => $cliente->id,
-        'servicio_id' => $servicio->id,
-        'fecha_inicio' => now()->addDay(),
-        'estado' => 'pendiente',
+        'client_id' => $cliente->id,
+        'provider_id' => $business->id,
+        'producto_id' => $servicio->id,
+        'start_time' => now()->addDay(),
+        'end_time' => now()->addDay()->addHour(),
+        'status' => 'pendiente',
     ]);
 
     $response = $this->getJson("/api/internal/business/{$business->id}/appointments?status=confirmada", n8nHeaders($business));
@@ -376,7 +384,7 @@ test('expenses returns combined project and treasury expenses', function () {
     GastoProyecto::factory()->create([
         'owner_id' => $business->id,
         'monto' => 30000,
-        'tipo' => 'materiales',
+        'categoria' => 'materiales',
         'estado' => 'aprobado',
     ]);
 

@@ -1,51 +1,99 @@
 <?php
-/**
- * Notification Created Event - Triggered when a new notification is sent
- */
 
 namespace App\Events;
 
-use App\Http\Resources\Base\BaseResource;
+use App\Models\User;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Str;
 
+/**
+ * Notificacion creada para un usuario.
+ */
 class NotificationCreated implements ShouldBroadcast
 {
-    /**
-     * Constructor
-     */
-    public function __construct()
-    {
-        parent::__construct();
-    }
+    use Dispatchable, InteractsWithSockets, SerializesModels;
+
+    public function __construct(
+        public mixed $notification = null,
+        public ?User $user = null,
+    ) {}
 
     /**
-     * Create the event
+     * Canal concreto: `notifications.{userId}`.
      */
-    public function create(): NotificationCreated
-    {
-        return new self();
-    }
-
-    /**
-     * Get the event data
-     */
-    public function getEventData(): array
+    public function broadcastOn(): array
     {
         return [
-            'id' => uniqid(),
-            'type' => 'notification.created',
-            'title' => $this->notification->title ?? 'Nueva notificación',
-            'message' => $this->notification->message ?? '',
-            'data' => $this->notification->data,
-            'read_at' => $this->notification->read_at,
-            'created_at' => $this->notification->created_at,
+            new PrivateChannel('notifications.'.$this->userId()),
         ];
     }
 
     /**
-     * Get the channel to subscribe to
+     * Datos que se difunden por el canal.
+     */
+    public function broadcastWith(): array
+    {
+        return $this->getEventData();
+    }
+
+    /**
+     * Estructura canonica del evento.
+     */
+    public function getEventData(): array
+    {
+        $data = $this->payload();
+
+        return [
+            'id' => (string) Str::uuid(),
+            'type' => 'notification.created',
+            'title' => $data['title'] ?? 'Nueva notificación',
+            'message' => $data['message'] ?? $data['body'] ?? '',
+            'data' => $data,
+            'read_at' => $this->notification?->read_at?->toISOString(),
+            'created_at' => $this->notification?->created_at?->toISOString() ?? now()->toISOString(),
+        ];
+    }
+
+    /**
+     * Formato del canal (contrato historico).
      */
     public function getChannel(): string
     {
         return 'notifications.{userId}';
+    }
+
+    /**
+     * Fabrica de compatibilidad.
+     */
+    public function create(): NotificationCreated
+    {
+        return new self;
+    }
+
+    protected function userId(): ?int
+    {
+        $id = $this->user?->id ?? $this->notification?->notifiable_id;
+
+        return $id !== null ? (int) $id : null;
+    }
+
+    /**
+     * Contenido serializado de la notificacion.
+     *
+     * @return array<string, mixed>
+     */
+    protected function payload(): array
+    {
+        $data = $this->notification?->data ?? [];
+
+        if (is_object($data)) {
+            $data = (array) $data;
+        }
+
+        return is_array($data) ? $data : [];
     }
 }

@@ -197,8 +197,9 @@ test('comprador puede enviar mensaje en conversacion de pedido', function () {
         'contenido' => 'Hola vendedor!',
     ]);
 
-    Notification::assertSent(
-        fn ($n) => $n instanceof NuevoMensajeChatPedidoNotification
+    Notification::assertSentTo(
+        $vendedor,
+        fn (NuevoMensajeChatPedidoNotification $n) => true
     );
 });
 
@@ -248,8 +249,9 @@ test('vendedor puede enviar mensaje en conversacion de pedido', function () {
         'contenido' => 'Gracias por tu compra!',
     ]);
 
-    Notification::assertSent(
-        fn ($n) => $n instanceof NuevoMensajeChatPedidoNotification
+    Notification::assertSentTo(
+        $comprador,
+        fn (NuevoMensajeChatPedidoNotification $n) => true
     );
 });
 

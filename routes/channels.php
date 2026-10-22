@@ -55,7 +55,7 @@ Broadcast::channel('presence-conversation.{id}', function ($user, $id) {
             || (int) $user->id === (int) $conversacion->vendedor_id;
         if ($allowed) {
             return [
-                'id' => $user->id, 
+                'id' => $user->id,
                 'name' => $user->name,
             ];
         }
@@ -68,7 +68,7 @@ Broadcast::channel('presence-conversation.{id}', function ($user, $id) {
             || ($profile && (int) $user->id === (int) $profile->user_id);
         if ($allowed) {
             return [
-                'id' => $user->id, 
+                'id' => $user->id,
                 'name' => $user->name,
             ];
         }
@@ -83,7 +83,7 @@ Broadcast::channel('notifications.{userId}', function ($user, $userId) {
 });
 
 Broadcast::channel('delivery.driver.{driverId}', function ($user, $driverId) {
-    return (int) $user->repartidor_id === (int) $driverId;
+    return (int) $user->repartidor?->id === (int) $driverId;
 });
 
 Broadcast::channel('delivery.orders.{orderId}', function ($user, $orderId) {
@@ -96,7 +96,7 @@ Broadcast::channel('chat.conversation.{id}', function ($user, $id) {
         return false;
     }
 
-    $profile = PublicProfile::withoutGlobalScope(OwnerScope::class)->find($conversation->store_profile_id);
+    $profile = PublicProfile::withoutGlobalScope(OwnerScope::class)->find($conversacion->public_profile_id);
 
     return (int) $user->id === (int) $conversacion->comprador_id
         || (int) $user->id === (int) $conversacion->vendedor_id;

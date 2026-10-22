@@ -1,57 +1,80 @@
 <?php
-/**
- * Conversation Model
- */
 
 namespace App\Models;
 
-use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Conversacion
+class Conversacion extends Model
 {
-    /**
-     * The conversation title
-     */
-    protected ?string $titulo = null;
+    use HasFactory;
 
     /**
-     * Participants in the conversation
+     * Tabla asociada al modelo (opcional si sigue la convención conversations/conversaciones)
      */
-    protected ?array $participantes = null;
+    protected $table = 'conversaciones';
 
     /**
-     * Current status
+     * Atributos asignables masivamente.
+     *
+     * Deben coincidir con las columnas reales de la tabla `conversaciones`
+     * (ver database/migrations/2026_03_16_234952_create_conversaciones_table.php
+     * y 2026_06_28_041156_add_owner_id_to_chat_tables.php).
      */
-    protected ?string $estado = null;
+    protected $fillable = [
+        'owner_id',
+        'pedido_id',
+        'public_profile_id',
+        'comprador_id',
+        'vendedor_id',
+        'titulo',
+        'ultimo_mensaje_at',
+    ];
 
     /**
-     * Last message ID
+     * Conversión de tipos de atributos.
      */
-    protected ?int $ultimo_mensaje_id = null;
-
-    /**
-     * Casts method for Eloquent
-     */
-    public function casts(): array
+    protected function casts(): array
     {
         return [
-            'estado' => 'estado',
+            'owner_id' => 'integer',
+            'pedido_id' => 'integer',
+            'public_profile_id' => 'integer',
+            'comprador_id' => 'integer',
+            'vendedor_id' => 'integer',
+            'ultimo_mensaje_at' => 'datetime',
         ];
     }
 
-    /**
-     * Fill from DB
-     */
-    public function fillFromDb(): void
+    public function pedido(): BelongsTo
     {
-        $this->titulo = $this->attributes->get('titulo');
-        $this->participantes = $this->attributes->get('participantes');
-        $this->estado = $this->attributes->get('estado');
-        $this->ultimo_mensaje_id = $this->attributes->get('ultimo_mensaje_id');
+        return $this->belongsTo(Pedido::class);
+    }
+
+    public function publicProfile(): BelongsTo
+    {
+        return $this->belongsTo(PublicProfile::class);
+    }
+
+    public function comprador(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'comprador_id');
+    }
+
+    public function vendedor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'vendedor_id');
+    }
+
+    public function mensajes(): HasMany
+    {
+        return $this->hasMany(MensajeConversacion::class, 'conversacion_id');
     }
 
     /**
-     * Get common fields for nested relations
+     * Helper para formatear datos comunes en respuestas/JSON
      */
     public function getCommonFields(): array
     {
@@ -62,9 +85,7 @@ class Conversacion
             'data' => [
                 'id' => $this->id,
                 'titulo' => $this->titulo,
-                'participantes' => $this->participantes,
-                'estado' => $this->estado,
-                'ultimo_mensaje_id' => $this->ultimo_mensaje_id,
+                'ultimo_mensaje_at' => $this->ultimo_mensaje_at,
             ],
         ];
     }

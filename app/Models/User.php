@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToOwner;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
@@ -17,8 +17,23 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use BelongsToOwner, HasApiTokens, HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
+    /**
+     * NO se usa el trait `BelongsToOwner`.
+     *
+     * La jerarquia de tenants en la tabla `users` se apoya en `creator_id`
+     * (ver `getOwnerId()`), no en `owner_id`: el owner de un tenant tiene
+     * `owner_id = NULL`. El `OwnerScope` que agregaba ese trait filtraba por
+     * `users.owner_id`, de modo que cualquier `User::find()`, `User::where()`
+     * o `User::query()` devolvia cero filas para los tenants que no son
+     * Super Admin (el scope solo se salta para Master/Super Admin).
+     *
+     * El aislamiento por tenant de las consultas de usuarios se hace de
+     * forma explicita con `creator_id` (ver `scopeVisibles` y los
+     * controladores de Backend).
+     *
+     * @use HasFactory<UserFactory>
+     */
+    use HasApiTokens, HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
@@ -79,6 +94,13 @@ class User extends Authenticatable
 
                 $user->referral_code = $code;
             }
+
+            // `users.owner_id` se mantiene poblado igual que antes (lo hacia
+            // el trait BelongsToOwner) para no cambiar la semantica de los
+            // datos existentes.
+            if (Auth::check() && ! $user->owner_id) {
+                $user->owner_id = Auth::user()->getOwnerId();
+            }
         });
 
         static::created(function (User $user) {
@@ -121,6 +143,17 @@ class User extends Authenticatable
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'creator_id');
+    }
+
+    /**
+     * Referencia al owner (tenant) de la fila.
+     *
+     * Se mantiene aunque `User` ya no use el trait `BelongsToOwner`, para no
+     * romper los puntos de codigo que usan `$user->owner`.
+     */
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_id');
     }
 
     public function referrer(): BelongsTo
