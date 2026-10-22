@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\SystemHealthController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Bot\ClienteBotController;
 use App\Http\Controllers\Api\Bot\OpenApiController;
+use App\Http\Controllers\Api\Bot\ResourceBotController;
+use App\Http\Controllers\Api\Bot\TransversalBotController;
 use App\Http\Controllers\Api\Bot\VentaBotController;
 use App\Http\Controllers\Api\Delivery\DeliveryOrdenController;
 use App\Http\Controllers\Api\Delivery\ZoneController;
@@ -90,10 +92,22 @@ Route::prefix('v1/auth')->middleware(['throttle:api-auth'])->group(function () {
 // y, por compatibilidad, el `users.api_token` legacy que ya usan los workflows
 // de n8n desplegados.
 Route::prefix('v1/bot')->middleware(['agent-api', 'ability:agent:read', 'throttle:agent-read'])->group(function () {
+    // Transversales (Ola 2)
+    Route::get('contexto', [TransversalBotController::class, 'contexto']);
+    Route::get('resumen', [TransversalBotController::class, 'resumen']);
+    Route::get('reportes/{tipo}', [TransversalBotController::class, 'reportes']);
+    Route::get('buscar', [TransversalBotController::class, 'buscar']);
+    Route::get('dashboard/resumen', [TransversalBotController::class, 'dashboardResumen']);
+
+    // Existentes (mantener compatibilidad)
     Route::get('clientes', [ClienteBotController::class, 'index']);
     Route::get('clientes/{cliente}', [ClienteBotController::class, 'show']);
     Route::get('ventas', [VentaBotController::class, 'index']);
     Route::get('ventas/{venta}', [VentaBotController::class, 'show']);
+
+    // Recursos genéricos read-only (Ola 2)
+    Route::get('{resource}', [ResourceBotController::class, 'index']);
+    Route::get('{resource}/{id}', [ResourceBotController::class, 'show']);
 });
 
 // Escrituras del Bot API: requieren `agent:write`. El token legacy de n8n
