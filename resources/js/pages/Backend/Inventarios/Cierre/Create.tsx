@@ -7,7 +7,7 @@ import {
     AlertTriangle,
     CheckCircle,
     ArrowLeft,
-    RotateCcw
+    RotateCcw,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -65,7 +65,12 @@ export default function CierreCreate({
     almacenes: Almacen[];
     productos: Producto[];
     ventas_esperadas: Record<string, any>;
-    envases_pendientes?: { id: number; producto: string; cantidad: number; observaciones: string | null }[];
+    envases_pendientes?: {
+        id: number;
+        producto: string;
+        cantidad: number;
+        observaciones: string | null;
+    }[];
     selected_almacen?: string;
 }) {
     const { hasPermission } = usePermissions();
@@ -161,7 +166,9 @@ export default function CierreCreate({
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );
@@ -330,7 +337,7 @@ export default function CierreCreate({
                                                                 {stockActual.toLocaleString()}
                                                             </td>
                                                             <td className="px-4 py-3 text-right font-mono text-red-500">
-{vendido.toLocaleString()}
+                                                                {vendido.toLocaleString()}
                                                             </td>
                                                             <td className="px-4 py-3 text-right font-mono">
                                                                 {esperado.toLocaleString()}
@@ -421,14 +428,28 @@ export default function CierreCreate({
                                 </div>
 
                                 {/* 5% Threshold Warning */}
-                                {totales.expectedStock > 0 && Math.abs(totales.difference) / totales.expectedStock > 0.05 && (
-                                    <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-200 p-3">
-                                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-                                        <p className="text-xs text-amber-800">
-                                            <strong>Diferencia alta detectada:</strong> La diferencia ({Math.abs(totales.difference).toLocaleString()} uds) supera el 5% del stock esperado ({totales.expectedStock.toLocaleString()} uds). Verifique el conteo físico antes de cerrar.
-                                        </p>
-                                    </div>
-                                )}
+                                {totales.expectedStock > 0 &&
+                                    Math.abs(totales.difference) /
+                                        totales.expectedStock >
+                                        0.05 && (
+                                        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-500/10 p-3">
+                                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                                            <p className="text-xs text-amber-800">
+                                                <strong>
+                                                    Diferencia alta detectada:
+                                                </strong>{' '}
+                                                La diferencia (
+                                                {Math.abs(
+                                                    totales.difference,
+                                                ).toLocaleString()}{' '}
+                                                uds) supera el 5% del stock
+                                                esperado (
+                                                {totales.expectedStock.toLocaleString()}{' '}
+                                                uds). Verifique el conteo físico
+                                                antes de cerrar.
+                                            </p>
+                                        </div>
+                                    )}
 
                                 {totales.difference !== 0 && (
                                     <div className="flex items-start gap-2 rounded-lg bg-red-500/10 p-3">
@@ -451,27 +472,47 @@ export default function CierreCreate({
                                     </div>
                                 )}
 
-                                {envases_pendientes && envases_pendientes.length > 0 && (
-                                    <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3">
-                                        <div className="mb-2 flex items-center gap-2">
-                                            <RotateCcw className="h-4 w-4 text-amber-600" />
-                                            <span className="text-sm font-bold text-amber-800">
-                                                Envases Pendientes de Retorno
-                                            </span>
-                                            <Badge variant="outline" className="ml-auto bg-amber-100 text-amber-700 text-xs">
-                                                {envases_pendientes.reduce((s, e) => s + e.cantidad, 0)} uds.
-                                            </Badge>
+                                {envases_pendientes &&
+                                    envases_pendientes.length > 0 && (
+                                        <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3">
+                                            <div className="mb-2 flex items-center gap-2">
+                                                <RotateCcw className="h-4 w-4 text-amber-600" />
+                                                <span className="text-sm font-bold text-amber-800">
+                                                    Envases Pendientes de
+                                                    Retorno
+                                                </span>
+                                                <Badge
+                                                    variant="outline"
+                                                    className="ml-auto bg-amber-100 text-xs text-amber-700"
+                                                >
+                                                    {envases_pendientes.reduce(
+                                                        (s, e) =>
+                                                            s + e.cantidad,
+                                                        0,
+                                                    )}{' '}
+                                                    uds.
+                                                </Badge>
+                                            </div>
+                                            <div className="space-y-1">
+                                                {envases_pendientes.map(
+                                                    (env) => (
+                                                        <div
+                                                            key={env.id}
+                                                            className="flex items-center justify-between rounded bg-white/60 px-2 py-1 text-xs"
+                                                        >
+                                                            <span className="font-medium">
+                                                                {env.producto}
+                                                            </span>
+                                                            <span className="font-mono font-bold text-amber-700">
+                                                                {env.cantidad}{' '}
+                                                                uds.
+                                                            </span>
+                                                        </div>
+                                                    ),
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="space-y-1">
-                                            {envases_pendientes.map((env) => (
-                                                <div key={env.id} className="flex items-center justify-between rounded bg-white/60 px-2 py-1 text-xs">
-                                                    <span className="font-medium">{env.producto}</span>
-                                                    <span className="font-mono font-bold text-amber-700">{env.cantidad} uds.</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
+                                    )}
 
                                 <div className="space-y-2 pt-2">
                                     <Label className="text-xs font-bold text-muted-foreground uppercase">
@@ -685,6 +726,7 @@ export default function CierreCreate({
                                                                                     {
                                                                                         data.nombre
                                                                                     }
+
                                                                                     :{' '}
                                                                                     {
                                                                                         data.cantidad

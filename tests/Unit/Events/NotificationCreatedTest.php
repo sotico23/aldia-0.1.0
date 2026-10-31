@@ -1,4 +1,5 @@
 <?php
+
 /**
  * NotificationCreated Event Test
  */
@@ -12,7 +13,8 @@ class NotificationCreatedTest extends TestCase
 {
     public function test_notification_created_event_has_correct_structure(): void
     {
-        $event = new class extends NotificationCreated {
+        $event = new class extends NotificationCreated
+        {
             public function __construct()
             {
                 parent::__construct();
@@ -20,7 +22,7 @@ class NotificationCreatedTest extends TestCase
         };
 
         $data = $event->getEventData();
-        
+
         $this->assertArrayHasKey('id', $data);
         $this->assertArrayHasKey('type', $data);
         $this->assertArrayHasKey('title', $data);
@@ -28,13 +30,14 @@ class NotificationCreatedTest extends TestCase
         $this->assertArrayHasKey('data', $data);
         $this->assertArrayHasKey('read_at', $data);
         $this->assertArrayHasKey('created_at', $data);
-        
+
         $this->assertEquals('notification.created', $data['type']);
     }
 
     public function test_notification_created_event_channel_format(): void
     {
-        $event = new class extends NotificationCreated {
+        $event = new class extends NotificationCreated
+        {
             public function __construct()
             {
                 parent::__construct();
@@ -42,7 +45,7 @@ class NotificationCreatedTest extends TestCase
         };
 
         $channel = $event->getChannel();
-        
+
         $this->assertStringContainsString('notifications', $channel);
         $this->assertStringContainsString('{userId}', $channel);
     }

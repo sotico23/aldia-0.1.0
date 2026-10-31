@@ -36,45 +36,55 @@ const statusLabels: Record<string, string> = {
     no_show: 'No Asistió',
 };
 
-export default function ProximasCitasWidget({ citas }: ProximasCitasWidgetProps) {
-    const { code: countryCode, currency } = useCountry();
+export default function ProximasCitasWidget({
+    citas,
+}: ProximasCitasWidgetProps) {
+    const { currency } = useCountry();
     return (
         <Card className="h-full border-0 shadow-none">
             <CardHeader className="flex flex-row items-center gap-2 px-4 pt-3 pb-0">
                 <Calendar className="h-4 w-4 text-primary" />
-                <CardTitle className="text-xs font-bold">Próximas Citas</CardTitle>
+                <CardTitle className="text-xs font-bold">
+                    Próximas Citas
+                </CardTitle>
             </CardHeader>
-            <CardContent className="px-4 pb-3 pt-2">
+            <CardContent className="px-4 pt-2 pb-3">
                 {citas.length === 0 ? (
                     <p className="py-6 text-center text-xs text-muted-foreground">
                         No tienes citas próximas
                     </p>
                 ) : (
                     <ul className="divide-y divide-border/50">
-                        {citas.map(cita => {
+                        {citas.map((cita) => {
                             const start = new Date(cita.start_time);
                             const today = new Date();
-                            const isToday = start.toDateString() === today.toDateString();
-                            const timeStr = start.toLocaleTimeString(currency.locale, {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                            });
+                            const isToday =
+                                start.toDateString() === today.toDateString();
+                            const timeStr = start.toLocaleTimeString(
+                                currency.locale,
+                                {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                },
+                            );
                             const dateStr = isToday
                                 ? 'Hoy'
                                 : start.toLocaleDateString(currency.locale, {
-                                    weekday: 'short',
-                                    day: 'numeric',
-                                    month: 'short',
-                                });
+                                      weekday: 'short',
+                                      day: 'numeric',
+                                      month: 'short',
+                                  });
 
                             return (
                                 <li key={cita.id}>
                                     <Link
                                         href={`/appointments/${cita.id}`}
-                                        className="flex items-center gap-3 py-2 transition-colors hover:bg-muted/50 -mx-2 px-2 rounded-lg group"
+                                        className="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/50"
                                     >
                                         <div className="flex shrink-0 flex-col items-center">
-                                            <span className={`text-[10px] font-bold ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
+                                            <span
+                                                className={`text-[10px] font-bold ${isToday ? 'text-primary' : 'text-muted-foreground'}`}
+                                            >
                                                 {dateStr}
                                             </span>
                                             <span className="flex items-center gap-0.5 text-[9px] text-muted-foreground/60">
@@ -85,7 +95,8 @@ export default function ProximasCitasWidget({ citas }: ProximasCitasWidgetProps)
 
                                         <div className="min-w-0 flex-1">
                                             <p className="truncate text-xs font-medium">
-                                                {cita.client?.name ?? 'Sin cliente'}
+                                                {cita.client?.name ??
+                                                    'Sin cliente'}
                                             </p>
                                             {cita.producto && (
                                                 <p className="truncate text-[10px] text-muted-foreground">
@@ -96,12 +107,13 @@ export default function ProximasCitasWidget({ citas }: ProximasCitasWidgetProps)
 
                                         <Badge
                                             variant="outline"
-                                            className={`shrink-0 text-[9px] px-1.5 py-0 ${statusColors[cita.status] ?? 'bg-gray-500/10 text-gray-600'}`}
+                                            className={`shrink-0 px-1.5 py-0 text-[9px] ${statusColors[cita.status] ?? 'bg-gray-500/10 text-gray-600'}`}
                                         >
-                                            {statusLabels[cita.status] ?? cita.status}
+                                            {statusLabels[cita.status] ??
+                                                cita.status}
                                         </Badge>
 
-                                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+                                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-muted-foreground" />
                                     </Link>
                                 </li>
                             );
@@ -112,7 +124,7 @@ export default function ProximasCitasWidget({ citas }: ProximasCitasWidgetProps)
                     <div className="mt-1 text-center">
                         <Link
                             href="/appointments/calendar"
-                            className="text-[10px] font-medium text-primary hover:text-primary/80 transition-colors"
+                            className="text-[10px] font-medium text-primary transition-colors hover:text-primary/80"
                         >
                             Ver calendario →
                         </Link>

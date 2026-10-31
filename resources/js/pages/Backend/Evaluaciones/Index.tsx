@@ -1,5 +1,13 @@
 import { Head, useForm } from '@inertiajs/react';
-import { Pencil, Plus, Trash2, Search, X, LayoutGrid, List } from 'lucide-react';
+import {
+    Pencil,
+    Plus,
+    Trash2,
+    Search,
+    X,
+    LayoutGrid,
+    List,
+} from 'lucide-react';
 import { useState } from 'react';
 import { useMemo } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
@@ -175,7 +183,7 @@ export default function Index({
         <>
             <Head title="Evaluaciones" />
             <AppLayout breadcrumbs={breadcrumbs}>
-                <div className="flex flex-col gap-4 px-4 sm:px-6 lg:px-8 py-6">
+                <div className="flex flex-col gap-4 px-4 py-6 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-2xl font-bold">Evaluaciones</h1>
@@ -183,7 +191,7 @@ export default function Index({
                                 Gestión de evaluaciones
                             </p>
                         </div>
-                        <div className="flex gap-2 items-center">
+                        <div className="flex items-center gap-2">
                             <BulkActions
                                 baseUrl="/evaluaciones"
                                 modelName="Evaluaciones"
@@ -201,17 +209,32 @@ export default function Index({
                                 <div>
                                     <CardTitle>Evaluaciones</CardTitle>
                                     <CardDescription>
-                                        {evaluacionesFiltradas.length} registros encontrados
+                                        {evaluacionesFiltradas.length} registros
+                                        encontrados
                                     </CardDescription>
                                 </div>
                                 <div className="flex gap-1 rounded-lg border p-0.5">
-                                    <button type="button" onClick={() => setViewMode('table')} className={`rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${viewMode === 'table' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`} title="Vista tabla"><List className="h-4 w-4" /></button>
-                                    <button type="button" onClick={() => setViewMode('cards')} className={`rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${viewMode === 'cards' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`} title="Vista tarjetas"><LayoutGrid className="h-4 w-4" /></button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setViewMode('table')}
+                                        className={`rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${viewMode === 'table' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                        title="Vista tabla"
+                                    >
+                                        <List className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setViewMode('cards')}
+                                        className={`rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${viewMode === 'cards' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                        title="Vista tarjetas"
+                                    >
+                                        <LayoutGrid className="h-4 w-4" />
+                                    </button>
                                 </div>
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 rounded-lg bg-muted/30 p-3 text-xs sm:text-sm">
+                            <div className="mb-4 grid grid-cols-1 gap-4 rounded-lg bg-muted/30 p-3 text-xs sm:grid-cols-2 sm:text-sm md:grid-cols-4">
                                 <div className="relative">
                                     <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
                                     <Input
@@ -239,7 +262,8 @@ export default function Index({
                                     <option value="">Todos los tipos</option>
                                     {tipos.map((t) => (
                                         <option key={t} value={t}>
-                                            {t.charAt(0).toUpperCase() + t.slice(1)}
+                                            {t.charAt(0).toUpperCase() +
+                                                t.slice(1)}
                                         </option>
                                     ))}
                                 </select>
@@ -256,7 +280,8 @@ export default function Index({
                                     <option value="">Todos los estados</option>
                                     {estados.map((est) => (
                                         <option key={est} value={est}>
-                                            {est.charAt(0).toUpperCase() + est.slice(1)}
+                                            {est.charAt(0).toUpperCase() +
+                                                est.slice(1)}
                                         </option>
                                     ))}
                                 </select>
@@ -275,35 +300,110 @@ export default function Index({
                                     <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
                                         <thead>
                                             <tr className="border-b">
-                                                <th className="py-2 text-left font-medium">Fecha</th>
-                                                <th className="py-2 text-left font-medium">Período</th>
-                                                <th className="py-2 text-right font-medium">Puntuación</th>
-                                                <th className="py-2 text-left font-medium">Tipo</th>
-                                                <th className="py-2 text-center font-medium">Estado</th>
-                                                <th className="py-2 text-right font-medium">Acciones</th>
+                                                <th className="py-2 text-left font-medium">
+                                                    Fecha
+                                                </th>
+                                                <th className="py-2 text-left font-medium">
+                                                    Período
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Puntuación
+                                                </th>
+                                                <th className="py-2 text-left font-medium">
+                                                    Tipo
+                                                </th>
+                                                <th className="py-2 text-center font-medium">
+                                                    Estado
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Acciones
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {evaluacionesFiltradas.map((e) => (
-                                                <tr key={e.id} className="border-b transition-colors hover:bg-muted/30">
+                                                <tr
+                                                    key={e.id}
+                                                    className="border-b transition-colors hover:bg-muted/30"
+                                                >
                                                     <td className="py-2">
-                                                        <div className="font-medium">{e.fecha ? new Date(e.fecha).toLocaleDateString() : '-'}</div>
-                                                        <div className="text-[10px] text-muted-foreground truncate max-w-[150px]">{e.comentarios || ''}</div>
+                                                        <div className="font-medium">
+                                                            {e.fecha
+                                                                ? new Date(
+                                                                      e.fecha,
+                                                                  ).toLocaleDateString()
+                                                                : '-'}
+                                                        </div>
+                                                        <div className="max-w-[150px] truncate text-[10px] text-muted-foreground">
+                                                            {e.comentarios ||
+                                                                ''}
+                                                        </div>
                                                     </td>
-                                                    <td className="py-2 text-muted-foreground">{e.periodo || '-'}</td>
-                                                    <td className="py-2 text-right font-medium">{e.puntuacion || 0}</td>
-                                                    <td className="py-2"><Badge variant="outline" className="capitalize">{e.tipo || '-'}</Badge></td>
-                                                    <td className="py-2 text-center">{getEstadoBadge(e.estado)}</td>
+                                                    <td className="py-2 text-muted-foreground">
+                                                        {e.periodo || '-'}
+                                                    </td>
+                                                    <td className="py-2 text-right font-medium">
+                                                        {e.puntuacion || 0}
+                                                    </td>
+                                                    <td className="py-2">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="capitalize"
+                                                        >
+                                                            {e.tipo || '-'}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="py-2 text-center">
+                                                        {getEstadoBadge(
+                                                            e.estado,
+                                                        )}
+                                                    </td>
                                                     <td className="py-2 text-right">
                                                         <div className="flex justify-end gap-1">
-                                                            {canEdit && <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(e)}><Pencil className="h-4 w-4" /></Button>}
-                                                            {canDelete && <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(e.id)}><Trash2 className="h-4 w-4" /></Button>}
+                                                            {canEdit && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0"
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            e,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {canDelete && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            e.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>
                                             ))}
-                                            {evaluacionesFiltradas.length === 0 && (
-                                                <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No se encontraron evaluaciones con los filtros aplicados</td></tr>
+                                            {evaluacionesFiltradas.length ===
+                                                0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan={6}
+                                                        className="py-8 text-center text-muted-foreground"
+                                                    >
+                                                        No se encontraron
+                                                        evaluaciones con los
+                                                        filtros aplicados
+                                                    </td>
+                                                </tr>
                                             )}
                                         </tbody>
                                     </table>
@@ -311,7 +411,10 @@ export default function Index({
                             ) : (
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                     {evaluacionesFiltradas.map((e) => (
-                                        <Card key={e.id} className="overflow-hidden border-muted/80 transition-all hover:shadow-md">
+                                        <Card
+                                            key={e.id}
+                                            className="overflow-hidden border-muted/80 transition-all hover:shadow-md"
+                                        >
                                             <CardHeader className="pb-2">
                                                 <div className="flex items-start justify-between">
                                                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -320,31 +423,79 @@ export default function Index({
                                                     {getEstadoBadge(e.estado)}
                                                 </div>
                                                 <div className="mt-2">
-                                                    <p className="font-medium">{e.fecha ? new Date(e.fecha).toLocaleDateString() : 'Sin fecha'}</p>
-                                                    <p className="text-xs text-muted-foreground">{e.periodo || 'Sin período'}</p>
+                                                    <p className="font-medium">
+                                                        {e.fecha
+                                                            ? new Date(
+                                                                  e.fecha,
+                                                              ).toLocaleDateString()
+                                                            : 'Sin fecha'}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {e.periodo ||
+                                                            'Sin período'}
+                                                    </p>
                                                 </div>
                                             </CardHeader>
-                                            <CardContent className="space-y-2 text-sm pb-3">
+                                            <CardContent className="space-y-2 pb-3 text-sm">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-muted-foreground">Puntuación</span>
-                                                    <span className="font-semibold">{e.puntuacion || 0}</span>
+                                                    <span className="text-muted-foreground">
+                                                        Puntuación
+                                                    </span>
+                                                    <span className="font-semibold">
+                                                        {e.puntuacion || 0}
+                                                    </span>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-muted-foreground">Tipo</span>
-                                                    <Badge variant="outline" className="capitalize">{e.tipo || '-'}</Badge>
+                                                    <span className="text-muted-foreground">
+                                                        Tipo
+                                                    </span>
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="capitalize"
+                                                    >
+                                                        {e.tipo || '-'}
+                                                    </Badge>
                                                 </div>
                                                 {e.comentarios && (
-                                                    <div className="pt-1 border-t text-xs text-muted-foreground line-clamp-2">{e.comentarios}</div>
+                                                    <div className="line-clamp-2 border-t pt-1 text-xs text-muted-foreground">
+                                                        {e.comentarios}
+                                                    </div>
                                                 )}
                                             </CardContent>
-                                            <div className="border-t bg-muted/20 p-3 flex justify-end gap-1">
-                                                {canEdit && <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(e)} title="Editar"><Pencil className="h-4 w-4" /></Button>}
-                                                {canDelete && <Button variant="outline" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(e.id)}><Trash2 className="h-4 w-4" /></Button>}
+                                            <div className="flex justify-end gap-1 border-t bg-muted/20 p-3">
+                                                {canEdit && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="h-8 w-8 p-0"
+                                                        onClick={() =>
+                                                            handleEdit(e)
+                                                        }
+                                                        title="Editar"
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                                {canDelete && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                        onClick={() =>
+                                                            handleDelete(e.id)
+                                                        }
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
                                             </div>
                                         </Card>
                                     ))}
                                     {evaluacionesFiltradas.length === 0 && (
-                                        <div className="col-span-full py-8 text-center text-muted-foreground">No se encontraron evaluaciones con los filtros aplicados</div>
+                                        <div className="col-span-full py-8 text-center text-muted-foreground">
+                                            No se encontraron evaluaciones con
+                                            los filtros aplicados
+                                        </div>
                                     )}
                                 </div>
                             )}
@@ -353,15 +504,18 @@ export default function Index({
                 </div>
             </AppLayout>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="mx-4 sm:mx-auto w-full max-w-full sm:max-w-lg md:max-w-2xl p-4 sm:p-6">
+                <DialogContent className="mx-4 w-full max-w-full p-4 sm:mx-auto sm:max-w-lg sm:p-6 md:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>
                             {editando ? 'Editar' : 'Nueva'} Evaluación
                         </DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="max-h-[85vh] overflow-y-auto">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="max-h-[85vh] overflow-y-auto"
+                    >
                         <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label>Fecha</Label>
                                     <Input
@@ -383,7 +537,7 @@ export default function Index({
                                     />
                                 </div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label>Puntuación</Label>
                                     <Input

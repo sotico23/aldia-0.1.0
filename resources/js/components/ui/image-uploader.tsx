@@ -1,194 +1,359 @@
-import { useState, useRef, useEffect } from 'react';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { useRef, useState } from 'react';
+import {
+    Image as ImageIcon,
+    Loader2,
+    Plus,
+    Upload,
+    X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-interface ImageUploaderProps {
-    images?: string[];
-    files?: File[];
-    onImagesChange?: (images: string[]) => void;
-    onFilesChange?: (files: File[]) => void;
-    maxImages?: number;
-    minImages?: number;
+export interface ImageUploaderImage {
+    id: string;
+    preview: string;
+    file?: File;
+    existingPath?: string;
+    existingKey?: string;
 }
 
-export function ImageUploader({ 
-    images = [], 
-    files = [],
-    onImagesChange, 
-    onFilesChange,
-    maxImages = 6, 
-    minImages = 1 
+interface ImageUploaderProps {
+    images: ImageUploaderImage[];
+    onChange: (images: ImageUploaderImage[]) => void;
+    maxImages?: number;
+    maxFileSizeMb?: number;
+    acceptedMimeTypes?: string[];
+    disabled?: boolean;
+    isSubmitting?: boolean;
+    error?: string | null;
+    onError?: (message: string | null) => void;
+}
+
+const DEFAULT_ACCEPTED_MIME_TYPES = [
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+];
+
+const ACCEPTED_EXTENSION_PATTERN = /\.(jpe?g|png|webp)$/i;
+
+function readFileAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () =>
+            reject(reader.error ?? new Error('No se pudo leer el archivo.'));
+        reader.readAsDataURL(file);
+    });
+}
+
+function fileFingerprint(file: File): string {
+    return `${file.name}|${file.size}|${file.lastModified}`;
+}
+
+export function ImageUploader({
+    images,
+    onChange,
+    maxImages = 5,
+    maxFileSizeMb = 2,
+    acceptedMimeTypes = DEFAULT_ACCEPTED_MIME_TYPES,
+    disabled = false,
+    isSubmitting = false,
+    error = null,
+    onError,
 }: ImageUploaderProps) {
     const inputRef = useRef<HTMLInputElement>(null);
+    const nextId = useRef(0);
     const [isDragging, setIsDragging] = useState(false);
-    const [filePreviews, setFilePreviews] = useState<string[]>([]);
+    const [isReading, setIsReading] = useState(false);
+    const [localError, setLocalError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (files.length === 0) {
-            setFilePreviews([]);
+    const isBusy = isSubmitting || isReading;
+    const canAddMore = images.length < maxImages && !disabled && !isSubmitting;
+
+    const reportError = (message: string | null) => {
+        setLocalError(message);
+        onError?.(message);
+    };
+
+    const validateFile = (file: File): string | null => {
+        const hasAcceptedMimeType = acceptedMimeTypes.includes(
+            file.type.toLowerCase(),
+        );
+        const hasAcceptedExtension = ACCEPTED_EXTENSION_PATTERN.test(file.name);
+
+        if (!hasAcceptedMimeType && !hasAcceptedExtension) {
+            return `"${file.name}" no es una imagen JPG, PNG o WEBP válida.`;
+        }
+
+        if (file.size === 0) {
+            return `"${file.name}" está vacío.`;
+        }
+
+        if (file.size > maxFileSizeMb * 1024 * 1024) {
+            return `"${file.name}" supera el máximo de ${maxFileSizeMb} MB.`;
+        }
+
+        return null;
+    };
+
+    const handleFiles = async (fileList: FileList | null) => {
+        if (!fileList || fileList.length === 0) {
             return;
         }
-        let cancelled = false;
-        Promise.all(
-            files.map(
-                (file) =>
-                    new Promise<string>((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result as string);
-                        reader.readAsDataURL(file);
-                    }),
-            ),
-        ).then((urls) => {
-            if (!cancelled) setFilePreviews(urls);
-        });
-        return () => { cancelled = true; };
-    }, [files]);
 
-    const previewUrls = images.length > 0 ? images : filePreviews;
-
-    const totalItems = images.length + files.length;
-
-    const handleFileChange = async (newFiles: FileList | null) => {
-        if (!newFiles) return;
-        
-        const remainingSlots = maxImages - totalItems;
-        const filesToAdd = Array.from(newFiles).slice(0, remainingSlots);
-        
-        if (onFilesChange) {
-            onFilesChange([...files, ...filesToAdd]);
+        if (!canAddMore) {
+            reportError(`Solo puedes subir hasta ${maxImages} imágenes.`);
+            return;
         }
-        
-        if (onImagesChange) {
-            const newUrls = await Promise.all(
-                filesToAdd.map(
-                    (file) =>
-                        new Promise<string>((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result as string);
-                            reader.readAsDataURL(file);
-                        }),
-                ),
+
+        const incomingFiles = Array.from(fileList);
+        const errors: string[] = [];
+        const filesToAdd: File[] = [];
+        const knownFingerprints = new Set(
+            images
+                .filter((image) => image.file)
+                .map((image) => fileFingerprint(image.file as File)),
+        );
+        const remainingSlots = maxImages - images.length;
+
+        for (const file of incomingFiles) {
+            if (filesToAdd.length >= remainingSlots) {
+                errors.push(
+                    `Solo puedes subir hasta ${maxImages} imágenes en total.`,
+                );
+                break;
+            }
+
+            const validationError = validateFile(file);
+            if (validationError) {
+                errors.push(validationError);
+                continue;
+            }
+
+            const fingerprint = fileFingerprint(file);
+            if (knownFingerprints.has(fingerprint)) {
+                errors.push(`"${file.name}" ya está seleccionada.`);
+                continue;
+            }
+
+            knownFingerprints.add(fingerprint);
+            filesToAdd.push(file);
+        }
+
+        if (filesToAdd.length === 0) {
+            reportError(errors.join(' '));
+            if (inputRef.current) {
+                inputRef.current.value = '';
+            }
+            return;
+        }
+
+        setIsReading(true);
+
+        try {
+            const preparedImages = await Promise.all(
+                filesToAdd.map(async (file) => ({
+                    id: `image-${nextId.current++}`,
+                    preview: await readFileAsDataUrl(file),
+                    file,
+                })),
             );
-            onImagesChange([...images, ...newUrls]);
+
+            onChange([...images, ...preparedImages]);
+            reportError(errors.length > 0 ? errors.join(' ') : null);
+        } catch {
+            reportError(
+                'No se pudieron procesar las imágenes seleccionadas. Intenta nuevamente.',
+            );
+        } finally {
+            setIsReading(false);
+            if (inputRef.current) {
+                inputRef.current.value = '';
+            }
         }
     };
 
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
+    const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
         setIsDragging(false);
-        handleFileChange(e.dataTransfer.files);
+
+        if (!canAddMore) {
+            return;
+        }
+
+        void handleFiles(event.dataTransfer.files);
     };
 
-    const removeImage = (index: number) => {
-        if (index < images.length) {
-            const newImages = [...images];
-            newImages.splice(index, 1);
-            onImagesChange?.(newImages);
-        } else {
-            const fileIndex = index - images.length;
-            const newFiles = [...files];
-            newFiles.splice(fileIndex, 1);
-            onFilesChange?.(newFiles);
+    const openFilePicker = () => {
+        if (canAddMore) {
+            inputRef.current?.click();
         }
     };
+
+    const removeImage = (id: string) => {
+        onChange(images.filter((image) => image.id !== id));
+        reportError(null);
+    };
+
+    const displayedError = error || localError;
+    const acceptAttribute = [
+        ...acceptedMimeTypes,
+        '.jpg',
+        '.jpeg',
+        '.png',
+        '.webp',
+    ].join(',');
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-3">
+            <input
+                ref={inputRef}
+                type="file"
+                accept={acceptAttribute}
+                multiple
+                className="hidden"
+                onChange={(event) => void handleFiles(event.target.files)}
+                disabled={!canAddMore}
+            />
+
             <div
-                className={cn(
-                    "border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer",
-                    isDragging 
-                        ? "border-blue-500 bg-blue-50" 
-                        : "border-zinc-300 dark:border-zinc-700 hover:border-zinc-400",
-                    totalItems >= maxImages && "opacity-50 cursor-not-allowed"
-                )}
-                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                role="button"
+                tabIndex={canAddMore ? 0 : -1}
+                aria-disabled={!canAddMore}
+                onClick={openFilePicker}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openFilePicker();
+                    }
+                }}
+                onDragOver={(event) => {
+                    if (!canAddMore) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    setIsDragging(true);
+                }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
-                onClick={() => totalItems < maxImages && inputRef.current?.click()}
+                className={cn(
+                    'cursor-pointer rounded-2xl border-2 border-dashed p-4 text-center transition-colors outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30',
+                    isDragging
+                        ? 'border-primary bg-primary/5'
+                        : 'border-muted-foreground/20 bg-muted/10 hover:border-muted-foreground/40',
+                    !canAddMore && 'cursor-not-allowed opacity-60',
+                )}
             >
-                <input
-                    ref={inputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => handleFileChange(e.target.files)}
-                    disabled={totalItems >= maxImages}
-                />
-                
                 <div className="flex flex-col items-center gap-2">
-                    <div className="h-12 w-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                        <Upload className="h-6 w-6 text-zinc-500" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background">
+                        {isBusy ? (
+                            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        ) : (
+                            <Upload className="h-5 w-5 text-muted-foreground" />
+                        )}
                     </div>
-                    <div className="text-sm">
-                        <span className="font-medium text-blue-600">Haz clic para subir</span>
-                        {" "}o arrastra y suelta
+                    <div className="text-xs font-semibold">
+                        {isReading
+                            ? 'Procesando imágenes...'
+                            : isSubmitting
+                              ? 'Subiendo imágenes...'
+                              : canAddMore
+                                ? 'Haz clic o arrastra tus fotografías aquí'
+                                : `Límite de ${maxImages} imágenes alcanzado`}
                     </div>
-                    <p className="text-xs text-zinc-500">
-                        PNG, JPG, GIF hasta 10MB • {minImages}-{maxImages} imágenes
+                    <p className="text-[11px] text-muted-foreground">
+                        JPG, JPEG, PNG o WEBP · Máx. {maxFileSizeMb} MB por
+                        imagen
                     </p>
                 </div>
             </div>
 
-            {previewUrls.length > 0 && (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                    {previewUrls.map((url, index) => (
-                        <div 
-                            key={index} 
-                            className="relative aspect-square rounded-lg overflow-hidden group border"
+            {images.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {images.map((image, index) => (
+                        <div
+                            key={image.id}
+                            className="group relative aspect-square overflow-hidden rounded-2xl border border-muted-foreground/10 bg-muted/10"
                         >
-                            <img 
-                                src={url} 
-                                alt={`Imagen ${index + 1}`} 
-                                className="w-full h-full object-cover"
+                            <img
+                                src={image.preview}
+                                alt={`Imagen ${index + 1} del producto`}
+                                className="h-full w-full object-cover"
                             />
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Button
-                                    variant="destructive"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        removeImage(index);
-                                    }}
+
+                            <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-1 p-1.5">
+                                <span
+                                    className={cn(
+                                        'rounded-full px-2 py-0.5 text-[8px] font-black tracking-wide uppercase',
+                                        index === 0
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-background/90 text-foreground',
+                                    )}
                                 >
-                                    <X className="h-4 w-4" />
+                                    {index === 0
+                                        ? 'Principal'
+                                        : image.file
+                                          ? 'Nueva'
+                                          : 'Guardada'}
+                                </span>
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="icon-xs"
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        removeImage(image.id);
+                                    }}
+                                    disabled={isBusy}
+                                    aria-label={`Eliminar imagen ${index + 1}`}
+                                >
+                                    <X className="h-3 w-3" />
                                 </Button>
                             </div>
-                            {index === 0 && (
-                                <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-2 py-0.5 rounded">
-                                    Principal
+
+                            {isSubmitting && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                                    <Loader2 className="h-5 w-5 animate-spin text-white" />
                                 </div>
                             )}
                         </div>
                     ))}
-                    
-                    {totalItems < maxImages && (
-                        <div 
-                            className="relative aspect-square rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center cursor-pointer hover:border-zinc-400"
-                            onClick={() => inputRef.current?.click()}
+
+                    {canAddMore && (
+                        <button
+                            type="button"
+                            onClick={openFilePicker}
+                            className="flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-muted-foreground/20 bg-muted/10 text-muted-foreground transition-colors hover:border-muted-foreground/40 hover:text-foreground"
                         >
-                            <ImageIcon className="h-8 w-8 text-zinc-400" />
-                            <input
-                                ref={inputRef}
-                                type="file"
-                                accept="image/*"
-                                multiple
-                                className="hidden"
-                                onChange={(e) => handleFileChange(e.target.files)}
-                            />
-                        </div>
+                            <Plus className="h-5 w-5" />
+                            <span className="text-[10px] font-bold uppercase">
+                                Agregar
+                            </span>
+                        </button>
                     )}
                 </div>
             )}
 
-            {totalItems < minImages && (
-                <p className="text-sm text-red-500">
-                    Sube al menos {minImages} imagen{minImages > 1 ? 'es' : ''}
+            {displayedError && (
+                <p
+                    role="alert"
+                    className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive"
+                >
+                    {displayedError}
                 </p>
             )}
+
+            <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] font-medium text-muted-foreground">
+                <span className="flex items-center gap-1">
+                    <ImageIcon className="h-3 w-3" />
+                    La primera imagen será la portada del producto.
+                </span>
+                <span>
+                    {images.length} de {maxImages} imágenes
+                </span>
+            </div>
         </div>
     );
 }

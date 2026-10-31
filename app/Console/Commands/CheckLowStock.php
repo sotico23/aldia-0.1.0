@@ -4,13 +4,13 @@ namespace App\Console\Commands;
 
 use App\Events\LowStock;
 use App\Models\Inventario;
-use App\Models\Producto;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
 class CheckLowStock extends Command
 {
     protected $signature = 'stock:check-low';
+
     protected $description = 'Verifica productos con stock bajo y dispara eventos LowStock';
 
     public function handle(): int

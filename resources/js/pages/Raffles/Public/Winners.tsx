@@ -36,7 +36,7 @@ interface Props {
 }
 
 export default function RaffleWinners({ raffle }: Props) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const bgColor = 'bg-gradient-to-br from-yellow-900 to-amber-900';
 
     return (

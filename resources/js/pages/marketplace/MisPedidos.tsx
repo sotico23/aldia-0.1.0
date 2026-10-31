@@ -75,7 +75,11 @@ const estadoIconos: Record<string, any> = {
     cancelado: XCircle,
 };
 
-function renderPedidos(pedidos: Pedido[], showCliente: boolean = false, locale: string = 'es-CL') {
+function renderPedidos(
+    pedidos: Pedido[],
+    showCliente: boolean = false,
+    locale: string = 'es-CL',
+) {
     if (pedidos.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -181,7 +185,7 @@ function renderPedidos(pedidos: Pedido[], showCliente: boolean = false, locale: 
 }
 
 export default function MisPedidos({ compras, ventas }: Props) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const tieneDatos = compras.length > 0 || ventas.length > 0;
 
     if (!tieneDatos) {

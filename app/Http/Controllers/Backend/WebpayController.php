@@ -89,7 +89,7 @@ class WebpayController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error starting Webpay translation: '.$e->getMessage());
+            Log::error('Error starting Webpay transaction', ['exception' => $e]);
 
             return Inertia::render('Backend/Pagos/WebpayResult', [
                 'success' => false,

@@ -11,7 +11,10 @@ export default function Welcome({
     return (
         <>
             <Head title={web_settings?.app_title || 'Welcome'}>
-                <meta name="description" content={web_settings?.app_description} />
+                <meta
+                    name="description"
+                    content={web_settings?.app_description}
+                />
                 <meta name="keywords" content={web_settings?.app_keywords} />
                 <link rel="preconnect" href="https://fonts.bunny.net" />
                 <link
@@ -49,9 +52,9 @@ export default function Welcome({
                         )}
                     </nav>
                 </header>
-                    <div className="flex w-full items-center justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
-                        <main className="flex w-full max-w-sm flex-col-reverse lg:max-w-4xl lg:flex-row">
-                            <div className="flex-1 rounded-br-lg rounded-bl-lg bg-white px-4 py-6 pb-12 text-[13px] leading-[20px] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] sm:px-6 lg:rounded-tl-lg lg:rounded-br-none lg:p-20 dark:bg-[#161615] dark:text-[#EDEDEC] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]">
+                <div className="flex w-full items-center justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
+                    <main className="flex w-full max-w-sm flex-col-reverse lg:max-w-4xl lg:flex-row">
+                        <div className="flex-1 rounded-br-lg rounded-bl-lg bg-white px-4 py-6 pb-12 text-[13px] leading-[20px] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] sm:px-6 lg:rounded-tl-lg lg:rounded-br-none lg:p-20 dark:bg-[#161615] dark:text-[#EDEDEC] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]">
                             <h1 className="mb-1 font-medium">Comencemos</h1>
                             <p className="mb-2 text-[#706f6c] dark:text-[#A1A09A]">
                                 Laravel tiene un ecosistema increíblemente rico.
@@ -170,8 +173,8 @@ export default function Welcome({
                                     fill="currentColor"
                                 />
                             </svg>
-                                <svg
-                                    className="relative -mt-[4.9rem] -ml-8 w-full max-w-[448px] lg:-mt-[6.6rem] lg:ml-0 dark:hidden"
+                            <svg
+                                className="relative -mt-[4.9rem] -ml-8 w-full max-w-[448px] lg:-mt-[6.6rem] lg:ml-0 dark:hidden"
                                 viewBox="0 0 440 376"
                                 fill="none"
                                 xmlns="http://www.w3.org/2000/svg"
@@ -487,8 +490,8 @@ export default function Welcome({
                                     />
                                 </g>
                             </svg>
-                                <svg
-                                    className="relative -mt-[4.9rem] -ml-8 hidden w-full max-w-[448px] lg:-mt-[6.6rem] lg:ml-0 dark:block"
+                            <svg
+                                className="relative -mt-[4.9rem] -ml-8 hidden w-full max-w-[448px] lg:-mt-[6.6rem] lg:ml-0 dark:block"
                                 viewBox="0 0 440 376"
                                 fill="none"
                                 xmlns="http://www.w3.org/2000/svg"

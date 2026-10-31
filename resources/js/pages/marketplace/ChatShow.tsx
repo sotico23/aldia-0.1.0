@@ -103,9 +103,7 @@ export default function ChatShow({ conversation, messages, auth }: Props) {
         const addMensaje = (e: any) => {
             setLocalMessages((prev) => {
                 if (prev.some((m) => m.id === e.id)) return prev;
-                const withoutTemp = prev.filter(
-                    (m) => !(m as Message)._temp,
-                );
+                const withoutTemp = prev.filter((m) => !(m as Message)._temp);
                 return [...withoutTemp, e];
             });
             setTimeout(scrollToBottom, 100);
@@ -131,7 +129,8 @@ export default function ChatShow({ conversation, messages, auth }: Props) {
             if (e.user_id === auth.user.id) return;
             setTypingUser(e.name);
             setIsTyping(true);
-            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            if (typingTimeoutRef.current)
+                clearTimeout(typingTimeoutRef.current);
             typingTimeoutRef.current = setTimeout(() => {
                 setIsTyping(false);
                 setTypingUser(null);
@@ -151,7 +150,8 @@ export default function ChatShow({ conversation, messages, auth }: Props) {
             clearInterval(interval);
             clearTimeout(connectTimer);
             echo.leave('conversation.' + conversation.id);
-            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            if (typingTimeoutRef.current)
+                clearTimeout(typingTimeoutRef.current);
         };
     }, [conversation.id, auth.user.id]);
 
@@ -226,8 +226,16 @@ export default function ChatShow({ conversation, messages, auth }: Props) {
                     <CardHeader className="z-10 shrink-0 border-b border-slate-100 bg-white py-4 dark:border-slate-800 dark:bg-slate-900">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <Button variant="ghost" size="icon" asChild className="rounded-full">
-                                    <Link href={chat.index().url} className="h-5 w-5">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    asChild
+                                    className="rounded-full"
+                                >
+                                    <Link
+                                        href={chat.index().url}
+                                        className="h-5 w-5"
+                                    >
                                         <ArrowLeft className="h-5 w-5" />
                                     </Link>
                                 </Button>
@@ -243,53 +251,104 @@ export default function ChatShow({ conversation, messages, auth }: Props) {
                                         {chatTitle}
                                     </h2>
                                     <p className="flex items-center gap-1 text-xs text-slate-500">
-                                        <span className={`h-2 w-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
+                                        <span
+                                            className={`h-2 w-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`}
+                                        />
                                         {isStoreOwner ? 'Cliente' : 'Tienda'}
                                     </p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setIsPolling(!isPolling)} title={isPolling ? 'Pausar actualización' : 'Reanudar actualización'}>
-                                    <RefreshCw className={`h-4 w-4 ${isPolling ? 'animate-spin-slow text-primary' : 'text-slate-400'}`} />
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="rounded-full"
+                                    onClick={() => setIsPolling(!isPolling)}
+                                    title={
+                                        isPolling
+                                            ? 'Pausar actualización'
+                                            : 'Reanudar actualización'
+                                    }
+                                >
+                                    <RefreshCw
+                                        className={`h-4 w-4 ${isPolling ? 'animate-spin-slow text-primary' : 'text-slate-400'}`}
+                                    />
                                 </Button>
                             </div>
                         </div>
                     </CardHeader>
 
                     <CardContent
-                        className="flex-1 space-y-4 overflow-y-auto overflow-x-hidden bg-slate-50/50 p-4 dark:bg-slate-950/20"
+                        className="flex-1 space-y-4 overflow-x-hidden overflow-y-auto bg-slate-50/50 p-4 dark:bg-slate-950/20"
                         ref={scrollRef}
                     >
                         {localMessages.length > 0 ? (
                             localMessages.map((msg) => {
                                 const isMe = msg.sender_id === auth.user.id;
                                 return (
-                                    <div key={msg.id || (msg as Message)._tempId} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${isMe ? 'rounded-tr-none bg-primary text-primary-foreground' : 'rounded-tl-none border border-slate-100 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white'} ${(msg as Message)._sending ? 'animate-pulse opacity-70' : ''} ${(msg as Message)._error ? 'ring-2 ring-red-400' : ''}`}>
-                                            {msg.image_path && !(msg as Message)._temp && (
-                                                <img src={`/storage/${msg.image_path}`} alt="Imagen" className="mb-2 max-h-[300px] w-full rounded-lg object-cover" />
-                                            )}
-                                            {(msg as Message)._temp && (msg as Message).image_path && (
-                                                <img src={(msg as Message).image_path as string} alt="Preview" className="mb-2 max-h-[300px] w-full rounded-lg object-cover opacity-80" />
-                                            )}
+                                    <div
+                                        key={msg.id || (msg as Message)._tempId}
+                                        className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}
+                                    >
+                                        <div
+                                            className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${isMe ? 'rounded-tr-none bg-primary text-primary-foreground' : 'rounded-tl-none border border-slate-100 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white'} ${(msg as Message)._sending ? 'animate-pulse opacity-70' : ''} ${(msg as Message)._error ? 'ring-2 ring-red-400' : ''}`}
+                                        >
+                                            {msg.image_path &&
+                                                !(msg as Message)._temp && (
+                                                    <img
+                                                        src={`/storage/${msg.image_path}`}
+                                                        alt="Imagen"
+                                                        className="mb-2 max-h-[300px] w-full rounded-lg object-cover"
+                                                    />
+                                                )}
+                                            {(msg as Message)._temp &&
+                                                (msg as Message).image_path && (
+                                                    <img
+                                                        src={
+                                                            (msg as Message)
+                                                                .image_path as string
+                                                        }
+                                                        alt="Preview"
+                                                        className="mb-2 max-h-[300px] w-full rounded-lg object-cover opacity-80"
+                                                    />
+                                                )}
                                             {msg.body && (
-                                                <p className="prose dark:prose-invert text-sm break-words">{msg.body}</p>
+                                                <p className="prose dark:prose-invert text-sm break-words">
+                                                    {msg.body}
+                                                </p>
                                             )}
-                                            <p className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${isMe ? 'text-blue-100' : 'text-slate-400'}`}>
-                                                <span>{format(new Date(msg.created_at), 'HH:mm')}</span>
-                                                {isMe && (msg as Message)._sending && (
-                                                    <Clock className="h-3 w-3 animate-spin text-yellow-300" />
-                                                )}
-                                                {isMe && (msg as Message)._error && (
-                                                    <AlertCircle className="h-3 w-3 text-red-300" />
-                                                )}
+                                            <p
+                                                className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${isMe ? 'text-blue-100' : 'text-slate-400'}`}
+                                            >
+                                                <span>
+                                                    {format(
+                                                        new Date(
+                                                            msg.created_at,
+                                                        ),
+                                                        'HH:mm',
+                                                    )}
+                                                </span>
+                                                {isMe &&
+                                                    (msg as Message)
+                                                        ._sending && (
+                                                        <Clock className="h-3 w-3 animate-spin text-yellow-300" />
+                                                    )}
+                                                {isMe &&
+                                                    (msg as Message)._error && (
+                                                        <AlertCircle className="h-3 w-3 text-red-300" />
+                                                    )}
                                             </p>
                                             {(msg as Message)._error && (
                                                 <button
                                                     type="button"
                                                     onClick={() => {
-                                                        setLocalMessages((prev) =>
-                                                            prev.filter((m) => m.id !== msg.id),
+                                                        setLocalMessages(
+                                                            (prev) =>
+                                                                prev.filter(
+                                                                    (m) =>
+                                                                        m.id !==
+                                                                        msg.id,
+                                                                ),
                                                         );
                                                     }}
                                                     className="mt-1 text-[10px] text-red-400 hover:text-red-300"
@@ -306,8 +365,13 @@ export default function ChatShow({ conversation, messages, auth }: Props) {
                                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
                                     <Send className="h-8 w-8 -rotate-45 text-slate-300" />
                                 </div>
-                                <h3 className="font-semibold text-slate-700 dark:text-slate-300">Comienza la conversación</h3>
-                                <p className="max-w-[200px] text-sm text-slate-500">Envía un mensaje para ponerte en contacto con {chatTitle}.</p>
+                                <h3 className="font-semibold text-slate-700 dark:text-slate-300">
+                                    Comienza la conversación
+                                </h3>
+                                <p className="max-w-[200px] text-sm text-slate-500">
+                                    Envía un mensaje para ponerte en contacto
+                                    con {chatTitle}.
+                                </p>
                             </div>
                         )}
 
@@ -319,25 +383,55 @@ export default function ChatShow({ conversation, messages, auth }: Props) {
                                         <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:150ms]" />
                                         <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:300ms]" />
                                     </span>
-                                    <span>{typingUser} está escribiendo...</span>
+                                    <span>
+                                        {typingUser} está escribiendo...
+                                    </span>
                                 </div>
                             </div>
                         )}
                     </CardContent>
 
                     <div className="shrink-0 border-t border-slate-100 bg-white p-4 sm:p-6 dark:border-slate-800 dark:bg-slate-900">
-                        <form onSubmit={handleSubmit} encType="multipart/form-data" className="flex flex-col gap-2">
+                        <form
+                            onSubmit={handleSubmit}
+                            encType="multipart/form-data"
+                            className="flex flex-col gap-2"
+                        >
                             {previewImage && (
                                 <div className="relative self-start overflow-hidden rounded-lg border border-slate-200">
-                                    <img src={previewImage} alt="Preview" className="h-24 w-auto object-cover" />
-                                    <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 rounded-full" onClick={clearImage}>
+                                    <img
+                                        src={previewImage}
+                                        alt="Preview"
+                                        className="h-24 w-auto object-cover"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="icon"
+                                        className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                                        onClick={clearImage}
+                                    >
                                         <X className="h-3 w-3" />
                                     </Button>
                                 </div>
                             )}
-                            <div className="flex flex-col sm:flex-row items-center gap-2">
-                                <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageSelect} />
-                                <Button type="button" variant="ghost" size="icon" className="rounded-full" onClick={() => fileInputRef.current?.click()}>
+                            <div className="flex flex-col items-center gap-2 sm:flex-row">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    ref={fileInputRef}
+                                    onChange={handleImageSelect}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="rounded-full"
+                                    onClick={() =>
+                                        fileInputRef.current?.click()
+                                    }
+                                >
                                     <ImagePlus className="h-5 w-5" />
                                 </Button>
                                 <Input
@@ -355,7 +449,10 @@ export default function ChatShow({ conversation, messages, auth }: Props) {
                                     type="submit"
                                     size="icon"
                                     className="h-12 w-12 rounded-full shadow-lg transition-transform active:scale-95"
-                                    disabled={processing || (!data.body.trim() && !data.image)}
+                                    disabled={
+                                        processing ||
+                                        (!data.body.trim() && !data.image)
+                                    }
                                 >
                                     <Send className="h-5 w-5" />
                                 </Button>

@@ -13,13 +13,18 @@ import {
     LayoutGrid,
     List,
     X,
-    Check,
 } from 'lucide-react';
 import { useState, useCallback, useRef, useMemo } from 'react';
 import TipTapEditorWithSource from '@/components/TipTapEditorWithSource';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -127,9 +132,14 @@ const tipoIcons: Record<string, React.ReactNode> = {
     vale_producto: <Package className="h-3.5 w-3.5" />,
 };
 
-export default function CuponesIndex({ cupones, productos, filters, flash }: Props) {
+export default function CuponesIndex({
+    cupones,
+    productos,
+    filters,
+    flash,
+}: Props) {
     const { hasPermission } = usePermissions();
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const canAccess = hasPermission('ventas.cupones.viewAny');
     const canCreate = hasPermission('ventas.cupones.create');
     const canEdit = hasPermission('ventas.cupones.edit');
@@ -139,7 +149,9 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
     const [search, setSearch] = useState(filters.search || '');
     const [showPreview, setShowPreview] = useState(false);
     const [previewMode, setPreviewMode] = useState<'html' | 'text'>('html');
-    const searchTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const searchTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(
+        undefined,
+    );
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
     const [productoSearch, setProductoSearch] = useState('');
     const [showProductoDropdown, setShowProductoDropdown] = useState(false);
@@ -148,16 +160,21 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
         setSearch(value);
         if (searchTimeout.current) clearTimeout(searchTimeout.current);
         searchTimeout.current = setTimeout(() => {
-            router.get('/cupones', { search: value || undefined }, {
-                preserveState: true,
-                replace: true,
-            });
+            router.get(
+                '/cupones',
+                { search: value || undefined },
+                {
+                    preserveState: true,
+                    replace: true,
+                },
+            );
         }, 400);
     }, []);
 
     const form = useForm({
         codigo: '',
-        tipo: 'porcentaje' as 'porcentaje' | 'precio_fijo' | 'envio_gratis' | 'vale_producto',
+        tipo: 'porcentaje' as
+            'porcentaje' | 'precio_fijo' | 'envio_gratis' | 'vale_producto',
         valor: '',
         descripcion: '',
         plantilla_html: '',
@@ -168,7 +185,11 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
         fecha_inicio: '',
         fecha_fin: '',
         activa: true,
-        productos: [] as Array<{ id: number; descuento_tipo: 'porcentaje' | 'precio_fijo'; descuento_valor: number }>,
+        productos: [] as Array<{
+            id: number;
+            descuento_tipo: 'porcentaje' | 'precio_fijo';
+            descuento_valor: number;
+        }>,
     });
 
     const defaultVariables: Record<string, string> = {
@@ -184,7 +205,10 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
 
     const generateCodigo = () => {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        const random = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+        const random = Array.from(
+            { length: 4 },
+            () => chars[Math.floor(Math.random() * chars.length)],
+        ).join('');
         const num = Math.floor(Math.random() * 900) + 100;
         form.setData('codigo', `${random}${num}`);
     };
@@ -217,11 +241,12 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
             fecha_inicio: c.fecha_inicio ? c.fecha_inicio.split(' ')[0] : '',
             fecha_fin: c.fecha_fin ? c.fecha_fin.split(' ')[0] : '',
             activa: c.activa,
-            productos: c.productos?.map((p) => ({
-                id: p.id,
-                descuento_tipo: p.pivot.descuento_tipo,
-                descuento_valor: Number(p.pivot.descuento_valor),
-            })) || [],
+            productos:
+                c.productos?.map((p) => ({
+                    id: p.id,
+                    descuento_tipo: p.pivot.descuento_tipo,
+                    descuento_valor: Number(p.pivot.descuento_valor),
+                })) || [],
         });
         setShowPreview(false);
         setIsOpen(true);
@@ -273,13 +298,22 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
     };
 
     const removeProducto = (id: number) => {
-        form.setData('productos', form.data.productos.filter((p) => p.id !== id));
-    };
-
-    const updateProductoConfig = (id: number, field: 'descuento_tipo' | 'descuento_valor', value: string | number) => {
         form.setData(
             'productos',
-            form.data.productos.map((p) => (p.id === id ? { ...p, [field]: value } : p)),
+            form.data.productos.filter((p) => p.id !== id),
+        );
+    };
+
+    const updateProductoConfig = (
+        id: number,
+        field: 'descuento_tipo' | 'descuento_valor',
+        value: string | number,
+    ) => {
+        form.setData(
+            'productos',
+            form.data.productos.map((p) =>
+                p.id === id ? { ...p, [field]: value } : p,
+            ),
         );
     };
 
@@ -290,8 +324,13 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
             .filter((p) => !selectedIds.includes(p.id))
             .filter(
                 (p) =>
-                    p.nombre.toLowerCase().includes(productoSearch.toLowerCase()) ||
-                    (p.codigo && p.codigo.toLowerCase().includes(productoSearch.toLowerCase())),
+                    p.nombre
+                        .toLowerCase()
+                        .includes(productoSearch.toLowerCase()) ||
+                    (p.codigo &&
+                        p.codigo
+                            .toLowerCase()
+                            .includes(productoSearch.toLowerCase())),
             )
             .slice(0, 10);
     }, [productoSearch, productos, form.data.productos]);
@@ -309,17 +348,19 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
             form.data.tipo === 'porcentaje'
                 ? `${form.data.valor || '0'}`
                 : form.data.tipo === 'envio_gratis'
-                    ? 'Gratis'
-                    : form.data.tipo === 'vale_producto'
-                        ? `${form.data.productos.length} productos`
-                        : `$${Number(form.data.valor || 0).toLocaleString(currency.locale)}`;
+                  ? 'Gratis'
+                  : form.data.tipo === 'vale_producto'
+                    ? `${form.data.productos.length} productos`
+                    : `$${Number(form.data.valor || 0).toLocaleString(currency.locale)}`;
 
         return {
             codigo: form.data.codigo || 'CODIGO',
             valor: valorStr,
             tipo: tipoLabel[form.data.tipo],
             vencimiento: form.data.fecha_fin
-                ? new Date(form.data.fecha_fin).toLocaleDateString(currency.locale)
+                ? new Date(form.data.fecha_fin).toLocaleDateString(
+                      currency.locale,
+                  )
                 : 'Sin vencimiento',
             descripcion: form.data.descripcion || '',
             tienda: 'Mi Tienda',
@@ -328,7 +369,16 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                 ? `$${Number(form.data.compra_minima).toLocaleString(currency.locale)}`
                 : 'Sin mínimo',
         };
-    }, [form.data.codigo, form.data.tipo, form.data.valor, form.data.descripcion, form.data.fecha_fin, form.data.compra_minima, form.data.productos]);
+    }, [
+        form.data.codigo,
+        form.data.tipo,
+        form.data.valor,
+        form.data.descripcion,
+        form.data.fecha_fin,
+        form.data.compra_minima,
+        form.data.productos,
+        currency.locale,
+    ]);
 
     const substituteVariables = useCallback(
         (template: string): string => {
@@ -355,7 +405,8 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
     const formatValor = (c: Cupon) => {
         if (c.tipo === 'porcentaje') return `${c.valor}%`;
         if (c.tipo === 'envio_gratis') return 'Gratis';
-        if (c.tipo === 'vale_producto') return `${c.productos?.length ?? 0} productos`;
+        if (c.tipo === 'vale_producto')
+            return `${c.productos?.length ?? 0} productos`;
         return `$${Number(c.valor).toLocaleString(currency.locale)}`;
     };
 
@@ -363,7 +414,9 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );
@@ -387,8 +440,10 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
 
             {Object.keys(form.errors).length > 0 && (
                 <div className="mx-4 mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                    <p className="font-medium mb-1">Por favor corrige los siguientes errores:</p>
-                    <ul className="list-disc list-inside space-y-0.5">
+                    <p className="mb-1 font-medium">
+                        Por favor corrige los siguientes errores:
+                    </p>
+                    <ul className="list-inside list-disc space-y-0.5">
                         {Object.entries(form.errors).map(([key, msg]) => (
                             <li key={key}>{msg}</li>
                         ))}
@@ -399,8 +454,13 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
             <div className="space-y-4 p-4">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold">Cupones de Descuento</h1>
-                        <p className="text-muted-foreground">Gestiona cupones, códigos promocionales y vales por producto</p>
+                        <h1 className="text-2xl font-bold">
+                            Cupones de Descuento
+                        </h1>
+                        <p className="text-muted-foreground">
+                            Gestiona cupones, códigos promocionales y vales por
+                            producto
+                        </p>
                     </div>
                     {canCreate && (
                         <Button onClick={handleOpenNew}>
@@ -410,7 +470,7 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                 </div>
 
                 <div className="relative w-full sm:max-w-sm">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         value={search}
                         onChange={(e) => handleSearch(e.target.value)}
@@ -423,13 +483,18 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                     <Card className="border-dashed">
                         <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                             <Gift className="mb-4 h-12 w-12 text-muted-foreground" />
-                            <h3 className="mb-2 text-lg font-semibold">Sin cupones</h3>
+                            <h3 className="mb-2 text-lg font-semibold">
+                                Sin cupones
+                            </h3>
                             <p className="mb-4 text-muted-foreground">
-                                {search ? 'No se encontraron cupones con ese código.' : 'Crea tu primer cupón de descuento.'}
+                                {search
+                                    ? 'No se encontraron cupones con ese código.'
+                                    : 'Crea tu primer cupón de descuento.'}
                             </p>
                             {canCreate && !search && (
                                 <Button onClick={handleOpenNew}>
-                                    <Plus className="mr-2 h-4 w-4" /> Nuevo Cupón
+                                    <Plus className="mr-2 h-4 w-4" /> Nuevo
+                                    Cupón
                                 </Button>
                             )}
                         </CardContent>
@@ -440,7 +505,9 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                             <div className="flex items-center justify-between">
                                 <div>
                                     <CardTitle>Cupones</CardTitle>
-                                    <CardDescription>{cupones.total} cupones encontrados</CardDescription>
+                                    <CardDescription>
+                                        {cupones.total} cupones encontrados
+                                    </CardDescription>
                                 </div>
                                 <div className="flex gap-1 rounded-lg border p-0.5">
                                     <button
@@ -468,59 +535,151 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                                     <table className="w-full min-w-[600px]">
                                         <thead>
                                             <tr className="border-b bg-muted/50">
-                                                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Código</th>
-                                                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Tipo</th>
-                                                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Valor</th>
-                                                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Usos</th>
-                                                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Vigencia</th>
-                                                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Estado</th>
-                                                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Acciones</th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                                                    Código
+                                                </th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                                                    Tipo
+                                                </th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                                                    Valor
+                                                </th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                                                    Usos
+                                                </th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                                                    Vigencia
+                                                </th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                                                    Estado
+                                                </th>
+                                                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
+                                                    Acciones
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {cupones.data.map((c) => (
-                                                <tr key={c.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                                                <tr
+                                                    key={c.id}
+                                                    className="border-b transition-colors last:border-0 hover:bg-muted/30"
+                                                >
                                                     <td className="px-4 py-3">
                                                         <div className="flex items-center gap-2">
-                                                            <span className="font-mono font-semibold">{c.codigo}</span>
-                                                            <button type="button" onClick={() => navigator.clipboard.writeText(c.codigo)} className="text-muted-foreground hover:text-foreground" title="Copiar código">
+                                                            <span className="font-mono font-semibold">
+                                                                {c.codigo}
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    navigator.clipboard.writeText(
+                                                                        c.codigo,
+                                                                    )
+                                                                }
+                                                                className="text-muted-foreground hover:text-foreground"
+                                                                title="Copiar código"
+                                                            >
                                                                 <Copy className="h-3.5 w-3.5" />
                                                             </button>
                                                         </div>
-                                                        {c.descripcion && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">{c.descripcion}</p>}
+                                                        {c.descripcion && (
+                                                            <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                                                                {c.descripcion}
+                                                            </p>
+                                                        )}
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <div className="flex items-center gap-1.5 text-sm">
                                                             {tipoIcons[c.tipo]}
-                                                            <span>{tipoLabels[c.tipo]}</span>
+                                                            <span>
+                                                                {
+                                                                    tipoLabels[
+                                                                        c.tipo
+                                                                    ]
+                                                                }
+                                                            </span>
                                                         </div>
                                                     </td>
-                                                    <td className="px-4 py-3 text-sm font-medium">{formatValor(c)}</td>
+                                                    <td className="px-4 py-3 text-sm font-medium">
+                                                        {formatValor(c)}
+                                                    </td>
                                                     <td className="px-4 py-3 text-sm">
                                                         {c.max_usos > 0 ? (
                                                             <span>
-                                                                <span className="font-medium">{c.usos_actuales}</span> / {c.max_usos}
+                                                                <span className="font-medium">
+                                                                    {
+                                                                        c.usos_actuales
+                                                                    }
+                                                                </span>{' '}
+                                                                / {c.max_usos}
                                                             </span>
                                                         ) : (
-                                                            <span className="text-muted-foreground">{c.usos_actuales} usos</span>
+                                                            <span className="text-muted-foreground">
+                                                                {
+                                                                    c.usos_actuales
+                                                                }{' '}
+                                                                usos
+                                                            </span>
                                                         )}
                                                     </td>
                                                     <td className="px-4 py-3 text-sm text-muted-foreground">
-                                                        {c.fecha_fin ? new Date(c.fecha_fin).toLocaleDateString(currency.locale) : 'Sin fecha'}
+                                                        {c.fecha_fin
+                                                            ? new Date(
+                                                                  c.fecha_fin,
+                                                              ).toLocaleDateString(
+                                                                  currency.locale,
+                                                              )
+                                                            : 'Sin fecha'}
                                                     </td>
                                                     <td className="px-4 py-3">
-                                                        <Badge variant={c.activa ? 'default' : 'secondary'}>{c.activa ? 'Activo' : 'Inactivo'}</Badge>
+                                                        <Badge
+                                                            variant={
+                                                                c.activa
+                                                                    ? 'default'
+                                                                    : 'secondary'
+                                                            }
+                                                        >
+                                                            {c.activa
+                                                                ? 'Activo'
+                                                                : 'Inactivo'}
+                                                        </Badge>
                                                     </td>
                                                     <td className="px-4 py-3 text-right">
                                                         <div className="flex items-center justify-end gap-2">
-                                                            <Switch checked={c.activa} onCheckedChange={() => handleToggle(c)} />
+                                                            <Switch
+                                                                checked={
+                                                                    c.activa
+                                                                }
+                                                                onCheckedChange={() =>
+                                                                    handleToggle(
+                                                                        c,
+                                                                    )
+                                                                }
+                                                            />
                                                             {canEdit && (
-                                                                <button onClick={() => handleEdit(c)} className="rounded-md p-1.5 transition-colors hover:bg-muted" title="Editar">
+                                                                <button
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            c,
+                                                                        )
+                                                                    }
+                                                                    className="rounded-md p-1.5 transition-colors hover:bg-muted"
+                                                                    title="Editar"
+                                                                >
                                                                     <Pencil className="h-4 w-4 text-muted-foreground" />
                                                                 </button>
                                                             )}
                                                             {canDelete && (
-                                                                <button onClick={() => handleDelete(c.id, c.codigo)} className="rounded-md p-1.5 transition-colors hover:bg-muted" title="Eliminar">
+                                                                <button
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            c.id,
+                                                                            c.codigo,
+                                                                        )
+                                                                    }
+                                                                    className="rounded-md p-1.5 transition-colors hover:bg-muted"
+                                                                    title="Eliminar"
+                                                                >
                                                                     <Trash2 className="h-4 w-4 text-red-500" />
                                                                 </button>
                                                             )}
@@ -534,64 +693,152 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                             ) : (
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                     {cupones.data.map((c) => (
-                                        <Card key={c.id} className="overflow-hidden border-muted/80 transition-all hover:shadow-md">
+                                        <Card
+                                            key={c.id}
+                                            className="overflow-hidden border-muted/80 transition-all hover:shadow-md"
+                                        >
                                             <CardHeader className="pb-2">
                                                 <div className="flex items-start justify-between">
                                                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                                                        {tipoIcons[c.tipo] || <Gift className="h-5 w-5 text-primary" />}
+                                                        {tipoIcons[c.tipo] || (
+                                                            <Gift className="h-5 w-5 text-primary" />
+                                                        )}
                                                     </div>
-                                                    <Badge variant={c.activa ? 'default' : 'secondary'}>{c.activa ? 'Activo' : 'Inactivo'}</Badge>
+                                                    <Badge
+                                                        variant={
+                                                            c.activa
+                                                                ? 'default'
+                                                                : 'secondary'
+                                                        }
+                                                    >
+                                                        {c.activa
+                                                            ? 'Activo'
+                                                            : 'Inactivo'}
+                                                    </Badge>
                                                 </div>
                                                 <div className="mt-2">
                                                     <div className="flex items-center gap-1.5">
-                                                        <span className="font-mono font-bold text-lg">{c.codigo}</span>
-                                                        <button type="button" onClick={() => navigator.clipboard.writeText(c.codigo)} className="text-muted-foreground hover:text-foreground" title="Copiar código">
+                                                        <span className="font-mono text-lg font-bold">
+                                                            {c.codigo}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                navigator.clipboard.writeText(
+                                                                    c.codigo,
+                                                                )
+                                                            }
+                                                            className="text-muted-foreground hover:text-foreground"
+                                                            title="Copiar código"
+                                                        >
                                                             <Copy className="h-3.5 w-3.5" />
                                                         </button>
                                                     </div>
-                                                    {c.descripcion && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{c.descripcion}</p>}
+                                                    {c.descripcion && (
+                                                        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                                                            {c.descripcion}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </CardHeader>
-                                            <CardContent className="space-y-2 text-sm pb-3">
+                                            <CardContent className="space-y-2 pb-3 text-sm">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-muted-foreground">{tipoLabels[c.tipo]}</span>
-                                                    <span className="font-semibold">{formatValor(c)}</span>
+                                                    <span className="text-muted-foreground">
+                                                        {tipoLabels[c.tipo]}
+                                                    </span>
+                                                    <span className="font-semibold">
+                                                        {formatValor(c)}
+                                                    </span>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-muted-foreground">Usos</span>
+                                                    <span className="text-muted-foreground">
+                                                        Usos
+                                                    </span>
                                                     <span>
                                                         {c.max_usos > 0 ? (
                                                             <>
-                                                                {c.usos_actuales} / {c.max_usos}
+                                                                {
+                                                                    c.usos_actuales
+                                                                }{' '}
+                                                                / {c.max_usos}
                                                             </>
                                                         ) : (
-                                                            <>{c.usos_actuales} usos</>
+                                                            <>
+                                                                {
+                                                                    c.usos_actuales
+                                                                }{' '}
+                                                                usos
+                                                            </>
                                                         )}
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-muted-foreground">Vence</span>
-                                                    <span>{c.fecha_fin ? new Date(c.fecha_fin).toLocaleDateString(currency.locale) : 'Sin fecha'}</span>
+                                                    <span className="text-muted-foreground">
+                                                        Vence
+                                                    </span>
+                                                    <span>
+                                                        {c.fecha_fin
+                                                            ? new Date(
+                                                                  c.fecha_fin,
+                                                              ).toLocaleDateString(
+                                                                  currency.locale,
+                                                              )
+                                                            : 'Sin fecha'}
+                                                    </span>
                                                 </div>
-                                                {c.tipo === 'vale_producto' && c.productos && c.productos.length > 0 && (
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-muted-foreground">Productos</span>
-                                                        <span className="text-right">{c.productos.length} productos</span>
-                                                    </div>
-                                                )}
-                                                <div className="flex items-center justify-between pt-2 border-t">
+                                                {c.tipo === 'vale_producto' &&
+                                                    c.productos &&
+                                                    c.productos.length > 0 && (
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-muted-foreground">
+                                                                Productos
+                                                            </span>
+                                                            <span className="text-right">
+                                                                {
+                                                                    c.productos
+                                                                        .length
+                                                                }{' '}
+                                                                productos
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                <div className="flex items-center justify-between border-t pt-2">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-xs text-muted-foreground">Activo</span>
-                                                        <Switch checked={c.activa} onCheckedChange={() => handleToggle(c)} />
+                                                        <span className="text-xs text-muted-foreground">
+                                                            Activo
+                                                        </span>
+                                                        <Switch
+                                                            checked={c.activa}
+                                                            onCheckedChange={() =>
+                                                                handleToggle(c)
+                                                            }
+                                                        />
                                                     </div>
                                                     <div className="flex gap-1">
                                                         {canEdit && (
-                                                            <button onClick={() => handleEdit(c)} className="rounded-md p-1.5 transition-colors hover:bg-muted" title="Editar">
+                                                            <button
+                                                                onClick={() =>
+                                                                    handleEdit(
+                                                                        c,
+                                                                    )
+                                                                }
+                                                                className="rounded-md p-1.5 transition-colors hover:bg-muted"
+                                                                title="Editar"
+                                                            >
                                                                 <Pencil className="h-4 w-4 text-muted-foreground" />
                                                             </button>
                                                         )}
                                                         {canDelete && (
-                                                            <button onClick={() => handleDelete(c.id, c.codigo)} className="rounded-md p-1.5 transition-colors hover:bg-muted" title="Eliminar">
+                                                            <button
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        c.id,
+                                                                        c.codigo,
+                                                                    )
+                                                                }
+                                                                className="rounded-md p-1.5 transition-colors hover:bg-muted"
+                                                                title="Eliminar"
+                                                            >
                                                                 <Trash2 className="h-4 w-4 text-red-500" />
                                                             </button>
                                                         )}
@@ -605,17 +852,34 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                             {cupones.last_page > 1 && (
                                 <div className="flex flex-col gap-3 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                                     <p className="text-center text-sm text-muted-foreground sm:text-left">
-                                        Mostrando {cupones.from}-{cupones.to} de {cupones.total}
+                                        Mostrando {cupones.from}-{cupones.to} de{' '}
+                                        {cupones.total}
                                     </p>
                                     <div className="flex flex-wrap justify-center gap-1">
                                         {cupones.links.map((link, i) => (
                                             <Button
                                                 key={i}
-                                                variant={link.active ? 'default' : 'outline'}
+                                                variant={
+                                                    link.active
+                                                        ? 'default'
+                                                        : 'outline'
+                                                }
                                                 size="sm"
                                                 disabled={!link.url}
-                                                onClick={() => link.url && router.get(link.url, {}, { preserveState: true, replace: true })}
-                                                dangerouslySetInnerHTML={{ __html: link.label }}
+                                                onClick={() =>
+                                                    link.url &&
+                                                    router.get(
+                                                        link.url,
+                                                        {},
+                                                        {
+                                                            preserveState: true,
+                                                            replace: true,
+                                                        },
+                                                    )
+                                                }
+                                                dangerouslySetInnerHTML={{
+                                                    __html: link.label,
+                                                }}
                                             />
                                         ))}
                                     </div>
@@ -627,9 +891,11 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
             </div>
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="w-full max-w-3xl max-h-[90vh] overflow-y-auto sm:p-6 p-4">
+                <DialogContent className="max-h-[90vh] w-full max-w-3xl overflow-y-auto p-4 sm:p-6">
                     <DialogHeader>
-                        <DialogTitle>{editando ? 'Editar Cupón' : 'Nuevo Cupón'}</DialogTitle>
+                        <DialogTitle>
+                            {editando ? 'Editar Cupón' : 'Nuevo Cupón'}
+                        </DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleSubmit}>
                         <div className="grid gap-4 sm:gap-6">
@@ -638,12 +904,21 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                                 <div className="flex gap-2">
                                     <Input
                                         value={form.data.codigo}
-                                        onChange={(e) => form.setData('codigo', e.target.value.toUpperCase())}
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'codigo',
+                                                e.target.value.toUpperCase(),
+                                            )
+                                        }
                                         placeholder="Ej: VERANO2025"
                                         className="font-mono uppercase"
                                         required
                                     />
-                                    <Button type="button" variant="outline" onClick={generateCodigo}>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={generateCodigo}
+                                    >
                                         Generar
                                     </Button>
                                 </div>
@@ -655,7 +930,13 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                                     <Label>Tipo de descuento *</Label>
                                     <Select
                                         value={form.data.tipo}
-                                        onValueChange={(v: 'porcentaje' | 'precio_fijo' | 'envio_gratis' | 'vale_producto') => {
+                                        onValueChange={(
+                                            v:
+                                                | 'porcentaje'
+                                                | 'precio_fijo'
+                                                | 'envio_gratis'
+                                                | 'vale_producto',
+                                        ) => {
                                             form.setData('tipo', v);
                                         }}
                                     >
@@ -663,10 +944,18 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="porcentaje">Porcentaje (%)</SelectItem>
-                                            <SelectItem value="precio_fijo">Precio Fijo ($)</SelectItem>
-                                            <SelectItem value="envio_gratis">Envío Gratis</SelectItem>
-                                            <SelectItem value="vale_producto">Vale por Producto</SelectItem>
+                                            <SelectItem value="porcentaje">
+                                                Porcentaje (%)
+                                            </SelectItem>
+                                            <SelectItem value="precio_fijo">
+                                                Precio Fijo ($)
+                                            </SelectItem>
+                                            <SelectItem value="envio_gratis">
+                                                Envío Gratis
+                                            </SelectItem>
+                                            <SelectItem value="vale_producto">
+                                                Vale por Producto
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FieldError error={form.errors.tipo} />
@@ -676,10 +965,11 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                                         {form.data.tipo === 'porcentaje'
                                             ? 'Porcentaje (%) *'
                                             : form.data.tipo === 'precio_fijo'
-                                                ? 'Monto ($) *'
-                                                : form.data.tipo === 'vale_producto'
-                                                    ? 'Porcentaje global (%) *'
-                                                    : 'Valor referencial'}
+                                              ? 'Monto ($) *'
+                                              : form.data.tipo ===
+                                                  'vale_producto'
+                                                ? 'Porcentaje global (%) *'
+                                                : 'Valor referencial'}
                                     </Label>
                                     {form.data.tipo !== 'envio_gratis' && (
                                         <Input
@@ -687,8 +977,18 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                                             step="any"
                                             min="0"
                                             value={form.data.valor}
-                                            onChange={(e) => form.setData('valor', e.target.value)}
-                                            placeholder={form.data.tipo === 'vale_producto' ? 'Porcentaje aplicado a productos no configurados individualmente' : ''}
+                                            onChange={(e) =>
+                                                form.setData(
+                                                    'valor',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder={
+                                                form.data.tipo ===
+                                                'vale_producto'
+                                                    ? 'Porcentaje aplicado a productos no configurados individualmente'
+                                                    : ''
+                                            }
                                         />
                                     )}
                                     <FieldError error={form.errors.valor} />
@@ -696,123 +996,194 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                             </div>
 
                             <div className="space-y-3 rounded-lg border p-4">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <Label className="text-base font-semibold">Productos aplicables (Opcional)</Label>
-                                            <p className="text-sm text-muted-foreground">
-                                                Selecciona productos para restringir este cupón o configura un descuento individual para cada uno.
-                                            </p>
-                                        </div>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <Label className="text-base font-semibold">
+                                            Productos aplicables (Opcional)
+                                        </Label>
+                                        <p className="text-sm text-muted-foreground">
+                                            Selecciona productos para restringir
+                                            este cupón o configura un descuento
+                                            individual para cada uno.
+                                        </p>
                                     </div>
+                                </div>
 
-                                    <div className="relative">
-                                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                        <Input
-                                            value={productoSearch}
-                                            onChange={(e) => {
-                                                setProductoSearch(e.target.value);
-                                                setShowProductoDropdown(true);
-                                            }}
-                                            onFocus={() => setShowProductoDropdown(true)}
-                                            placeholder="Buscar producto por nombre o código..."
-                                            className="pl-9"
-                                        />
-                                        {showProductoDropdown && filteredProductos.length > 0 && (
+                                <div className="relative">
+                                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        value={productoSearch}
+                                        onChange={(e) => {
+                                            setProductoSearch(e.target.value);
+                                            setShowProductoDropdown(true);
+                                        }}
+                                        onFocus={() =>
+                                            setShowProductoDropdown(true)
+                                        }
+                                        placeholder="Buscar producto por nombre o código..."
+                                        className="pl-9"
+                                    />
+                                    {showProductoDropdown &&
+                                        filteredProductos.length > 0 && (
                                             <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover shadow-md">
                                                 {filteredProductos.map((p) => (
                                                     <button
                                                         key={p.id}
                                                         type="button"
                                                         className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                        onClick={() => addProducto(p)}
+                                                        onClick={() =>
+                                                            addProducto(p)
+                                                        }
                                                     >
                                                         <Plus className="h-4 w-4 text-muted-foreground" />
-                                                        <span className="flex-1 text-left">{p.nombre}</span>
-                                                        {p.codigo && <span className="text-xs text-muted-foreground">{p.codigo}</span>}
+                                                        <span className="flex-1 text-left">
+                                                            {p.nombre}
+                                                        </span>
+                                                        {p.codigo && (
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {p.codigo}
+                                                            </span>
+                                                        )}
                                                         {p.precio_venta && (
-                                                            <span className="text-xs font-medium">${p.precio_venta.toLocaleString(currency.locale)}</span>
+                                                            <span className="text-xs font-medium">
+                                                                $
+                                                                {p.precio_venta.toLocaleString(
+                                                                    currency.locale,
+                                                                )}
+                                                            </span>
                                                         )}
                                                     </button>
                                                 ))}
                                             </div>
                                         )}
-                                        {showProductoDropdown && productoSearch && filteredProductos.length === 0 && (
+                                    {showProductoDropdown &&
+                                        productoSearch &&
+                                        filteredProductos.length === 0 && (
                                             <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover p-3 text-sm text-muted-foreground shadow-md">
                                                 No se encontraron productos
                                             </div>
                                         )}
-                                    </div>
-
-                                    {form.data.productos.length > 0 && (
-                                        <div className="space-y-2">
-                                            {form.data.productos.map((pConfig) => {
-                                                const prod = getProductoById(pConfig.id);
-                                                if (!prod) return null;
-                                                return (
-                                                    <div key={pConfig.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-md border p-3">
-                                                        <div className="flex-1 min-w-0 w-full">
-                                                            <p className="text-sm font-medium truncate">{prod.nombre}</p>
-                                                            {prod.precio_venta && (
-                                                                <p className="text-xs text-muted-foreground">
-                                                                    Precio: ${prod.precio_venta.toLocaleString(currency.locale)}
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex w-full sm:w-auto items-center gap-2">
-                                                            <Select
-                                                                value={pConfig.descuento_tipo}
-                                                                onValueChange={(v: 'porcentaje' | 'precio_fijo') =>
-                                                                    updateProductoConfig(pConfig.id, 'descuento_tipo', v)
-                                                                }
-                                                            >
-                                                                <SelectTrigger className="w-[110px] h-9">
-                                                                    <SelectValue />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    <SelectItem value="porcentaje">%</SelectItem>
-                                                                    <SelectItem value="precio_fijo">$ Fijo</SelectItem>
-                                                                </SelectContent>
-                                                            </Select>
-                                                            <Input
-                                                                type="number"
-                                                                step="any"
-                                                                min="0"
-                                                                value={pConfig.descuento_valor || ''}
-                                                                onChange={(e) =>
-                                                                    updateProductoConfig(pConfig.id, 'descuento_valor', parseFloat(e.target.value) || 0)
-                                                                }
-                                                                placeholder={pConfig.descuento_tipo === 'porcentaje' ? '20' : '15000'}
-                                                                className="w-[90px] h-9"
-                                                            />
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                onClick={() => removeProducto(pConfig.id)}
-                                                                className="h-9 w-9 text-red-500 hover:text-red-700 ml-auto sm:ml-0 shrink-0"
-                                                            >
-                                                                <X className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-
-                                    {form.data.productos.length === 0 && (
-                                        <p className="text-center text-sm text-muted-foreground py-4">
-                                            No hay productos seleccionados. Busca y agrega productos arriba.
-                                        </p>
-                                    )}
-                                    <FieldError error={form.errors.productos} />
                                 </div>
+
+                                {form.data.productos.length > 0 && (
+                                    <div className="space-y-2">
+                                        {form.data.productos.map((pConfig) => {
+                                            const prod = getProductoById(
+                                                pConfig.id,
+                                            );
+                                            if (!prod) return null;
+                                            return (
+                                                <div
+                                                    key={pConfig.id}
+                                                    className="flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:items-center"
+                                                >
+                                                    <div className="w-full min-w-0 flex-1">
+                                                        <p className="truncate text-sm font-medium">
+                                                            {prod.nombre}
+                                                        </p>
+                                                        {prod.precio_venta && (
+                                                            <p className="text-xs text-muted-foreground">
+                                                                Precio: $
+                                                                {prod.precio_venta.toLocaleString(
+                                                                    currency.locale,
+                                                                )}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex w-full items-center gap-2 sm:w-auto">
+                                                        <Select
+                                                            value={
+                                                                pConfig.descuento_tipo
+                                                            }
+                                                            onValueChange={(
+                                                                v:
+                                                                    | 'porcentaje'
+                                                                    | 'precio_fijo',
+                                                            ) =>
+                                                                updateProductoConfig(
+                                                                    pConfig.id,
+                                                                    'descuento_tipo',
+                                                                    v,
+                                                                )
+                                                            }
+                                                        >
+                                                            <SelectTrigger className="h-9 w-[110px]">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="porcentaje">
+                                                                    %
+                                                                </SelectItem>
+                                                                <SelectItem value="precio_fijo">
+                                                                    $ Fijo
+                                                                </SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <Input
+                                                            type="number"
+                                                            step="any"
+                                                            min="0"
+                                                            value={
+                                                                pConfig.descuento_valor ||
+                                                                ''
+                                                            }
+                                                            onChange={(e) =>
+                                                                updateProductoConfig(
+                                                                    pConfig.id,
+                                                                    'descuento_valor',
+                                                                    parseFloat(
+                                                                        e.target
+                                                                            .value,
+                                                                    ) || 0,
+                                                                )
+                                                            }
+                                                            placeholder={
+                                                                pConfig.descuento_tipo ===
+                                                                'porcentaje'
+                                                                    ? '20'
+                                                                    : '15000'
+                                                            }
+                                                            className="h-9 w-[90px]"
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() =>
+                                                                removeProducto(
+                                                                    pConfig.id,
+                                                                )
+                                                            }
+                                                            className="ml-auto h-9 w-9 shrink-0 text-red-500 hover:text-red-700 sm:ml-0"
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                                {form.data.productos.length === 0 && (
+                                    <p className="py-4 text-center text-sm text-muted-foreground">
+                                        No hay productos seleccionados. Busca y
+                                        agrega productos arriba.
+                                    </p>
+                                )}
+                                <FieldError error={form.errors.productos} />
+                            </div>
 
                             <div className="space-y-2">
                                 <Label>Descripción</Label>
                                 <Textarea
                                     value={form.data.descripcion}
-                                    onChange={(e) => form.setData('descripcion', e.target.value)}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'descripcion',
+                                            e.target.value,
+                                        )
+                                    }
                                     placeholder="Describe el cupón y sus condiciones..."
                                 />
                             </div>
@@ -825,7 +1196,12 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                                         step="any"
                                         min="0"
                                         value={form.data.compra_minima}
-                                        onChange={(e) => form.setData('compra_minima', e.target.value)}
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'compra_minima',
+                                                e.target.value,
+                                            )
+                                        }
                                         placeholder="Ej: 20000"
                                     />
                                 </div>
@@ -835,7 +1211,12 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                                         type="number"
                                         min="1"
                                         value={form.data.usos_por_cliente}
-                                        onChange={(e) => form.setData('usos_por_cliente', e.target.value)}
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'usos_por_cliente',
+                                                e.target.value,
+                                            )
+                                        }
                                     />
                                 </div>
                             </div>
@@ -847,13 +1228,25 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                                         type="number"
                                         min="0"
                                         value={form.data.max_usos}
-                                        onChange={(e) => form.setData('max_usos', e.target.value)}
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'max_usos',
+                                                e.target.value,
+                                            )
+                                        }
                                     />
                                 </div>
                                 <div className="flex items-end pb-2">
                                     <div className="flex items-center gap-2">
-                                        <Switch checked={form.data.activa} onCheckedChange={(v) => form.setData('activa', v)} />
-                                        <Label className="cursor-pointer">Activo</Label>
+                                        <Switch
+                                            checked={form.data.activa}
+                                            onCheckedChange={(v) =>
+                                                form.setData('activa', v)
+                                            }
+                                        />
+                                        <Label className="cursor-pointer">
+                                            Activo
+                                        </Label>
                                     </div>
                                 </div>
                             </div>
@@ -861,46 +1254,88 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
                                 <div className="space-y-2">
                                     <Label>Fecha inicio</Label>
-                                    <Input type="date" value={form.data.fecha_inicio} onChange={(e) => form.setData('fecha_inicio', e.target.value)} />
+                                    <Input
+                                        type="date"
+                                        value={form.data.fecha_inicio}
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'fecha_inicio',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Fecha fin</Label>
-                                    <Input type="date" value={form.data.fecha_fin} onChange={(e) => form.setData('fecha_fin', e.target.value)} />
+                                    <Input
+                                        type="date"
+                                        value={form.data.fecha_fin}
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'fecha_fin',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
                                     <FieldError error={form.errors.fecha_fin} />
                                 </div>
                             </div>
 
                             <div className="space-y-2 border-t pt-4">
-                                <Label className="text-base font-semibold">Diseño de plantilla</Label>
-                                <p className="text-sm text-muted-foreground">Personaliza el diseño visual del cupón para emails y vista en pantalla.</p>
+                                <Label className="text-base font-semibold">
+                                    Diseño de plantilla
+                                </Label>
+                                <p className="text-sm text-muted-foreground">
+                                    Personaliza el diseño visual del cupón para
+                                    emails y vista en pantalla.
+                                </p>
                                 <TipTapEditorWithSource
                                     value={form.data.plantilla_html}
-                                    onChange={(html) => form.setData('plantilla_html', html)}
+                                    onChange={(html) =>
+                                        form.setData('plantilla_html', html)
+                                    }
                                     placeholder="<div style='padding: 20px; text-align: center;'><h2>Cupón de descuento</h2><p>Código: {{codigo}}</p></div>"
                                 />
                             </div>
 
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between gap-2">
-                                    <Button type="button" variant="outline" size="sm" onClick={() => setShowPreview(!showPreview)}>
-                                        {showPreview ? 'Ocultar' : 'Vista previa'}
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            setShowPreview(!showPreview)
+                                        }
+                                    >
+                                        {showPreview
+                                            ? 'Ocultar'
+                                            : 'Vista previa'}
                                     </Button>
                                     {showPreview && (
                                         <div className="flex items-center gap-1 rounded-lg border p-0.5">
                                             <button
                                                 type="button"
-                                                onClick={() => setPreviewMode('html')}
+                                                onClick={() =>
+                                                    setPreviewMode('html')
+                                                }
                                                 className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                                                    previewMode === 'html' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                                                    previewMode === 'html'
+                                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                                        : 'text-muted-foreground hover:text-foreground'
                                                 }`}
                                             >
                                                 HTML
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => setPreviewMode('text')}
+                                                onClick={() =>
+                                                    setPreviewMode('text')
+                                                }
                                                 className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                                                    previewMode === 'text' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                                                    previewMode === 'text'
+                                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                                        : 'text-muted-foreground hover:text-foreground'
                                                 }`}
                                             >
                                                 Texto
@@ -911,31 +1346,54 @@ export default function CuponesIndex({ cupones, productos, filters, flash }: Pro
                                 {showPreview && (
                                     <div className="rounded-xl border bg-white p-4">
                                         <div className="mb-2 text-xs text-muted-foreground">
-                                            {previewMode === 'html' ? 'Vista previa HTML:' : 'Vista previa texto plano:'}
+                                            {previewMode === 'html'
+                                                ? 'Vista previa HTML:'
+                                                : 'Vista previa texto plano:'}
                                         </div>
                                         {previewMode === 'html' ? (
                                             renderedPreview ? (
                                                 <div className="[&_img]:max-w-full [&_table]:w-full [&_table]:border-collapse">
-                                                    <div dangerouslySetInnerHTML={{ __html: renderedPreview }} />
+                                                    <div
+                                                        dangerouslySetInnerHTML={{
+                                                            __html: renderedPreview,
+                                                        }}
+                                                    />
                                                 </div>
                                             ) : (
-                                                <p className="text-sm text-muted-foreground italic">Sin contenido de plantilla</p>
+                                                <p className="text-sm text-muted-foreground italic">
+                                                    Sin contenido de plantilla
+                                                </p>
                                             )
                                         ) : (
-                                            <pre className="whitespace-pre-wrap break-words text-sm">
-                                                {renderedPreview ? stripHtml(renderedPreview) : 'Sin contenido de plantilla'}
+                                            <pre className="text-sm break-words whitespace-pre-wrap">
+                                                {renderedPreview
+                                                    ? stripHtml(renderedPreview)
+                                                    : 'Sin contenido de plantilla'}
                                             </pre>
                                         )}
                                     </div>
                                 )}
                             </div>
                         </div>
-                        <DialogFooter className="flex-col gap-2 sm:flex-row mt-4">
-                            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="w-full sm:w-auto">
+                        <DialogFooter className="mt-4 flex-col gap-2 sm:flex-row">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsOpen(false)}
+                                className="w-full sm:w-auto"
+                            >
                                 Cancelar
                             </Button>
-                            <Button type="submit" disabled={form.processing} className="w-full sm:w-auto">
-                                {form.processing ? 'Guardando...' : editando ? 'Actualizar' : 'Crear'}
+                            <Button
+                                type="submit"
+                                disabled={form.processing}
+                                className="w-full sm:w-auto"
+                            >
+                                {form.processing
+                                    ? 'Guardando...'
+                                    : editando
+                                      ? 'Actualizar'
+                                      : 'Crear'}
                             </Button>
                         </DialogFooter>
                     </form>

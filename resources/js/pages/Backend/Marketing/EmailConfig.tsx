@@ -193,28 +193,36 @@ export default function EmailConfig({
 
         const errors: Record<string, string> = {};
         if (!data.name.trim()) errors.name = 'El nombre es requerido';
-        if (!data.from_address.trim()) errors.from_address = 'El email remitente es requerido';
+        if (!data.from_address.trim())
+            errors.from_address = 'El email remitente es requerido';
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.from_address))
             errors.from_address = 'Email inválido';
-        if (!data.from_name.trim()) errors.from_name = 'El nombre remitente es requerido';
+        if (!data.from_name.trim())
+            errors.from_name = 'El nombre remitente es requerido';
 
         if (data.driver === 'smtp') {
             if (!data.host.trim()) errors.host = 'El host es requerido';
             if (!data.port || data.port < 1 || data.port > 65535)
                 errors.port = 'Puerto inválido (1-65535)';
-            if (!data.username.trim()) errors.username = 'El usuario es requerido';
-            if (!editingConfig && !data.password) errors.password = 'La contraseña es requerida';
+            if (!data.username.trim())
+                errors.username = 'El usuario es requerido';
+            if (!editingConfig && !data.password)
+                errors.password = 'La contraseña es requerida';
         }
         if (data.driver === 'mailgun') {
             if (!data.domain.trim()) errors.domain = 'El dominio es requerido';
-            if (!editingConfig && !data.secret) errors.secret = 'El API Key es requerida';
+            if (!editingConfig && !data.secret)
+                errors.secret = 'El API Key es requerida';
         }
         if (data.driver === 'postmark') {
-            if (!editingConfig && !data.secret) errors.secret = 'El Token es requerido';
+            if (!editingConfig && !data.secret)
+                errors.secret = 'El Token es requerido';
         }
         if (data.driver === 'ses') {
-            if (!data.username.trim()) errors.username = 'El Access Key es requerido';
-            if (!editingConfig && !data.password) errors.password = 'El Secret Key es requerido';
+            if (!data.username.trim())
+                errors.username = 'El Access Key es requerido';
+            if (!editingConfig && !data.password)
+                errors.password = 'El Secret Key es requerido';
         }
 
         if (Object.keys(errors).length > 0) {
@@ -317,7 +325,10 @@ export default function EmailConfig({
                     router.reload({ only: ['logs'] });
                 },
                 onError: (errs: Record<string, string>) => {
-                    const msg = errs?.test_email || errs?.message || 'Error al enviar prueba';
+                    const msg =
+                        errs?.test_email ||
+                        errs?.message ||
+                        'Error al enviar prueba';
                     toast.error(msg);
                 },
                 onFinish: () => setTesting(false),
@@ -633,7 +644,7 @@ export default function EmailConfig({
             </div>
 
             <Dialog open={showModal} onOpenChange={setShowModal}>
-                <DialogContent className="w-[95vw] max-w-2xl max-h-[95dvh] overflow-y-auto p-4 sm:p-6">
+                <DialogContent className="max-h-[95dvh] w-[95vw] max-w-2xl overflow-y-auto p-4 sm:p-6">
                     <DialogHeader>
                         <DialogTitle>
                             {editingConfig
@@ -1018,7 +1029,7 @@ export default function EmailConfig({
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-lg border p-3 sm:p-4">
+                        <div className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
                             <div className="space-y-0.5">
                                 <Label>Activa</Label>
                                 <p className="text-sm text-muted-foreground">
@@ -1031,7 +1042,7 @@ export default function EmailConfig({
                             />
                         </div>
 
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-lg border p-3 sm:p-4">
+                        <div className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
                             <div className="space-y-0.5">
                                 <Label>Predeterminada</Label>
                                 <p className="text-sm text-muted-foreground">
@@ -1063,7 +1074,7 @@ export default function EmailConfig({
             </Dialog>
 
             <Dialog open={showTestModal} onOpenChange={setShowTestModal}>
-                <DialogContent className="w-[95vw] max-w-md max-h-[95dvh] overflow-y-auto p-4 sm:p-6">
+                <DialogContent className="max-h-[95dvh] w-[95vw] max-w-md overflow-y-auto p-4 sm:p-6">
                     <DialogHeader>
                         <DialogTitle>Enviar Email de Prueba</DialogTitle>
                         <DialogDescription>
@@ -1108,7 +1119,11 @@ export default function EmailConfig({
                 item={detailsConfig}
                 title={detailsConfig?.name || 'Detalles'}
                 badgeLabel="Config. Correo"
-                description={detailsConfig ? getDriverLabel(detailsConfig.driver) : undefined}
+                description={
+                    detailsConfig
+                        ? getDriverLabel(detailsConfig.driver)
+                        : undefined
+                }
                 colorScheme={
                     detailsConfig?.driver === 'smtp'
                         ? 'blue'
@@ -1279,7 +1294,8 @@ export default function EmailConfig({
                                             Endpoint
                                         </Label>
                                         <p className="text-sm font-medium">
-                                            {detailsConfig.endpoint || 'api.mailgun.net'}
+                                            {detailsConfig.endpoint ||
+                                                'api.mailgun.net'}
                                         </p>
                                     </div>
                                 </div>

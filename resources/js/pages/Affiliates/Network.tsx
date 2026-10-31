@@ -1,7 +1,20 @@
 import { Head } from '@inertiajs/react';
 import { Users, Calendar, Award } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 
 interface Affiliate {
@@ -18,21 +31,24 @@ interface Props {
 
 export default function Network({ affiliates, points }: Props) {
     return (
-        <AppLayout breadcrumbs={[{ title: 'Mis Afiliados', href: '/afiliados/red' }]}>
+        <AppLayout
+            breadcrumbs={[{ title: 'Mis Afiliados', href: '/afiliados/red' }]}
+        >
             <Head title="Mis Afiliados" />
-            
+
             <div className="mx-auto max-w-6xl p-6">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                    <h1 className="flex items-center gap-2 text-3xl font-bold text-zinc-900 dark:text-white">
                         <Users className="h-8 w-8 text-primary" />
                         Mi Red de Afiliados
                     </h1>
                     <p className="mt-2 text-zinc-500">
-                        Gestiona y visualiza a los usuarios que se han registrado con tu código.
+                        Gestiona y visualiza a los usuarios que se han
+                        registrado con tu código.
                     </p>
                 </div>
 
-                <div className="grid gap-6 md:grid-cols-3 mb-8">
+                <div className="mb-8 grid gap-6 md:grid-cols-3">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">
@@ -41,7 +57,9 @@ export default function Network({ affiliates, points }: Props) {
                             <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{affiliates.length}</div>
+                            <div className="text-2xl font-bold">
+                                {affiliates.length}
+                            </div>
                         </CardContent>
                     </Card>
 
@@ -53,7 +71,9 @@ export default function Network({ affiliates, points }: Props) {
                             <Award className="h-4 w-4 text-primary" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{points} pts</div>
+                            <div className="text-2xl font-bold">
+                                {points} pts
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
@@ -62,15 +82,19 @@ export default function Network({ affiliates, points }: Props) {
                     <CardHeader>
                         <CardTitle>Historial de Referidos</CardTitle>
                         <CardDescription>
-                            Usuarios que han ingresado gracias a tu recomendación.
+                            Usuarios que han ingresado gracias a tu
+                            recomendación.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {affiliates.length === 0 ? (
-                            <div className="text-center py-12 text-muted-foreground">
-                                <Users className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                            <div className="py-12 text-center text-muted-foreground">
+                                <Users className="mx-auto mb-4 h-12 w-12 opacity-20" />
                                 <p>Aún no tienes afiliados.</p>
-                                <p className="text-sm mt-1">Comparte tu código para empezar a ganar puntos.</p>
+                                <p className="mt-1 text-sm">
+                                    Comparte tu código para empezar a ganar
+                                    puntos.
+                                </p>
                             </div>
                         ) : (
                             <Table>
@@ -78,17 +102,25 @@ export default function Network({ affiliates, points }: Props) {
                                     <TableRow>
                                         <TableHead>Nombre</TableHead>
                                         <TableHead>Correo</TableHead>
-                                        <TableHead className="text-right">Fecha de Registro</TableHead>
+                                        <TableHead className="text-right">
+                                            Fecha de Registro
+                                        </TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {affiliates.map((affiliate) => (
                                         <TableRow key={affiliate.id}>
-                                            <TableCell className="font-medium">{affiliate.name}</TableCell>
-                                            <TableCell>{affiliate.email}</TableCell>
-                                            <TableCell className="text-right flex items-center justify-end gap-2 text-muted-foreground">
+                                            <TableCell className="font-medium">
+                                                {affiliate.name}
+                                            </TableCell>
+                                            <TableCell>
+                                                {affiliate.email}
+                                            </TableCell>
+                                            <TableCell className="flex items-center justify-end gap-2 text-right text-muted-foreground">
                                                 <Calendar className="h-3 w-3" />
-                                                {new Date(affiliate.created_at).toLocaleDateString()}
+                                                {new Date(
+                                                    affiliate.created_at,
+                                                ).toLocaleDateString()}
                                             </TableCell>
                                         </TableRow>
                                     ))}

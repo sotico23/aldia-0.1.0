@@ -1,12 +1,13 @@
 <?php
+
 /**
  * Reverb Rate Limiter - Handles rate limiting for real-time events
  */
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Support\Facades\RateLimiter;
 
 class ReverbRateLimiter
 {

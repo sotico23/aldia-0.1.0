@@ -110,7 +110,9 @@ export default function CierreIndex({
         filters.difference === '1' ? 'yes' : 'all',
     );
     const [activeCard, setActiveCard] = useState<string | null>(null);
-    const [highlightedIds, setHighlightedIds] = useState<Set<number>>(new Set());
+    const [highlightedIds, setHighlightedIds] = useState<Set<number>>(
+        new Set(),
+    );
     const tableRef = useRef<HTMLDivElement>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedCierre, setSelectedCierre] = useState<Cierre | null>(null);
@@ -146,7 +148,10 @@ export default function CierreIndex({
         }
 
         setTimeout(() => {
-            tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            tableRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
         }, 100);
     };
 
@@ -160,7 +165,8 @@ export default function CierreIndex({
             .filter((c) => {
                 if (activeCard === 'pendientes') return c.status === 'ABIERTO';
                 if (activeCard === 'auditados') return c.status === 'AUDITADO';
-                if (activeCard === 'con_diferencia') return Number(c.difference) !== 0;
+                if (activeCard === 'con_diferencia')
+                    return Number(c.difference) !== 0;
                 return false;
             })
             .map((c) => c.id);
@@ -222,7 +228,13 @@ export default function CierreIndex({
             });
         }, 500);
         return () => clearTimeout(timer);
-    }, [statusFilter, almacenFilter, differenceFilter, sortColumn, sortDirection]);
+    }, [
+        statusFilter,
+        almacenFilter,
+        differenceFilter,
+        sortColumn,
+        sortDirection,
+    ]);
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -247,7 +259,9 @@ export default function CierreIndex({
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );
@@ -358,8 +372,18 @@ export default function CierreIndex({
                         </CardContent>
                     </Card>
 
-                    <button type="button" onClick={() => handleCardClick('pendientes')} className="text-left">
-                        <Card className={cn('border-none shadow-lg transition-all hover:shadow-xl cursor-pointer', activeCard === 'pendientes' && 'ring-2 ring-orange-500 shadow-xl shadow-orange-500/10')}>
+                    <button
+                        type="button"
+                        onClick={() => handleCardClick('pendientes')}
+                        className="text-left"
+                    >
+                        <Card
+                            className={cn(
+                                'cursor-pointer border-none shadow-lg transition-all hover:shadow-xl',
+                                activeCard === 'pendientes' &&
+                                    'shadow-xl ring-2 shadow-orange-500/10 ring-orange-500',
+                            )}
+                        >
                             <CardContent className="p-4">
                                 <div className="flex items-center gap-3">
                                     <div className="rounded-full bg-orange-500/10 p-2">
@@ -370,7 +394,12 @@ export default function CierreIndex({
                                             Pendientes
                                         </p>
                                         <p className="text-2xl font-black">
-                                            {cierres.data.filter((c) => c.status === 'ABIERTO').length}
+                                            {
+                                                cierres.data.filter(
+                                                    (c) =>
+                                                        c.status === 'ABIERTO',
+                                                ).length
+                                            }
                                         </p>
                                     </div>
                                 </div>
@@ -378,8 +407,18 @@ export default function CierreIndex({
                         </Card>
                     </button>
 
-                    <button type="button" onClick={() => handleCardClick('auditados')} className="text-left">
-                        <Card className={cn('border-none shadow-lg transition-all hover:shadow-xl cursor-pointer', activeCard === 'auditados' && 'ring-2 ring-green-500 shadow-xl shadow-green-500/10')}>
+                    <button
+                        type="button"
+                        onClick={() => handleCardClick('auditados')}
+                        className="text-left"
+                    >
+                        <Card
+                            className={cn(
+                                'cursor-pointer border-none shadow-lg transition-all hover:shadow-xl',
+                                activeCard === 'auditados' &&
+                                    'shadow-xl ring-2 shadow-green-500/10 ring-green-500',
+                            )}
+                        >
                             <CardContent className="p-4">
                                 <div className="flex items-center gap-3">
                                     <div className="rounded-full bg-green-500/10 p-2">
@@ -390,7 +429,12 @@ export default function CierreIndex({
                                             Auditados
                                         </p>
                                         <p className="text-2xl font-black">
-                                            {cierres.data.filter((c) => c.status === 'AUDITADO').length}
+                                            {
+                                                cierres.data.filter(
+                                                    (c) =>
+                                                        c.status === 'AUDITADO',
+                                                ).length
+                                            }
                                         </p>
                                     </div>
                                 </div>
@@ -398,8 +442,18 @@ export default function CierreIndex({
                         </Card>
                     </button>
 
-                    <button type="button" onClick={() => handleCardClick('con_diferencia')} className="text-left">
-                        <Card className={cn('border-none shadow-lg transition-all hover:shadow-xl cursor-pointer', activeCard === 'con_diferencia' && 'ring-2 ring-red-500 shadow-xl shadow-red-500/10')}>
+                    <button
+                        type="button"
+                        onClick={() => handleCardClick('con_diferencia')}
+                        className="text-left"
+                    >
+                        <Card
+                            className={cn(
+                                'cursor-pointer border-none shadow-lg transition-all hover:shadow-xl',
+                                activeCard === 'con_diferencia' &&
+                                    'shadow-xl ring-2 shadow-red-500/10 ring-red-500',
+                            )}
+                        >
                             <CardContent className="p-4">
                                 <div className="flex items-center gap-3">
                                     <div className="rounded-full bg-red-500/10 p-2">
@@ -410,7 +464,13 @@ export default function CierreIndex({
                                             Con Diferencia
                                         </p>
                                         <p className="text-2xl font-black">
-                                            {cierres.data.filter((c) => Number(c.difference) !== 0).length}
+                                            {
+                                                cierres.data.filter(
+                                                    (c) =>
+                                                        Number(c.difference) !==
+                                                        0,
+                                                ).length
+                                            }
                                         </p>
                                     </div>
                                 </div>
@@ -429,7 +489,11 @@ export default function CierreIndex({
                             <div className="flex items-center gap-2">
                                 <div className="flex items-center gap-1 rounded-lg border bg-background/50 p-0.5">
                                     <Button
-                                        variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'secondary'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('table')}
                                         className="h-7 w-7 p-0"
@@ -437,7 +501,11 @@ export default function CierreIndex({
                                         <List className="h-3.5 w-3.5" />
                                     </Button>
                                     <Button
-                                        variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'secondary'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('cards')}
                                         className="h-7 w-7 p-0"
@@ -454,9 +522,15 @@ export default function CierreIndex({
                                             <SelectValue placeholder="Estado" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="all">Todos</SelectItem>
-                                            <SelectItem value="abierto">Abiertos</SelectItem>
-                                            <SelectItem value="cerrado">Cerrados</SelectItem>
+                                            <SelectItem value="all">
+                                                Todos
+                                            </SelectItem>
+                                            <SelectItem value="abierto">
+                                                Abiertos
+                                            </SelectItem>
+                                            <SelectItem value="cerrado">
+                                                Cerrados
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <Select
@@ -486,310 +560,448 @@ export default function CierreIndex({
                     </CardHeader>
                     <CardContent className="p-0">
                         {viewMode === 'table' ? (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-<thead>
-                                    <tr className="border-b bg-muted/5 text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                                        <th className="px-4 py-3 text-left">
-                                            <button
-                                                onClick={() => handleSort('closure_date')}
-                                                className="flex items-center gap-1.5 w-full text-left cursor-pointer select-none hover:bg-muted/10 px-2 py-1 rounded transition-colors"
-                                            >
-                                                <span>Fecha</span>
-                                                {sortColumn === 'closure_date' && (
-                                                    <span className="inline-flex text-muted-foreground">
-                                                        {sortDirection === 'asc' ? '▲' : '▼'}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </th>
-                                        <th className="px-4 py-3 text-left">
-                                            <button
-                                                onClick={() => handleSort('type')}
-                                                className="flex items-center gap-1.5 w-full text-left cursor-pointer select-none hover:bg-muted/10 px-2 py-1 rounded transition-colors"
-                                            >
-                                                <span>Tipo</span>
-                                                {sortColumn === 'type' && (
-                                                    <span className="inline-flex text-muted-foreground">
-                                                        {sortDirection === 'asc' ? '▲' : '▼'}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </th>
-                                        <th className="px-4 py-3 text-left">
-                                            <button
-                                                onClick={() => handleSort('almacen_nombre')}
-                                                className="flex items-center gap-1.5 w-full text-left cursor-pointer select-none hover:bg-muted/10 px-2 py-1 rounded transition-colors"
-                                            >
-                                                <span>Bodega</span>
-                                                {sortColumn === 'almacen_nombre' && (
-                                                    <span className="inline-flex text-muted-foreground">
-                                                        {sortDirection === 'asc' ? '▲' : '▼'}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </th>
-                                        <th className="px-4 py-3 text-center">
-                                            <button
-                                                onClick={() => handleSort('total_products')}
-                                                className="flex items-center gap-1.5 justify-center w-full cursor-pointer select-none hover:bg-muted/10 px-2 py-1 rounded transition-colors"
-                                            >
-                                                <span>Productos</span>
-                                                {sortColumn === 'total_products' && (
-                                                    <span className="inline-flex text-muted-foreground">
-                                                        {sortDirection === 'asc' ? '▲' : '▼'}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </th>
-                                        <th className="px-4 py-3 text-center">
-                                            <button
-                                                onClick={() => handleSort('closing_stock')}
-                                                className="flex items-center gap-1.5 justify-center w-full cursor-pointer select-none hover:bg-muted/10 px-2 py-1 rounded transition-colors"
-                                            >
-                                                <span>Stock Actual</span>
-                                                {sortColumn === 'closing_stock' && (
-                                                    <span className="inline-flex text-muted-foreground">
-                                                        {sortDirection === 'asc' ? '▲' : '▼'}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </th>
-                                        <th className="px-4 py-3 text-center">
-                                            <button
-                                                onClick={() => handleSort('expected_stock')}
-                                                className="flex items-center gap-1.5 justify-center w-full cursor-pointer select-none hover:bg-muted/10 px-2 py-1 rounded transition-colors"
-                                            >
-                                                <span>Esperado</span>
-                                                {sortColumn === 'expected_stock' && (
-                                                    <span className="inline-flex text-muted-foreground">
-                                                        {sortDirection === 'asc' ? '▲' : '▼'}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </th>
-                                        <th className="px-4 py-3 text-center">
-                                            <button
-                                                onClick={() => handleSort('difference')}
-                                                className="flex items-center gap-1.5 justify-center w-full cursor-pointer select-none hover:bg-muted/10 px-2 py-1 rounded transition-colors"
-                                            >
-                                                <span>Diferencia</span>
-                                                {sortColumn === 'difference' && (
-                                                    <span className="inline-flex text-muted-foreground">
-                                                        {sortDirection === 'asc' ? '▲' : '▼'}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </th>
-                                        <th className="px-4 py-3 text-center">
-                                            <button
-                                                onClick={() => handleSort('status')}
-                                                className="flex items-center gap-1.5 justify-center w-full cursor-pointer select-none hover:bg-muted/10 px-2 py-1 rounded transition-colors"
-                                            >
-                                                <span>Estado</span>
-                                                {sortColumn === 'status' && (
-                                                    <span className="inline-flex text-muted-foreground">
-                                                        {sortDirection === 'asc' ? '▲' : '▼'}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </th>
-                                        <th className="px-4 py-3 text-right">
-                                            Acciones
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-muted/50">
-                                    {cierres.data.length === 0 ? (
-                                        <tr>
-                                            <td
-                                                colSpan={9}
-                                                className="py-8 text-center text-muted-foreground"
-                                            >
-                                                No hay cierres registrados
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        cierres.data.map((cierre) => (
-                                            <tr
-                                                key={cierre.id}
-                                                className={cn(
-                                                    'transition-all duration-300 hover:bg-muted/30',
-                                                    highlightedIds.has(cierre.id) && 'ring-1 ring-inset ring-primary/30 bg-primary/5 shadow-sm',
-                                                )}
-                                            >
-                                                <td className="px-4 py-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                                                        <span className="font-medium">
-                                                            {new Date(
-                                                                cierre.closure_date,
-                                                            ).toLocaleDateString(
-                                                                'es-ES',
-                                                            )}
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b bg-muted/5 text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                                            <th className="px-4 py-3 text-left">
+                                                <button
+                                                    onClick={() =>
+                                                        handleSort(
+                                                            'closure_date',
+                                                        )
+                                                    }
+                                                    className="flex w-full cursor-pointer items-center gap-1.5 rounded px-2 py-1 text-left transition-colors select-none hover:bg-muted/10"
+                                                >
+                                                    <span>Fecha</span>
+                                                    {sortColumn ===
+                                                        'closure_date' && (
+                                                        <span className="inline-flex text-muted-foreground">
+                                                            {sortDirection ===
+                                                            'asc'
+                                                                ? '▲'
+                                                                : '▼'}
                                                         </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <Badge
-                                                        variant={
-                                                            cierre.type ===
-                                                            'GENERAL'
-                                                                ? 'default'
-                                                                : 'secondary'
-                                                        }
-                                                    >
-                                                        {cierre.type}
-                                                    </Badge>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                                                        <span>
-                                                            {cierre.almacen
-                                                                ?.nombre ||
-                                                                'General'}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3 text-center font-mono">
-                                                    {cierre.total_products}
-                                                </td>
-                                                <td className="px-4 py-3 text-center font-mono">
-                                                    {Number(
-                                                        cierre.closing_stock ??
-                                                            cierre.total_stock ??
-                                                            0,
-                                                    ).toLocaleString()}
-                                                </td>
-                                                <td className="px-4 py-3 text-center font-mono">
-                                                    {Number(
-                                                        cierre.expected_stock ||
-                                                            0,
-                                                    ).toLocaleString()}
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <span
-                                                        className={`font-mono font-bold ${Number(cierre.difference || 0) === 0 ? 'text-green-500' : 'text-red-500'}`}
-                                                    >
-                                                        {Number(
-                                                            cierre.difference ||
-                                                                0,
-                                                        ) > 0
-                                                            ? '+'
-                                                            : ''}
-                                                        {Number(
-                                                            cierre.difference ||
-                                                                0,
-                                                        ).toLocaleString()}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    {getStatusBadge(
-                                                        cierre.status,
                                                     )}
+                                                </button>
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                <button
+                                                    onClick={() =>
+                                                        handleSort('type')
+                                                    }
+                                                    className="flex w-full cursor-pointer items-center gap-1.5 rounded px-2 py-1 text-left transition-colors select-none hover:bg-muted/10"
+                                                >
+                                                    <span>Tipo</span>
+                                                    {sortColumn === 'type' && (
+                                                        <span className="inline-flex text-muted-foreground">
+                                                            {sortDirection ===
+                                                            'asc'
+                                                                ? '▲'
+                                                                : '▼'}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                <button
+                                                    onClick={() =>
+                                                        handleSort(
+                                                            'almacen_nombre',
+                                                        )
+                                                    }
+                                                    className="flex w-full cursor-pointer items-center gap-1.5 rounded px-2 py-1 text-left transition-colors select-none hover:bg-muted/10"
+                                                >
+                                                    <span>Bodega</span>
+                                                    {sortColumn ===
+                                                        'almacen_nombre' && (
+                                                        <span className="inline-flex text-muted-foreground">
+                                                            {sortDirection ===
+                                                            'asc'
+                                                                ? '▲'
+                                                                : '▼'}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            </th>
+                                            <th className="px-4 py-3 text-center">
+                                                <button
+                                                    onClick={() =>
+                                                        handleSort(
+                                                            'total_products',
+                                                        )
+                                                    }
+                                                    className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded px-2 py-1 transition-colors select-none hover:bg-muted/10"
+                                                >
+                                                    <span>Productos</span>
+                                                    {sortColumn ===
+                                                        'total_products' && (
+                                                        <span className="inline-flex text-muted-foreground">
+                                                            {sortDirection ===
+                                                            'asc'
+                                                                ? '▲'
+                                                                : '▼'}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            </th>
+                                            <th className="px-4 py-3 text-center">
+                                                <button
+                                                    onClick={() =>
+                                                        handleSort(
+                                                            'closing_stock',
+                                                        )
+                                                    }
+                                                    className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded px-2 py-1 transition-colors select-none hover:bg-muted/10"
+                                                >
+                                                    <span>Stock Actual</span>
+                                                    {sortColumn ===
+                                                        'closing_stock' && (
+                                                        <span className="inline-flex text-muted-foreground">
+                                                            {sortDirection ===
+                                                            'asc'
+                                                                ? '▲'
+                                                                : '▼'}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            </th>
+                                            <th className="px-4 py-3 text-center">
+                                                <button
+                                                    onClick={() =>
+                                                        handleSort(
+                                                            'expected_stock',
+                                                        )
+                                                    }
+                                                    className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded px-2 py-1 transition-colors select-none hover:bg-muted/10"
+                                                >
+                                                    <span>Esperado</span>
+                                                    {sortColumn ===
+                                                        'expected_stock' && (
+                                                        <span className="inline-flex text-muted-foreground">
+                                                            {sortDirection ===
+                                                            'asc'
+                                                                ? '▲'
+                                                                : '▼'}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            </th>
+                                            <th className="px-4 py-3 text-center">
+                                                <button
+                                                    onClick={() =>
+                                                        handleSort('difference')
+                                                    }
+                                                    className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded px-2 py-1 transition-colors select-none hover:bg-muted/10"
+                                                >
+                                                    <span>Diferencia</span>
+                                                    {sortColumn ===
+                                                        'difference' && (
+                                                        <span className="inline-flex text-muted-foreground">
+                                                            {sortDirection ===
+                                                            'asc'
+                                                                ? '▲'
+                                                                : '▼'}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            </th>
+                                            <th className="px-4 py-3 text-center">
+                                                <button
+                                                    onClick={() =>
+                                                        handleSort('status')
+                                                    }
+                                                    className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded px-2 py-1 transition-colors select-none hover:bg-muted/10"
+                                                >
+                                                    <span>Estado</span>
+                                                    {sortColumn ===
+                                                        'status' && (
+                                                        <span className="inline-flex text-muted-foreground">
+                                                            {sortDirection ===
+                                                            'asc'
+                                                                ? '▲'
+                                                                : '▼'}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            </th>
+                                            <th className="px-4 py-3 text-right">
+                                                Acciones
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-muted/50">
+                                        {cierres.data.length === 0 ? (
+                                            <tr>
+                                                <td
+                                                    colSpan={9}
+                                                    className="py-8 text-center text-muted-foreground"
+                                                >
+                                                    No hay cierres registrados
                                                 </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8"
-                                                            onClick={() =>
-                                                                handleViewCierre(
-                                                                    cierre,
-                                                                )
+                                            </tr>
+                                        ) : (
+                                            cierres.data.map((cierre) => (
+                                                <tr
+                                                    key={cierre.id}
+                                                    className={cn(
+                                                        'transition-all duration-300 hover:bg-muted/30',
+                                                        highlightedIds.has(
+                                                            cierre.id,
+                                                        ) &&
+                                                            'bg-primary/5 shadow-sm ring-1 ring-primary/30 ring-inset',
+                                                    )}
+                                                >
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                                                            <span className="font-medium">
+                                                                {new Date(
+                                                                    cierre.closure_date,
+                                                                ).toLocaleDateString(
+                                                                    'es-ES',
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <Badge
+                                                            variant={
+                                                                cierre.type ===
+                                                                'GENERAL'
+                                                                    ? 'default'
+                                                                    : 'secondary'
                                                             }
                                                         >
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                        {cierre.status ===
-                                                            'CERRADO' && (
+                                                            {cierre.type}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                                                            <span>
+                                                                {cierre.almacen
+                                                                    ?.nombre ||
+                                                                    'General'}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center font-mono">
+                                                        {cierre.total_products}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center font-mono">
+                                                        {Number(
+                                                            cierre.closing_stock ??
+                                                                cierre.total_stock ??
+                                                                0,
+                                                        ).toLocaleString()}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center font-mono">
+                                                        {Number(
+                                                            cierre.expected_stock ||
+                                                                0,
+                                                        ).toLocaleString()}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center">
+                                                        <span
+                                                            className={`font-mono font-bold ${Number(cierre.difference || 0) === 0 ? 'text-green-500' : 'text-red-500'}`}
+                                                        >
+                                                            {Number(
+                                                                cierre.difference ||
+                                                                    0,
+                                                            ) > 0
+                                                                ? '+'
+                                                                : ''}
+                                                            {Number(
+                                                                cierre.difference ||
+                                                                    0,
+                                                            ).toLocaleString()}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center">
+                                                        {getStatusBadge(
+                                                            cierre.status,
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <div className="flex justify-end gap-2">
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                className="h-8 w-8 text-green-600 hover:bg-green-50"
+                                                                className="h-8 w-8"
                                                                 onClick={() =>
-                                                                    router.patch(
-                                                                        `/inventario-cierre/${cierre.id}/audit`,
+                                                                    handleViewCierre(
+                                                                        cierre,
                                                                     )
                                                                 }
                                                             >
-                                                                <ClipboardList className="h-4 w-4" />
+                                                                <Eye className="h-4 w-4" />
                                                             </Button>
+                                                            {cierre.status ===
+                                                                'CERRADO' && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 text-green-600 hover:bg-green-50"
+                                                                    onClick={() =>
+                                                                        router.patch(
+                                                                            `/inventario-cierre/${cierre.id}/audit`,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <ClipboardList className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-red-600 hover:bg-red-50"
+                                                                onClick={() => {
+                                                                    if (
+                                                                        confirm(
+                                                                            '¿Está seguro de eliminar este cierre? Esta acción no se puede deshacer.',
+                                                                        )
+                                                                    ) {
+                                                                        router.delete(
+                                                                            `/inventario-cierre/${cierre.id}`,
+                                                                        );
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
+                                {cierres.data.map((cierre) => (
+                                    <Card
+                                        key={cierre.id}
+                                        className={cn(
+                                            'overflow-hidden border-none shadow-md transition-all hover:shadow-lg',
+                                            highlightedIds.has(cierre.id) &&
+                                                'bg-primary/5 ring-2 ring-primary/30',
+                                        )}
+                                    >
+                                        <CardContent className="p-4">
+                                            <div className="mb-3 flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                                    <span className="font-bold">
+                                                        {new Date(
+                                                            cierre.closure_date,
+                                                        ).toLocaleDateString(
+                                                            'es-ES',
                                                         )}
+                                                    </span>
+                                                </div>
+                                                <Badge
+                                                    variant={
+                                                        cierre.type ===
+                                                        'GENERAL'
+                                                            ? 'default'
+                                                            : 'secondary'
+                                                    }
+                                                >
+                                                    {cierre.type}
+                                                </Badge>
+                                            </div>
+                                            <div className="mb-2 flex items-center gap-2 text-sm">
+                                                <Building2 className="h-4 w-4 text-muted-foreground" />
+                                                <span>
+                                                    {cierre.almacen?.nombre ||
+                                                        'General'}
+                                                </span>
+                                            </div>
+                                            <div className="mb-3 grid grid-cols-2 gap-2">
+                                                <div className="rounded-lg bg-muted/20 p-2 text-center">
+                                                    <p className="text-[9px] font-black text-muted-foreground uppercase">
+                                                        Stock
+                                                    </p>
+                                                    <p className="font-mono font-bold">
+                                                        {Number(
+                                                            cierre.closing_stock ??
+                                                                cierre.total_stock ??
+                                                                0,
+                                                        ).toLocaleString()}
+                                                    </p>
+                                                </div>
+                                                <div className="rounded-lg bg-muted/20 p-2 text-center">
+                                                    <p className="text-[9px] font-black text-muted-foreground uppercase">
+                                                        Esperado
+                                                    </p>
+                                                    <p className="font-mono font-bold">
+                                                        {Number(
+                                                            cierre.expected_stock ||
+                                                                0,
+                                                        ).toLocaleString()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center justify-between border-t border-muted/20 pt-2">
+                                                <span
+                                                    className={`font-mono text-lg font-bold ${Number(cierre.difference || 0) === 0 ? 'text-green-500' : 'text-red-500'}`}
+                                                >
+                                                    {Number(
+                                                        cierre.difference || 0,
+                                                    ) > 0
+                                                        ? '+'
+                                                        : ''}
+                                                    {Number(
+                                                        cierre.difference || 0,
+                                                    ).toLocaleString()}
+                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    {getStatusBadge(
+                                                        cierre.status,
+                                                    )}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7"
+                                                        onClick={() =>
+                                                            handleViewCierre(
+                                                                cierre,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Eye className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                    {cierre.status ===
+                                                        'CERRADO' && (
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-8 w-8 text-red-600 hover:bg-red-50"
-                                                            onClick={() => {
-                                                                if (confirm('¿Está seguro de eliminar este cierre? Esta acción no se puede deshacer.')) {
-                                                                    router.delete(`/inventario-cierre/${cierre.id}`);
-                                                                }
-                                                            }}
+                                                            className="h-7 w-7 text-green-600 hover:bg-green-50"
+                                                            onClick={() =>
+                                                                router.patch(
+                                                                    `/inventario-cierre/${cierre.id}/audit`,
+                                                                )
+                                                            }
                                                         >
-                                                            <Trash2 className="h-4 w-4" />
+                                                            <ClipboardList className="h-3.5 w-3.5" />
                                                         </Button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                        ) : (
-                        <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {cierres.data.map((cierre) => (
-                                <Card key={cierre.id} className={cn('overflow-hidden border-none shadow-md transition-all hover:shadow-lg', highlightedIds.has(cierre.id) && 'ring-2 ring-primary/30 bg-primary/5')}>
-                                    <CardContent className="p-4">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <div className="flex items-center gap-2">
-                                                <Calendar className="h-4 w-4 text-muted-foreground" />
-                                                <span className="font-bold">{new Date(cierre.closure_date).toLocaleDateString('es-ES')}</span>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <Badge variant={cierre.type === 'GENERAL' ? 'default' : 'secondary'}>{cierre.type}</Badge>
-                                        </div>
-                                        <div className="flex items-center gap-2 mb-2 text-sm">
-                                            <Building2 className="h-4 w-4 text-muted-foreground" />
-                                            <span>{cierre.almacen?.nombre || 'General'}</span>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-2 mb-3">
-                                            <div className="rounded-lg bg-muted/20 p-2 text-center">
-                                                <p className="text-[9px] font-black text-muted-foreground uppercase">Stock</p>
-                                                <p className="font-mono font-bold">{Number(cierre.closing_stock ?? cierre.total_stock ?? 0).toLocaleString()}</p>
-                                            </div>
-                                            <div className="rounded-lg bg-muted/20 p-2 text-center">
-                                                <p className="text-[9px] font-black text-muted-foreground uppercase">Esperado</p>
-                                                <p className="font-mono font-bold">{Number(cierre.expected_stock || 0).toLocaleString()}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-between pt-2 border-t border-muted/20">
-                                            <span className={`font-mono font-bold text-lg ${Number(cierre.difference || 0) === 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                                {Number(cierre.difference || 0) > 0 ? '+' : ''}{Number(cierre.difference || 0).toLocaleString()}
-                                            </span>
-                                            <div className="flex items-center gap-2">
-                                                {getStatusBadge(cierre.status)}
-                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleViewCierre(cierre)}>
-                                                    <Eye className="h-3.5 w-3.5" />
-                                                </Button>
-                                                {cierre.status === 'CERRADO' && (
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-green-600 hover:bg-green-50" onClick={() => router.patch(`/inventario-cierre/${cierre.id}/audit`)}>
-                                                        <ClipboardList className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                            {cierres.data.length === 0 && (
-                                <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
-                                    <FileText className="mb-2 h-12 w-12" />
-                                    <p className="font-bold">No hay cierres registrados</p>
-                                </div>
-                            )}
-                        </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                                {cierres.data.length === 0 && (
+                                    <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
+                                        <FileText className="mb-2 h-12 w-12" />
+                                        <p className="font-bold">
+                                            No hay cierres registrados
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
                         )}
                         <div className="border-t p-4">
                             <Pagination links={cierres.links} />

@@ -87,6 +87,10 @@ Route::prefix('v1/auth')->middleware(['throttle:api-auth'])->group(function () {
         ->name('api.v1.auth.me');
 });
 
+// OpenAPI contract for n8n "Tools via OpenAPI" import.
+// Debe registrarse ANTES del comodín `v1/bot/{resource}` para que no lo capture.
+Route::get('v1/bot/openapi', [OpenApiController::class, 'index'])->middleware('throttle:api');
+
 // Bot API for AI agents (n8n / agentes de IA) — strict multi-tenant isolation.
 // `agent-api` acepta el Personal Access Token de Sanctum (app Flutter, agentes)
 // y, por compatibilidad, el `users.api_token` legacy que ya usan los workflows
@@ -121,9 +125,6 @@ Route::prefix('v1/bot')->middleware(['agent-api', 'ability:agent:write', 'thrott
     Route::put('ventas/{venta}', [VentaBotController::class, 'update']);
     Route::delete('ventas/{venta}', [VentaBotController::class, 'destroy']);
 });
-
-// OpenAPI contract for n8n "Tools via OpenAPI" import
-Route::get('v1/bot/openapi', [OpenApiController::class, 'index'])->middleware('throttle:api');
 
 // Internal API for n8n — protected by X-N8N-TOKEN header
 Route::prefix('internal')->middleware(['verify-n8n-token', 'throttle:60,1'])->group(function () {

@@ -7,10 +7,9 @@ import {
     Trophy,
     Play,
     CheckCircle,
-    Search
+    Search,
 } from 'lucide-react';
 import { useState } from 'react';
-import { useCountry } from '@/hooks/use-country';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,8 +21,6 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
-} from '@/components/ui/select';
-import {
     Table,
     TableBody,
     TableCell,
@@ -31,6 +28,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useCountry } from '@/hooks/use-country';
 import AppLayout from '@/layouts/app-layout';
 import { sanitize } from '@/lib/sanitize';
 
@@ -65,10 +63,9 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 };
 
 export default function DrawsIndex({ raffles }: Props) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const [search, setSearch] = useState('');
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-
 
     const filteredRaffles = raffles.data.filter((raffle) =>
         raffle.title.toLowerCase().includes(search.toLowerCase()),
@@ -173,21 +170,32 @@ export default function DrawsIndex({ raffles }: Props) {
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <div>
-                                <CardTitle>Rifas Disponibles para Sorteo</CardTitle>
+                                <CardTitle>
+                                    Rifas Disponibles para Sorteo
+                                </CardTitle>
                                 <CardDescription>
-                                    Rifas publicadas o activas listas para realizar el sorteo
+                                    Rifas publicadas o activas listas para
+                                    realizar el sorteo
                                 </CardDescription>
                             </div>
                             <div className="flex items-center gap-1 rounded-lg border p-1">
                                 <Button
-                                    variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                                    variant={
+                                        viewMode === 'table'
+                                            ? 'secondary'
+                                            : 'ghost'
+                                    }
                                     size="sm"
                                     onClick={() => setViewMode('table')}
                                 >
                                     <List className="h-4 w-4" />
                                 </Button>
                                 <Button
-                                    variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                                    variant={
+                                        viewMode === 'cards'
+                                            ? 'secondary'
+                                            : 'ghost'
+                                    }
                                     size="sm"
                                     onClick={() => setViewMode('cards')}
                                 >
@@ -321,11 +329,18 @@ export default function DrawsIndex({ raffles }: Props) {
                         ) : (
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                                 {filteredRaffles.map((raffle) => (
-                                    <Card key={raffle.id} className="overflow-hidden">
+                                    <Card
+                                        key={raffle.id}
+                                        className="overflow-hidden"
+                                    >
                                         <CardContent className="p-0">
                                             {raffle.cover_image ? (
                                                 <div className="aspect-video w-full overflow-hidden">
-                                                    <img src={raffle.cover_image} alt={raffle.title} className="h-full w-full object-cover" />
+                                                    <img
+                                                        src={raffle.cover_image}
+                                                        alt={raffle.title}
+                                                        className="h-full w-full object-cover"
+                                                    />
                                                 </div>
                                             ) : (
                                                 <div className="flex aspect-video w-full items-center justify-center bg-zinc-100 dark:bg-zinc-800">
@@ -334,24 +349,55 @@ export default function DrawsIndex({ raffles }: Props) {
                                             )}
                                             <div className="space-y-3 p-4">
                                                 <div>
-                                                    <h3 className="font-semibold">{raffle.title}</h3>
-                                                    <p className="text-xs text-muted-foreground">/{raffle.slug}</p>
+                                                    <h3 className="font-semibold">
+                                                        {raffle.title}
+                                                    </h3>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        /{raffle.slug}
+                                                    </p>
                                                 </div>
                                                 <div className="flex flex-wrap gap-2">
-                                                    <Badge className={statusConfig[raffle.status]?.color}>
-                                                        {statusConfig[raffle.status]?.label || raffle.status}
+                                                    <Badge
+                                                        className={
+                                                            statusConfig[
+                                                                raffle.status
+                                                            ]?.color
+                                                        }
+                                                    >
+                                                        {statusConfig[
+                                                            raffle.status
+                                                        ]?.label ||
+                                                            raffle.status}
                                                     </Badge>
                                                 </div>
                                                 <div className="flex items-center justify-between text-sm text-muted-foreground">
-                                                    <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {raffle.participants_count}</span>
-                                                    <span className="flex items-center gap-1"><Trophy className="h-3 w-3" /> {raffle.prizes_count}</span>
-                                                    <span className="flex items-center gap-1">{raffle.winners_count > 0 ? <CheckCircle className="h-3 w-3 text-green-600" /> : null} {raffle.winners_count}</span>
+                                                    <span className="flex items-center gap-1">
+                                                        <Users className="h-3 w-3" />{' '}
+                                                        {
+                                                            raffle.participants_count
+                                                        }
+                                                    </span>
+                                                    <span className="flex items-center gap-1">
+                                                        <Trophy className="h-3 w-3" />{' '}
+                                                        {raffle.prizes_count}
+                                                    </span>
+                                                    <span className="flex items-center gap-1">
+                                                        {raffle.winners_count >
+                                                        0 ? (
+                                                            <CheckCircle className="h-3 w-3 text-green-600" />
+                                                        ) : null}{' '}
+                                                        {raffle.winners_count}
+                                                    </span>
                                                 </div>
                                                 <div className="text-xs text-muted-foreground">
-                                                    {formatDate(raffle.created_at)}
+                                                    {formatDate(
+                                                        raffle.created_at,
+                                                    )}
                                                 </div>
                                                 <div className="flex justify-end">
-                                                    <Link href={`/raffles/${raffle.id}/draw-room`}>
+                                                    <Link
+                                                        href={`/raffles/${raffle.id}/draw-room`}
+                                                    >
                                                         <Button size="sm">
                                                             <Play className="mr-2 h-4 w-4" />
                                                             Ir al Sorteo

@@ -1,7 +1,17 @@
 import { Link, usePage, router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { BookOpen, Folder, LayoutGrid, Menu, Search, Bell, MessageSquare, ShoppingCart, User as UserIcon } from 'lucide-react';
+import {
+    BookOpen,
+    Folder,
+    LayoutGrid,
+    Menu,
+    Search,
+    Bell,
+    MessageSquare,
+    ShoppingCart,
+    User as UserIcon,
+} from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -72,7 +82,9 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
     const { auth } = page.props as any;
     const getInitials = useInitials();
     const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
-    const pollingRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+    const pollingRef = useRef<ReturnType<typeof setInterval> | undefined>(
+        undefined,
+    );
 
     useEffect(() => {
         pollingRef.current = setInterval(() => {
@@ -239,19 +251,38 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                     className="relative size-10 rounded-full"
                                 >
                                     <Bell className="size-5" />
-                                    {((auth.user.unread_messages || 0) > 0 || (auth.user.pending_orders || 0) > 0 || (auth.user.unread_notifications || 0) > 0) && (
+                                    {((auth.user.unread_messages || 0) > 0 ||
+                                        (auth.user.pending_orders || 0) > 0 ||
+                                        (auth.user.unread_notifications || 0) >
+                                            0) && (
                                         <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-background">
-                                            {(auth.user.unread_messages || 0) + (auth.user.pending_orders || 0) + (auth.user.unread_notifications || 0)}
+                                            {(auth.user.unread_messages || 0) +
+                                                (auth.user.pending_orders ||
+                                                    0) +
+                                                (auth.user
+                                                    .unread_notifications || 0)}
                                         </span>
                                     )}
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-80 p-0" align="end">
+                            <DropdownMenuContent
+                                className="w-80 p-0"
+                                align="end"
+                            >
                                 <div className="flex items-center justify-between border-b px-3 py-2">
-                                    <div className="text-sm font-semibold">Notificaciones</div>
-                                    {(auth.user.unread_notifications || 0) > 0 && (
-                                        <button 
-                                            onClick={() => router.post('/notifications/mark-as-read', {}, { preserveScroll: true })}
+                                    <div className="text-sm font-semibold">
+                                        Notificaciones
+                                    </div>
+                                    {(auth.user.unread_notifications || 0) >
+                                        0 && (
+                                        <button
+                                            onClick={() =>
+                                                router.post(
+                                                    '/notifications/mark-as-read',
+                                                    {},
+                                                    { preserveScroll: true },
+                                                )
+                                            }
                                             className="text-[11px] text-primary hover:underline"
                                         >
                                             Marcar todo como leído
@@ -259,76 +290,143 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                     )}
                                 </div>
                                 <div className="max-h-[400px] overflow-y-auto">
-                                    {(auth.user.recent_notifications && auth.user.recent_notifications.length > 0) ? (
-                                        auth.user.recent_notifications.map((notification: any) => (
-                                            <div 
-                                                key={notification.id} 
-                                                className={cn(
-                                                    "flex items-start gap-3 border-b p-3 last:border-0 hover:bg-muted/50 transition-colors relative",
-                                                    !notification.read_at && "bg-primary/5"
-                                                )}
-                                            >
-                                                {/* Background link for the whole notification */}
-                                                <Link 
-                                                    href={notification.data.link || '/comunidad'}
-                                                    className="absolute inset-0 z-0"
-                                                />
+                                    {auth.user.recent_notifications &&
+                                    auth.user.recent_notifications.length >
+                                        0 ? (
+                                        auth.user.recent_notifications.map(
+                                            (notification: any) => (
+                                                <div
+                                                    key={notification.id}
+                                                    className={cn(
+                                                        'relative flex items-start gap-3 border-b p-3 transition-colors last:border-0 hover:bg-muted/50',
+                                                        !notification.read_at &&
+                                                            'bg-primary/5',
+                                                    )}
+                                                >
+                                                    {/* Background link for the whole notification */}
+                                                    <Link
+                                                        href={
+                                                            notification.data
+                                                                .link ||
+                                                            '/comunidad'
+                                                        }
+                                                        className="absolute inset-0 z-0"
+                                                    />
 
-                                                <Avatar className="h-8 w-8 shrink-0 relative z-10 pointer-events-none">
-                                                    <AvatarImage src={notification.data.user_avatar} />
-                                                    <AvatarFallback>
-                                                        <UserIcon className="h-4 w-4" />
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                
-                                                <div className="flex-1 space-y-1 relative z-10 pointer-events-none">
-                                                    <p className="text-xs text-balance leading-relaxed">
-                                                        {notification.data.user_id ? (
-                                                            <Link 
-                                                                href={`/perfil/${notification.data.user_id}`}
-                                                                className="font-semibold hover:text-primary hover:underline pointer-events-auto"
-                                                                onClick={(e) => e.stopPropagation()}
-                                                            >
-                                                                {notification.data.user_name}
-                                                            </Link>
-                                                        ) : (
-                                                            <span className="font-semibold">{notification.data.user_name || 'Usuario'}</span>
-                                                        )}
-                                                        {" "}{(notification.data.message && notification.data.user_name) 
-                                                            ? (notification.data.message.split(notification.data.user_name)[1] || notification.data.message)
-                                                            : (notification.data.message || '')}
-                                                    </p>
-                                                    <p className="text-[10px] text-muted-foreground">
-                                                        {format(new Date(notification.created_at), "d 'de' MMM, HH:mm", { locale: es })}
-                                                    </p>
+                                                    <Avatar className="pointer-events-none relative z-10 h-8 w-8 shrink-0">
+                                                        <AvatarImage
+                                                            src={
+                                                                notification
+                                                                    .data
+                                                                    .user_avatar
+                                                            }
+                                                        />
+                                                        <AvatarFallback>
+                                                            <UserIcon className="h-4 w-4" />
+                                                        </AvatarFallback>
+                                                    </Avatar>
+
+                                                    <div className="pointer-events-none relative z-10 flex-1 space-y-1">
+                                                        <p className="text-xs leading-relaxed text-balance">
+                                                            {notification.data
+                                                                .user_id ? (
+                                                                <Link
+                                                                    href={`/perfil/${notification.data.user_id}`}
+                                                                    className="pointer-events-auto font-semibold hover:text-primary hover:underline"
+                                                                    onClick={(
+                                                                        e,
+                                                                    ) =>
+                                                                        e.stopPropagation()
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        notification
+                                                                            .data
+                                                                            .user_name
+                                                                    }
+                                                                </Link>
+                                                            ) : (
+                                                                <span className="font-semibold">
+                                                                    {notification
+                                                                        .data
+                                                                        .user_name ||
+                                                                        'Usuario'}
+                                                                </span>
+                                                            )}{' '}
+                                                            {notification.data
+                                                                .message &&
+                                                            notification.data
+                                                                .user_name
+                                                                ? notification.data.message.split(
+                                                                      notification
+                                                                          .data
+                                                                          .user_name,
+                                                                  )[1] ||
+                                                                  notification
+                                                                      .data
+                                                                      .message
+                                                                : notification
+                                                                      .data
+                                                                      .message ||
+                                                                  ''}
+                                                        </p>
+                                                        <p className="text-[10px] text-muted-foreground">
+                                                            {format(
+                                                                new Date(
+                                                                    notification.created_at,
+                                                                ),
+                                                                "d 'de' MMM, HH:mm",
+                                                                { locale: es },
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                    {!notification.read_at && (
+                                                        <div className="relative z-10 mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                                                    )}
                                                 </div>
-                                                {!notification.read_at && (
-                                                    <div className="mt-2 h-2 w-2 rounded-full bg-primary shrink-0 relative z-10" />
-                                                )}
-                                            </div>
-                                        ))
+                                            ),
+                                        )
                                     ) : (
                                         <div className="p-8 text-center text-sm text-muted-foreground">
                                             No tienes notificaciones
                                         </div>
                                     )}
                                 </div>
-                                
+
                                 <div className="border-t p-2">
-                                    <Link href="/notifications" className="flex items-center rounded-md p-2 hover:bg-accent hover:text-accent-foreground text-sm mb-1">
+                                    <Link
+                                        href="/notifications"
+                                        className="mb-1 flex items-center rounded-md p-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                    >
                                         <Bell className="mr-2 size-4" />
-                                        <span>Ver todas las notificaciones</span>
+                                        <span>
+                                            Ver todas las notificaciones
+                                        </span>
                                     </Link>
-                                    {((auth.user.unread_messages || 0) > 0) && (
-                                        <Link href="/mensajes" className="flex items-center rounded-md p-2 hover:bg-accent hover:text-accent-foreground text-sm">
+                                    {(auth.user.unread_messages || 0) > 0 && (
+                                        <Link
+                                            href="/mensajes"
+                                            className="flex items-center rounded-md p-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                        >
                                             <MessageSquare className="mr-2 size-4 text-violet-500" />
-                                            <span>Tienes {auth.user.unread_messages} mensajes</span>
+                                            <span>
+                                                Tienes{' '}
+                                                {auth.user.unread_messages}{' '}
+                                                mensajes
+                                            </span>
                                         </Link>
                                     )}
-                                    {((auth.user.pending_orders || 0) > 0) && (
-                                        <Link href="/pedidos-recibidos" className="flex items-center rounded-md p-2 hover:bg-accent hover:text-accent-foreground text-sm">
+                                    {(auth.user.pending_orders || 0) > 0 && (
+                                        <Link
+                                            href="/pedidos-recibidos"
+                                            className="flex items-center rounded-md p-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                        >
                                             <ShoppingCart className="mr-2 size-4 text-amber-500" />
-                                            <span>Tienes {auth.user.pending_orders} pedidos</span>
+                                            <span>
+                                                Tienes{' '}
+                                                {auth.user.pending_orders}{' '}
+                                                pedidos
+                                            </span>
                                         </Link>
                                     )}
                                 </div>

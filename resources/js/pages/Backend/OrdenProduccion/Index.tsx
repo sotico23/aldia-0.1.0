@@ -1,5 +1,13 @@
 import { Head, useForm } from '@inertiajs/react';
-import { LayoutGrid, List, Pencil, Plus, Trash2, Search, X } from 'lucide-react';
+import {
+    LayoutGrid,
+    List,
+    Pencil,
+    Plus,
+    Trash2,
+    Search,
+    X,
+} from 'lucide-react';
 import { useState } from 'react';
 import { useMemo } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
@@ -44,7 +52,6 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const estados = ['pendiente', 'en_proceso', 'completado', 'cancelado'];
-
 
 export default function Index({
     ordenes,
@@ -188,17 +195,21 @@ export default function Index({
                             </p>
                         </div>
                         <div className="flex items-center gap-2">
-                            <BulkActions 
-                                baseUrl="/ordenes-produccion" 
+                            <BulkActions
+                                baseUrl="/ordenes-produccion"
                                 modelName="Órdenes"
                                 filters={{
                                     search: filtros.busqueda,
-                                    estado: filtros.estado
+                                    estado: filtros.estado,
                                 }}
                             />
                             {canCreate && (
-                                <Button onClick={handleNew} className="w-full sm:w-auto">
-                                    <Plus className="mr-2 h-4 w-4" /> Nueva Orden
+                                <Button
+                                    onClick={handleNew}
+                                    className="w-full sm:w-auto"
+                                >
+                                    <Plus className="mr-2 h-4 w-4" /> Nueva
+                                    Orden
                                 </Button>
                             )}
                         </div>
@@ -206,14 +217,21 @@ export default function Index({
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between p-4 sm:p-6">
                             <div>
-                                <CardTitle className="text-sm sm:text-base">Órdenes</CardTitle>
+                                <CardTitle className="text-sm sm:text-base">
+                                    Órdenes
+                                </CardTitle>
                                 <CardDescription className="text-xs sm:text-sm">
-                                    {ordenesFiltradas.length} órdenes encontradas
+                                    {ordenesFiltradas.length} órdenes
+                                    encontradas
                                 </CardDescription>
                             </div>
                             <div className="flex items-center gap-1 rounded-lg bg-muted/30 p-1">
                                 <Button
-                                    variant={viewMode === 'table' ? 'default' : 'ghost'}
+                                    variant={
+                                        viewMode === 'table'
+                                            ? 'default'
+                                            : 'ghost'
+                                    }
                                     size="sm"
                                     onClick={() => setViewMode('table')}
                                     className="h-8 w-8 p-0"
@@ -221,7 +239,11 @@ export default function Index({
                                     <List className="h-4 w-4" />
                                 </Button>
                                 <Button
-                                    variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                                    variant={
+                                        viewMode === 'cards'
+                                            ? 'default'
+                                            : 'ghost'
+                                    }
                                     size="sm"
                                     onClick={() => setViewMode('cards')}
                                     className="h-8 w-8 p-0"
@@ -244,7 +266,7 @@ export default function Index({
                                                     busqueda: e.target.value,
                                                 })
                                             }
-                                            className="h-9 pl-8 pr-8"
+                                            className="h-9 pr-8 pl-8"
                                         />
                                     </div>
                                 </div>
@@ -256,12 +278,16 @@ export default function Index({
                                             estado: e.target.value,
                                         })
                                     }
-                                    className="flex h-9 rounded-md border bg-background px-3 py-1 min-w-[150px]"
+                                    className="flex h-9 min-w-[150px] rounded-md border bg-background px-3 py-1"
                                 >
                                     <option value="">Todos los estados</option>
                                     {estados.map((est) => (
                                         <option key={est} value={est}>
-                                            {est.replace('_', ' ').charAt(0).toUpperCase() + est.replace('_', ' ').slice(1)}
+                                            {est
+                                                .replace('_', ' ')
+                                                .charAt(0)
+                                                .toUpperCase() +
+                                                est.replace('_', ' ').slice(1)}
                                         </option>
                                     ))}
                                 </select>
@@ -276,186 +302,300 @@ export default function Index({
                                 </Button>
                             </div>
                             {viewMode === 'table' ? (
-                            <>
-                            <div className="hidden md:block">
-                                <table className="w-full text-xs sm:text-sm">
-                                    <thead>
-                                        <tr className="border-b">
-                                            <th className="py-2 pr-2 text-left font-medium">Número</th>
-                                            <th className="py-2 pr-2 text-left font-medium">Producto</th>
-                                            <th className="py-2 pr-2 text-right font-medium">Cantidad</th>
-                                            <th className="py-2 pr-2 text-center font-medium">Progreso</th>
-                                            <th className="py-2 pr-2 text-center font-medium">Estado</th>
-                                            <th className="py-2 text-right font-medium">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {ordenesFiltradas.map((o) => (
-                                            <tr
-                                                key={o.id}
-                                                className="border-b transition-colors hover:bg-muted/30"
-                                            >
-                                                <td className="py-2 pr-2 font-mono text-muted-foreground">
-                                                    {o.numero}
-                                                </td>
-                                                <td className="py-2 pr-2 font-medium">
-                                                    {o.producto || '-'}
-                                                </td>
-                                                <td className="py-2 pr-2 text-right">
-                                                    {o.cantidad}
-                                                </td>
-                                                <td className="py-2 pr-2 text-center">
-                                                    <div className="flex items-center justify-center gap-2">
-                                                        <div className="h-2 w-12 rounded-full bg-muted overflow-hidden">
-                                                            <div
-                                                                className="h-full bg-primary"
-                                                                style={{ width: `${o.progreso}%` }}
-                                                            />
-                                                        </div>
-                                                        <span className="text-[10px] text-muted-foreground w-6">
-                                                            {o.progreso}%
+                                <>
+                                    <div className="hidden md:block">
+                                        <table className="w-full text-xs sm:text-sm">
+                                            <thead>
+                                                <tr className="border-b">
+                                                    <th className="py-2 pr-2 text-left font-medium">
+                                                        Número
+                                                    </th>
+                                                    <th className="py-2 pr-2 text-left font-medium">
+                                                        Producto
+                                                    </th>
+                                                    <th className="py-2 pr-2 text-right font-medium">
+                                                        Cantidad
+                                                    </th>
+                                                    <th className="py-2 pr-2 text-center font-medium">
+                                                        Progreso
+                                                    </th>
+                                                    <th className="py-2 pr-2 text-center font-medium">
+                                                        Estado
+                                                    </th>
+                                                    <th className="py-2 text-right font-medium">
+                                                        Acciones
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {ordenesFiltradas.map((o) => (
+                                                    <tr
+                                                        key={o.id}
+                                                        className="border-b transition-colors hover:bg-muted/30"
+                                                    >
+                                                        <td className="py-2 pr-2 font-mono text-muted-foreground">
+                                                            {o.numero}
+                                                        </td>
+                                                        <td className="py-2 pr-2 font-medium">
+                                                            {o.producto || '-'}
+                                                        </td>
+                                                        <td className="py-2 pr-2 text-right">
+                                                            {o.cantidad}
+                                                        </td>
+                                                        <td className="py-2 pr-2 text-center">
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                <div className="h-2 w-12 overflow-hidden rounded-full bg-muted">
+                                                                    <div
+                                                                        className="h-full bg-primary"
+                                                                        style={{
+                                                                            width: `${o.progreso}%`,
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                                <span className="w-6 text-[10px] text-muted-foreground">
+                                                                    {o.progreso}
+                                                                    %
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-2 pr-2 text-center">
+                                                            {getEstadoBadge(
+                                                                o.estado,
+                                                            )}
+                                                        </td>
+                                                        <td className="py-2 text-right">
+                                                            <div className="flex justify-end gap-1">
+                                                                {canEdit && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-8 w-8 p-0"
+                                                                        onClick={() =>
+                                                                            handleEdit(
+                                                                                o,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Pencil className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
+                                                                {canDelete && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                        onClick={() =>
+                                                                            handleDelete(
+                                                                                o.id,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {ordenesFiltradas.length ===
+                                                    0 && (
+                                                    <tr>
+                                                        <td
+                                                            colSpan={6}
+                                                            className="py-8 text-center text-muted-foreground"
+                                                        >
+                                                            No se encontraron
+                                                            órdenes con los
+                                                            filtros aplicados
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div className="flex flex-col gap-3 md:hidden">
+                                        {ordenesFiltradas.length === 0 ? (
+                                            <p className="py-8 text-center text-xs text-muted-foreground">
+                                                No se encontraron órdenes con
+                                                los filtros aplicados
+                                            </p>
+                                        ) : (
+                                            ordenesFiltradas.map((o) => (
+                                                <div
+                                                    key={o.id}
+                                                    className="rounded-lg border bg-card p-3 text-xs shadow-sm"
+                                                >
+                                                    <div className="mb-2 flex items-center justify-between">
+                                                        <span className="font-mono font-semibold">
+                                                            {o.numero}
                                                         </span>
+                                                        {getEstadoBadge(
+                                                            o.estado,
+                                                        )}
                                                     </div>
-                                                </td>
-                                                <td className="py-2 pr-2 text-center">
-                                                    {getEstadoBadge(o.estado)}
-                                                </td>
-                                                <td className="py-2 text-right">
-                                                    <div className="flex justify-end gap-1">
+                                                    <div className="space-y-1 text-muted-foreground">
+                                                        <div className="flex justify-between">
+                                                            <span>
+                                                                Producto:
+                                                            </span>
+                                                            <span className="font-medium text-foreground">
+                                                                {o.producto ||
+                                                                    '-'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span>
+                                                                Cantidad:
+                                                            </span>
+                                                            <span className="font-medium">
+                                                                {o.cantidad}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span>
+                                                                Progreso:
+                                                            </span>
+                                                            <span className="flex items-center gap-1">
+                                                                <div className="h-2 w-16 overflow-hidden rounded-full bg-muted">
+                                                                    <div
+                                                                        className="h-full bg-primary"
+                                                                        style={{
+                                                                            width: `${o.progreso}%`,
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                                <span className="text-[10px]">
+                                                                    {o.progreso}
+                                                                    %
+                                                                </span>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-2 flex justify-end gap-1 border-t pt-2">
                                                         {canEdit && (
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="h-8 w-8 p-0"
-                                                                onClick={() => handleEdit(o)}
+                                                                className="h-7 px-2 text-xs"
+                                                                onClick={() =>
+                                                                    handleEdit(
+                                                                        o,
+                                                                    )
+                                                                }
                                                             >
-                                                                <Pencil className="h-4 w-4" />
+                                                                <Pencil className="mr-1 h-3 w-3" />{' '}
+                                                                Editar
                                                             </Button>
                                                         )}
                                                         {canDelete && (
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                                                onClick={() => handleDelete(o.id)}
+                                                                className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        o.id,
+                                                                    )
+                                                                }
                                                             >
-                                                                <Trash2 className="h-4 w-4" />
+                                                                <Trash2 className="mr-1 h-3 w-3" />{' '}
+                                                                Eliminar
                                                             </Button>
                                                         )}
                                                     </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {ordenesFiltradas.length === 0 && (
-                                            <tr>
-                                                <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                                                    No se encontraron órdenes con los filtros aplicados
-                                                </td>
-                                            </tr>
+                                                </div>
+                                            ))
                                         )}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div className="flex flex-col gap-3 md:hidden">
-                                {ordenesFiltradas.length === 0 ? (
-                                    <p className="py-8 text-center text-xs text-muted-foreground">
-                                        No se encontraron órdenes con los filtros aplicados
-                                    </p>
-                                ) : (
-                                    ordenesFiltradas.map((o) => (
-                                        <div key={o.id} className="rounded-lg border bg-card p-3 text-xs shadow-sm">
-                                            <div className="mb-2 flex items-center justify-between">
-                                                <span className="font-mono font-semibold">{o.numero}</span>
-                                                {getEstadoBadge(o.estado)}
-                                            </div>
-                                            <div className="space-y-1 text-muted-foreground">
-                                                <div className="flex justify-between">
-                                                    <span>Producto:</span>
-                                                    <span className="font-medium text-foreground">{o.producto || '-'}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>Cantidad:</span>
-                                                    <span className="font-medium">{o.cantidad}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>Progreso:</span>
-                                                    <span className="flex items-center gap-1">
-                                                        <div className="h-2 w-16 rounded-full bg-muted overflow-hidden">
-                                                            <div className="h-full bg-primary" style={{ width: `${o.progreso}%` }} />
-                                                        </div>
-                                                        <span className="text-[10px]">{o.progreso}%</span>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="mt-2 flex justify-end gap-1 border-t pt-2">
-                                                {canEdit && (
-                                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => handleEdit(o)}>
-                                                        <Pencil className="mr-1 h-3 w-3" /> Editar
-                                                    </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={() => handleDelete(o.id)}>
-                                                        <Trash2 className="mr-1 h-3 w-3" /> Eliminar
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                            </>
-                            ) : (
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {ordenesFiltradas.map((o) => (
-                                    <Card key={o.id}>
-                                        <CardHeader className="pb-2">
-                                            <div className="flex items-start justify-between">
-                                                <CardTitle className="text-sm font-mono">{o.numero}</CardTitle>
-                                                {getEstadoBadge(o.estado)}
-                                            </div>
-                                            <CardDescription className="truncate text-xs">{o.producto || '-'}</CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="space-y-2 text-sm">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-muted-foreground">Cantidad</span>
-                                                    <span className="font-medium">{o.cantidad}</span>
-                                                </div>
-                                                <div>
-                                                    <div className="mb-1 flex items-center justify-between">
-                                                        <span className="text-muted-foreground">Progreso</span>
-                                                        <span className="text-xs text-muted-foreground">{o.progreso}%</span>
-                                                    </div>
-                                                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                                                        <div className="h-full bg-primary" style={{ width: `${o.progreso}%` }} />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="mt-3 flex justify-end gap-1 border-t pt-2">
-                                                {canEdit && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(o)}>
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(o.id)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                                {ordenesFiltradas.length === 0 && (
-                                    <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-                                        <div className="mb-4 rounded-full bg-muted/30 p-4">
-                                            <LayoutGrid className="h-8 w-8 text-muted-foreground" />
-                                        </div>
-                                        <p className="text-muted-foreground">No se encontraron órdenes con los filtros aplicados</p>
                                     </div>
-                                )}
-                            </div>
+                                </>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    {ordenesFiltradas.map((o) => (
+                                        <Card key={o.id}>
+                                            <CardHeader className="pb-2">
+                                                <div className="flex items-start justify-between">
+                                                    <CardTitle className="font-mono text-sm">
+                                                        {o.numero}
+                                                    </CardTitle>
+                                                    {getEstadoBadge(o.estado)}
+                                                </div>
+                                                <CardDescription className="truncate text-xs">
+                                                    {o.producto || '-'}
+                                                </CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="space-y-2 text-sm">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-muted-foreground">
+                                                            Cantidad
+                                                        </span>
+                                                        <span className="font-medium">
+                                                            {o.cantidad}
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <div className="mb-1 flex items-center justify-between">
+                                                            <span className="text-muted-foreground">
+                                                                Progreso
+                                                            </span>
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {o.progreso}%
+                                                            </span>
+                                                        </div>
+                                                        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                                                            <div
+                                                                className="h-full bg-primary"
+                                                                style={{
+                                                                    width: `${o.progreso}%`,
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-3 flex justify-end gap-1 border-t pt-2">
+                                                    {canEdit && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0"
+                                                            onClick={() =>
+                                                                handleEdit(o)
+                                                            }
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                    {canDelete && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    o.id,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                    {ordenesFiltradas.length === 0 && (
+                                        <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
+                                            <div className="mb-4 rounded-full bg-muted/30 p-4">
+                                                <LayoutGrid className="h-8 w-8 text-muted-foreground" />
+                                            </div>
+                                            <p className="text-muted-foreground">
+                                                No se encontraron órdenes con
+                                                los filtros aplicados
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
                             )}
                             <Pagination
                                 links={ordenes.links}
@@ -466,7 +606,10 @@ export default function Index({
                 </div>
             </AppLayout>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="w-[95vw] max-w-lg overflow-y-auto p-3 sm:p-6" style={{ maxHeight: '85vh' }}>
+                <DialogContent
+                    className="w-[95vw] max-w-lg overflow-y-auto p-3 sm:p-6"
+                    style={{ maxHeight: '85vh' }}
+                >
                     <DialogHeader className="mb-2 sm:mb-4">
                         <DialogTitle className="text-base sm:text-lg">
                             {editando ? 'Editar' : 'Nueva'} Orden
@@ -475,65 +618,94 @@ export default function Index({
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Número *</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Número *
+                                </Label>
                                 <Input
                                     value={data.numero}
-                                    onChange={(e) => setData('numero', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('numero', e.target.value)
+                                    }
                                     required
                                     className="h-10 text-xs sm:text-sm"
                                 />
                             </div>
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Producto</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Producto
+                                </Label>
                                 <div className="flex gap-2">
                                     <Input
                                         value={data.producto}
-                                        onChange={(e) => setData('producto', e.target.value)}
-                                        className="flex-1 h-10 text-xs sm:text-sm"
+                                        onChange={(e) =>
+                                            setData('producto', e.target.value)
+                                        }
+                                        className="h-10 flex-1 text-xs sm:text-sm"
                                     />
-
                                 </div>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Cantidad</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Cantidad
+                                </Label>
                                 <Input
                                     type="number"
                                     min="1"
                                     value={data.cantidad}
-                                    onChange={(e) => setData('cantidad', parseInt(e.target.value))}
+                                    onChange={(e) =>
+                                        setData(
+                                            'cantidad',
+                                            parseInt(e.target.value),
+                                        )
+                                    }
                                     className="h-10 text-xs sm:text-sm"
                                 />
                             </div>
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Progreso %</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Progreso %
+                                </Label>
                                 <Input
                                     type="number"
                                     min="0"
                                     max="100"
                                     value={data.progreso}
-                                    onChange={(e) => setData('progreso', parseInt(e.target.value))}
+                                    onChange={(e) =>
+                                        setData(
+                                            'progreso',
+                                            parseInt(e.target.value),
+                                        )
+                                    }
                                     className="h-10 text-xs sm:text-sm"
                                 />
                             </div>
                         </div>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Fecha Inicio</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Fecha Inicio
+                                </Label>
                                 <Input
                                     type="date"
                                     value={data.fecha_inicio}
-                                    onChange={(e) => setData('fecha_inicio', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('fecha_inicio', e.target.value)
+                                    }
                                     className="h-10 text-xs sm:text-sm"
                                 />
                             </div>
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Fecha Fin</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Fecha Fin
+                                </Label>
                                 <Input
                                     type="date"
                                     value={data.fecha_fin}
-                                    onChange={(e) => setData('fecha_fin', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('fecha_fin', e.target.value)
+                                    }
                                     className="h-10 text-xs sm:text-sm"
                                 />
                             </div>
@@ -542,19 +714,30 @@ export default function Index({
                             <Label className="text-xs sm:text-sm">Estado</Label>
                             <select
                                 value={data.estado}
-                                onChange={(e) => setData('estado', e.target.value)}
+                                onChange={(e) =>
+                                    setData('estado', e.target.value)
+                                }
                                 className="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-xs sm:text-sm"
                             >
                                 {estados.map((e) => (
-                                    <option key={e} value={e}>{e}</option>
+                                    <option key={e} value={e}>
+                                        {e}
+                                    </option>
                                 ))}
                             </select>
                         </div>
                         <DialogFooter className="flex-col gap-2 sm:flex-row">
-                            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="w-full sm:w-auto">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsOpen(false)}
+                                className="w-full sm:w-auto"
+                            >
                                 Cancelar
                             </Button>
-                            <Button type="submit" className="w-full sm:w-auto">Guardar</Button>
+                            <Button type="submit" className="w-full sm:w-auto">
+                                Guardar
+                            </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>

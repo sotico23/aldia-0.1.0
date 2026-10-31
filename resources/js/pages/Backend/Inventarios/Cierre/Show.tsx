@@ -8,7 +8,7 @@ import {
     Calendar,
     User,
     FileText,
-    ClipboardCheck
+    ClipboardCheck,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -77,7 +77,9 @@ export default function CierreShow({ cierre }: { cierre: Cierre }) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );

@@ -17,43 +17,52 @@ interface DashboardLayoutProps {
 
 function getColSpanClass(span: number) {
     switch (span) {
-        case 12: return 'lg:col-span-12';
-        case 6: return 'lg:col-span-6';
-        case 4: return 'lg:col-span-4';
-        case 8: return 'lg:col-span-8';
-        case 3: return 'lg:col-span-3';
-        default: return 'lg:col-span-12';
+        case 12:
+            return 'lg:col-span-12';
+        case 6:
+            return 'lg:col-span-6';
+        case 4:
+            return 'lg:col-span-4';
+        case 8:
+            return 'lg:col-span-8';
+        case 3:
+            return 'lg:col-span-3';
+        default:
+            return 'lg:col-span-12';
     }
 }
 
-export default function DashboardLayout({ widgets, savedLayout }: DashboardLayoutProps) {
+export default function DashboardLayout({
+    widgets,
+    savedLayout,
+}: DashboardLayoutProps) {
     const [editing, setEditing] = useState(false);
-    
+
     // Initialize from saved database state or default to all visible
     const [visibleKeys, setVisibleKeys] = useState<string[]>(() => {
         if (savedLayout && Array.isArray(savedLayout.visibleKeys)) {
             return savedLayout.visibleKeys;
         }
-        return widgets.map(w => w.key);
+        return widgets.map((w) => w.key);
     });
 
     const handleSaveAndExit = () => {
         router.post(
             saveConfig().url,
             { layout: { visibleKeys }, mode: 'grid' },
-            { preserveScroll: true, preserveState: true }
+            { preserveScroll: true, preserveState: true },
         );
         setEditing(false);
     };
 
     const toggleWidget = (key: string) => {
-        setVisibleKeys(prev =>
-            prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+        setVisibleKeys((prev) =>
+            prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
         );
     };
 
     // Keep the widgets in their original defined order, but only show visible ones
-    const visibleWidgets = widgets.filter(w => visibleKeys.includes(w.key));
+    const visibleWidgets = widgets.filter((w) => visibleKeys.includes(w.key));
 
     return (
         <div className="flex flex-col gap-4">
@@ -66,14 +75,14 @@ export default function DashboardLayout({ widgets, savedLayout }: DashboardLayou
                         <button
                             type="button"
                             onClick={() => setEditing(false)}
-                            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold shadow-xs transition-colors text-muted-foreground hover:bg-accent/60"
+                            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold text-muted-foreground shadow-xs transition-colors hover:bg-accent/60"
                         >
                             Cancelar
                         </button>
                         <button
                             type="button"
                             onClick={handleSaveAndExit}
-                            className="flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-4 py-1.5 text-[11px] font-bold shadow-sm transition-colors hover:brightness-110"
+                            className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-[11px] font-bold text-primary-foreground shadow-sm transition-colors hover:brightness-110"
                         >
                             Guardar Layout
                         </button>
@@ -82,7 +91,7 @@ export default function DashboardLayout({ widgets, savedLayout }: DashboardLayou
                     <button
                         type="button"
                         onClick={() => setEditing(true)}
-                        className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-[11px] font-bold shadow-xs transition-colors text-muted-foreground hover:bg-accent/60"
+                        className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-[11px] font-bold text-muted-foreground shadow-xs transition-colors hover:bg-accent/60"
                     >
                         <Settings2 className="h-3.5 w-3.5" />
                         Personalizar Dashboard
@@ -91,14 +100,15 @@ export default function DashboardLayout({ widgets, savedLayout }: DashboardLayou
             </div>
 
             {editing && (
-                <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-4 shadow-sm animate-in fade-in slide-in-from-top-2">
-                    <p className="w-full text-xs text-muted-foreground mb-1 font-semibold">
-                        Selecciona los módulos que deseas ver en tu pantalla principal.
+                <div className="flex animate-in flex-wrap gap-2 rounded-xl border border-border bg-card p-4 shadow-sm fade-in slide-in-from-top-2">
+                    <p className="mb-1 w-full text-xs font-semibold text-muted-foreground">
+                        Selecciona los módulos que deseas ver en tu pantalla
+                        principal.
                     </p>
-                    {widgets.map(w => (
+                    {widgets.map((w) => (
                         <label
                             key={w.key}
-                            className="flex cursor-pointer items-center gap-2 rounded-lg border border-border/50 px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent/60 has-checked:bg-primary/10 has-checked:border-primary/40 select-none"
+                            className="flex cursor-pointer items-center gap-2 rounded-lg border border-border/50 px-3 py-1.5 text-xs font-medium transition-colors select-none hover:bg-accent/60 has-checked:border-primary/40 has-checked:bg-primary/10"
                         >
                             <input
                                 type="checkbox"
@@ -106,14 +116,16 @@ export default function DashboardLayout({ widgets, savedLayout }: DashboardLayou
                                 onChange={() => toggleWidget(w.key)}
                                 className="sr-only"
                             />
-                            <span className={`h-2 w-2 rounded-full transition-all ${visibleKeys.includes(w.key) ? 'bg-primary scale-110' : 'bg-muted-foreground/30 scale-90'}`} />
+                            <span
+                                className={`h-2 w-2 rounded-full transition-all ${visibleKeys.includes(w.key) ? 'scale-110 bg-primary' : 'scale-90 bg-muted-foreground/30'}`}
+                            />
                             {w.title}
                         </label>
                     ))}
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-2">
+            <div className="mt-2 grid grid-cols-1 gap-6 lg:grid-cols-12">
                 {visibleWidgets.map((w) => (
                     <div
                         key={w.key}

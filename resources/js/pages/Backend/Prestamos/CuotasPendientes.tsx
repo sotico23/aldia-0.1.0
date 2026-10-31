@@ -1,6 +1,12 @@
 import { Head, Link } from '@inertiajs/react';
 import { router } from '@inertiajs/react';
-import { ArrowLeft, DollarSign, Banknote, Calendar, User, AlertCircle } from 'lucide-react';
+import {
+    ArrowLeft,
+    DollarSign,
+    Banknote,
+    Calendar,
+    AlertCircle,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -48,14 +54,12 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Cuotas Pendientes', href: '/prestamos/cuotas-pendientes' },
 ];
 
-export default function CuotasPendientes({
-    cuotas,
-}: {
-    cuotas: Cuota[];
-}) {
+export default function CuotasPendientes({ cuotas }: { cuotas: Cuota[] }) {
     const [isPagarOpen, setIsPagarOpen] = useState(false);
     const [isNominaOpen, setIsNominaOpen] = useState(false);
-    const [cuotaSeleccionada, setCuotaSeleccionada] = useState<Cuota | null>(null);
+    const [cuotaSeleccionada, setCuotaSeleccionada] = useState<Cuota | null>(
+        null,
+    );
 
     const [pagoData, setPagoData] = useState({
         monto_pagado: 0,
@@ -93,21 +97,29 @@ export default function CuotasPendientes({
     const confirmarPago = () => {
         if (!cuotaSeleccionada) return;
 
-        router.post(`/prestamo-cuotas/${cuotaSeleccionada.id}/pagar`, pagoData, {
-            onSuccess: () => {
-                setIsPagarOpen(false);
+        router.post(
+            `/prestamo-cuotas/${cuotaSeleccionada.id}/pagar`,
+            pagoData,
+            {
+                onSuccess: () => {
+                    setIsPagarOpen(false);
+                },
             },
-        });
+        );
     };
 
     const confirmarNomina = () => {
         if (!cuotaSeleccionada) return;
 
-        router.post(`/prestamo-cuotas/${cuotaSeleccionada.id}/aplicar-nomina`, nominaData, {
-            onSuccess: () => {
-                setIsNominaOpen(false);
+        router.post(
+            `/prestamo-cuotas/${cuotaSeleccionada.id}/aplicar-nomina`,
+            nominaData,
+            {
+                onSuccess: () => {
+                    setIsNominaOpen(false);
+                },
             },
-        });
+        );
     };
 
     const totalPendiente = cuotas.reduce((sum, c) => sum + c.monto, 0);
@@ -157,7 +169,8 @@ export default function CuotasPendientes({
                         <CardHeader>
                             <CardTitle>Cuotas por Vencer</CardTitle>
                             <CardDescription>
-                                Cuotas con vencimiento en el mes actual o anteriores
+                                Cuotas con vencimiento en el mes actual o
+                                anteriores
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -166,12 +179,24 @@ export default function CuotasPendientes({
                                     <table className="w-full text-xs sm:text-sm">
                                         <thead>
                                             <tr className="border-b">
-                                                <th className="py-2 text-left font-medium">Empleado</th>
-                                                <th className="py-2 text-left font-medium">Tipo</th>
-                                                <th className="py-2 text-center font-medium">Cuota</th>
-                                                <th className="py-2 text-right font-medium">Monto</th>
-                                                <th className="py-2 text-center font-medium">Vencimiento</th>
-                                                <th className="py-2 text-right font-medium">Acciones</th>
+                                                <th className="py-2 text-left font-medium">
+                                                    Empleado
+                                                </th>
+                                                <th className="py-2 text-left font-medium">
+                                                    Tipo
+                                                </th>
+                                                <th className="py-2 text-center font-medium">
+                                                    Cuota
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Monto
+                                                </th>
+                                                <th className="py-2 text-center font-medium">
+                                                    Vencimiento
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Acciones
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -182,16 +207,30 @@ export default function CuotasPendientes({
                                                 >
                                                     <td className="py-2">
                                                         <div className="font-bold">
-                                                            {cuota.prestamo?.empleado?.nombre}{' '}
-                                                            {cuota.prestamo?.empleado?.apellido}
+                                                            {
+                                                                cuota.prestamo
+                                                                    ?.empleado
+                                                                    ?.nombre
+                                                            }{' '}
+                                                            {
+                                                                cuota.prestamo
+                                                                    ?.empleado
+                                                                    ?.apellido
+                                                            }
                                                         </div>
                                                         <div className="text-[10px] text-muted-foreground">
-                                                            {cuota.prestamo?.empleado?.rut}
+                                                            {
+                                                                cuota.prestamo
+                                                                    ?.empleado
+                                                                    ?.rut
+                                                            }
                                                         </div>
                                                     </td>
                                                     <td className="py-2">
                                                         <span className="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">
-                                                            {cuota.prestamo?.tipo === 'prestamo'
+                                                            {cuota.prestamo
+                                                                ?.tipo ===
+                                                            'prestamo'
                                                                 ? 'Préstamo'
                                                                 : 'Adelanto'}
                                                         </span>
@@ -200,11 +239,17 @@ export default function CuotasPendientes({
                                                         #{cuota.numero_cuota}
                                                     </td>
                                                     <td className="py-2 text-right font-bold">
-                                                        {formatCurrency(cuota.monto)}
+                                                        {formatCurrency(
+                                                            cuota.monto,
+                                                        )}
                                                     </td>
                                                     <td className="py-2 text-center">
                                                         <span className="text-amber-600">
-                                                            {cuota.fecha_vencimiento?.split('T')[0]}
+                                                            {
+                                                                cuota.fecha_vencimiento?.split(
+                                                                    'T',
+                                                                )[0]
+                                                            }
                                                         </span>
                                                     </td>
                                                     <td className="py-2 text-right">
@@ -213,7 +258,11 @@ export default function CuotasPendientes({
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 className="h-7 text-xs text-green-600 hover:bg-green-50 hover:text-green-700"
-                                                                onClick={() => handlePagar(cuota)}
+                                                                onClick={() =>
+                                                                    handlePagar(
+                                                                        cuota,
+                                                                    )
+                                                                }
                                                             >
                                                                 <DollarSign className="mr-1 h-3 w-3" />
                                                                 Pagar
@@ -222,7 +271,11 @@ export default function CuotasPendientes({
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 className="h-7 text-xs text-purple-600 hover:bg-purple-50 hover:text-purple-700"
-                                                                onClick={() => handleAplicarNomina(cuota)}
+                                                                onClick={() =>
+                                                                    handleAplicarNomina(
+                                                                        cuota,
+                                                                    )
+                                                                }
                                                             >
                                                                 <Banknote className="mr-1 h-3 w-3" />
                                                                 Nómina
@@ -258,50 +311,88 @@ export default function CuotasPendientes({
                             <div className="space-y-4">
                                 <div className="rounded-lg bg-green-50 p-3 text-center">
                                     <p className="text-xs text-muted-foreground">
-                                        {cuotaSeleccionada.prestamo?.empleado?.nombre}{' '}
-                                        {cuotaSeleccionada.prestamo?.empleado?.apellido} - Cuota #{cuotaSeleccionada.numero_cuota}
+                                        {
+                                            cuotaSeleccionada.prestamo?.empleado
+                                                ?.nombre
+                                        }{' '}
+                                        {
+                                            cuotaSeleccionada.prestamo?.empleado
+                                                ?.apellido
+                                        }{' '}
+                                        - Cuota #
+                                        {cuotaSeleccionada.numero_cuota}
                                     </p>
                                     <p className="text-2xl font-black text-green-700">
-                                        {formatCurrency(cuotaSeleccionada.monto)}
+                                        {formatCurrency(
+                                            cuotaSeleccionada.monto,
+                                        )}
                                     </p>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold uppercase">Monto *</Label>
+                                    <Label className="text-xs font-bold uppercase">
+                                        Monto *
+                                    </Label>
                                     <Input
                                         type="number"
                                         min="0.01"
                                         step="0.01"
                                         value={pagoData.monto_pagado}
                                         onChange={(e) =>
-                                            setPagoData({ ...pagoData, monto_pagado: parseFloat(e.target.value) || 0 })
+                                            setPagoData({
+                                                ...pagoData,
+                                                monto_pagado:
+                                                    parseFloat(
+                                                        e.target.value,
+                                                    ) || 0,
+                                            })
                                         }
                                         className="h-9"
                                         required
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold uppercase">Fecha *</Label>
+                                    <Label className="text-xs font-bold uppercase">
+                                        Fecha *
+                                    </Label>
                                     <Input
                                         type="date"
                                         value={pagoData.fecha_pago}
-                                        onChange={(e) => setPagoData({ ...pagoData, fecha_pago: e.target.value })}
+                                        onChange={(e) =>
+                                            setPagoData({
+                                                ...pagoData,
+                                                fecha_pago: e.target.value,
+                                            })
+                                        }
                                         className="h-9"
                                         required
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold uppercase">Método *</Label>
+                                    <Label className="text-xs font-bold uppercase">
+                                        Método *
+                                    </Label>
                                     <Select
                                         value={pagoData.metodo_pago}
-                                        onValueChange={(val) => setPagoData({ ...pagoData, metodo_pago: val })}
+                                        onValueChange={(val) =>
+                                            setPagoData({
+                                                ...pagoData,
+                                                metodo_pago: val,
+                                            })
+                                        }
                                     >
                                         <SelectTrigger className="h-9">
                                             <SelectValue placeholder="Método" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="efectivo">Efectivo</SelectItem>
-                                            <SelectItem value="transferencia">Transferencia</SelectItem>
-                                            <SelectItem value="nomina">Descuento Nómina</SelectItem>
+                                            <SelectItem value="efectivo">
+                                                Efectivo
+                                            </SelectItem>
+                                            <SelectItem value="transferencia">
+                                                Transferencia
+                                            </SelectItem>
+                                            <SelectItem value="nomina">
+                                                Descuento Nómina
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -340,19 +431,36 @@ export default function CuotasPendientes({
                             <div className="space-y-4">
                                 <div className="rounded-lg bg-purple-50 p-3 text-center">
                                     <p className="text-xs text-muted-foreground">
-                                        {cuotaSeleccionada.prestamo?.empleado?.nombre}{' '}
-                                        {cuotaSeleccionada.prestamo?.empleado?.apellido} - Cuota #{cuotaSeleccionada.numero_cuota}
+                                        {
+                                            cuotaSeleccionada.prestamo?.empleado
+                                                ?.nombre
+                                        }{' '}
+                                        {
+                                            cuotaSeleccionada.prestamo?.empleado
+                                                ?.apellido
+                                        }{' '}
+                                        - Cuota #
+                                        {cuotaSeleccionada.numero_cuota}
                                     </p>
                                     <p className="text-2xl font-black text-purple-700">
-                                        {formatCurrency(cuotaSeleccionada.monto)}
+                                        {formatCurrency(
+                                            cuotaSeleccionada.monto,
+                                        )}
                                     </p>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold uppercase">Período de Nómina *</Label>
+                                    <Label className="text-xs font-bold uppercase">
+                                        Período de Nómina *
+                                    </Label>
                                     <Input
                                         type="month"
                                         value={nominaData.nomina_periodo}
-                                        onChange={(e) => setNominaData({ ...nominaData, nomina_periodo: e.target.value })}
+                                        onChange={(e) =>
+                                            setNominaData({
+                                                ...nominaData,
+                                                nomina_periodo: e.target.value,
+                                            })
+                                        }
                                         className="h-9"
                                         required
                                     />

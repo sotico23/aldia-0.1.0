@@ -1,5 +1,12 @@
 import { router } from '@inertiajs/react';
-import { Settings, Play, Save, Bot, MessageCircle, Smartphone } from 'lucide-react';
+import {
+    Settings,
+    Play,
+    Save,
+    Bot,
+    MessageCircle,
+    Smartphone,
+} from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -56,8 +63,12 @@ export default function AutomationConfigDialog({
     const [saving, setSaving] = useState(false);
     const [testing, setTesting] = useState(false);
     const [channel, setChannel] = useState(automation?.channel ?? 'telegram');
-    const [frequency, setFrequency] = useState(automation?.frequency ?? 'daily');
-    const [executionTime, setExecutionTime] = useState(automation?.execution_time ?? '08:00');
+    const [frequency, setFrequency] = useState(
+        automation?.frequency ?? 'daily',
+    );
+    const [executionTime, setExecutionTime] = useState(
+        automation?.execution_time ?? '08:00',
+    );
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [enabled, setEnabled] = useState(automation?.enabled ?? false);
     const [selectedReports, setSelectedReports] = useState<string[]>(
@@ -99,7 +110,9 @@ export default function AutomationConfigDialog({
                 },
                 onError: (errors) => {
                     const firstError = Object.values(errors)[0];
-                    toast.error(firstError || 'Error al guardar la configuración.');
+                    toast.error(
+                        firstError || 'Error al guardar la configuración.',
+                    );
                 },
                 onFinish: () => setSaving(false),
             },
@@ -137,7 +150,9 @@ export default function AutomationConfigDialog({
             const data = await resp.json();
 
             if (data.success) {
-                toast.success(data.message || 'Workflow ejecutado correctamente.');
+                toast.success(
+                    data.message || 'Workflow ejecutado correctamente.',
+                );
                 router.reload({ only: ['automation'] });
             } else {
                 toast.error(data.message || 'Error al ejecutar el workflow.');
@@ -157,27 +172,43 @@ export default function AutomationConfigDialog({
                     Configurar Automatizaciones
                 </Button>
             </DialogTrigger>
-            <DialogContent className="mx-4 w-full max-w-full sm:mx-auto sm:max-w-xl p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
+            <DialogContent className="mx-4 max-h-[90vh] w-full max-w-full overflow-y-auto p-4 sm:mx-auto sm:max-w-xl sm:p-6">
                 <DialogHeader className="mb-2">
-                    <DialogTitle className="text-xl">Configuración de Automatizaciones</DialogTitle>
+                    <DialogTitle className="text-xl">
+                        Configuración de Automatizaciones
+                    </DialogTitle>
                     <DialogDescription>
-                        Selecciona qué información deseas recibir automáticamente en tus canales
-                        conectados.
+                        Selecciona qué información deseas recibir
+                        automáticamente en tus canales conectados.
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-6">
                     <div className="space-y-3">
-                        <Label className="text-sm font-medium">Canal de envío</Label>
+                        <Label className="text-sm font-medium">
+                            Canal de envío
+                        </Label>
                         <RadioGroup
                             value={channel}
                             onValueChange={setChannel}
                             className="flex flex-wrap gap-3"
                         >
                             {[
-                                { value: 'telegram', icon: <Bot className="h-4 w-4" />, label: 'Telegram' },
-                                { value: 'whatsapp', icon: <MessageCircle className="h-4 w-4" />, label: 'WhatsApp' },
-                                { value: 'both', icon: <Smartphone className="h-4 w-4" />, label: 'Ambos' },
+                                {
+                                    value: 'telegram',
+                                    icon: <Bot className="h-4 w-4" />,
+                                    label: 'Telegram',
+                                },
+                                {
+                                    value: 'whatsapp',
+                                    icon: <MessageCircle className="h-4 w-4" />,
+                                    label: 'WhatsApp',
+                                },
+                                {
+                                    value: 'both',
+                                    icon: <Smartphone className="h-4 w-4" />,
+                                    label: 'Ambos',
+                                },
                             ].map((opt) => (
                                 <Label
                                     key={opt.value}
@@ -187,7 +218,10 @@ export default function AutomationConfigDialog({
                                             : 'border-border'
                                     }`}
                                 >
-                                    <RadioGroupItem value={opt.value} className="sr-only" />
+                                    <RadioGroupItem
+                                        value={opt.value}
+                                        className="sr-only"
+                                    />
                                     {opt.icon}
                                     {opt.label}
                                 </Label>
@@ -195,9 +229,11 @@ export default function AutomationConfigDialog({
                         </RadioGroup>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div className="space-y-3">
-                            <Label className="text-sm font-medium">Frecuencia</Label>
+                            <Label className="text-sm font-medium">
+                                Frecuencia
+                            </Label>
                             <RadioGroup
                                 value={frequency}
                                 onValueChange={setFrequency}
@@ -216,7 +252,10 @@ export default function AutomationConfigDialog({
                                                 : 'border-border'
                                         }`}
                                     >
-                                        <RadioGroupItem value={opt.value} className="sr-only" />
+                                        <RadioGroupItem
+                                            value={opt.value}
+                                            className="sr-only"
+                                        />
                                         {opt.label}
                                     </Label>
                                 ))}
@@ -224,14 +263,19 @@ export default function AutomationConfigDialog({
                         </div>
 
                         <div className="space-y-3">
-                            <Label htmlFor="execution_time" className="text-sm font-medium">
+                            <Label
+                                htmlFor="execution_time"
+                                className="text-sm font-medium"
+                            >
                                 Hora de ejecución
                             </Label>
                             <Input
                                 id="execution_time"
                                 type="time"
                                 value={executionTime}
-                                onChange={(e) => setExecutionTime(e.target.value)}
+                                onChange={(e) =>
+                                    setExecutionTime(e.target.value)
+                                }
                                 className="text-base"
                             />
                         </div>
@@ -240,16 +284,22 @@ export default function AutomationConfigDialog({
                     <Separator />
 
                     <div className="space-y-3">
-                        <Label className="text-sm font-medium">Reportes disponibles</Label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <Label className="text-sm font-medium">
+                            Reportes disponibles
+                        </Label>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                             {REPORT_OPTIONS.map((report) => (
                                 <Label
                                     key={report.key}
                                     className="flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
                                 >
                                     <Checkbox
-                                        checked={selectedReports.includes(report.key)}
-                                        onCheckedChange={() => toggleReport(report.key)}
+                                        checked={selectedReports.includes(
+                                            report.key,
+                                        )}
+                                        onCheckedChange={() =>
+                                            toggleReport(report.key)
+                                        }
                                     />
                                     {report.label}
                                 </Label>
@@ -262,7 +312,9 @@ export default function AutomationConfigDialog({
                             <div className="flex items-center gap-2 font-medium">
                                 <span
                                     className={`inline-block h-2 w-2 rounded-full ${
-                                        automation.enabled ? 'bg-emerald-500' : 'bg-muted-foreground'
+                                        automation.enabled
+                                            ? 'bg-emerald-500'
+                                            : 'bg-muted-foreground'
                                     }`}
                                 />
                                 {automation.enabled ? 'Activo' : 'Inactivo'}
@@ -280,12 +332,14 @@ export default function AutomationConfigDialog({
                                     Estado:{' '}
                                     <span
                                         className={
-                                            automation.last_run_status === 'success'
+                                            automation.last_run_status ===
+                                            'success'
                                                 ? 'text-emerald-600'
                                                 : 'text-destructive'
                                         }
                                     >
-                                        {automation.last_run_status === 'success'
+                                        {automation.last_run_status ===
+                                        'success'
                                             ? 'Exitosa'
                                             : 'Error'}
                                     </span>
@@ -296,7 +350,7 @@ export default function AutomationConfigDialog({
 
                     <Separator />
 
-                    <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                    <div className="flex flex-col-reverse items-stretch justify-between gap-3 sm:flex-row sm:items-center">
                         <Button
                             type="button"
                             variant="outline"
@@ -314,7 +368,9 @@ export default function AutomationConfigDialog({
                         <Button
                             type="button"
                             onClick={handleSave}
-                            disabled={saving || (!hasChanged && automation !== null)}
+                            disabled={
+                                saving || (!hasChanged && automation !== null)
+                            }
                             className="gap-2"
                         >
                             <Save className="h-4 w-4" />

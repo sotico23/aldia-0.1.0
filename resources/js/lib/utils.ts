@@ -13,15 +13,21 @@ export function toUrl(url: NonNullable<InertiaLinkProps['href']>): string {
     return typeof url === 'string' ? url : url.url;
 }
 
-export function formatCurrencyCLP(amount: number | string | null | undefined): string {
+export function formatCurrencyCLP(
+    amount: number | string | null | undefined,
+): string {
     return formatCurrency(amount, DEFAULT_CURRENCY);
 }
 
-export function formatCurrency(amount: number | string | null | undefined, currencyCode?: string): string {
+export function formatCurrency(
+    amount: number | string | null | undefined,
+    currencyCode?: string,
+): string {
     const code = currencyCode || DEFAULT_CURRENCY;
     const info: CurrencyInfo = CURRENCIES[code] || CURRENCIES[DEFAULT_CURRENCY];
     const value = typeof amount === 'string' ? parseFloat(amount) : amount;
-    if (value === null || value === undefined || isNaN(value)) return `${info.symbol} 0`;
+    if (value === null || value === undefined || isNaN(value))
+        return `${info.symbol} 0`;
 
     return new Intl.NumberFormat(info.locale, {
         style: 'currency',
@@ -48,7 +54,10 @@ export function formatDatePE(dateString: string | null | undefined): string {
     return formatDateLocale(dateString, 'es-PE');
 }
 
-export function formatDateLocale(dateString: string | null | undefined, locale?: string): string {
+export function formatDateLocale(
+    dateString: string | null | undefined,
+    locale?: string,
+): string {
     if (!dateString) return '-';
     const parts = dateString.split('-');
     if (parts.length !== 3) return '-';
@@ -64,7 +73,10 @@ export function formatDateLocale(dateString: string | null | undefined, locale?:
     }).format(date);
 }
 
-export function formatDateTimeLocale(dateString: string | null | undefined, locale?: string): string {
+export function formatDateTimeLocale(
+    dateString: string | null | undefined,
+    locale?: string,
+): string {
     if (!dateString) return '-';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '-';
@@ -78,7 +90,10 @@ export function formatDateTimeLocale(dateString: string | null | undefined, loca
     }).format(date);
 }
 
-export function formatTimeLocale(dateString: string | null | undefined, locale?: string): string {
+export function formatTimeLocale(
+    dateString: string | null | undefined,
+    locale?: string,
+): string {
     if (!dateString) return '-';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '-';
@@ -89,14 +104,23 @@ export function formatTimeLocale(dateString: string | null | undefined, locale?:
     }).format(date);
 }
 
-export function formatNumberLocale(value: number | null | undefined, locale?: string): string {
+export function formatNumberLocale(
+    value: number | null | undefined,
+    locale?: string,
+): string {
     if (value === null || value === undefined || isNaN(value)) return '0';
     return new Intl.NumberFormat(locale || 'es-CL').format(value);
 }
 
-export function formatMonthShortLocale(year: number | string, month: number | string, locale?: string): string {
+export function formatMonthShortLocale(
+    year: number | string,
+    month: number | string,
+    locale?: string,
+): string {
     const date = new Date(+year, +month - 1);
-    return new Intl.DateTimeFormat(locale || 'es-CL', { month: 'short' }).format(date);
+    return new Intl.DateTimeFormat(locale || 'es-CL', {
+        month: 'short',
+    }).format(date);
 }
 
 export function getCountryLocale(countryCode: string): string {

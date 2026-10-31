@@ -9,13 +9,17 @@ interface PublicPageProps {
     };
 }
 
-export default function PublicPage({ title, content, web_settings }: PublicPageProps) {
+export default function PublicPage({
+    title,
+    content,
+    web_settings,
+}: PublicPageProps) {
     const appName = web_settings?.app_name || 'GrowERP';
     const appLogo = web_settings?.app_logo || null;
     const logoLetra = appName.charAt(0).toUpperCase();
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="flex min-h-screen flex-col bg-gray-50">
             <Head title={title} />
 
             {/* Header */}
@@ -55,23 +59,33 @@ export default function PublicPage({ title, content, web_settings }: PublicPageP
             </header>
 
             {/* Content */}
-            <main className="flex-grow container mx-auto max-w-4xl px-4 py-12">
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-12">
-                    <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-8 pb-4 border-b border-gray-100">
+            <main className="container mx-auto max-w-4xl flex-grow px-4 py-12">
+                <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm md:p-12">
+                    <h1 className="mb-8 border-b border-gray-100 pb-4 text-3xl font-extrabold text-gray-900 md:text-4xl">
                         {title}
                     </h1>
-                    
-                    <div className="prose prose-amber max-w-none text-gray-600 leading-relaxed whitespace-pre-wrap">
+
+                    <div className="prose prose-amber max-w-none leading-relaxed whitespace-pre-wrap text-gray-600">
                         {content}
                     </div>
 
-                    <div className="mt-12 pt-8 border-t border-gray-100 flex justify-center">
-                        <Link 
+                    <div className="mt-12 flex justify-center border-t border-gray-100 pt-8">
+                        <Link
                             href="/"
-                            className="inline-flex items-center gap-2 text-amber-600 font-medium hover:text-amber-700 transition-colors"
+                            className="inline-flex items-center gap-2 font-medium text-amber-600 transition-colors hover:text-amber-700"
                         >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            <svg
+                                className="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                                />
                             </svg>
                             Volver al inicio
                         </Link>

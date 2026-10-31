@@ -1,5 +1,11 @@
 import { Link } from '@inertiajs/react';
-import { format, isSameDay, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import {
+    format,
+    isSameDay,
+    startOfMonth,
+    endOfMonth,
+    isWithinInterval,
+} from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { useState, useMemo } from 'react';
@@ -37,18 +43,24 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function CalendarioWidget({ citas }: CalendarioWidgetProps) {
-    const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
+    const [currentMonth, setCurrentMonth] = useState(() =>
+        startOfMonth(new Date()),
+    );
     const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
 
     const citasEnMes = useMemo(
-        () => citas.filter(c => {
-            const d = new Date(c.start_time);
-            return isWithinInterval(d, { start: monthStart, end: monthEnd });
-        }),
-        [citas, monthStart, monthEnd]
+        () =>
+            citas.filter((c) => {
+                const d = new Date(c.start_time);
+                return isWithinInterval(d, {
+                    start: monthStart,
+                    end: monthEnd,
+                });
+            }),
+        [citas, monthStart, monthEnd],
     );
 
     const diasConCitas = useMemo(() => {
@@ -77,15 +89,29 @@ export default function CalendarioWidget({ citas }: CalendarioWidgetProps) {
         return days;
     }, [currentMonth]);
 
-    const prevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
-    const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+    const prevMonth = () =>
+        setCurrentMonth(
+            new Date(
+                currentMonth.getFullYear(),
+                currentMonth.getMonth() - 1,
+                1,
+            ),
+        );
+    const nextMonth = () =>
+        setCurrentMonth(
+            new Date(
+                currentMonth.getFullYear(),
+                currentMonth.getMonth() + 1,
+                1,
+            ),
+        );
 
     const today = new Date();
 
     return (
         <div className="flex h-full flex-col p-3">
-            <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-bold flex items-center gap-1.5">
+            <div className="mb-2 flex items-center justify-between">
+                <h3 className="flex items-center gap-1.5 text-xs font-bold">
                     <CalendarDays className="h-3.5 w-3.5 text-primary" />
                     Calendario de Citas
                 </h3>
@@ -97,11 +123,11 @@ export default function CalendarioWidget({ citas }: CalendarioWidgetProps) {
                 </Link>
             </div>
 
-            <div className="flex items-center justify-between mb-2">
+            <div className="mb-2 flex items-center justify-between">
                 <button
                     type="button"
                     onClick={prevMonth}
-                    className="rounded-lg p-1 text-muted-foreground hover:bg-accent/60 transition-colors"
+                    className="rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent/60"
                 >
                     <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -111,52 +137,65 @@ export default function CalendarioWidget({ citas }: CalendarioWidgetProps) {
                 <button
                     type="button"
                     onClick={nextMonth}
-                    className="rounded-lg p-1 text-muted-foreground hover:bg-accent/60 transition-colors"
+                    className="rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent/60"
                 >
                     <ChevronRight className="h-4 w-4" />
                 </button>
             </div>
 
             <div className="grid grid-cols-7 gap-0">
-                {['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'].map(d => (
-                    <div key={d} className="text-center text-[9px] font-semibold text-muted-foreground/60 py-1">
+                {['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'].map((d) => (
+                    <div
+                        key={d}
+                        className="py-1 text-center text-[9px] font-semibold text-muted-foreground/60"
+                    >
                         {d}
                     </div>
                 ))}
                 {daysInMonth.map((day, i) => {
                     if (day === null) return <div key={`empty-${i}`} />;
-                    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+                    const date = new Date(
+                        currentMonth.getFullYear(),
+                        currentMonth.getMonth(),
+                        day,
+                    );
                     const key = format(date, 'yyyy-MM-dd');
                     const dayCitas = diasConCitas.get(key);
                     const isToday = isSameDay(date, today);
-                    const isSelected = selectedDay && isSameDay(date, selectedDay);
+                    const isSelected =
+                        selectedDay && isSameDay(date, selectedDay);
 
                     return (
                         <button
                             key={key}
                             type="button"
                             onClick={() => setSelectedDay(date)}
-                            className={`relative flex flex-col items-center justify-center rounded-lg py-1 text-[11px] font-medium transition-all duration-200
-                                ${isSelected
+                            className={`relative flex flex-col items-center justify-center rounded-lg py-1 text-[11px] font-medium transition-all duration-200 ${
+                                isSelected
                                     ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
                                     : isToday
-                                        ? 'text-foreground font-bold'
-                                        : 'text-muted-foreground hover:bg-accent/40'
-                                }
-                            `}
+                                      ? 'font-bold text-foreground'
+                                      : 'text-muted-foreground hover:bg-accent/40'
+                            } `}
                         >
                             <span>{day}</span>
                             {dayCitas && (
-                                <span className="flex gap-0.5 mt-0.5">
-                                    {dayCitas.slice(0, 3).map(c => (
+                                <span className="mt-0.5 flex gap-0.5">
+                                    {dayCitas.slice(0, 3).map((c) => (
                                         <span
                                             key={c.id}
                                             className={`h-1 w-1 rounded-full ${
-                                                c.status === 'completada' ? 'bg-emerald-500'
-                                                : c.status === 'cancelada' ? 'bg-rose-400'
-                                                : c.status === 'confirmada' ? 'bg-blue-500'
-                                                : c.status === 'en_curso' ? 'bg-violet-500'
-                                                : 'bg-amber-500'
+                                                c.status === 'completada'
+                                                    ? 'bg-emerald-500'
+                                                    : c.status === 'cancelada'
+                                                      ? 'bg-rose-400'
+                                                      : c.status ===
+                                                          'confirmada'
+                                                        ? 'bg-blue-500'
+                                                        : c.status ===
+                                                            'en_curso'
+                                                          ? 'bg-violet-500'
+                                                          : 'bg-amber-500'
                                             }`}
                                         />
                                     ))}
@@ -168,46 +207,58 @@ export default function CalendarioWidget({ citas }: CalendarioWidgetProps) {
             </div>
 
             {selectedDay && (
-                <div className="mt-2 flex-1 min-h-0 overflow-y-auto">
-                    <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-bold capitalize text-muted-foreground">
+                <div className="mt-2 min-h-0 flex-1 overflow-y-auto">
+                    <div className="mb-1.5 flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-muted-foreground capitalize">
                             {format(selectedDay, "d 'de' MMMM", { locale: es })}
                         </span>
                         <span className="text-[10px] text-muted-foreground/60">
-                            {citasDelDia.length} cita{citasDelDia.length !== 1 ? 's' : ''}
+                            {citasDelDia.length} cita
+                            {citasDelDia.length !== 1 ? 's' : ''}
                         </span>
                     </div>
                     {citasDelDia.length === 0 ? (
-                        <p className="text-[10px] text-muted-foreground/50 italic py-2 text-center">
+                        <p className="py-2 text-center text-[10px] text-muted-foreground/50 italic">
                             Sin citas este día
                         </p>
                     ) : (
                         <div className="flex flex-col gap-1">
-                            {citasDelDia.map(c => (
+                            {citasDelDia.map((c) => (
                                 <Link
                                     key={c.id}
                                     href={`/appointments/${c.id}`}
-                                    className="flex items-center gap-2 rounded-lg border border-border/40 bg-card/50 px-2 py-1.5 transition-all duration-200 hover:bg-accent/40 hover:border-border/70"
+                                    className="flex items-center gap-2 rounded-lg border border-border/40 bg-card/50 px-2 py-1.5 transition-all duration-200 hover:border-border/70 hover:bg-accent/40"
                                 >
-                                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                                        c.status === 'completada' ? 'bg-emerald-500'
-                                        : c.status === 'cancelada' ? 'bg-rose-400'
-                                        : c.status === 'confirmada' ? 'bg-blue-500'
-                                        : c.status === 'en_curso' ? 'bg-violet-500'
-                                        : 'bg-amber-500'
-                                    }`} />
-                                    <div className="flex-1 min-w-0">
-                                        <span className="text-[10px] font-medium leading-tight block truncate">
+                                    <span
+                                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                                            c.status === 'completada'
+                                                ? 'bg-emerald-500'
+                                                : c.status === 'cancelada'
+                                                  ? 'bg-rose-400'
+                                                  : c.status === 'confirmada'
+                                                    ? 'bg-blue-500'
+                                                    : c.status === 'en_curso'
+                                                      ? 'bg-violet-500'
+                                                      : 'bg-amber-500'
+                                        }`}
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                        <span className="block truncate text-[10px] leading-tight font-medium">
                                             {c.client?.name ?? 'Sin cliente'}
                                         </span>
-                                        <span className="text-[9px] text-muted-foreground/70 block truncate">
-                                            {format(new Date(c.start_time), 'HH:mm')}
-                                            {c.producto?.nombre ? ` · ${c.producto.nombre}` : ''}
+                                        <span className="block truncate text-[9px] text-muted-foreground/70">
+                                            {format(
+                                                new Date(c.start_time),
+                                                'HH:mm',
+                                            )}
+                                            {c.producto?.nombre
+                                                ? ` · ${c.producto.nombre}`
+                                                : ''}
                                         </span>
                                     </div>
                                     <Badge
                                         variant="outline"
-                                        className={`text-[8px] px-1 py-0 leading-tight ${statusStyles[c.status] ?? ''}`}
+                                        className={`px-1 py-0 text-[8px] leading-tight ${statusStyles[c.status] ?? ''}`}
                                     >
                                         {statusLabels[c.status] ?? c.status}
                                     </Badge>
@@ -220,8 +271,8 @@ export default function CalendarioWidget({ citas }: CalendarioWidgetProps) {
 
             {!selectedDay && citasEnMes.length > 0 && (
                 <div className="mt-2 text-center text-[9px] text-muted-foreground/50">
-                    {citasEnMes.length} cita{citasEnMes.length !== 1 ? 's' : ''} este mes
-                    &nbsp;— selecciona un día
+                    {citasEnMes.length} cita{citasEnMes.length !== 1 ? 's' : ''}{' '}
+                    este mes &nbsp;— selecciona un día
                 </div>
             )}
         </div>

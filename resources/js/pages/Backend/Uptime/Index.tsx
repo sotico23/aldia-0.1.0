@@ -7,7 +7,7 @@ import {
     Plus,
     RefreshCw,
     Server,
-    XCircle
+    XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -72,12 +72,7 @@ export default function UptimeIndex({
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [selectedSite, setSelectedSite] = useState<Site | null>(null);
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-    const {
-        data,
-        setData,
-        post,
-        reset,
-    } = useForm({
+    const { data, setData, post, reset } = useForm({
         name: '',
         url: '',
         method: 'GET',
@@ -145,7 +140,9 @@ export default function UptimeIndex({
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );
@@ -243,10 +240,26 @@ export default function UptimeIndex({
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('table')}>
+                                    <Button
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'default'
+                                                : 'outline'
+                                        }
+                                        size="icon"
+                                        onClick={() => setViewMode('table')}
+                                    >
                                         <List className="h-4 w-4" />
                                     </Button>
-                                    <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('cards')}>
+                                    <Button
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'default'
+                                                : 'outline'
+                                        }
+                                        size="icon"
+                                        onClick={() => setViewMode('cards')}
+                                    >
                                         <LayoutGrid className="h-4 w-4" />
                                     </Button>
                                 </div>
@@ -310,14 +323,14 @@ export default function UptimeIndex({
                                                         </div>
                                                         {site.incidents_count >
                                                             0 && (
-                                                             <span className="text-xs text-red-600">
-                                                                 (
-                                                                 {
-                                                                     site.incidents_count
-                                                                 }{' '}
-                                                                 incidentes)
-                                                             </span>
-                                                         )}
+                                                            <span className="text-xs text-red-600">
+                                                                (
+                                                                {
+                                                                    site.incidents_count
+                                                                }{' '}
+                                                                incidentes)
+                                                            </span>
+                                                        )}
                                                     </td>
                                                     <td className="py-2">
                                                         {getStatusBadge(
@@ -377,46 +390,103 @@ export default function UptimeIndex({
                                     {sites.length === 0 ? (
                                         <div className="col-span-full py-12 text-center">
                                             <Server className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                                            <h3 className="mb-2 text-lg font-semibold">No hay sitios configurados</h3>
-                                            <Button onClick={handleNew}>Agregar Sitio</Button>
+                                            <h3 className="mb-2 text-lg font-semibold">
+                                                No hay sitios configurados
+                                            </h3>
+                                            <Button onClick={handleNew}>
+                                                Agregar Sitio
+                                            </Button>
                                         </div>
-                                    ) : sites.map((site) => (
-                                        <Card key={site.id} className="overflow-hidden">
-                                            <CardHeader className="pb-3">
-                                                <div className="flex items-center justify-between">
-                                                    <CardTitle className="text-sm font-bold">{site.name}</CardTitle>
-                                                    {getStatusBadge(site.last_status)}
-                                                </div>
-                                                <CardDescription className="truncate text-xs">{site.url}</CardDescription>
-                                            </CardHeader>
-                                            <CardContent className="space-y-2 pt-0">
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <span className="text-muted-foreground">Uptime 30d</span>
-                                                    <span className={`font-medium ${getUptimeColor(site.uptime_30d)}`}>{site.uptime_30d}%</span>
-                                                </div>
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <span className="text-muted-foreground">Respuesta</span>
-                                                    <span>{site.last_response_time ? `${site.last_response_time}ms` : '-'}</span>
-                                                </div>
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <span className="text-muted-foreground">Último chequeo</span>
-                                                    <span className="text-xs">{site.last_check_at ? new Date(site.last_check_at).toLocaleString() : 'Nunca'}</span>
-                                                </div>
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <span className="text-muted-foreground">Intervalo</span>
-                                                    <span>{site.check_interval} min</span>
-                                                </div>
-                                                {site.incidents_count > 0 && (
-                                                    <div className="text-xs text-red-600 font-medium">{site.incidents_count} incidentes</div>
-                                                )}
-                                                <div className="flex justify-end gap-1 border-t pt-2">
-                                                    <Button variant="ghost" size="icon" onClick={() => checkNow(site.id)} title="Verificar ahora">
-                                                        <RefreshCw className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    ))}
+                                    ) : (
+                                        sites.map((site) => (
+                                            <Card
+                                                key={site.id}
+                                                className="overflow-hidden"
+                                            >
+                                                <CardHeader className="pb-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <CardTitle className="text-sm font-bold">
+                                                            {site.name}
+                                                        </CardTitle>
+                                                        {getStatusBadge(
+                                                            site.last_status,
+                                                        )}
+                                                    </div>
+                                                    <CardDescription className="truncate text-xs">
+                                                        {site.url}
+                                                    </CardDescription>
+                                                </CardHeader>
+                                                <CardContent className="space-y-2 pt-0">
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="text-muted-foreground">
+                                                            Uptime 30d
+                                                        </span>
+                                                        <span
+                                                            className={`font-medium ${getUptimeColor(site.uptime_30d)}`}
+                                                        >
+                                                            {site.uptime_30d}%
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="text-muted-foreground">
+                                                            Respuesta
+                                                        </span>
+                                                        <span>
+                                                            {site.last_response_time
+                                                                ? `${site.last_response_time}ms`
+                                                                : '-'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="text-muted-foreground">
+                                                            Último chequeo
+                                                        </span>
+                                                        <span className="text-xs">
+                                                            {site.last_check_at
+                                                                ? new Date(
+                                                                      site.last_check_at,
+                                                                  ).toLocaleString()
+                                                                : 'Nunca'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="text-muted-foreground">
+                                                            Intervalo
+                                                        </span>
+                                                        <span>
+                                                            {
+                                                                site.check_interval
+                                                            }{' '}
+                                                            min
+                                                        </span>
+                                                    </div>
+                                                    {site.incidents_count >
+                                                        0 && (
+                                                        <div className="text-xs font-medium text-red-600">
+                                                            {
+                                                                site.incidents_count
+                                                            }{' '}
+                                                            incidentes
+                                                        </div>
+                                                    )}
+                                                    <div className="flex justify-end gap-1 border-t pt-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() =>
+                                                                checkNow(
+                                                                    site.id,
+                                                                )
+                                                            }
+                                                            title="Verificar ahora"
+                                                        >
+                                                            <RefreshCw className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        ))
+                                    )}
                                 </div>
                             )}
                         </CardContent>

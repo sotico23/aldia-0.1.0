@@ -1,13 +1,71 @@
 import axios from 'axios';
-import { Loader2, Save, RefreshCw, ChevronDown, ChevronRight, ExternalLink, CreditCard, KeyRound } from 'lucide-react';
+import {
+    Loader2,
+    Save,
+    ChevronDown,
+    ChevronRight,
+    CreditCard,
+    KeyRound,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+
+type AccordionProps = {
+    id: string;
+    title: string;
+    icon: React.ReactNode;
+    children: React.ReactNode;
+    expanded: string | null;
+    onToggle: (id: string | null) => void;
+};
+
+function Accordion({
+    id,
+    title,
+    icon,
+    children,
+    expanded,
+    onToggle,
+}: AccordionProps) {
+    return (
+        <Card className="overflow-hidden">
+            <button
+                type="button"
+                onClick={() => onToggle(expanded === id ? null : id)}
+                className="flex w-full items-center justify-between p-6 transition-colors hover:bg-muted/30"
+            >
+                <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        {icon}
+                    </div>
+                    <div className="text-left">
+                        <CardTitle className="text-lg">{title}</CardTitle>
+                    </div>
+                </div>
+                {expanded === id ? (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                )}
+            </button>
+            {expanded === id && (
+                <div className="border-t px-6 pb-6">{children}</div>
+            )}
+        </Card>
+    );
+}
 
 export default function Gateways() {
     const [loading, setLoading] = useState(true);
@@ -41,20 +99,27 @@ export default function Gateways() {
     const [mercadopagoSaving, setMercadopagoSaving] = useState(false);
 
     useEffect(() => {
-        axios.get('/configuracion-web/gateway-settings').then((res) => {
-            const d = res.data.data;
-            setWebpay((prev) => ({ ...prev, ...d.webpay }));
-            setPaypal((prev) => ({ ...prev, ...d.paypal }));
-            setMercadopago((prev) => ({ ...prev, ...d.mercadopago }));
-        }).catch(() => {
-            toast.error('Error al cargar configuración de gateways');
-        }).finally(() => setLoading(false));
+        axios
+            .get('/configuracion-web/gateway-settings')
+            .then((res) => {
+                const d = res.data.data;
+                setWebpay((prev) => ({ ...prev, ...d.webpay }));
+                setPaypal((prev) => ({ ...prev, ...d.paypal }));
+                setMercadopago((prev) => ({ ...prev, ...d.mercadopago }));
+            })
+            .catch(() => {
+                toast.error('Error al cargar configuración de gateways');
+            })
+            .finally(() => setLoading(false));
     }, []);
 
     const saveWebpay = async () => {
         setWebpaySaving(true);
         try {
-            const res = await axios.put('/configuracion-web/gateway-settings/webpay', webpay);
+            const res = await axios.put(
+                '/configuracion-web/gateway-settings/webpay',
+                webpay,
+            );
             toast.success(res.data.message || 'Configuración guardada');
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Error al guardar');
@@ -66,7 +131,10 @@ export default function Gateways() {
     const savePaypal = async () => {
         setPaypalSaving(true);
         try {
-            const res = await axios.put('/configuracion-web/gateway-settings/paypal', paypal);
+            const res = await axios.put(
+                '/configuracion-web/gateway-settings/paypal',
+                paypal,
+            );
             toast.success(res.data.message || 'Configuración guardada');
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Error al guardar');
@@ -78,7 +146,10 @@ export default function Gateways() {
     const saveMercadopago = async () => {
         setMercadopagoSaving(true);
         try {
-            const res = await axios.put('/configuracion-web/gateway-settings/mercadopago', mercadopago);
+            const res = await axios.put(
+                '/configuracion-web/gateway-settings/mercadopago',
+                mercadopago,
+            );
             toast.success(res.data.message || 'Configuración guardada');
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Error al guardar');
@@ -90,13 +161,16 @@ export default function Gateways() {
     const autofillFromIntegrations = async () => {
         setAutofilling(true);
         try {
-            const res = await axios.get('/api/v1/tenant-credentials/autocomplete');
+            const res = await axios.get(
+                '/api/v1/tenant-credentials/autocomplete',
+            );
             const data = res.data?.data ?? {};
 
             if (data.webpay) {
                 setWebpay((prev) => ({
                     ...prev,
-                    commerce_code: data.webpay.commerce_code || prev.commerce_code,
+                    commerce_code:
+                        data.webpay.commerce_code || prev.commerce_code,
                     api_key: data.webpay.api_key || prev.api_key,
                     environment: data.webpay.environment || prev.environment,
                 }));
@@ -104,26 +178,39 @@ export default function Gateways() {
             if (data.paypal) {
                 setPaypal((prev) => ({
                     ...prev,
-                    paypal_client_id: data.paypal.paypal_client_id || prev.paypal_client_id,
-                    paypal_client_secret: data.paypal.paypal_client_secret || prev.paypal_client_secret,
+                    paypal_client_id:
+                        data.paypal.paypal_client_id || prev.paypal_client_id,
+                    paypal_client_secret:
+                        data.paypal.paypal_client_secret ||
+                        prev.paypal_client_secret,
                     paypal_mode: data.paypal.paypal_mode || prev.paypal_mode,
                 }));
             }
             if (data.mercadopago) {
                 setMercadopago((prev) => ({
                     ...prev,
-                    mercadopago_public_key: data.mercadopago.mercadopago_public_key || prev.mercadopago_public_key,
-                    mercadopago_access_token: data.mercadopago.mercadopago_access_token || prev.mercadopago_access_token,
-                    mercadopago_mode: data.mercadopago.mercadopago_mode || prev.mercadopago_mode,
+                    mercadopago_public_key:
+                        data.mercadopago.mercadopago_public_key ||
+                        prev.mercadopago_public_key,
+                    mercadopago_access_token:
+                        data.mercadopago.mercadopago_access_token ||
+                        prev.mercadopago_access_token,
+                    mercadopago_mode:
+                        data.mercadopago.mercadopago_mode ||
+                        prev.mercadopago_mode,
                 }));
             }
 
             toast.success('Credenciales cargadas desde Conexiones API.');
         } catch (error: any) {
             if (error.response?.status === 403) {
-                toast.error('No tienes permiso para acceder a las integraciones API.');
+                toast.error(
+                    'No tienes permiso para acceder a las integraciones API.',
+                );
             } else {
-                toast.error('No se pudieron cargar las credenciales desde Conexiones API.');
+                toast.error(
+                    'No se pudieron cargar las credenciales desde Conexiones API.',
+                );
             }
         } finally {
             setAutofilling(false);
@@ -138,177 +225,366 @@ export default function Gateways() {
         );
     }
 
-    const Accordion = ({ id, title, icon, children, defaultOpen }: { id: string; title: string; icon: React.ReactNode; children: React.ReactNode; defaultOpen?: boolean }) => (
-        <Card className="overflow-hidden">
-            <button
-                type="button"
-                onClick={() => setExpanded(expanded === id ? null : id)}
-                className="flex w-full items-center justify-between p-6 hover:bg-muted/30 transition-colors"
-            >
-                <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                        {icon}
-                    </div>
-                    <div className="text-left">
-                        <CardTitle className="text-lg">{title}</CardTitle>
-                    </div>
-                </div>
-                {expanded === id ? <ChevronDown className="h-5 w-5 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 text-muted-foreground" />}
-            </button>
-            {expanded === id && (
-                <div className="border-t px-6 pb-6">
-                    {children}
-                </div>
-            )}
-        </Card>
-    );
-
     return (
         <div className="space-y-4">
             <div className="mb-4 flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
                     Configuración global de pasarelas de pago de la plataforma.
                 </p>
-                <Button variant="outline" onClick={autofillFromIntegrations} disabled={autofilling} className="gap-2">
-                    {autofilling ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+                <Button
+                    variant="outline"
+                    onClick={autofillFromIntegrations}
+                    disabled={autofilling}
+                    className="gap-2"
+                >
+                    {autofilling ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                        <KeyRound className="h-4 w-4" />
+                    )}
                     Usar mis Conexiones API
                 </Button>
             </div>
             {/* Webpay */}
-            <Accordion id="webpay" title="Webpay Plus (Transbank)" icon={<CreditCard className="h-5 w-5" />} defaultOpen>
+            <Accordion
+                id="webpay"
+                title="Webpay Plus (Transbank)"
+                icon={<CreditCard className="h-5 w-5" />}
+                expanded={expanded}
+                onToggle={setExpanded}
+            >
                 <div className="space-y-4 pt-4">
                     <div className="flex items-center gap-2">
                         <Switch
                             checked={webpay.is_active}
-                            onCheckedChange={(v) => setWebpay((prev) => ({ ...prev, is_active: v }))}
+                            onCheckedChange={(v) =>
+                                setWebpay((prev) => ({ ...prev, is_active: v }))
+                            }
                             id="webpay_active"
                         />
                         <Label htmlFor="webpay_active">Activado</Label>
                     </div>
                     <div className="flex items-center gap-4">
                         <Label>Ambiente</Label>
-                        <Select value={webpay.environment} onValueChange={(v) => setWebpay((prev) => ({ ...prev, environment: v }))}>
+                        <Select
+                            value={webpay.environment}
+                            onValueChange={(v) =>
+                                setWebpay((prev) => ({
+                                    ...prev,
+                                    environment: v,
+                                }))
+                            }
+                        >
                             <SelectTrigger className="w-[180px]">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="integration">Sandbox / Integración</SelectItem>
-                                <SelectItem value="production">Producción</SelectItem>
+                                <SelectItem value="integration">
+                                    Sandbox / Integración
+                                </SelectItem>
+                                <SelectItem value="production">
+                                    Producción
+                                </SelectItem>
                             </SelectContent>
                         </Select>
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${webpay.environment === 'production' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}>
-                            {webpay.environment === 'production' ? 'Producción' : 'Sandbox'}
+                        <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${webpay.environment === 'production' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}
+                        >
+                            {webpay.environment === 'production'
+                                ? 'Producción'
+                                : 'Sandbox'}
                         </span>
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                             <Label>Commerce Code</Label>
-                            <Input value={webpay.commerce_code} onChange={(e) => setWebpay((prev) => ({ ...prev, commerce_code: e.target.value }))} placeholder="597055555532" />
+                            <Input
+                                value={webpay.commerce_code}
+                                onChange={(e) =>
+                                    setWebpay((prev) => ({
+                                        ...prev,
+                                        commerce_code: e.target.value,
+                                    }))
+                                }
+                                placeholder="597055555532"
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label>API Key</Label>
-                            <Input type="password" value={webpay.api_key} onChange={(e) => setWebpay((prev) => ({ ...prev, api_key: e.target.value }))} placeholder={webpay.api_key ? '••••••••••••••••' : 'Ingresa API Key'} />
-                            <p className="text-xs text-muted-foreground">Se almacena cifrada. Dejar vacío para mantener la existente.</p>
+                            <Input
+                                type="password"
+                                value={webpay.api_key}
+                                onChange={(e) =>
+                                    setWebpay((prev) => ({
+                                        ...prev,
+                                        api_key: e.target.value,
+                                    }))
+                                }
+                                placeholder={
+                                    webpay.api_key
+                                        ? '••••••••••••••••'
+                                        : 'Ingresa API Key'
+                                }
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Se almacena cifrada. Dejar vacío para mantener
+                                la existente.
+                            </p>
                         </div>
                     </div>
-                    <Button onClick={saveWebpay} disabled={webpaySaving} className="gap-2">
-                        {webpaySaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    <Button
+                        onClick={saveWebpay}
+                        disabled={webpaySaving}
+                        className="gap-2"
+                    >
+                        {webpaySaving ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Save className="h-4 w-4" />
+                        )}
                         Guardar Configuración Webpay
                     </Button>
                 </div>
             </Accordion>
 
             {/* PayPal */}
-            <Accordion id="paypal" title="PayPal" icon={<span className="text-lg">💳</span>}>
+            <Accordion
+                id="paypal"
+                title="PayPal"
+                icon={<span className="text-lg">💳</span>}
+                expanded={expanded}
+                onToggle={setExpanded}
+            >
                 <div className="space-y-4 pt-4">
                     <div className="flex items-center gap-2">
                         <Switch
                             checked={paypal.paypal_active}
-                            onCheckedChange={(v) => setPaypal((prev) => ({ ...prev, paypal_active: v }))}
+                            onCheckedChange={(v) =>
+                                setPaypal((prev) => ({
+                                    ...prev,
+                                    paypal_active: v,
+                                }))
+                            }
                             id="paypal_active"
                         />
                         <Label htmlFor="paypal_active">Activado</Label>
                     </div>
                     <div className="flex items-center gap-4">
                         <Label>Ambiente</Label>
-                        <Select value={paypal.paypal_mode} onValueChange={(v) => setPaypal((prev) => ({ ...prev, paypal_mode: v }))}>
+                        <Select
+                            value={paypal.paypal_mode}
+                            onValueChange={(v) =>
+                                setPaypal((prev) => ({
+                                    ...prev,
+                                    paypal_mode: v,
+                                }))
+                            }
+                        >
                             <SelectTrigger className="w-[180px]">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="sandbox">Sandbox</SelectItem>
-                                <SelectItem value="live">Producción (Live)</SelectItem>
+                                <SelectItem value="live">
+                                    Producción (Live)
+                                </SelectItem>
                             </SelectContent>
                         </Select>
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${paypal.paypal_mode === 'live' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}>
-                            {paypal.paypal_mode === 'live' ? 'Producción' : 'Sandbox'}
+                        <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${paypal.paypal_mode === 'live' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}
+                        >
+                            {paypal.paypal_mode === 'live'
+                                ? 'Producción'
+                                : 'Sandbox'}
                         </span>
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                             <Label>Client ID</Label>
-                            <Input value={paypal.paypal_client_id} onChange={(e) => setPaypal((prev) => ({ ...prev, paypal_client_id: e.target.value }))} placeholder="AeBxP8Dq..." />
+                            <Input
+                                value={paypal.paypal_client_id}
+                                onChange={(e) =>
+                                    setPaypal((prev) => ({
+                                        ...prev,
+                                        paypal_client_id: e.target.value,
+                                    }))
+                                }
+                                placeholder="AeBxP8Dq..."
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label>Client Secret</Label>
-                            <Input type="password" value={paypal.paypal_client_secret} onChange={(e) => setPaypal((prev) => ({ ...prev, paypal_client_secret: e.target.value }))} placeholder={paypal.paypal_client_secret ? '••••••••••••••••' : 'Ingresa Client Secret'} />
-                            <p className="text-xs text-muted-foreground">Se almacena cifrado. Dejar vacío para mantener el existente.</p>
+                            <Input
+                                type="password"
+                                value={paypal.paypal_client_secret}
+                                onChange={(e) =>
+                                    setPaypal((prev) => ({
+                                        ...prev,
+                                        paypal_client_secret: e.target.value,
+                                    }))
+                                }
+                                placeholder={
+                                    paypal.paypal_client_secret
+                                        ? '••••••••••••••••'
+                                        : 'Ingresa Client Secret'
+                                }
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Se almacena cifrado. Dejar vacío para mantener
+                                el existente.
+                            </p>
                         </div>
                     </div>
                     <div className="space-y-2">
                         <Label>Webhook ID</Label>
-                        <Input type="password" value={paypal.paypal_webhook_id} onChange={(e) => setPaypal((prev) => ({ ...prev, paypal_webhook_id: e.target.value }))} placeholder={paypal.paypal_webhook_id ? '••••••••••••••••' : 'Webhook ID'} />
+                        <Input
+                            type="password"
+                            value={paypal.paypal_webhook_id}
+                            onChange={(e) =>
+                                setPaypal((prev) => ({
+                                    ...prev,
+                                    paypal_webhook_id: e.target.value,
+                                }))
+                            }
+                            placeholder={
+                                paypal.paypal_webhook_id
+                                    ? '••••••••••••••••'
+                                    : 'Webhook ID'
+                            }
+                        />
                     </div>
-                    <Button onClick={savePaypal} disabled={paypalSaving} className="gap-2">
-                        {paypalSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    <Button
+                        onClick={savePaypal}
+                        disabled={paypalSaving}
+                        className="gap-2"
+                    >
+                        {paypalSaving ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Save className="h-4 w-4" />
+                        )}
                         Guardar Configuración PayPal
                     </Button>
                 </div>
             </Accordion>
 
             {/* MercadoPago */}
-            <Accordion id="mercadopago" title="MercadoPago" icon={<span className="text-lg">🟡</span>}>
+            <Accordion
+                id="mercadopago"
+                title="MercadoPago"
+                icon={<span className="text-lg">🟡</span>}
+                expanded={expanded}
+                onToggle={setExpanded}
+            >
                 <div className="space-y-4 pt-4">
                     <div className="flex items-center gap-2">
                         <Switch
                             checked={mercadopago.mercadopago_active}
-                            onCheckedChange={(v) => setMercadopago((prev) => ({ ...prev, mercadopago_active: v }))}
+                            onCheckedChange={(v) =>
+                                setMercadopago((prev) => ({
+                                    ...prev,
+                                    mercadopago_active: v,
+                                }))
+                            }
                             id="mp_active"
                         />
                         <Label htmlFor="mp_active">Activado</Label>
                     </div>
                     <div className="flex items-center gap-4">
                         <Label>Ambiente</Label>
-                        <Select value={mercadopago.mercadopago_mode} onValueChange={(v) => setMercadopago((prev) => ({ ...prev, mercadopago_mode: v }))}>
+                        <Select
+                            value={mercadopago.mercadopago_mode}
+                            onValueChange={(v) =>
+                                setMercadopago((prev) => ({
+                                    ...prev,
+                                    mercadopago_mode: v,
+                                }))
+                            }
+                        >
                             <SelectTrigger className="w-[180px]">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="sandbox">Sandbox</SelectItem>
-                                <SelectItem value="production">Producción</SelectItem>
+                                <SelectItem value="production">
+                                    Producción
+                                </SelectItem>
                             </SelectContent>
                         </Select>
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${mercadopago.mercadopago_mode === 'production' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}>
-                            {mercadopago.mercadopago_mode === 'production' ? 'Producción' : 'Sandbox'}
+                        <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${mercadopago.mercadopago_mode === 'production' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}
+                        >
+                            {mercadopago.mercadopago_mode === 'production'
+                                ? 'Producción'
+                                : 'Sandbox'}
                         </span>
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                             <Label>Public Key</Label>
-                            <Input value={mercadopago.mercadopago_public_key} onChange={(e) => setMercadopago((prev) => ({ ...prev, mercadopago_public_key: e.target.value }))} placeholder="APP_USU-xxxx" />
+                            <Input
+                                value={mercadopago.mercadopago_public_key}
+                                onChange={(e) =>
+                                    setMercadopago((prev) => ({
+                                        ...prev,
+                                        mercadopago_public_key: e.target.value,
+                                    }))
+                                }
+                                placeholder="APP_USU-xxxx"
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label>Access Token</Label>
-                            <Input type="password" value={mercadopago.mercadopago_access_token} onChange={(e) => setMercadopago((prev) => ({ ...prev, mercadopago_access_token: e.target.value }))} placeholder={mercadopago.mercadopago_access_token ? '••••••••••••••••' : 'Ingresa Access Token'} />
-                            <p className="text-xs text-muted-foreground">Se almacena cifrado. Dejar vacío para mantener el existente.</p>
+                            <Input
+                                type="password"
+                                value={mercadopago.mercadopago_access_token}
+                                onChange={(e) =>
+                                    setMercadopago((prev) => ({
+                                        ...prev,
+                                        mercadopago_access_token:
+                                            e.target.value,
+                                    }))
+                                }
+                                placeholder={
+                                    mercadopago.mercadopago_access_token
+                                        ? '••••••••••••••••'
+                                        : 'Ingresa Access Token'
+                                }
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Se almacena cifrado. Dejar vacío para mantener
+                                el existente.
+                            </p>
                         </div>
                     </div>
                     <div className="space-y-2">
                         <Label>Webhook Secret</Label>
-                        <Input type="password" value={mercadopago.mercadopago_webhook_secret} onChange={(e) => setMercadopago((prev) => ({ ...prev, mercadopago_webhook_secret: e.target.value }))} placeholder={mercadopago.mercadopago_webhook_secret ? '••••••••••••••••' : 'Webhook Secret'} />
+                        <Input
+                            type="password"
+                            value={mercadopago.mercadopago_webhook_secret}
+                            onChange={(e) =>
+                                setMercadopago((prev) => ({
+                                    ...prev,
+                                    mercadopago_webhook_secret: e.target.value,
+                                }))
+                            }
+                            placeholder={
+                                mercadopago.mercadopago_webhook_secret
+                                    ? '••••••••••••••••'
+                                    : 'Webhook Secret'
+                            }
+                        />
                     </div>
-                    <Button onClick={saveMercadopago} disabled={mercadopagoSaving} className="gap-2">
-                        {mercadopagoSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    <Button
+                        onClick={saveMercadopago}
+                        disabled={mercadopagoSaving}
+                        className="gap-2"
+                    >
+                        {mercadopagoSaving ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Save className="h-4 w-4" />
+                        )}
                         Guardar Configuración MercadoPago
                     </Button>
                 </div>

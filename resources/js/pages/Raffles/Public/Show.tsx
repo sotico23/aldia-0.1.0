@@ -72,7 +72,7 @@ export default function RafflePublicShow({
     isParticipating,
     purchasedNumbers = [],
 }: Props) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const { data, setData, post } = useForm({
         name: '',
         email: '',

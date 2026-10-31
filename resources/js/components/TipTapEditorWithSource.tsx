@@ -67,9 +67,11 @@ export default function TipTapEditorWithSource({
                             key={variable}
                             type="button"
                             onClick={() => insertVariable(variable)}
-                            className="rounded-md bg-muted px-2 py-1 text-xs font-mono text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                            className="rounded-md bg-muted px-2 py-1 font-mono text-xs text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                         >
-                            {'{{'}{variable}{'}}'}
+                            {'{{'}
+                            {variable}
+                            {'}}'}
                         </button>
                     ))}
                 </div>

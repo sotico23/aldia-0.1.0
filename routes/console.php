@@ -93,11 +93,6 @@ Schedule::command('cleanup:temp-data')
     ->withoutOverlapping()
     ->onOneServer();
 
-Schedule::command('horizon:snapshot')
-    ->dailyAt('06:30')
-    ->withoutOverlapping()
-    ->onOneServer();
-
 Schedule::command('delivery:auto-assign')
     ->everyMinute()
     ->withoutOverlapping()

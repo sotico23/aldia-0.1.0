@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Reverb Auth Middleware - Authenticates WebSocket connections
  */
@@ -17,7 +18,7 @@ class ReverbAuthMiddleware
     public function handle(Request $request, Closure $next)
     {
         $token = $request->bearerToken();
-        
+
         if (! $token) {
             return response()->json([
                 'error' => 'Unauthorized',
@@ -27,7 +28,7 @@ class ReverbAuthMiddleware
 
         $authService = app(ReverbAuthService::class);
         $user = $authService->getUserFromToken($token);
-        
+
         if (! $user) {
             return response()->json([
                 'error' => 'Unauthorized',

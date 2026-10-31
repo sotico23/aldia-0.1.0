@@ -1,8 +1,19 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { FileSpreadsheet, Download, Upload } from 'lucide-react';
-import { Pencil, Plus, Trash2, Search, X, Eye, LayoutGrid, List, MapPin, Phone, Warehouse } from 'lucide-react';
+import {
+    Pencil,
+    Plus,
+    Trash2,
+    Search,
+    X,
+    Eye,
+    LayoutGrid,
+    List,
+    MapPin,
+    Phone,
+    Warehouse,
+} from 'lucide-react';
 import { useState, useMemo, useRef } from 'react';
-
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,7 +29,7 @@ import {
     DialogContent,
     DialogFooter,
     DialogHeader,
-    DialogTitle
+    DialogTitle,
 } from '@/components/ui/dialog';
 import {
     DropdownMenu,
@@ -362,11 +373,21 @@ export default function Index({
                                         align="end"
                                         className="w-48"
                                     >
-                                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); csvInputRef.current?.click(); }}>
+                                        <DropdownMenuItem
+                                            onSelect={(e) => {
+                                                e.preventDefault();
+                                                csvInputRef.current?.click();
+                                            }}
+                                        >
                                             <Upload className="mr-2 h-4 w-4" />
                                             Importar CSV
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); excelInputRef.current?.click(); }}>
+                                        <DropdownMenuItem
+                                            onSelect={(e) => {
+                                                e.preventDefault();
+                                                excelInputRef.current?.click();
+                                            }}
+                                        >
                                             <FileSpreadsheet className="mr-2 h-4 w-4" />
                                             Importar Excel
                                         </DropdownMenuItem>
@@ -527,10 +548,16 @@ export default function Index({
                                                     >
                                                         <td className="px-4 py-2">
                                                             {a.imagenes &&
-                                                            a.imagenes.length > 0 ? (
+                                                            a.imagenes.length >
+                                                                0 ? (
                                                                 <img
-                                                                    src={a.imagenes[0]}
-                                                                    alt={a.nombre}
+                                                                    src={
+                                                                        a
+                                                                            .imagenes[0]
+                                                                    }
+                                                                    alt={
+                                                                        a.nombre
+                                                                    }
                                                                     className="h-10 w-10 rounded-lg border object-cover"
                                                                 />
                                                             ) : (
@@ -569,7 +596,9 @@ export default function Index({
                                                                     size="sm"
                                                                     className="h-8 w-8 p-0"
                                                                     onClick={() => {
-                                                                        setViendo(a);
+                                                                        setViendo(
+                                                                            a,
+                                                                        );
                                                                         setIsViewOpen(
                                                                             true,
                                                                         );
@@ -583,7 +612,9 @@ export default function Index({
                                                                         size="sm"
                                                                         className="h-8 w-8 p-0"
                                                                         onClick={() =>
-                                                                            handleEdit(a)
+                                                                            handleEdit(
+                                                                                a,
+                                                                            )
                                                                         }
                                                                     >
                                                                         <Pencil className="h-4 w-4" />
@@ -607,7 +638,8 @@ export default function Index({
                                                         </td>
                                                     </tr>
                                                 ))}
-                                                {almacenesFiltrados.length === 0 && (
+                                                {almacenesFiltrados.length ===
+                                                    0 && (
                                                     <tr>
                                                         <td
                                                             colSpan={5}
@@ -646,9 +678,14 @@ export default function Index({
                                                     className="group relative overflow-hidden rounded-xl border bg-card transition-all hover:shadow-lg"
                                                 >
                                                     <div className="relative h-36 overflow-hidden bg-muted">
-                                                        {a.imagenes && a.imagenes.length > 0 ? (
+                                                        {a.imagenes &&
+                                                        a.imagenes.length >
+                                                            0 ? (
                                                             <img
-                                                                src={a.imagenes[0]}
+                                                                src={
+                                                                    a
+                                                                        .imagenes[0]
+                                                                }
                                                                 alt={a.nombre}
                                                                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                                             />
@@ -659,14 +696,23 @@ export default function Index({
                                                         )}
                                                         <div className="absolute top-2 right-2">
                                                             <Badge
-                                                                variant={a.activo ? 'default' : 'destructive'}
+                                                                variant={
+                                                                    a.activo
+                                                                        ? 'default'
+                                                                        : 'destructive'
+                                                                }
                                                                 className="px-2 py-0.5 text-[10px]"
                                                             >
-                                                                {a.activo ? 'Activo' : 'Inactivo'}
+                                                                {a.activo
+                                                                    ? 'Activo'
+                                                                    : 'Inactivo'}
                                                             </Badge>
                                                         </div>
                                                         <div className="absolute top-2 left-2">
-                                                            <Badge variant="secondary" className="px-2 py-0.5 text-[10px] capitalize">
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="px-2 py-0.5 text-[10px] capitalize"
+                                                            >
                                                                 {a.tipo}
                                                             </Badge>
                                                         </div>
@@ -674,29 +720,49 @@ export default function Index({
                                                     <div className="space-y-2 p-4">
                                                         <div className="flex items-start justify-between gap-2">
                                                             <div>
-                                                                <h3 className="font-semibold leading-tight">{a.nombre}</h3>
-                                                                <p className="font-mono text-xs text-muted-foreground">{a.codigo}</p>
+                                                                <h3 className="leading-tight font-semibold">
+                                                                    {a.nombre}
+                                                                </h3>
+                                                                <p className="font-mono text-xs text-muted-foreground">
+                                                                    {a.codigo}
+                                                                </p>
                                                             </div>
                                                         </div>
                                                         <div className="space-y-1 text-xs text-muted-foreground">
                                                             {a.direccion && (
                                                                 <div className="flex items-center gap-1.5">
                                                                     <MapPin className="h-3.5 w-3.5 shrink-0" />
-                                                                    <span className="truncate">{a.direccion}</span>
+                                                                    <span className="truncate">
+                                                                        {
+                                                                            a.direccion
+                                                                        }
+                                                                    </span>
                                                                 </div>
                                                             )}
                                                             {a.telefono && (
                                                                 <div className="flex items-center gap-1.5">
                                                                     <Phone className="h-3.5 w-3.5 shrink-0" />
-                                                                    <span>{a.telefono}</span>
+                                                                    <span>
+                                                                        {
+                                                                            a.telefono
+                                                                        }
+                                                                    </span>
                                                                 </div>
                                                             )}
-                                                            {a.capacidad && a.capacidad > 0 && (
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <Warehouse className="h-3.5 w-3.5 shrink-0" />
-                                                                    <span>Capacidad: {a.capacidad} und</span>
-                                                                </div>
-                                                            )}
+                                                            {a.capacidad &&
+                                                                a.capacidad >
+                                                                    0 && (
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <Warehouse className="h-3.5 w-3.5 shrink-0" />
+                                                                        <span>
+                                                                            Capacidad:{' '}
+                                                                            {
+                                                                                a.capacidad
+                                                                            }{' '}
+                                                                            und
+                                                                        </span>
+                                                                    </div>
+                                                                )}
                                                         </div>
                                                         <div className="flex items-center gap-1 pt-1">
                                                             <Button
@@ -704,20 +770,30 @@ export default function Index({
                                                                 size="sm"
                                                                 className="h-8 px-2 text-xs"
                                                                 onClick={() => {
-                                                                    setViendo(a);
-                                                                    setIsViewOpen(true);
+                                                                    setViendo(
+                                                                        a,
+                                                                    );
+                                                                    setIsViewOpen(
+                                                                        true,
+                                                                    );
                                                                 }}
                                                             >
-                                                                <Eye className="mr-1 h-3.5 w-3.5" /> Ver
+                                                                <Eye className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                Ver
                                                             </Button>
                                                             {canEdit && (
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="sm"
                                                                     className="h-8 px-2 text-xs"
-                                                                    onClick={() => handleEdit(a)}
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            a,
+                                                                        )
+                                                                    }
                                                                 >
-                                                                    <Pencil className="mr-1 h-3.5 w-3.5" /> Editar
+                                                                    <Pencil className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                    Editar
                                                                 </Button>
                                                             )}
                                                             {canDelete && (
@@ -725,9 +801,14 @@ export default function Index({
                                                                     variant="ghost"
                                                                     size="sm"
                                                                     className="h-8 px-2 text-xs text-destructive hover:text-destructive"
-                                                                    onClick={() => handleDelete(a.id)}
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            a.id,
+                                                                        )
+                                                                    }
                                                                 >
-                                                                    <Trash2 className="mr-1 h-3.5 w-3.5" /> Eliminar
+                                                                    <Trash2 className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                    Eliminar
                                                                 </Button>
                                                             )}
                                                         </div>
@@ -1092,7 +1173,7 @@ export default function Index({
                     </DialogHeader>
                     {viendo && (
                         <div className="relative z-20 -mt-3 mb-3 flex max-h-[calc(85vh-100px)] flex-col gap-3 overflow-y-auto px-4 md:-mt-4 md:mb-4 md:gap-4 md:px-6">
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-2">
                                     <p className="text-[8px] font-bold text-amber-600 uppercase">
                                         Código
@@ -1210,7 +1291,7 @@ export default function Index({
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className="p-2">
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                                             {viendo.imagenes.map((img, idx) => (
                                                 <div
                                                     key={idx}

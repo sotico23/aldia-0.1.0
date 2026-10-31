@@ -63,6 +63,12 @@ export default [
                 },
             ],
             'import/consistent-type-specifier-style': 'off',
+            // Reglas nuevas del React Compiler: se dejan como advertencia
+            // porque el código existente las usa de forma deliberada.
+            'react-hooks/purity': 'warn',
+            'react-hooks/set-state-in-effect': 'warn',
+            'react-hooks/static-components': 'warn',
+            'react-hooks/exhaustive-deps': 'warn',
         },
     },
     {
@@ -74,6 +80,10 @@ export default [
             'tailwind.config.js',
             'vite.config.ts',
             'resources/js/components/ui/*',
+            // Generados por Laravel Wayfinder.
+            'resources/js/actions/**',
+            'resources/js/routes/**',
+            'resources/js/wayfinder/**',
         ],
     },
     prettier, // Turn off all rules that might conflict with Prettier

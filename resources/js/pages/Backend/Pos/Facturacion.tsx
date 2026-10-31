@@ -102,7 +102,9 @@ export default function Facturacion({
                 ]}
             >
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );
@@ -325,9 +327,7 @@ export default function Facturacion({
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-xs font-black">
-                                                    {formatCurrency(
-                                                        doc.total,
-                                                    )}
+                                                    {formatCurrency(doc.total)}
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge className="h-5 rounded-full bg-emerald-500 px-2 text-[10px]">

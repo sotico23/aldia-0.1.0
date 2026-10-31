@@ -1,2 +1,15 @@
-resources/js/components/ui/*
-resources/views/mail/*
+node_modules
+vendor
+public
+bootstrap/ssr
+
+# Generados por Laravel Wayfinder
+resources/js/actions
+resources/js/routes
+resources/js/wayfinder
+
+# Componentes generados por shadcn/ui
+resources/js/components/ui
+
+# Vistas publicadas de paquetes
+resources/views/vendor

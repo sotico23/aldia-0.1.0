@@ -30,7 +30,7 @@ export default function WebpayMovimientos({
 }: {
     transactions: any;
 }) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const { hasPermission } = usePermissions();
     const canAccess = hasPermission('finanzas.tesoreria.viewAny');
     const getStatusBadge = (status: string) => {
@@ -129,7 +129,9 @@ export default function WebpayMovimientos({
                 ]}
             >
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );
@@ -224,7 +226,9 @@ export default function WebpayMovimientos({
                                             <td className="px-3 py-2 font-medium whitespace-nowrap text-slate-900 sm:px-6 sm:py-4 dark:text-white">
                                                 {new Date(
                                                     tx.created_at,
-                                                ).toLocaleString(currency.locale)}
+                                                ).toLocaleString(
+                                                    currency.locale,
+                                                )}
                                             </td>
                                             <td className="px-3 py-2 sm:px-6 sm:py-4">
                                                 <span

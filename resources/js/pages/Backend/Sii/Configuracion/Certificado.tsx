@@ -7,7 +7,7 @@ import {
     CheckCircle2,
     XCircle,
     Loader2,
-    FileCheck
+    FileCheck,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -33,7 +33,7 @@ interface Props {
 
 export default function Certificado({ config }: Props) {
     const { hasPermission } = usePermissions();
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const canAccess = hasPermission('finanzas.sii.viewAny');
     const { data, setData, post, processing, errors } = useForm({
         certificado: null as File | null,
@@ -82,9 +82,10 @@ export default function Certificado({ config }: Props) {
             const res = await fetch('/sii/configuracion/certificado/probar', {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector<HTMLMetaElement>(
-                        'meta[name="csrf-token"]',
-                    )?.content ?? '',
+                    'X-CSRF-TOKEN':
+                        document.querySelector<HTMLMetaElement>(
+                            'meta[name="csrf-token"]',
+                        )?.content ?? '',
                 },
                 body: formData,
             });
@@ -137,7 +138,9 @@ export default function Certificado({ config }: Props) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );

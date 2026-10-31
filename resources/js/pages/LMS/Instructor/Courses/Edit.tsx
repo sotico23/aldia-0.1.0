@@ -1,5 +1,17 @@
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import { ArrowLeft, Save, Plus, Trash2, GripVertical, PlayCircle, FileText, HelpCircle, Edit as EditIcon, Eye, Download } from 'lucide-react';
+import {
+    ArrowLeft,
+    Save,
+    Plus,
+    Trash2,
+    GripVertical,
+    PlayCircle,
+    FileText,
+    HelpCircle,
+    Edit as EditIcon,
+    Eye,
+    Download,
+} from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,10 +21,16 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 
@@ -95,7 +113,13 @@ interface Course {
     certificado_html?: string | null;
 }
 
-export default function Edit({ course, categories }: { course: Course, categories: any[] }) {
+export default function Edit({
+    course,
+    categories,
+}: {
+    course: Course;
+    categories: any[];
+}) {
     const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
     const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
     const [activeModuleId, setActiveModuleId] = useState<number | null>(null);
@@ -103,7 +127,9 @@ export default function Edit({ course, categories }: { course: Course, categorie
     const [editingLessonId, setEditingLessonId] = useState<number | null>(null);
     const [previewHtml, setPreviewHtml] = useState<string>('');
     const [showPreview, setShowPreview] = useState(false);
-    const previewTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const previewTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+        undefined,
+    );
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
     const { data, setData, post, processing } = useForm({
@@ -148,14 +174,14 @@ export default function Edit({ course, categories }: { course: Course, categorie
                     setIsModuleModalOpen(false);
                     moduleForm.reset();
                     setEditingModuleId(null);
-                }
+                },
             });
         } else {
             moduleForm.post(`/instructor/cursos/${course.id}/modules`, {
                 onSuccess: () => {
                     setIsModuleModalOpen(false);
                     moduleForm.reset();
-                }
+                },
             });
         }
     };
@@ -168,7 +194,7 @@ export default function Edit({ course, categories }: { course: Course, categorie
                     setIsLessonModalOpen(false);
                     lessonForm.reset();
                     setEditingLessonId(null);
-                }
+                },
             });
         } else {
             if (!activeModuleId) return;
@@ -177,13 +203,17 @@ export default function Edit({ course, categories }: { course: Course, categorie
                     setIsLessonModalOpen(false);
                     lessonForm.reset();
                     setActiveModuleId(null);
-                }
+                },
             });
         }
     };
 
     const handleDeleteModule = (id: number) => {
-        if (confirm('¿Estás seguro de eliminar este módulo y todas sus lecciones?')) {
+        if (
+            confirm(
+                '¿Estás seguro de eliminar este módulo y todas sus lecciones?',
+            )
+        ) {
             router.delete(`/instructor/modules/${id}`);
         }
     };
@@ -194,22 +224,31 @@ export default function Edit({ course, categories }: { course: Course, categorie
         }
     };
 
-    const updatePreview = useCallback((html: string) => {
-        if (!html) {
-            setPreviewHtml('');
-            return;
-        }
+    const updatePreview = useCallback(
+        (html: string) => {
+            if (!html) {
+                setPreviewHtml('');
+                return;
+            }
 
-        const replaced = html
-            .replace(/\{student_name\}/g, '[Nombre del Alumno]')
-            .replace(/\{course_title\}/g, course.title)
-            .replace(/\{instructor_name\}/g, '[Nombre del Instructor]')
-            .replace(/\{date\}/g, new Date().toLocaleDateString('es-ES'))
-            .replace(/\{certificate_number\}/g, 'CERT-'+course.id+'-PREVIEW')
-            .replace(/\{institution_name\}/g, document.title || 'Plataforma');
+            const replaced = html
+                .replace(/\{student_name\}/g, '[Nombre del Alumno]')
+                .replace(/\{course_title\}/g, course.title)
+                .replace(/\{instructor_name\}/g, '[Nombre del Instructor]')
+                .replace(/\{date\}/g, new Date().toLocaleDateString('es-ES'))
+                .replace(
+                    /\{certificate_number\}/g,
+                    'CERT-' + course.id + '-PREVIEW',
+                )
+                .replace(
+                    /\{institution_name\}/g,
+                    document.title || 'Plataforma',
+                );
 
-        setPreviewHtml(replaced);
-    }, [course.id, course.title]);
+            setPreviewHtml(replaced);
+        },
+        [course.id, course.title],
+    );
 
     useEffect(() => {
         if (data.certificado_html) {
@@ -235,62 +274,88 @@ export default function Edit({ course, categories }: { course: Course, categorie
     };
 
     const handleDownloadPdf = () => {
-        window.open(`/instructor/cursos/${course.id}/certificate-download`, '_blank');
+        window.open(
+            `/instructor/cursos/${course.id}/certificate-download`,
+            '_blank',
+        );
     };
 
     return (
-        <AppLayout breadcrumbs={[
-            { title: 'Mis Cursos', href: '/instructor/cursos' },
-            { title: 'Editar Curso', href: `/instructor/cursos/${course.id}/edit` }
-        ]}>
+        <AppLayout
+            breadcrumbs={[
+                { title: 'Mis Cursos', href: '/instructor/cursos' },
+                {
+                    title: 'Editar Curso',
+                    href: `/instructor/cursos/${course.id}/edit`,
+                },
+            ]}
+        >
             <Head title={`Editar: ${course.title}`} />
             <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
                     <div>
-                        <Button variant="ghost" asChild className="pl-0 mb-2">
+                        <Button variant="ghost" asChild className="mb-2 pl-0">
                             <Link href="/instructor/cursos">
-                                <ArrowLeft className="h-4 w-4 mr-2" />
+                                <ArrowLeft className="mr-2 h-4 w-4" />
                                 Volver a la lista
                             </Link>
                         </Button>
-                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{course.title}</h1>
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+                            {course.title}
+                        </h1>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Button variant={course.is_published ? "outline" : "default"} onClick={handlePublish}>
-                            {course.is_published ? 'Retirar de publicación' : 'Publicar curso'}
+                        <Button
+                            variant={
+                                course.is_published ? 'outline' : 'default'
+                            }
+                            onClick={handlePublish}
+                        >
+                            {course.is_published
+                                ? 'Retirar de publicación'
+                                : 'Publicar curso'}
                         </Button>
                         <Button onClick={handleSubmit} disabled={processing}>
-                            <Save className="h-4 w-4 mr-2" />
+                            <Save className="mr-2 h-4 w-4" />
                             Guardar cambios
                         </Button>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 space-y-8">
-                        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                            <h2 className="text-xl font-bold mb-6">Detalles del Curso</h2>
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                    <div className="space-y-8 lg:col-span-2">
+                        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                            <h2 className="mb-6 text-xl font-bold">
+                                Detalles del Curso
+                            </h2>
                             <form className="space-y-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="title">Título</Label>
                                     <Input
                                         id="title"
                                         value={data.title}
-                                        onChange={e => setData('title', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('title', e.target.value)
+                                        }
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Categoría</Label>
                                     <Select
                                         value={data.category_id as string}
-                                        onValueChange={value => setData('category_id', value)}
+                                        onValueChange={(value) =>
+                                            setData('category_id', value)
+                                        }
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Selecciona una categoría" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {categories.map(cat => (
-                                                <SelectItem key={cat.id} value={cat.id.toString()}>
+                                            {categories.map((cat) => (
+                                                <SelectItem
+                                                    key={cat.id}
+                                                    value={cat.id.toString()}
+                                                >
                                                     {cat.nombre}
                                                 </SelectItem>
                                             ))}
@@ -298,33 +363,49 @@ export default function Edit({ course, categories }: { course: Course, categorie
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="description">Descripción</Label>
+                                    <Label htmlFor="description">
+                                        Descripción
+                                    </Label>
                                     <Textarea
                                         id="description"
                                         className="min-h-[150px]"
                                         value={data.description}
-                                        onChange={e => setData('description', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'description',
+                                                e.target.value,
+                                            )
+                                        }
                                     />
                                 </div>
                                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="price">Precio ($)</Label>
+                                        <Label htmlFor="price">
+                                            Precio ($)
+                                        </Label>
                                         <Input
                                             id="price"
                                             type="number"
                                             value={data.price}
-                                            onChange={e => setData('price', parseFloat(e.target.value))}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'price',
+                                                    parseFloat(e.target.value),
+                                                )
+                                            }
                                         />
                                     </div>
                                     <div className="space-y-4">
-                                        <Label htmlFor="cover_image">Imagen de Portada</Label>
+                                        <Label htmlFor="cover_image">
+                                            Imagen de Portada
+                                        </Label>
                                         <div className="flex items-start gap-4">
                                             {course.cover_image && (
-                                                <div className="relative w-32 h-20 rounded-lg overflow-hidden border border-slate-200">
+                                                <div className="relative h-20 w-32 overflow-hidden rounded-lg border border-slate-200">
                                                     <img
                                                         src={`/storage/${course.cover_image}`}
                                                         alt="Cover"
-                                                        className="w-full h-full object-cover"
+                                                        className="h-full w-full object-cover"
                                                     />
                                                 </div>
                                             )}
@@ -333,100 +414,195 @@ export default function Edit({ course, categories }: { course: Course, categorie
                                                     id="cover_image"
                                                     type="file"
                                                     accept="image/*"
-                                                    onChange={e => setData('cover_image', e.target.files ? e.target.files[0] : null)}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'cover_image',
+                                                            e.target.files
+                                                                ? e.target
+                                                                      .files[0]
+                                                                : null,
+                                                        )
+                                                    }
                                                 />
-                                                <p className="text-[10px] text-slate-500 mt-1">Sube una nueva imagen para reemplazar la actual.</p>
+                                                <p className="mt-1 text-[10px] text-slate-500">
+                                                    Sube una nueva imagen para
+                                                    reemplazar la actual.
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800">
-                                        <Label htmlFor="promo_video_url">URL del Video Promocional</Label>
+                                    <div className="space-y-4 border-t border-slate-100 pt-6 dark:border-slate-800">
+                                        <Label htmlFor="promo_video_url">
+                                            URL del Video Promocional
+                                        </Label>
                                         <Input
                                             id="promo_video_url"
                                             type="url"
                                             placeholder="https://www.youtube.com/watch?v=..."
                                             value={data.promo_video_url}
-                                            onChange={e => setData('promo_video_url', e.target.value)}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'promo_video_url',
+                                                    e.target.value,
+                                                )
+                                            }
                                         />
-                                        <p className="text-[10px] text-slate-500">Enlace a YouTube o Vimeo para el tráiler del curso.</p>
+                                        <p className="text-[10px] text-slate-500">
+                                            Enlace a YouTube o Vimeo para el
+                                            tráiler del curso.
+                                        </p>
                                     </div>
 
-                                    <div className="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800">
-                                        <Label>Lo que los alumnos aprenderán (Puntos clave)</Label>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {data.features.map((feature, index) => (
-                                                <Input
-                                                    key={index}
-                                                    placeholder={`Punto clave #${index + 1}`}
-                                                    value={feature}
-                                                    onChange={e => {
-                                                        const newFeatures = [...data.features];
-                                                        newFeatures[index] = e.target.value;
-                                                        setData('features', newFeatures);
-                                                    }}
-                                                />
-                                            ))}
+                                    <div className="space-y-4 border-t border-slate-100 pt-6 dark:border-slate-800">
+                                        <Label>
+                                            Lo que los alumnos aprenderán
+                                            (Puntos clave)
+                                        </Label>
+                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                            {data.features.map(
+                                                (feature, index) => (
+                                                    <Input
+                                                        key={index}
+                                                        placeholder={`Punto clave #${index + 1}`}
+                                                        value={feature}
+                                                        onChange={(e) => {
+                                                            const newFeatures =
+                                                                [
+                                                                    ...data.features,
+                                                                ];
+                                                            newFeatures[index] =
+                                                                e.target.value;
+                                                            setData(
+                                                                'features',
+                                                                newFeatures,
+                                                            );
+                                                        }}
+                                                    />
+                                                ),
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                             </form>
                         </section>
 
-                        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-xl font-bold">Temario del Curso</h2>
-                                <Button variant="outline" size="sm" onClick={() => setIsModuleModalOpen(true)}>
-                                    <Plus className="h-4 w-4 mr-2" />
+                        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                            <div className="mb-6 flex items-center justify-between">
+                                <h2 className="text-xl font-bold">
+                                    Temario del Curso
+                                </h2>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setIsModuleModalOpen(true)}
+                                >
+                                    <Plus className="mr-2 h-4 w-4" />
                                     Añadir Módulo
                                 </Button>
                             </div>
 
                             <div className="space-y-4">
                                 {course.modules.map((module) => (
-                                    <div key={module.id} className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-                                        <div className="bg-slate-50 dark:bg-slate-800/50 p-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
+                                    <div
+                                        key={module.id}
+                                        className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800"
+                                    >
+                                        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
                                             <div className="flex items-center gap-2">
-                                                <GripVertical className="h-4 w-4 text-slate-400 cursor-move" />
-                                                <span className="font-bold text-sm">{module.title}</span>
+                                                <GripVertical className="h-4 w-4 cursor-move text-slate-400" />
+                                                <span className="text-sm font-bold">
+                                                    {module.title}
+                                                </span>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500" onClick={() => {
-                                                    setEditingModuleId(module.id);
-                                                    moduleForm.setData({
-                                                        title: module.title,
-                                                        description: module.description || '',
-                                                        video_url: module.video_url || ''
-                                                    });
-                                                    setIsModuleModalOpen(true);
-                                                }}>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-slate-500"
+                                                    onClick={() => {
+                                                        setEditingModuleId(
+                                                            module.id,
+                                                        );
+                                                        moduleForm.setData({
+                                                            title: module.title,
+                                                            description:
+                                                                module.description ||
+                                                                '',
+                                                            video_url:
+                                                                module.video_url ||
+                                                                '',
+                                                        });
+                                                        setIsModuleModalOpen(
+                                                            true,
+                                                        );
+                                                    }}
+                                                >
                                                     <EditIcon className="h-3 w-3" />
                                                 </Button>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => handleDeleteModule(module.id)}>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-red-500"
+                                                    onClick={() =>
+                                                        handleDeleteModule(
+                                                            module.id,
+                                                        )
+                                                    }
+                                                >
                                                     <Trash2 className="h-3 w-3" />
                                                 </Button>
                                             </div>
                                         </div>
-                                        <div className="p-2 space-y-1">
+                                        <div className="space-y-1 p-2">
                                             {module.lessons.map((lesson) => (
-                                                <div key={lesson.id} className="flex items-center justify-between p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg group transition-colors">
+                                                <div
+                                                    key={lesson.id}
+                                                    className="group flex items-center justify-between rounded-lg p-2 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                                                >
                                                     <div className="flex items-center gap-3">
                                                         <PlayCircle className="h-4 w-4 text-slate-400" />
-                                                        <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{lesson.title}</span>
+                                                        <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                                                            {lesson.title}
+                                                        </span>
                                                     </div>
-                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                                                            setEditingLessonId(lesson.id);
-                                                            lessonForm.setData({
-                                                                title: lesson.title,
-                                                                description: lesson.description || '',
-                                                                video_url: lesson.video_url || ''
-                                                            });
-                                                            setIsLessonModalOpen(true);
-                                                        }}>
+                                                    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-7 w-7"
+                                                            onClick={() => {
+                                                                setEditingLessonId(
+                                                                    lesson.id,
+                                                                );
+                                                                lessonForm.setData(
+                                                                    {
+                                                                        title: lesson.title,
+                                                                        description:
+                                                                            lesson.description ||
+                                                                            '',
+                                                                        video_url:
+                                                                            lesson.video_url ||
+                                                                            '',
+                                                                    },
+                                                                );
+                                                                setIsLessonModalOpen(
+                                                                    true,
+                                                                );
+                                                            }}
+                                                        >
                                                             <EditIcon className="h-3 w-3" />
                                                         </Button>
-                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => handleDeleteLesson(lesson.id)}>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-7 w-7 text-red-500"
+                                                            onClick={() =>
+                                                                handleDeleteLesson(
+                                                                    lesson.id,
+                                                                )
+                                                            }
+                                                        >
                                                             <Trash2 className="h-3 w-3" />
                                                         </Button>
                                                     </div>
@@ -435,13 +611,15 @@ export default function Edit({ course, categories }: { course: Course, categorie
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                className="w-full text-xs text-blue-600 dark:text-blue-400 border-dashed border border-blue-200 dark:border-blue-900/50 mt-2 py-4"
+                                                className="mt-2 w-full border border-dashed border-blue-200 py-4 text-xs text-blue-600 dark:border-blue-900/50 dark:text-blue-400"
                                                 onClick={() => {
-                                                    setActiveModuleId(module.id);
+                                                    setActiveModuleId(
+                                                        module.id,
+                                                    );
                                                     setIsLessonModalOpen(true);
                                                 }}
                                             >
-                                                <Plus className="h-3 w-3 mr-1" />
+                                                <Plus className="mr-1 h-3 w-3" />
                                                 Añadir Lección
                                             </Button>
                                         </div>
@@ -449,33 +627,44 @@ export default function Edit({ course, categories }: { course: Course, categorie
                                 ))}
 
                                 {course.modules.length === 0 && (
-                                    <div className="text-center py-12 bg-slate-50 dark:bg-slate-900/50 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                                        <p className="text-sm text-slate-500">Aún no hay módulos. Haz clic en el botón superior para empezar.</p>
+                                    <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 py-12 text-center dark:border-slate-800 dark:bg-slate-900/50">
+                                        <p className="text-sm text-slate-500">
+                                            Aún no hay módulos. Haz clic en el
+                                            botón superior para empezar.
+                                        </p>
                                     </div>
                                 )}
                             </div>
                         </section>
 
-                        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-xl font-bold flex items-center gap-2">
+                        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                            <div className="mb-6 flex items-center justify-between">
+                                <h2 className="flex items-center gap-2 text-xl font-bold">
                                     <FileText className="h-5 w-5" />
                                     Certificado del Curso
                                 </h2>
                                 <div className="flex items-center gap-2">
                                     {!data.certificado_html && (
-                                        <Button variant="outline" size="sm" onClick={handleLoadExample}>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleLoadExample}
+                                        >
                                             Cargar ejemplo
                                         </Button>
                                     )}
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => setShowPreview(!showPreview)}
+                                        onClick={() =>
+                                            setShowPreview(!showPreview)
+                                        }
                                         disabled={!data.certificado_html}
                                     >
-                                        <Eye className="h-4 w-4 mr-1" />
-                                        {showPreview ? 'Ocultar vista previa' : 'Vista previa'}
+                                        <Eye className="mr-1 h-4 w-4" />
+                                        {showPreview
+                                            ? 'Ocultar vista previa'
+                                            : 'Vista previa'}
                                     </Button>
                                     <Button
                                         variant="outline"
@@ -483,7 +672,7 @@ export default function Edit({ course, categories }: { course: Course, categorie
                                         onClick={handleDownloadPdf}
                                         disabled={!data.certificado_html}
                                     >
-                                        <Download className="h-4 w-4 mr-1" />
+                                        <Download className="mr-1 h-4 w-4" />
                                         PDF de prueba
                                     </Button>
                                 </div>
@@ -491,57 +680,95 @@ export default function Edit({ course, categories }: { course: Course, categorie
 
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="certificado_html">HTML del Certificado</Label>
+                                    <Label htmlFor="certificado_html">
+                                        HTML del Certificado
+                                    </Label>
                                     <Textarea
                                         id="certificado_html"
                                         value={data.certificado_html}
-                                        onChange={e => handleCertificadoChange(e.target.value)}
+                                        onChange={(e) =>
+                                            handleCertificadoChange(
+                                                e.target.value,
+                                            )
+                                        }
                                         className="min-h-[400px] font-mono text-xs leading-relaxed"
                                         placeholder="<!-- Pega o escribe el HTML de tu certificado aquí. Haz clic en 'Cargar ejemplo' para ver un modelo funcional. -->"
                                     />
-                                    <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-4 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                                        <p className="font-medium text-slate-700 dark:text-slate-300 mb-1">Variables disponibles:</p>
+                                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-400">
+                                        <p className="mb-1 font-medium text-slate-700 dark:text-slate-300">
+                                            Variables disponibles:
+                                        </p>
                                         <code className="block space-x-1">
-                                            <span className="inline-block rounded bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 text-blue-700 dark:text-blue-300">{'{student_name}'}</span>
-                                            <span className="text-slate-400 mx-0.5">-</span>
+                                            <span className="inline-block rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                                {'{student_name}'}
+                                            </span>
+                                            <span className="mx-0.5 text-slate-400">
+                                                -
+                                            </span>
                                             <span>Nombre del alumno</span>
                                         </code>
-                                        <code className="block space-x-1 mt-0.5">
-                                            <span className="inline-block rounded bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 text-blue-700 dark:text-blue-300">{'{course_title}'}</span>
-                                            <span className="text-slate-400 mx-0.5">-</span>
+                                        <code className="mt-0.5 block space-x-1">
+                                            <span className="inline-block rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                                {'{course_title}'}
+                                            </span>
+                                            <span className="mx-0.5 text-slate-400">
+                                                -
+                                            </span>
                                             <span>Título del curso</span>
                                         </code>
-                                        <code className="block space-x-1 mt-0.5">
-                                            <span className="inline-block rounded bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 text-blue-700 dark:text-blue-300">{'{instructor_name}'}</span>
-                                            <span className="text-slate-400 mx-0.5">-</span>
+                                        <code className="mt-0.5 block space-x-1">
+                                            <span className="inline-block rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                                {'{instructor_name}'}
+                                            </span>
+                                            <span className="mx-0.5 text-slate-400">
+                                                -
+                                            </span>
                                             <span>Nombre del instructor</span>
                                         </code>
-                                        <code className="block space-x-1 mt-0.5">
-                                            <span className="inline-block rounded bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 text-blue-700 dark:text-blue-300">{'{date}'}</span>
-                                            <span className="text-slate-400 mx-0.5">-</span>
+                                        <code className="mt-0.5 block space-x-1">
+                                            <span className="inline-block rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                                {'{date}'}
+                                            </span>
+                                            <span className="mx-0.5 text-slate-400">
+                                                -
+                                            </span>
                                             <span>Fecha de emisión</span>
                                         </code>
-                                        <code className="block space-x-1 mt-0.5">
-                                            <span className="inline-block rounded bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 text-blue-700 dark:text-blue-300">{'{certificate_number}'}</span>
-                                            <span className="text-slate-400 mx-0.5">-</span>
-                                            <span>Número único de certificado</span>
+                                        <code className="mt-0.5 block space-x-1">
+                                            <span className="inline-block rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                                {'{certificate_number}'}
+                                            </span>
+                                            <span className="mx-0.5 text-slate-400">
+                                                -
+                                            </span>
+                                            <span>
+                                                Número único de certificado
+                                            </span>
                                         </code>
-                                        <code className="block space-x-1 mt-0.5">
-                                            <span className="inline-block rounded bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 text-blue-700 dark:text-blue-300">{'{institution_name}'}</span>
-                                            <span className="text-slate-400 mx-0.5">-</span>
-                                            <span>Nombre de la institución</span>
+                                        <code className="mt-0.5 block space-x-1">
+                                            <span className="inline-block rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                                {'{institution_name}'}
+                                            </span>
+                                            <span className="mx-0.5 text-slate-400">
+                                                -
+                                            </span>
+                                            <span>
+                                                Nombre de la institución
+                                            </span>
                                         </code>
                                     </div>
                                 </div>
 
                                 {showPreview && previewHtml && (
                                     <div className="space-y-2">
-                                        <Label>Vista previa del certificado</Label>
-                                        <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white">
+                                        <Label>
+                                            Vista previa del certificado
+                                        </Label>
+                                        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-700">
                                             <iframe
                                                 ref={iframeRef}
                                                 srcDoc={previewHtml}
-                                                className="w-full min-h-[400px]"
+                                                className="min-h-[400px] w-full"
                                                 title="Vista previa del certificado"
                                                 sandbox="allow-same-origin"
                                             />
@@ -553,47 +780,71 @@ export default function Edit({ course, categories }: { course: Course, categorie
                     </div>
 
                     <div className="space-y-6">
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                            <h3 className="font-bold mb-4">Estado del Curso</h3>
+                        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                            <h3 className="mb-4 font-bold">Estado del Curso</h3>
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-slate-500">Visibilidad</span>
-                                    <span className={`font-medium ${course.is_published ? 'text-green-600' : 'text-amber-600'}`}>
-                                        {course.is_published ? 'Público' : 'Borrador'}
+                                    <span className="text-slate-500">
+                                        Visibilidad
+                                    </span>
+                                    <span
+                                        className={`font-medium ${course.is_published ? 'text-green-600' : 'text-amber-600'}`}
+                                    >
+                                        {course.is_published
+                                            ? 'Público'
+                                            : 'Borrador'}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-slate-500">Módulos</span>
-                                    <span className="font-medium">{course.modules.length}</span>
+                                    <span className="text-slate-500">
+                                        Módulos
+                                    </span>
+                                    <span className="font-medium">
+                                        {course.modules.length}
+                                    </span>
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-slate-500">Lecciones totales</span>
+                                    <span className="text-slate-500">
+                                        Lecciones totales
+                                    </span>
                                     <span className="font-medium">
-                                        {course.modules.reduce((acc, m) => acc + m.lessons.length, 0)}
+                                        {course.modules.reduce(
+                                            (acc, m) => acc + m.lessons.length,
+                                            0,
+                                        )}
                                     </span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-2xl p-6">
+                        <div className="rounded-2xl border border-blue-100 bg-blue-50 p-6 dark:border-blue-800 dark:bg-blue-900/20">
                             <div className="flex items-start gap-4">
-                                <HelpCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
+                                <HelpCircle className="h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
                                 <div>
-                                    <h4 className="font-bold text-blue-900 dark:text-blue-100 text-sm mb-1">Consejo:</h4>
-                                    <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-                                        Organiza tus lecciones de forma lógica. Los cursos con módulos claros tienen un 40% más de tasa de finalización.
+                                    <h4 className="mb-1 text-sm font-bold text-blue-900 dark:text-blue-100">
+                                        Consejo:
+                                    </h4>
+                                    <p className="text-xs leading-relaxed text-blue-700 dark:text-blue-300">
+                                        Organiza tus lecciones de forma lógica.
+                                        Los cursos con módulos claros tienen un
+                                        40% más de tasa de finalización.
                                     </p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-2xl p-6">
+                        <div className="rounded-2xl border border-amber-100 bg-amber-50 p-6 dark:border-amber-800 dark:bg-amber-900/20">
                             <div className="flex items-start gap-4">
-                                <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                                <FileText className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
                                 <div>
-                                    <h4 className="font-bold text-amber-900 dark:text-amber-100 text-sm mb-1">Certificado:</h4>
-                                    <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
-                                        Personaliza el certificado que recibirán los alumnos al completar el curso. Usa HTML y CSS inline para diseñarlo a tu gusto.
+                                    <h4 className="mb-1 text-sm font-bold text-amber-900 dark:text-amber-100">
+                                        Certificado:
+                                    </h4>
+                                    <p className="text-xs leading-relaxed text-amber-700 dark:text-amber-300">
+                                        Personaliza el certificado que recibirán
+                                        los alumnos al completar el curso. Usa
+                                        HTML y CSS inline para diseñarlo a tu
+                                        gusto.
                                     </p>
                                 </div>
                             </div>
@@ -602,120 +853,196 @@ export default function Edit({ course, categories }: { course: Course, categorie
                 </div>
             </div>
 
-            <Dialog open={isModuleModalOpen} onOpenChange={(open) => {
-                setIsModuleModalOpen(open);
-                if (!open) {
-                    moduleForm.reset();
-                    setEditingModuleId(null);
-                }
-            }}>
+            <Dialog
+                open={isModuleModalOpen}
+                onOpenChange={(open) => {
+                    setIsModuleModalOpen(open);
+                    if (!open) {
+                        moduleForm.reset();
+                        setEditingModuleId(null);
+                    }
+                }}
+            >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{editingModuleId ? 'Editar Módulo' : 'Nuevo Módulo'}</DialogTitle>
+                        <DialogTitle>
+                            {editingModuleId ? 'Editar Módulo' : 'Nuevo Módulo'}
+                        </DialogTitle>
                         <DialogDescription>
-                            {editingModuleId ? 'Modifica los detalles de este bloque.' : 'Añade un nuevo bloque temático a tu curso.'}
+                            {editingModuleId
+                                ? 'Modifica los detalles de este bloque.'
+                                : 'Añade un nuevo bloque temático a tu curso.'}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleAddModule}>
-                        <div className="py-4 space-y-4">
+                        <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                                <Label htmlFor="module-title">Título del Módulo</Label>
+                                <Label htmlFor="module-title">
+                                    Título del Módulo
+                                </Label>
                                 <Input
                                     id="module-title"
                                     placeholder="Ej: Fundamentos de React"
                                     value={moduleForm.data.title}
-                                    onChange={e => moduleForm.setData('title', e.target.value)}
+                                    onChange={(e) =>
+                                        moduleForm.setData(
+                                            'title',
+                                            e.target.value,
+                                        )
+                                    }
                                     required
                                     autoFocus
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="module-description">Descripción (Opcional)</Label>
+                                <Label htmlFor="module-description">
+                                    Descripción (Opcional)
+                                </Label>
                                 <Textarea
                                     id="module-description"
                                     placeholder="Una breve descripción de lo que se cubrirá..."
                                     value={moduleForm.data.description}
-                                    onChange={e => moduleForm.setData('description', e.target.value)}
+                                    onChange={(e) =>
+                                        moduleForm.setData(
+                                            'description',
+                                            e.target.value,
+                                        )
+                                    }
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="module-url">URL del Video del Módulo (Opcional)</Label>
+                                <Label htmlFor="module-url">
+                                    URL del Video del Módulo (Opcional)
+                                </Label>
                                 <Input
                                     id="module-url"
                                     placeholder="https://youtube.com/..."
                                     value={moduleForm.data.video_url}
-                                    onChange={e => moduleForm.setData('video_url', e.target.value)}
+                                    onChange={(e) =>
+                                        moduleForm.setData(
+                                            'video_url',
+                                            e.target.value,
+                                        )
+                                    }
                                 />
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setIsModuleModalOpen(false)}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsModuleModalOpen(false)}
+                            >
                                 Cancelar
                             </Button>
-                            <Button type="submit" disabled={moduleForm.processing}>
-                                {editingModuleId ? 'Actualizar Módulo' : 'Crear Módulo'}
+                            <Button
+                                type="submit"
+                                disabled={moduleForm.processing}
+                            >
+                                {editingModuleId
+                                    ? 'Actualizar Módulo'
+                                    : 'Crear Módulo'}
                             </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={isLessonModalOpen} onOpenChange={(open) => {
-                setIsLessonModalOpen(open);
-                if (!open) {
-                    lessonForm.reset();
-                    setEditingLessonId(null);
-                    setActiveModuleId(null);
-                }
-            }}>
+            <Dialog
+                open={isLessonModalOpen}
+                onOpenChange={(open) => {
+                    setIsLessonModalOpen(open);
+                    if (!open) {
+                        lessonForm.reset();
+                        setEditingLessonId(null);
+                        setActiveModuleId(null);
+                    }
+                }}
+            >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{editingLessonId ? 'Editar Lección' : 'Nueva Lección'}</DialogTitle>
+                        <DialogTitle>
+                            {editingLessonId
+                                ? 'Editar Lección'
+                                : 'Nueva Lección'}
+                        </DialogTitle>
                         <DialogDescription>
-                            {editingLessonId ? 'Modifica el contenido de esta lección.' : 'Agrega contenido a este módulo.'}
+                            {editingLessonId
+                                ? 'Modifica el contenido de esta lección.'
+                                : 'Agrega contenido a este módulo.'}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleAddLesson}>
-                        <div className="py-4 space-y-4">
+                        <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                                <Label htmlFor="lesson-title">Título de la Lección</Label>
+                                <Label htmlFor="lesson-title">
+                                    Título de la Lección
+                                </Label>
                                 <Input
                                     id="lesson-title"
                                     placeholder="Ej: Instalación de Node.js"
                                     value={lessonForm.data.title}
-                                    onChange={e => lessonForm.setData('title', e.target.value)}
+                                    onChange={(e) =>
+                                        lessonForm.setData(
+                                            'title',
+                                            e.target.value,
+                                        )
+                                    }
                                     required
                                     autoFocus
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="lesson-description">Resumen/Descripción</Label>
+                                <Label htmlFor="lesson-description">
+                                    Resumen/Descripción
+                                </Label>
                                 <Textarea
                                     id="lesson-description"
                                     placeholder="¿Qué aprenderá el alumno en esta lección?"
                                     value={lessonForm.data.description}
-                                    onChange={e => lessonForm.setData('description', e.target.value)}
+                                    onChange={(e) =>
+                                        lessonForm.setData(
+                                            'description',
+                                            e.target.value,
+                                        )
+                                    }
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="lesson-url">URL del Video / Plataforma Externa</Label>
+                                <Label htmlFor="lesson-url">
+                                    URL del Video / Plataforma Externa
+                                </Label>
                                 <Input
                                     id="lesson-url"
                                     placeholder="https://youtube.com/... o https://vimeo.com/..."
                                     value={lessonForm.data.video_url}
-                                    onChange={e => lessonForm.setData('video_url', e.target.value)}
+                                    onChange={(e) =>
+                                        lessonForm.setData(
+                                            'video_url',
+                                            e.target.value,
+                                        )
+                                    }
                                 />
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => {
-                                setIsLessonModalOpen(false);
-                                setActiveModuleId(null);
-                            }}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                    setIsLessonModalOpen(false);
+                                    setActiveModuleId(null);
+                                }}
+                            >
                                 Cancelar
                             </Button>
-                            <Button type="submit" disabled={lessonForm.processing}>
-                                {editingLessonId ? 'Actualizar Lección' : 'Crear Lección'}
+                            <Button
+                                type="submit"
+                                disabled={lessonForm.processing}
+                            >
+                                {editingLessonId
+                                    ? 'Actualizar Lección'
+                                    : 'Crear Lección'}
                             </Button>
                         </DialogFooter>
                     </form>

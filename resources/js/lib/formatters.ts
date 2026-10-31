@@ -1,4 +1,3 @@
-import { useCountry, type CountrySettings } from '@/hooks/use-country';
 import { CURRENCIES, DEFAULT_CURRENCY, type CurrencyInfo } from './currencies';
 
 export function getCurrencyInfoForCountry(countryCode: string): CurrencyInfo {
@@ -10,11 +9,15 @@ export function getCurrencyInfoForCountry(countryCode: string): CurrencyInfo {
     return CURRENCIES[code] || CURRENCIES[DEFAULT_CURRENCY];
 }
 
-export function formatCurrencyForCountry(amount: number | string | null | undefined, countryCode?: string): string {
+export function formatCurrencyForCountry(
+    amount: number | string | null | undefined,
+    countryCode?: string,
+): string {
     const code = countryCode || 'CL';
     const info = getCurrencyInfoForCountry(code);
     const value = typeof amount === 'string' ? parseFloat(amount) : amount;
-    if (value === null || value === undefined || isNaN(value)) return `${info.symbol} 0`;
+    if (value === null || value === undefined || isNaN(value))
+        return `${info.symbol} 0`;
 
     return new Intl.NumberFormat(info.locale, {
         style: 'currency',
@@ -24,7 +27,10 @@ export function formatCurrencyForCountry(amount: number | string | null | undefi
     }).format(value);
 }
 
-export function formatDateForCountry(dateString: string | null | undefined, countryCode?: string): string {
+export function formatDateForCountry(
+    dateString: string | null | undefined,
+    countryCode?: string,
+): string {
     if (!dateString) return '-';
     const parts = dateString.split('-');
     if (parts.length !== 3) return '-';
@@ -46,7 +52,10 @@ export function formatDateForCountry(dateString: string | null | undefined, coun
     }).format(date);
 }
 
-export function formatNumberForCountry(value: number | null | undefined, countryCode?: string): string {
+export function formatNumberForCountry(
+    value: number | null | undefined,
+    countryCode?: string,
+): string {
     if (value === null || value === undefined || isNaN(value)) return '0';
 
     const localeMap: Record<string, string> = {
@@ -58,7 +67,10 @@ export function formatNumberForCountry(value: number | null | undefined, country
     return new Intl.NumberFormat(locale).format(value);
 }
 
-export function formatDateTimeForCountry(dateString: string | null | undefined, countryCode?: string): string {
+export function formatDateTimeForCountry(
+    dateString: string | null | undefined,
+    countryCode?: string,
+): string {
     if (!dateString) return '-';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '-';
@@ -78,7 +90,10 @@ export function formatDateTimeForCountry(dateString: string | null | undefined, 
     }).format(date);
 }
 
-export function formatTimeForCountry(dateString: string | null | undefined, countryCode?: string): string {
+export function formatTimeForCountry(
+    dateString: string | null | undefined,
+    countryCode?: string,
+): string {
     if (!dateString) return '-';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '-';
@@ -95,7 +110,11 @@ export function formatTimeForCountry(dateString: string | null | undefined, coun
     }).format(date);
 }
 
-export function formatMonthShortForCountry(year: number | string, month: number | string, countryCode?: string): string {
+export function formatMonthShortForCountry(
+    year: number | string,
+    month: number | string,
+    countryCode?: string,
+): string {
     const date = new Date(+year, +month - 1);
 
     const localeMap: Record<string, string> = {

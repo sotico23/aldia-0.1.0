@@ -10,12 +10,9 @@ import {
     X,
     Eye,
     DollarSign,
-    Calendar,
-    User,
     CreditCard,
     CheckCircle,
     Clock,
-    AlertCircle,
     Banknote,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
@@ -34,13 +31,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Pagination from '@/components/ui/Pagination';
@@ -110,7 +100,7 @@ export default function Index({
     empleados: Empleado[];
 }) {
     const { hasPermission } = usePermissions();
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const canCreate = hasPermission('rrhh.prestamos.create');
     const canEdit = hasPermission('rrhh.prestamos.edit');
     const canDelete = hasPermission('rrhh.prestamos.delete');
@@ -120,8 +110,11 @@ export default function Index({
     const [isPagarOpen, setIsPagarOpen] = useState(false);
     const [isNominaOpen, setIsNominaOpen] = useState(false);
     const [editando, setEditando] = useState<Prestamo | null>(null);
-    const [prestamoSeleccionado, setPrestamoSeleccionado] = useState<Prestamo | null>(null);
-    const [cuotaSeleccionada, setCuotaSeleccionada] = useState<Cuota | null>(null);
+    const [prestamoSeleccionado, setPrestamoSeleccionado] =
+        useState<Prestamo | null>(null);
+    const [cuotaSeleccionada, setCuotaSeleccionada] = useState<Cuota | null>(
+        null,
+    );
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
     const [filtros, setFiltros] = useState({
@@ -169,8 +162,11 @@ export default function Index({
             if (filtros.busqueda) {
                 const busca = filtros.busqueda.toLowerCase();
                 const empleadoMatch =
-                    `${p.empleado?.nombre} ${p.empleado?.apellido}`.toLowerCase().includes(busca) || false;
-                const rutMatch = p.empleado?.rut?.toLowerCase().includes(busca) || false;
+                    `${p.empleado?.nombre} ${p.empleado?.apellido}`
+                        .toLowerCase()
+                        .includes(busca) || false;
+                const rutMatch =
+                    p.empleado?.rut?.toLowerCase().includes(busca) || false;
                 if (!empleadoMatch && !rutMatch) return false;
             }
             if (filtros.estado && p.estado !== filtros.estado) return false;
@@ -237,8 +233,7 @@ export default function Index({
     };
 
     const handleDelete = (id: number) => {
-        if (confirm('¿Eliminar este préstamo?'))
-            destroy(`/prestamos/${id}`);
+        if (confirm('¿Eliminar este préstamo?')) destroy(`/prestamos/${id}`);
     };
 
     const handlePagar = (cuota: Cuota) => {
@@ -265,23 +260,31 @@ export default function Index({
     const confirmarPago = () => {
         if (!cuotaSeleccionada) return;
 
-        router.post(`/prestamo-cuotas/${cuotaSeleccionada.id}/pagar`, pagoData, {
-            onSuccess: () => {
-                setIsPagarOpen(false);
-                setIsVerOpen(false);
+        router.post(
+            `/prestamo-cuotas/${cuotaSeleccionada.id}/pagar`,
+            pagoData,
+            {
+                onSuccess: () => {
+                    setIsPagarOpen(false);
+                    setIsVerOpen(false);
+                },
             },
-        });
+        );
     };
 
     const confirmarNomina = () => {
         if (!cuotaSeleccionada) return;
 
-        router.post(`/prestamo-cuotas/${cuotaSeleccionada.id}/aplicar-nomina`, nominaData, {
-            onSuccess: () => {
-                setIsNominaOpen(false);
-                setIsVerOpen(false);
+        router.post(
+            `/prestamo-cuotas/${cuotaSeleccionada.id}/aplicar-nomina`,
+            nominaData,
+            {
+                onSuccess: () => {
+                    setIsNominaOpen(false);
+                    setIsVerOpen(false);
+                },
             },
-        });
+        );
     };
 
     const handleAgregarCuotas = (prestamo: Prestamo) => {
@@ -357,9 +360,16 @@ export default function Index({
                                         <CreditCard className="h-5 w-5 text-blue-600" />
                                     </div>
                                     <div>
-                                        <p className="text-xs text-muted-foreground">Activos</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Activos
+                                        </p>
                                         <p className="text-lg font-black">
-                                            {prestamosFiltrados.filter((p) => p.estado === 'activo').length}
+                                            {
+                                                prestamosFiltrados.filter(
+                                                    (p) =>
+                                                        p.estado === 'activo',
+                                                ).length
+                                            }
                                         </p>
                                     </div>
                                 </div>
@@ -372,9 +382,16 @@ export default function Index({
                                         <CheckCircle className="h-5 w-5 text-green-600" />
                                     </div>
                                     <div>
-                                        <p className="text-xs text-muted-foreground">Pagados</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Pagados
+                                        </p>
                                         <p className="text-lg font-black">
-                                            {prestamosFiltrados.filter((p) => p.estado === 'pagado').length}
+                                            {
+                                                prestamosFiltrados.filter(
+                                                    (p) =>
+                                                        p.estado === 'pagado',
+                                                ).length
+                                            }
                                         </p>
                                     </div>
                                 </div>
@@ -387,10 +404,18 @@ export default function Index({
                                         <DollarSign className="h-5 w-5 text-amber-600" />
                                     </div>
                                     <div>
-                                        <p className="text-xs text-muted-foreground">Saldo Pendiente</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Saldo Pendiente
+                                        </p>
                                         <p className="text-lg font-black">
                                             {formatCurrency(
-                                                prestamosFiltrados.reduce((sum, p) => sum + (p.saldo_pendiente || 0), 0)
+                                                prestamosFiltrados.reduce(
+                                                    (sum, p) =>
+                                                        sum +
+                                                        (p.saldo_pendiente ||
+                                                            0),
+                                                    0,
+                                                ),
                                             )}
                                         </p>
                                     </div>
@@ -404,10 +429,17 @@ export default function Index({
                                         <Clock className="h-5 w-5 text-purple-600" />
                                     </div>
                                     <div>
-                                        <p className="text-xs text-muted-foreground">Total Préstamos</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Total Préstamos
+                                        </p>
                                         <p className="text-lg font-black">
                                             {formatCurrency(
-                                                prestamosFiltrados.reduce((sum, p) => sum + (p.monto_total || 0), 0)
+                                                prestamosFiltrados.reduce(
+                                                    (sum, p) =>
+                                                        sum +
+                                                        (p.monto_total || 0),
+                                                    0,
+                                                ),
                                             )}
                                         </p>
                                     </div>
@@ -422,12 +454,17 @@ export default function Index({
                                 <div>
                                     <CardTitle>Préstamos y Adelantos</CardTitle>
                                     <CardDescription>
-                                        {prestamosFiltrados.length} registros encontrados
+                                        {prestamosFiltrados.length} registros
+                                        encontrados
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-1 rounded-lg border p-0.5">
                                     <Button
-                                        variant={viewMode === 'table' ? 'default' : 'ghost'}
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'default'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         className="h-8 w-8 p-0"
                                         onClick={() => setViewMode('table')}
@@ -435,7 +472,11 @@ export default function Index({
                                         <List className="h-4 w-4" />
                                     </Button>
                                     <Button
-                                        variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'default'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         className="h-8 w-8 p-0"
                                         onClick={() => setViewMode('cards')}
@@ -454,41 +495,64 @@ export default function Index({
                                             placeholder="Buscar por empleado o RUT..."
                                             value={filtros.busqueda}
                                             onChange={(e) =>
-                                                setFiltros({ ...filtros, busqueda: e.target.value })
+                                                setFiltros({
+                                                    ...filtros,
+                                                    busqueda: e.target.value,
+                                                })
                                             }
-                                            className="h-9 pl-8 pr-8"
+                                            className="h-9 pr-8 pl-8"
                                         />
                                     </div>
                                 </div>
                                 <Select
                                     value={filtros.tipo}
                                     onValueChange={(val) =>
-                                        setFiltros({ ...filtros, tipo: val === 'all' ? '' : val })
+                                        setFiltros({
+                                            ...filtros,
+                                            tipo: val === 'all' ? '' : val,
+                                        })
                                     }
                                 >
                                     <SelectTrigger className="h-9 w-full bg-background sm:w-[150px]">
                                         <SelectValue placeholder="Tipo" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">Todos</SelectItem>
-                                        <SelectItem value="prestamo">Préstamo</SelectItem>
-                                        <SelectItem value="adelanto">Adelanto</SelectItem>
+                                        <SelectItem value="all">
+                                            Todos
+                                        </SelectItem>
+                                        <SelectItem value="prestamo">
+                                            Préstamo
+                                        </SelectItem>
+                                        <SelectItem value="adelanto">
+                                            Adelanto
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <Select
                                     value={filtros.estado}
                                     onValueChange={(val) =>
-                                        setFiltros({ ...filtros, estado: val === 'all' ? '' : val })
+                                        setFiltros({
+                                            ...filtros,
+                                            estado: val === 'all' ? '' : val,
+                                        })
                                     }
                                 >
                                     <SelectTrigger className="h-9 w-full bg-background sm:w-[150px]">
                                         <SelectValue placeholder="Estado" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">Todos</SelectItem>
-                                        <SelectItem value="activo">Activo</SelectItem>
-                                        <SelectItem value="pagado">Pagado</SelectItem>
-                                        <SelectItem value="cancelado">Cancelado</SelectItem>
+                                        <SelectItem value="all">
+                                            Todos
+                                        </SelectItem>
+                                        <SelectItem value="activo">
+                                            Activo
+                                        </SelectItem>
+                                        <SelectItem value="pagado">
+                                            Pagado
+                                        </SelectItem>
+                                        <SelectItem value="cancelado">
+                                            Cancelado
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <Button
@@ -507,13 +571,27 @@ export default function Index({
                                     <table className="w-full text-xs sm:text-sm">
                                         <thead>
                                             <tr className="border-b">
-                                                <th className="py-2 text-left font-medium">Empleado</th>
-                                                <th className="py-2 text-left font-medium">Tipo</th>
-                                                <th className="py-2 text-right font-medium">Monto</th>
-                                                <th className="py-2 text-center font-medium">Cuotas</th>
-                                                <th className="py-2 text-center font-medium">Progreso</th>
-                                                <th className="py-2 text-center font-medium">Estado</th>
-                                                <th className="py-2 text-right font-medium">Acciones</th>
+                                                <th className="py-2 text-left font-medium">
+                                                    Empleado
+                                                </th>
+                                                <th className="py-2 text-left font-medium">
+                                                    Tipo
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Monto
+                                                </th>
+                                                <th className="py-2 text-center font-medium">
+                                                    Cuotas
+                                                </th>
+                                                <th className="py-2 text-center font-medium">
+                                                    Progreso
+                                                </th>
+                                                <th className="py-2 text-center font-medium">
+                                                    Estado
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Acciones
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -524,22 +602,35 @@ export default function Index({
                                                 >
                                                     <td className="py-2">
                                                         <div className="font-bold">
-                                                            {p.empleado?.nombre} {p.empleado?.apellido}
+                                                            {p.empleado?.nombre}{' '}
+                                                            {
+                                                                p.empleado
+                                                                    ?.apellido
+                                                            }
                                                         </div>
                                                         <div className="text-[10px] text-muted-foreground">
                                                             {p.empleado?.rut}
                                                         </div>
                                                     </td>
                                                     <td className="py-2">
-                                                        <Badge variant="outline" className="text-xs">
-                                                            {p.tipo === 'prestamo' ? 'Préstamo' : 'Adelanto'}
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="text-xs"
+                                                        >
+                                                            {p.tipo ===
+                                                            'prestamo'
+                                                                ? 'Préstamo'
+                                                                : 'Adelanto'}
                                                         </Badge>
                                                     </td>
                                                     <td className="py-2 text-right font-bold">
-                                                        {formatCurrency(p.monto_total)}
+                                                        {formatCurrency(
+                                                            p.monto_total,
+                                                        )}
                                                     </td>
                                                     <td className="py-2 text-center">
-                                                        {p.cuotas_pagadas}/{p.numero_cuotas}
+                                                        {p.cuotas_pagadas}/
+                                                        {p.numero_cuotas}
                                                     </td>
                                                     <td className="py-2 text-center">
                                                         <div className="mx-auto h-2 w-20 overflow-hidden rounded-full bg-gray-200">
@@ -552,13 +643,19 @@ export default function Index({
                                                         </div>
                                                         <p className="mt-1 text-[10px] text-muted-foreground">
                                                             {p.numero_cuotas > 0
-                                                                ? Math.round((p.cuotas_pagadas / p.numero_cuotas) * 100)
+                                                                ? Math.round(
+                                                                      (p.cuotas_pagadas /
+                                                                          p.numero_cuotas) *
+                                                                          100,
+                                                                  )
                                                                 : 0}
                                                             %
                                                         </p>
                                                     </td>
                                                     <td className="py-2 text-center">
-                                                        {getEstadoBadge(p.estado)}
+                                                        {getEstadoBadge(
+                                                            p.estado,
+                                                        )}
                                                     </td>
                                                     <td className="py-2 text-right">
                                                         <div className="flex justify-end gap-1">
@@ -566,7 +663,9 @@ export default function Index({
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                                                                onClick={() => handleVer(p)}
+                                                                onClick={() =>
+                                                                    handleVer(p)
+                                                                }
                                                                 title="Ver Detalles"
                                                             >
                                                                 <Eye className="h-4 w-4" />
@@ -576,29 +675,43 @@ export default function Index({
                                                                     variant="ghost"
                                                                     size="sm"
                                                                     className="h-8 w-8 p-0"
-                                                                    onClick={() => handleEdit(p)}
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            p,
+                                                                        )
+                                                                    }
                                                                     title="Editar"
                                                                 >
                                                                     <Pencil className="h-4 w-4" />
                                                                 </Button>
                                                             )}
-                                                            {canEdit && p.saldo_pendiente > 0 && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
-                                                                    onClick={() => handleAgregarCuotas(p)}
-                                                                    title="Pago Extra"
-                                                                >
-                                                                    <Plus className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
+                                                            {canEdit &&
+                                                                p.saldo_pendiente >
+                                                                    0 && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                                                                        onClick={() =>
+                                                                            handleAgregarCuotas(
+                                                                                p,
+                                                                            )
+                                                                        }
+                                                                        title="Pago Extra"
+                                                                    >
+                                                                        <Plus className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
                                                             {canDelete && (
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="sm"
                                                                     className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                                                    onClick={() => handleDelete(p.id)}
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            p.id,
+                                                                        )
+                                                                    }
                                                                 >
                                                                     <Trash2 className="h-4 w-4" />
                                                                 </Button>
@@ -607,33 +720,50 @@ export default function Index({
                                                     </td>
                                                 </tr>
                                             ))}
-                                            {prestamosFiltrados.length === 0 && (
+                                            {prestamosFiltrados.length ===
+                                                0 && (
                                                 <tr>
-                                                    <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                                                        No se encontraron préstamos.
+                                                    <td
+                                                        colSpan={8}
+                                                        className="py-8 text-center text-muted-foreground"
+                                                    >
+                                                        No se encontraron
+                                                        préstamos.
                                                     </td>
                                                 </tr>
                                             )}
                                         </tbody>
                                     </table>
                                     {prestamos.links && (
-                                        <Pagination links={prestamos.links} meta={prestamos.meta} />
+                                        <Pagination
+                                            links={prestamos.links}
+                                            meta={prestamos.meta}
+                                        />
                                     )}
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                     {prestamosFiltrados.map((p) => (
-                                        <Card key={p.id} className="overflow-hidden">
+                                        <Card
+                                            key={p.id}
+                                            className="overflow-hidden"
+                                        >
                                             <CardContent className="space-y-3 p-4">
                                                 <div className="flex items-center justify-between">
-                                                    <Badge variant="outline" className="text-xs">
-                                                        {p.tipo === 'prestamo' ? 'Préstamo' : 'Adelanto'}
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="text-xs"
+                                                    >
+                                                        {p.tipo === 'prestamo'
+                                                            ? 'Préstamo'
+                                                            : 'Adelanto'}
                                                     </Badge>
                                                     {getEstadoBadge(p.estado)}
                                                 </div>
                                                 <div>
                                                     <p className="text-lg font-bold">
-                                                        {p.empleado?.nombre} {p.empleado?.apellido}
+                                                        {p.empleado?.nombre}{' '}
+                                                        {p.empleado?.apellido}
                                                     </p>
                                                     <p className="text-xs text-muted-foreground">
                                                         {p.empleado?.rut}
@@ -641,19 +771,34 @@ export default function Index({
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-2 text-sm">
                                                     <div>
-                                                        <p className="text-[10px] text-muted-foreground">Monto Total</p>
-                                                        <p className="font-bold">{formatCurrency(p.monto_total)}</p>
+                                                        <p className="text-[10px] text-muted-foreground">
+                                                            Monto Total
+                                                        </p>
+                                                        <p className="font-bold">
+                                                            {formatCurrency(
+                                                                p.monto_total,
+                                                            )}
+                                                        </p>
                                                     </div>
                                                     <div>
-                                                        <p className="text-[10px] text-muted-foreground">Cuota Mensual</p>
-                                                        <p className="font-bold">{formatCurrency(p.monto_cuota)}</p>
+                                                        <p className="text-[10px] text-muted-foreground">
+                                                            Cuota Mensual
+                                                        </p>
+                                                        <p className="font-bold">
+                                                            {formatCurrency(
+                                                                p.monto_cuota,
+                                                            )}
+                                                        </p>
                                                     </div>
                                                 </div>
                                                 <div>
                                                     <div className="flex items-center justify-between text-xs">
-                                                        <span className="text-muted-foreground">Progreso</span>
+                                                        <span className="text-muted-foreground">
+                                                            Progreso
+                                                        </span>
                                                         <span className="font-bold">
-                                                            {p.cuotas_pagadas}/{p.numero_cuotas}
+                                                            {p.cuotas_pagadas}/
+                                                            {p.numero_cuotas}
                                                         </span>
                                                     </div>
                                                     <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-200">
@@ -670,7 +815,9 @@ export default function Index({
                                                         variant="ghost"
                                                         size="sm"
                                                         className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                                                        onClick={() => handleVer(p)}
+                                                        onClick={() =>
+                                                            handleVer(p)
+                                                        }
                                                         title="Ver Detalles"
                                                     >
                                                         <Eye className="h-4 w-4" />
@@ -680,29 +827,41 @@ export default function Index({
                                                             variant="ghost"
                                                             size="sm"
                                                             className="h-8 w-8 p-0"
-                                                            onClick={() => handleEdit(p)}
+                                                            onClick={() =>
+                                                                handleEdit(p)
+                                                            }
                                                             title="Editar"
                                                         >
                                                             <Pencil className="h-4 w-4" />
                                                         </Button>
                                                     )}
-                                                    {canEdit && p.saldo_pendiente > 0 && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
-                                                            onClick={() => handleAgregarCuotas(p)}
-                                                            title="Pago Extra"
-                                                        >
-                                                            <Plus className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
+                                                    {canEdit &&
+                                                        p.saldo_pendiente >
+                                                            0 && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                                                                onClick={() =>
+                                                                    handleAgregarCuotas(
+                                                                        p,
+                                                                    )
+                                                                }
+                                                                title="Pago Extra"
+                                                            >
+                                                                <Plus className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
                                                     {canDelete && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
                                                             className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                                            onClick={() => handleDelete(p.id)}
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    p.id,
+                                                                )
+                                                            }
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
@@ -729,24 +888,32 @@ export default function Index({
                 <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto border-none p-0 shadow-xl sm:max-w-lg">
                     <DialogHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-3 text-white md:px-6 md:py-4">
                         <DialogTitle className="text-lg font-black tracking-tight md:text-xl">
-                            {editando ? 'Modificar' : 'Nuevo'} Préstamo / Adelanto
+                            {editando ? 'Modificar' : 'Nuevo'} Préstamo /
+                            Adelanto
                         </DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="px-4 py-4 md:px-6">
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold uppercase">Empleado *</Label>
-                                                    <Select
+                                    <Label className="text-xs font-bold uppercase">
+                                        Empleado *
+                                    </Label>
+                                    <Select
                                         value={data.empleado_id}
-                                        onValueChange={(val) => setData('empleado_id', val)}
+                                        onValueChange={(val) =>
+                                            setData('empleado_id', val)
+                                        }
                                     >
                                         <SelectTrigger className="h-9">
                                             <SelectValue placeholder="Seleccionar..." />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {empleados.map((e) => (
-                                                <SelectItem key={e.id} value={e.id.toString()}>
+                                                <SelectItem
+                                                    key={e.id}
+                                                    value={e.id.toString()}
+                                                >
                                                     {e.nombre} {e.apellido}
                                                 </SelectItem>
                                             ))}
@@ -754,97 +921,152 @@ export default function Index({
                                     </Select>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold uppercase">Tipo *</Label>
+                                    <Label className="text-xs font-bold uppercase">
+                                        Tipo *
+                                    </Label>
                                     <Select
                                         value={data.tipo}
-                                        onValueChange={(val) => setData('tipo', val)}
+                                        onValueChange={(val) =>
+                                            setData('tipo', val)
+                                        }
                                     >
                                         <SelectTrigger className="h-9">
                                             <SelectValue placeholder="Tipo" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="prestamo">Préstamo</SelectItem>
-                                            <SelectItem value="adelanto">Adelanto de Sueldo</SelectItem>
+                                            <SelectItem value="prestamo">
+                                                Préstamo
+                                            </SelectItem>
+                                            <SelectItem value="adelanto">
+                                                Adelanto de Sueldo
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold uppercase">Monto Total ($) *</Label>
+                                    <Label className="text-xs font-bold uppercase">
+                                        Monto Total ($) *
+                                    </Label>
                                     <Input
                                         type="number"
                                         min="1"
                                         value={data.monto_total}
-                                        onChange={(e) => setData('monto_total', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'monto_total',
+                                                e.target.value,
+                                            )
+                                        }
                                         className="h-9"
                                         required
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold uppercase">Número de Cuotas *</Label>
+                                    <Label className="text-xs font-bold uppercase">
+                                        Número de Cuotas *
+                                    </Label>
                                     <Input
                                         type="number"
                                         min="1"
                                         value={data.numero_cuotas}
-                                        onChange={(e) => setData('numero_cuotas', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'numero_cuotas',
+                                                e.target.value,
+                                            )
+                                        }
                                         className="h-9"
                                         required
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold uppercase">Frecuencia *</Label>
+                                    <Label className="text-xs font-bold uppercase">
+                                        Frecuencia *
+                                    </Label>
                                     <Select
                                         value={data.frecuencia}
-                                        onValueChange={(val) => setData('frecuencia', val)}
+                                        onValueChange={(val) =>
+                                            setData('frecuencia', val)
+                                        }
                                     >
                                         <SelectTrigger className="h-9">
                                             <SelectValue placeholder="Frecuencia" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="semanal">Semanal</SelectItem>
-                                            <SelectItem value="quincenal">Quincenal</SelectItem>
-                                            <SelectItem value="mensual">Mensual</SelectItem>
+                                            <SelectItem value="semanal">
+                                                Semanal
+                                            </SelectItem>
+                                            <SelectItem value="quincenal">
+                                                Quincenal
+                                            </SelectItem>
+                                            <SelectItem value="mensual">
+                                                Mensual
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold uppercase">Fecha Inicio *</Label>
+                                    <Label className="text-xs font-bold uppercase">
+                                        Fecha Inicio *
+                                    </Label>
                                     <Input
                                         type="date"
                                         value={data.fecha_inicio}
-                                        onChange={(e) => setData('fecha_inicio', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'fecha_inicio',
+                                                e.target.value,
+                                            )
+                                        }
                                         className="h-9"
                                         required
                                     />
                                 </div>
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-bold uppercase">Motivo</Label>
+                                <Label className="text-xs font-bold uppercase">
+                                    Motivo
+                                </Label>
                                 <Input
                                     value={data.motivo}
-                                    onChange={(e) => setData('motivo', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('motivo', e.target.value)
+                                    }
                                     placeholder="Motivo del préstamo..."
                                     className="h-9"
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-bold uppercase">Notas</Label>
+                                <Label className="text-xs font-bold uppercase">
+                                    Notas
+                                </Label>
                                 <Input
                                     value={data.notas}
-                                    onChange={(e) => setData('notas', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('notas', e.target.value)
+                                    }
                                     placeholder="Observaciones adicionales..."
                                     className="h-9"
                                 />
                             </div>
 
-                            {!editando && data.monto_total && data.numero_cuotas && (
-                                <div className="rounded-lg bg-blue-50 p-3 text-sm">
-                                    <p className="font-bold text-blue-800">
-                                        Cuota estimada: {formatCurrency(
-                                            parseFloat(data.monto_total as string) / parseInt(data.numero_cuotas as string)
-                                        )}
-                                    </p>
-                                </div>
-                            )}
+                            {!editando &&
+                                data.monto_total &&
+                                data.numero_cuotas && (
+                                    <div className="rounded-lg bg-blue-50 p-3 text-sm">
+                                        <p className="font-bold text-blue-800">
+                                            Cuota estimada:{' '}
+                                            {formatCurrency(
+                                                parseFloat(
+                                                    data.monto_total as string,
+                                                ) /
+                                                    parseInt(
+                                                        data.numero_cuotas as string,
+                                                    ),
+                                            )}
+                                        </p>
+                                    </div>
+                                )}
                         </div>
                         <div className="mt-4 flex flex-col gap-2 border-t pt-4 sm:flex-row sm:justify-end">
                             <Button
@@ -855,7 +1077,10 @@ export default function Index({
                             >
                                 Cancelar
                             </Button>
-                            <Button type="submit" className="rounded-full sm:px-6">
+                            <Button
+                                type="submit"
+                                className="rounded-full sm:px-6"
+                            >
                                 Guardar
                             </Button>
                         </div>
@@ -881,8 +1106,14 @@ export default function Index({
                                             Empleado
                                         </p>
                                         <p className="font-bold">
-                                            {prestamoSeleccionado.empleado?.nombre}{' '}
-                                            {prestamoSeleccionado.empleado?.apellido}
+                                            {
+                                                prestamoSeleccionado.empleado
+                                                    ?.nombre
+                                            }{' '}
+                                            {
+                                                prestamoSeleccionado.empleado
+                                                    ?.apellido
+                                            }
                                         </p>
                                         <p className="text-xs text-muted-foreground">
                                             {prestamoSeleccionado.empleado?.rut}
@@ -893,7 +1124,9 @@ export default function Index({
                                             Tipo
                                         </p>
                                         <div className="mt-1">
-                                            {getEstadoBadge(prestamoSeleccionado.estado)}
+                                            {getEstadoBadge(
+                                                prestamoSeleccionado.estado,
+                                            )}
                                         </div>
                                     </div>
                                     <div>
@@ -901,7 +1134,9 @@ export default function Index({
                                             Monto Total
                                         </p>
                                         <p className="text-lg font-black">
-                                            {formatCurrency(prestamoSeleccionado.monto_total)}
+                                            {formatCurrency(
+                                                prestamoSeleccionado.monto_total,
+                                            )}
                                         </p>
                                     </div>
                                     <div>
@@ -909,7 +1144,9 @@ export default function Index({
                                             Saldo Pendiente
                                         </p>
                                         <p className="text-lg font-black text-amber-600">
-                                            {formatCurrency(prestamoSeleccionado.saldo_pendiente)}
+                                            {formatCurrency(
+                                                prestamoSeleccionado.saldo_pendiente,
+                                            )}
                                         </p>
                                     </div>
                                     <div>
@@ -925,8 +1162,17 @@ export default function Index({
                                             Fechas
                                         </p>
                                         <p className="text-xs">
-                                            {prestamoSeleccionado.fecha_inicio?.split('T')[0]} al{' '}
-                                            {prestamoSeleccionado.fecha_fin?.split('T')[0]}
+                                            {
+                                                prestamoSeleccionado.fecha_inicio?.split(
+                                                    'T',
+                                                )[0]
+                                            }{' '}
+                                            al{' '}
+                                            {
+                                                prestamoSeleccionado.fecha_fin?.split(
+                                                    'T',
+                                                )[0]
+                                            }
                                         </p>
                                     </div>
                                 </div>
@@ -963,58 +1209,85 @@ export default function Index({
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {prestamoSeleccionado.cuotas.map((cuota) => (
-                                                        <tr key={cuota.id} className="border-b">
-                                                            <td className="px-3 py-2 font-bold">
-                                                                #{cuota.numero_cuota}
-                                                            </td>
-                                                            <td className="px-3 py-2 text-right font-bold">
-                                                                {formatCurrency(cuota.monto)}
-                                                            </td>
-                                                            <td className="px-3 py-2 text-center">
-                                                                {cuota.fecha_vencimiento?.split('T')[0]}
-                                                            </td>
-                                                            <td className="px-3 py-2 text-center">
-                                                                {getEstadoBadge(cuota.estado)}
-                                                            </td>
-                                                            <td className="px-3 py-2 text-center text-[10px]">
-                                                                {cuota.metodo_pago && (
-                                                                    <span className="capitalize">
-                                                                        {cuota.metodo_pago}
-                                                                    </span>
-                                                                )}
-                                                                {cuota.aplicada_en_nomina && (
-                                                                    <Badge className="ml-1 bg-purple-500 text-[8px]">
-                                                                        Nómina
-                                                                    </Badge>
-                                                                )}
-                                                            </td>
-                                                            <td className="px-3 py-2 text-right">
-                                                                {cuota.estado === 'pendiente' && (
-                                                                    <div className="flex justify-end gap-1">
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="sm"
-                                                                            className="h-7 text-xs text-green-600"
-                                                                            onClick={() => handlePagar(cuota)}
-                                                                        >
-                                                                            <DollarSign className="mr-1 h-3 w-3" />
-                                                                            Pagar
-                                                                        </Button>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="sm"
-                                                                            className="h-7 text-xs text-purple-600"
-                                                                            onClick={() => handleAplicarNomina(cuota)}
-                                                                        >
-                                                                            <Banknote className="mr-1 h-3 w-3" />
+                                                    {prestamoSeleccionado.cuotas.map(
+                                                        (cuota) => (
+                                                            <tr
+                                                                key={cuota.id}
+                                                                className="border-b"
+                                                            >
+                                                                <td className="px-3 py-2 font-bold">
+                                                                    #
+                                                                    {
+                                                                        cuota.numero_cuota
+                                                                    }
+                                                                </td>
+                                                                <td className="px-3 py-2 text-right font-bold">
+                                                                    {formatCurrency(
+                                                                        cuota.monto,
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-center">
+                                                                    {
+                                                                        cuota.fecha_vencimiento?.split(
+                                                                            'T',
+                                                                        )[0]
+                                                                    }
+                                                                </td>
+                                                                <td className="px-3 py-2 text-center">
+                                                                    {getEstadoBadge(
+                                                                        cuota.estado,
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-center text-[10px]">
+                                                                    {cuota.metodo_pago && (
+                                                                        <span className="capitalize">
+                                                                            {
+                                                                                cuota.metodo_pago
+                                                                            }
+                                                                        </span>
+                                                                    )}
+                                                                    {cuota.aplicada_en_nomina && (
+                                                                        <Badge className="ml-1 bg-purple-500 text-[8px]">
                                                                             Nómina
-                                                                        </Button>
-                                                                    </div>
-                                                                )}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
+                                                                        </Badge>
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-right">
+                                                                    {cuota.estado ===
+                                                                        'pendiente' && (
+                                                                        <div className="flex justify-end gap-1">
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="h-7 text-xs text-green-600"
+                                                                                onClick={() =>
+                                                                                    handlePagar(
+                                                                                        cuota,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <DollarSign className="mr-1 h-3 w-3" />
+                                                                                Pagar
+                                                                            </Button>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="h-7 text-xs text-purple-600"
+                                                                                onClick={() =>
+                                                                                    handleAplicarNomina(
+                                                                                        cuota,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <Banknote className="mr-1 h-3 w-3" />
+                                                                                Nómina
+                                                                            </Button>
+                                                                        </div>
+                                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                        ),
+                                                    )}
                                                 </tbody>
                                             </table>
                                         </div>
@@ -1027,7 +1300,9 @@ export default function Index({
 
                                 {prestamoSeleccionado.motivo && (
                                     <div>
-                                        <h4 className="mb-2 text-sm font-bold text-foreground">Motivo</h4>
+                                        <h4 className="mb-2 text-sm font-bold text-foreground">
+                                            Motivo
+                                        </h4>
                                         <p className="rounded-lg bg-muted/30 p-3 text-sm">
                                             {prestamoSeleccionado.motivo}
                                         </p>
@@ -1051,56 +1326,95 @@ export default function Index({
                         {cuotaSeleccionada && (
                             <div className="space-y-4">
                                 <div className="rounded-lg bg-green-50 p-3 text-center">
-                                    <p className="text-xs text-muted-foreground">Cuota #{cuotaSeleccionada.numero_cuota}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Cuota #{cuotaSeleccionada.numero_cuota}
+                                    </p>
                                     <p className="text-2xl font-black text-green-700">
-                                        {formatCurrency(cuotaSeleccionada.monto)}
+                                        {formatCurrency(
+                                            cuotaSeleccionada.monto,
+                                        )}
                                     </p>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold uppercase">Monto a Pagar *</Label>
+                                    <Label className="text-xs font-bold uppercase">
+                                        Monto a Pagar *
+                                    </Label>
                                     <Input
                                         type="number"
                                         min="0.01"
                                         step="0.01"
                                         value={pagoData.monto_pagado}
                                         onChange={(e) =>
-                                            setPagoData({ ...pagoData, monto_pagado: parseFloat(e.target.value) || 0 })
+                                            setPagoData({
+                                                ...pagoData,
+                                                monto_pagado:
+                                                    parseFloat(
+                                                        e.target.value,
+                                                    ) || 0,
+                                            })
                                         }
                                         className="h-9"
                                         required
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold uppercase">Fecha de Pago *</Label>
+                                    <Label className="text-xs font-bold uppercase">
+                                        Fecha de Pago *
+                                    </Label>
                                     <Input
                                         type="date"
                                         value={pagoData.fecha_pago}
-                                        onChange={(e) => setPagoData({ ...pagoData, fecha_pago: e.target.value })}
+                                        onChange={(e) =>
+                                            setPagoData({
+                                                ...pagoData,
+                                                fecha_pago: e.target.value,
+                                            })
+                                        }
                                         className="h-9"
                                         required
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold uppercase">Método de Pago *</Label>
+                                    <Label className="text-xs font-bold uppercase">
+                                        Método de Pago *
+                                    </Label>
                                     <Select
                                         value={pagoData.metodo_pago}
-                                        onValueChange={(val) => setPagoData({ ...pagoData, metodo_pago: val })}
+                                        onValueChange={(val) =>
+                                            setPagoData({
+                                                ...pagoData,
+                                                metodo_pago: val,
+                                            })
+                                        }
                                     >
                                         <SelectTrigger className="h-9">
                                             <SelectValue placeholder="Método" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="efectivo">Efectivo</SelectItem>
-                                            <SelectItem value="transferencia">Transferencia</SelectItem>
-                                            <SelectItem value="nomina">Descuento Nómina</SelectItem>
+                                            <SelectItem value="efectivo">
+                                                Efectivo
+                                            </SelectItem>
+                                            <SelectItem value="transferencia">
+                                                Transferencia
+                                            </SelectItem>
+                                            <SelectItem value="nomina">
+                                                Descuento Nómina
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold uppercase">Referencia</Label>
+                                    <Label className="text-xs font-bold uppercase">
+                                        Referencia
+                                    </Label>
                                     <Input
                                         value={pagoData.referencia_pago}
-                                        onChange={(e) => setPagoData({ ...pagoData, referencia_pago: e.target.value })}
+                                        onChange={(e) =>
+                                            setPagoData({
+                                                ...pagoData,
+                                                referencia_pago: e.target.value,
+                                            })
+                                        }
                                         placeholder="Número de referencia..."
                                         className="h-9"
                                     />
@@ -1139,22 +1453,34 @@ export default function Index({
                         {cuotaSeleccionada && (
                             <div className="space-y-4">
                                 <div className="rounded-lg bg-purple-50 p-3 text-center">
-                                    <p className="text-xs text-muted-foreground">Cuota #{cuotaSeleccionada.numero_cuota}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Cuota #{cuotaSeleccionada.numero_cuota}
+                                    </p>
                                     <p className="text-2xl font-black text-purple-700">
-                                        {formatCurrency(cuotaSeleccionada.monto)}
+                                        {formatCurrency(
+                                            cuotaSeleccionada.monto,
+                                        )}
                                     </p>
                                 </div>
                                 <div className="rounded-lg bg-amber-50 p-3 text-sm">
                                     <p className="font-bold text-amber-800">
-                                        Esta cuota se descontará automáticamente del próximo pago de nómina del empleado.
+                                        Esta cuota se descontará automáticamente
+                                        del próximo pago de nómina del empleado.
                                     </p>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold uppercase">Período de Nómina *</Label>
+                                    <Label className="text-xs font-bold uppercase">
+                                        Período de Nómina *
+                                    </Label>
                                     <Input
                                         type="month"
                                         value={nominaData.nomina_periodo}
-                                        onChange={(e) => setNominaData({ ...nominaData, nomina_periodo: e.target.value })}
+                                        onChange={(e) =>
+                                            setNominaData({
+                                                ...nominaData,
+                                                nomina_periodo: e.target.value,
+                                            })
+                                        }
                                         className="h-9"
                                         required
                                     />
@@ -1194,15 +1520,22 @@ export default function Index({
                             <div className="space-y-4">
                                 <div className="rounded-lg bg-emerald-50 p-3 text-center">
                                     <p className="text-xs text-muted-foreground">
-                                        {prestamoCuotas.empleado?.nombre} {prestamoCuotas.empleado?.apellido}
+                                        {prestamoCuotas.empleado?.nombre}{' '}
+                                        {prestamoCuotas.empleado?.apellido}
                                     </p>
                                     <p className="text-sm text-muted-foreground">
-                                        Progreso: {prestamoCuotas.cuotas_pagadas}/{prestamoCuotas.numero_cuotas} —{' '}
-                                        Saldo: {formatCurrency(prestamoCuotas.saldo_pendiente)}
+                                        Progreso:{' '}
+                                        {prestamoCuotas.cuotas_pagadas}/
+                                        {prestamoCuotas.numero_cuotas} — Saldo:{' '}
+                                        {formatCurrency(
+                                            prestamoCuotas.saldo_pendiente,
+                                        )}
                                     </p>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold uppercase">Número de Cuotas a Pagar *</Label>
+                                    <Label className="text-xs font-bold uppercase">
+                                        Número de Cuotas a Pagar *
+                                    </Label>
                                     <Input
                                         type="number"
                                         min="1"
@@ -1210,7 +1543,12 @@ export default function Index({
                                         step="1"
                                         value={cuotasData.numero_cuotas}
                                         onChange={(e) =>
-                                            setCuotasData({ ...cuotasData, numero_cuotas: parseInt(e.target.value) || 1 })
+                                            setCuotasData({
+                                                ...cuotasData,
+                                                numero_cuotas:
+                                                    parseInt(e.target.value) ||
+                                                    1,
+                                            })
                                         }
                                         className="h-9"
                                         required
@@ -1218,9 +1556,15 @@ export default function Index({
                                 </div>
                                 {cuotasData.numero_cuotas > 0 && (
                                     <div className="rounded-lg bg-emerald-50 p-3 text-center">
-                                        <p className="text-xs text-muted-foreground">Cuotas pendientes a pagar</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Cuotas pendientes a pagar
+                                        </p>
                                         <p className="text-xl font-black text-emerald-700">
-                                            {Math.min(cuotasData.numero_cuotas, prestamoCuotas.numero_cuotas - prestamoCuotas.cuotas_pagadas)}
+                                            {Math.min(
+                                                cuotasData.numero_cuotas,
+                                                prestamoCuotas.numero_cuotas -
+                                                    prestamoCuotas.cuotas_pagadas,
+                                            )}
                                         </p>
                                     </div>
                                 )}

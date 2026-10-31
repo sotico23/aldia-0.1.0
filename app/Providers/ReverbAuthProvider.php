@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Reverb Auth Provider - Registers channel policies
  */

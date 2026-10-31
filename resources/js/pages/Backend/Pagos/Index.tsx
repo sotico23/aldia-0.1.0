@@ -7,7 +7,7 @@ import {
     Trash2,
     Search,
     X,
-    Eye
+    Eye,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useMemo } from 'react';
@@ -25,7 +25,7 @@ import {
     Dialog,
     DialogContent,
     DialogHeader,
-    DialogTitle
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -66,7 +66,7 @@ export default function Index({
         meta: { from: number; to: number; total: number };
     };
 }) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const [isOpen, setIsOpen] = useState(false);
     const [editando, setEditando] = useState<Pago | null>(null);
     const [isViewOpen, setIsViewOpen] = useState(false);
@@ -242,12 +242,17 @@ export default function Index({
                             <div>
                                 <CardTitle>Pagos</CardTitle>
                                 <CardDescription>
-                                    {pagosFiltrados.length} registros encontrados
+                                    {pagosFiltrados.length} registros
+                                    encontrados
                                 </CardDescription>
                             </div>
                             <div className="flex items-center gap-1 rounded-lg bg-muted/30 p-1">
                                 <Button
-                                    variant={viewMode === 'table' ? 'default' : 'ghost'}
+                                    variant={
+                                        viewMode === 'table'
+                                            ? 'default'
+                                            : 'ghost'
+                                    }
                                     size="sm"
                                     onClick={() => setViewMode('table')}
                                     className="h-8 w-8 p-0"
@@ -255,7 +260,11 @@ export default function Index({
                                     <List className="h-4 w-4" />
                                 </Button>
                                 <Button
-                                    variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                                    variant={
+                                        viewMode === 'cards'
+                                            ? 'default'
+                                            : 'ghost'
+                                    }
                                     size="sm"
                                     onClick={() => setViewMode('cards')}
                                     className="h-8 w-8 p-0"
@@ -356,54 +365,174 @@ export default function Index({
                                 </Button>
                             </div>
                             {viewMode === 'table' ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-xs sm:text-sm">
-                                    <thead>
-                                        <tr className="border-b">
-                                            <th className="py-2 text-right font-medium">
-                                                Monto
-                                            </th>
-                                            <th className="px-4 py-2 text-left font-medium">
-                                                Fecha Pago
-                                            </th>
-                                            <th className="py-2 text-left font-medium">
-                                                Método / Ref.
-                                            </th>
-                                            <th className="py-2 text-center font-medium">
-                                                Estado
-                                            </th>
-                                            <th className="py-2 text-right font-medium">
-                                                Acciones
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-xs sm:text-sm">
+                                        <thead>
+                                            <tr className="border-b">
+                                                <th className="py-2 text-right font-medium">
+                                                    Monto
+                                                </th>
+                                                <th className="px-4 py-2 text-left font-medium">
+                                                    Fecha Pago
+                                                </th>
+                                                <th className="py-2 text-left font-medium">
+                                                    Método / Ref.
+                                                </th>
+                                                <th className="py-2 text-center font-medium">
+                                                    Estado
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Acciones
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {pagosFiltrados.map((p) => (
+                                                <tr
+                                                    key={p.id}
+                                                    className="border-b transition-colors hover:bg-muted/30"
+                                                >
+                                                    <td className="py-2 text-right font-bold text-green-600">
+                                                        {formatCurrency(
+                                                            p.monto,
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-2 whitespace-nowrap text-muted-foreground">
+                                                        {formatDateCLP(
+                                                            p.fecha_pago,
+                                                        )}
+                                                    </td>
+                                                    <td className="py-2">
+                                                        <div className="text-[10px] font-medium whitespace-nowrap uppercase">
+                                                            {p.metodo_pago ||
+                                                                '-'}
+                                                        </div>
+                                                        <div className="max-w-[150px] truncate text-[10px] text-muted-foreground">
+                                                            {p.referencia || ''}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-2 text-center">
+                                                        {getEstadoBadge(
+                                                            p.estado,
+                                                        )}
+                                                    </td>
+                                                    <td className="py-2 text-right">
+                                                        <div className="flex justify-end gap-1">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-8 w-8 p-0"
+                                                                onClick={() =>
+                                                                    handleView(
+                                                                        p,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                            {canEdit && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0"
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            p,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {canDelete && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            p.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {pagosFiltrados.length === 0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan={5}
+                                                        className="py-8 text-center text-muted-foreground"
+                                                    >
+                                                        No se encontraron pagos
+                                                        con los filtros
+                                                        aplicados
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                    <Pagination
+                                        links={pagos.links}
+                                        meta={pagos.meta}
+                                    />
+                                </div>
+                            ) : (
+                                <div>
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                         {pagosFiltrados.map((p) => (
-                                            <tr
-                                                key={p.id}
-                                                className="border-b transition-colors hover:bg-muted/30"
-                                            >
-                                                <td className="py-2 text-right font-bold text-green-600">
-                                                    {formatCurrency(p.monto)}
-                                                </td>
-                                                <td className="px-4 py-2 whitespace-nowrap text-muted-foreground">
-                                                    {formatDateCLP(
-                                                        p.fecha_pago,
-                                                    )}
-                                                </td>
-                                                <td className="py-2">
-                                                    <div className="text-[10px] font-medium whitespace-nowrap uppercase">
-                                                        {p.metodo_pago || '-'}
+                                            <Card key={p.id}>
+                                                <CardHeader className="pb-2">
+                                                    <div className="flex items-start justify-between">
+                                                        <CardTitle className="text-base">
+                                                            {formatCurrency(
+                                                                p.monto,
+                                                            )}
+                                                        </CardTitle>
+                                                        {getEstadoBadge(
+                                                            p.estado,
+                                                        )}
                                                     </div>
-                                                    <div className="max-w-[150px] truncate text-[10px] text-muted-foreground">
-                                                        {p.referencia || ''}
+                                                    <CardDescription className="flex items-center gap-1 text-xs">
+                                                        <span className="uppercase">
+                                                            {p.metodo_pago ||
+                                                                '-'}
+                                                        </span>
+                                                        {p.referencia && (
+                                                            <>
+                                                                · {p.referencia}
+                                                            </>
+                                                        )}
+                                                    </CardDescription>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <div className="space-y-2 text-sm">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-muted-foreground">
+                                                                Fecha
+                                                            </span>
+                                                            <span className="font-medium">
+                                                                {formatDateCLP(
+                                                                    p.fecha_pago,
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                        {p.notas && (
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-muted-foreground">
+                                                                    Notas
+                                                                </span>
+                                                                <span className="max-w-[150px] truncate text-muted-foreground">
+                                                                    {p.notas}
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                </td>
-                                                <td className="py-2 text-center">
-                                                    {getEstadoBadge(p.estado)}
-                                                </td>
-                                                <td className="py-2 text-right">
-                                                    <div className="flex justify-end gap-1">
+                                                    <div className="mt-3 flex justify-end gap-1 border-t pt-2">
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -420,7 +549,9 @@ export default function Index({
                                                                 size="sm"
                                                                 className="h-8 w-8 p-0"
                                                                 onClick={() =>
-                                                                    handleEdit(p)
+                                                                    handleEdit(
+                                                                        p,
+                                                                    )
                                                                 }
                                                             >
                                                                 <Pencil className="h-4 w-4" />
@@ -441,93 +572,28 @@ export default function Index({
                                                             </Button>
                                                         )}
                                                     </div>
-                                                </td>
-                                            </tr>
+                                                </CardContent>
+                                            </Card>
                                         ))}
-                                        {pagosFiltrados.length === 0 && (
-                                            <tr>
-                                                <td
-                                                    colSpan={5}
-                                                    className="py-8 text-center text-muted-foreground"
-                                                >
-                                                    No se encontraron pagos con
-                                                    los filtros aplicados
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                                <Pagination
-                                    links={pagos.links}
-                                    meta={pagos.meta}
-                                />
-                            </div>
-                            ) : (
-                            <div>
-                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                    {pagosFiltrados.map((p) => (
-                                        <Card key={p.id}>
-                                            <CardHeader className="pb-2">
-                                                <div className="flex items-start justify-between">
-                                                    <CardTitle className="text-base">
-                                                        {formatCurrency(p.monto)}
-                                                    </CardTitle>
-                                                    {getEstadoBadge(p.estado)}
-                                                </div>
-                                                <CardDescription className="flex items-center gap-1 text-xs">
-                                                    <span className="uppercase">{p.metodo_pago || '-'}</span>
-                                                    {p.referencia && (
-                                                        <>· {p.referencia}</>
-                                                    )}
-                                                </CardDescription>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="space-y-2 text-sm">
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-muted-foreground">Fecha</span>
-                                                        <span className="font-medium">{formatDateCLP(p.fecha_pago)}</span>
-                                                    </div>
-                                                    {p.notas && (
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-muted-foreground">Notas</span>
-                                                            <span className="max-w-[150px] truncate text-muted-foreground">{p.notas}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="mt-3 flex justify-end gap-1 border-t pt-2">
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleView(p)}>
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                    {canEdit && (
-                                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(p)}>
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-                                                    {canDelete && (
-                                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(p.id)}>
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                                </div>
-                                {pagosFiltrados.length === 0 && (
-                                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                                        <div className="mb-4 rounded-full bg-muted/30 p-4">
-                                            <LayoutGrid className="h-8 w-8 text-muted-foreground" />
-                                        </div>
-                                        <p className="text-muted-foreground">No se encontraron pagos con los filtros aplicados</p>
                                     </div>
-                                )}
-                                <div className="mt-4">
-                                    <Pagination
-                                        links={pagos.links}
-                                        meta={pagos.meta}
-                                    />
+                                    {pagosFiltrados.length === 0 && (
+                                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                                            <div className="mb-4 rounded-full bg-muted/30 p-4">
+                                                <LayoutGrid className="h-8 w-8 text-muted-foreground" />
+                                            </div>
+                                            <p className="text-muted-foreground">
+                                                No se encontraron pagos con los
+                                                filtros aplicados
+                                            </p>
+                                        </div>
+                                    )}
+                                    <div className="mt-4">
+                                        <Pagination
+                                            links={pagos.links}
+                                            meta={pagos.meta}
+                                        />
+                                    </div>
                                 </div>
-                            </div>
                             )}
                         </CardContent>
                     </Card>

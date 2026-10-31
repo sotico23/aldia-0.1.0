@@ -490,7 +490,9 @@ export default function Index({
                         </div>
                         <div className="flex gap-2">
                             {canCreate && (
-                                <Button onClick={() => handleOpenDialog('venta')}>
+                                <Button
+                                    onClick={() => handleOpenDialog('venta')}
+                                >
                                     <Plus className="mr-2 h-4 w-4" />
                                     Nueva Factura
                                 </Button>
@@ -510,11 +512,13 @@ export default function Index({
                                     <CardContent className="p-4">
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                                                     Facturado este Mes
                                                 </p>
                                                 <p className="mt-1 text-2xl font-black text-blue-600">
-                                                    {formatCurrency(stats.total_facturado_mes)}
+                                                    {formatCurrency(
+                                                        stats.total_facturado_mes,
+                                                    )}
                                                 </p>
                                             </div>
                                             <div className="rounded-full bg-blue-100 p-3">
@@ -527,11 +531,13 @@ export default function Index({
                                     <CardContent className="p-4">
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                                                     Pendiente
                                                 </p>
                                                 <p className="mt-1 text-2xl font-black text-amber-600">
-                                                    {formatCurrency(stats.total_pendiente)}
+                                                    {formatCurrency(
+                                                        stats.total_pendiente,
+                                                    )}
                                                 </p>
                                             </div>
                                             <div className="rounded-full bg-amber-100 p-3">
@@ -544,11 +550,13 @@ export default function Index({
                                     <CardContent className="p-4">
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                                                     Cobrado este Mes
                                                 </p>
                                                 <p className="mt-1 text-2xl font-black text-green-600">
-                                                    {formatCurrency(stats.total_pagado_mes)}
+                                                    {formatCurrency(
+                                                        stats.total_pagado_mes,
+                                                    )}
                                                 </p>
                                             </div>
                                             <div className="rounded-full bg-green-100 p-3">
@@ -561,7 +569,7 @@ export default function Index({
                                     <CardContent className="p-4">
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                                                     Facturas Hoy
                                                 </p>
                                                 <p className="mt-1 text-2xl font-black text-purple-600">
@@ -579,17 +587,52 @@ export default function Index({
                             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                                 <Card className="shadow-sm">
                                     <CardHeader className="pb-2">
-                                        <CardTitle className="text-sm font-bold">Tendencia Mensual</CardTitle>
+                                        <CardTitle className="text-sm font-bold">
+                                            Tendencia Mensual
+                                        </CardTitle>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="h-48">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <LineChart data={stats.tendencia_mensual}>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                                    <XAxis dataKey="mes" tick={{ fontSize: 10 }} tickFormatter={(v) => v.slice(5)} />
-                                                    <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                                                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                                                    <Line type="monotone" dataKey="total" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3 }} />
+                                            <ResponsiveContainer
+                                                width="100%"
+                                                height="100%"
+                                            >
+                                                <LineChart
+                                                    data={
+                                                        stats.tendencia_mensual
+                                                    }
+                                                >
+                                                    <CartesianGrid
+                                                        strokeDasharray="3 3"
+                                                        stroke="#f0f0f0"
+                                                    />
+                                                    <XAxis
+                                                        dataKey="mes"
+                                                        tick={{ fontSize: 10 }}
+                                                        tickFormatter={(v) =>
+                                                            v.slice(5)
+                                                        }
+                                                    />
+                                                    <YAxis
+                                                        tick={{ fontSize: 10 }}
+                                                        tickFormatter={(v) =>
+                                                            `$${(v / 1000).toFixed(0)}k`
+                                                        }
+                                                    />
+                                                    <Tooltip
+                                                        formatter={(value) =>
+                                                            formatCurrency(
+                                                                Number(value),
+                                                            )
+                                                        }
+                                                    />
+                                                    <Line
+                                                        type="monotone"
+                                                        dataKey="total"
+                                                        stroke="#3B82F6"
+                                                        strokeWidth={2}
+                                                        dot={{ r: 3 }}
+                                                    />
                                                 </LineChart>
                                             </ResponsiveContainer>
                                         </div>
@@ -597,26 +640,57 @@ export default function Index({
                                 </Card>
                                 <Card className="shadow-sm">
                                     <CardHeader className="pb-2">
-                                        <CardTitle className="text-sm font-bold">Por Estado</CardTitle>
+                                        <CardTitle className="text-sm font-bold">
+                                            Por Estado
+                                        </CardTitle>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="h-48">
-                                            <ResponsiveContainer width="100%" height="100%">
+                                            <ResponsiveContainer
+                                                width="100%"
+                                                height="100%"
+                                            >
                                                 <PieChart>
                                                     <Pie
-                                                        data={stats.distribucion_estado}
+                                                        data={
+                                                            stats.distribucion_estado
+                                                        }
                                                         dataKey="total"
                                                         nameKey="estado"
                                                         cx="50%"
                                                         cy="50%"
                                                         outerRadius={70}
-                                                        label={({ name, percent }) => `${name} ${(Number(percent) * 100).toFixed(0)}%`}
+                                                        label={({
+                                                            name,
+                                                            percent,
+                                                        }) =>
+                                                            `${name} ${(Number(percent) * 100).toFixed(0)}%`
+                                                        }
                                                     >
-                                                        {stats.distribucion_estado.map((entry) => (
-                                                            <Cell key={entry.estado} fill={ESTADO_COLORS[entry.estado] || '#6B7280'} />
-                                                        ))}
+                                                        {stats.distribucion_estado.map(
+                                                            (entry) => (
+                                                                <Cell
+                                                                    key={
+                                                                        entry.estado
+                                                                    }
+                                                                    fill={
+                                                                        ESTADO_COLORS[
+                                                                            entry
+                                                                                .estado
+                                                                        ] ||
+                                                                        '#6B7280'
+                                                                    }
+                                                                />
+                                                            ),
+                                                        )}
                                                     </Pie>
-                                                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                                                    <Tooltip
+                                                        formatter={(value) =>
+                                                            formatCurrency(
+                                                                Number(value),
+                                                            )
+                                                        }
+                                                    />
                                                 </PieChart>
                                             </ResponsiveContainer>
                                         </div>
@@ -624,17 +698,50 @@ export default function Index({
                                 </Card>
                                 <Card className="shadow-sm">
                                     <CardHeader className="pb-2">
-                                        <CardTitle className="text-sm font-bold">Por Tipo</CardTitle>
+                                        <CardTitle className="text-sm font-bold">
+                                            Por Tipo
+                                        </CardTitle>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="h-48">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <BarChart data={stats.distribucion_tipo}>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                                    <XAxis dataKey="tipo" tick={{ fontSize: 10 }} tickFormatter={(v) => TIPO_LABELS[v] || v} />
-                                                    <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                                                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                                                    <Bar dataKey="total" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
+                                            <ResponsiveContainer
+                                                width="100%"
+                                                height="100%"
+                                            >
+                                                <BarChart
+                                                    data={
+                                                        stats.distribucion_tipo
+                                                    }
+                                                >
+                                                    <CartesianGrid
+                                                        strokeDasharray="3 3"
+                                                        stroke="#f0f0f0"
+                                                    />
+                                                    <XAxis
+                                                        dataKey="tipo"
+                                                        tick={{ fontSize: 10 }}
+                                                        tickFormatter={(v) =>
+                                                            TIPO_LABELS[v] || v
+                                                        }
+                                                    />
+                                                    <YAxis
+                                                        tick={{ fontSize: 10 }}
+                                                        tickFormatter={(v) =>
+                                                            `$${(v / 1000).toFixed(0)}k`
+                                                        }
+                                                    />
+                                                    <Tooltip
+                                                        formatter={(value) =>
+                                                            formatCurrency(
+                                                                Number(value),
+                                                            )
+                                                        }
+                                                    />
+                                                    <Bar
+                                                        dataKey="total"
+                                                        fill="#8B5CF6"
+                                                        radius={[4, 4, 0, 0]}
+                                                    />
                                                 </BarChart>
                                             </ResponsiveContainer>
                                         </div>
@@ -650,12 +757,17 @@ export default function Index({
                                 <div>
                                     <CardTitle>Facturas</CardTitle>
                                     <CardDescription>
-                                        {facturasFiltradas.length} registros encontrados
+                                        {facturasFiltradas.length} registros
+                                        encontrados
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-1 rounded-lg border p-1">
                                     <Button
-                                        variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'secondary'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('table')}
                                         className="h-8 w-8 p-0"
@@ -663,7 +775,11 @@ export default function Index({
                                         <List className="h-4 w-4" />
                                     </Button>
                                     <Button
-                                        variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'secondary'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('cards')}
                                         className="h-8 w-8 p-0"
@@ -687,7 +803,7 @@ export default function Index({
                                                     busqueda: e.target.value,
                                                 })
                                             }
-                                            className="h-9 pl-8 pr-8"
+                                            className="h-9 pr-8 pl-8"
                                         />
                                     </div>
                                 </div>
@@ -751,225 +867,296 @@ export default function Index({
                                 </Button>
                             </div>
                             {viewMode === 'table' ? (
-                            <>
-                                {facturas.data.length === 0 ? (
-                                    <div className="py-8 text-center text-muted-foreground">
-                                        No hay facturas registradas
-                                    </div>
-                                ) : (
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full">
-                                            <thead>
-                                                <tr className="border-b">
-                                                    <th className="px-2 py-3 text-left">
-                                                        Número
-                                                    </th>
-                                                    <th className="px-2 py-3 text-left">
-                                                        Tipo
-                                                    </th>
-                                                    <th className="px-2 py-3 text-left">
-                                                        Cliente
-                                                    </th>
-                                                    <th className="px-2 py-3 text-left">
-                                                        Fecha
-                                                    </th>
-                                                    <th className="px-2 py-3 text-right">
-                                                        Total
-                                                    </th>
-                                                    <th className="px-2 py-3 text-center">
-                                                        Estado
-                                                    </th>
-                                                    <th className="px-2 py-3 text-right">
-                                                        Acciones
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {facturasFiltradas.map(
-                                                    (factura) => (
-                                                        <tr
-                                                            key={factura.id}
-                                                            className="border-b transition-colors hover:bg-muted/30"
-                                                        >
-                                                            <td className="px-2 py-3">
-                                                                <span className="font-mono font-medium">
-                                                                    {factura.numero}
-                                                                </span>
-                                                            </td>
-                                                            <td className="px-2 py-3">
-                                                                <Badge
-                                                                    variant="outline"
-                                                                    className="capitalize"
-                                                                >
-                                                                    {factura.tipo ===
-                                                                    'venta'
-                                                                        ? 'Factura'
-                                                                        : factura.tipo}
-                                                                </Badge>
-                                                            </td>
-                                                            <td className="px-2 py-3">
-                                                                {factura.cliente
-                                                                    ?.nombre ||
-                                                                    'N/A'}
-                                                            </td>
-                                                            <td className="px-2 py-3 text-muted-foreground">
-                                                                {formatDateCLP(
-                                                                    factura.fecha,
-                                                                )}
-                                                            </td>
-                                                            <td className="px-2 py-3 text-right font-bold text-green-600">
-                                                                {formatCurrency(
-                                                                    factura.total,
-                                                                )}
-                                                            </td>
-                                                            <td className="px-2 py-3 text-center">
-                                                                {getEstadoBadge(
-                                                                    factura.estado,
-                                                                )}
-                                                            </td>
-                                                            <td className="px-2 py-3 text-right">
-                                                                <div className="flex justify-end gap-1">
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="sm"
-                                                                        className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                                                                        onClick={() => {
-                                                                            setFacturaSeleccionada(
-                                                                                factura,
-                                                                            );
-                                                                            setIsVerOpen(
-                                                                                true,
-                                                                            );
-                                                                        }}
-                                                                        title="Ver Detalles"
+                                <>
+                                    {facturas.data.length === 0 ? (
+                                        <div className="py-8 text-center text-muted-foreground">
+                                            No hay facturas registradas
+                                        </div>
+                                    ) : (
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full">
+                                                <thead>
+                                                    <tr className="border-b">
+                                                        <th className="px-2 py-3 text-left">
+                                                            Número
+                                                        </th>
+                                                        <th className="px-2 py-3 text-left">
+                                                            Tipo
+                                                        </th>
+                                                        <th className="px-2 py-3 text-left">
+                                                            Cliente
+                                                        </th>
+                                                        <th className="px-2 py-3 text-left">
+                                                            Fecha
+                                                        </th>
+                                                        <th className="px-2 py-3 text-right">
+                                                            Total
+                                                        </th>
+                                                        <th className="px-2 py-3 text-center">
+                                                            Estado
+                                                        </th>
+                                                        <th className="px-2 py-3 text-right">
+                                                            Acciones
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {facturasFiltradas.map(
+                                                        (factura) => (
+                                                            <tr
+                                                                key={factura.id}
+                                                                className="border-b transition-colors hover:bg-muted/30"
+                                                            >
+                                                                <td className="px-2 py-3">
+                                                                    <span className="font-mono font-medium">
+                                                                        {
+                                                                            factura.numero
+                                                                        }
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-2 py-3">
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="capitalize"
                                                                     >
-                                                                        <Eye className="h-4 w-4" />
-                                                                    </Button>
-                                                                    {canEdit && (
+                                                                        {factura.tipo ===
+                                                                        'venta'
+                                                                            ? 'Factura'
+                                                                            : factura.tipo}
+                                                                    </Badge>
+                                                                </td>
+                                                                <td className="px-2 py-3">
+                                                                    {factura
+                                                                        .cliente
+                                                                        ?.nombre ||
+                                                                        'N/A'}
+                                                                </td>
+                                                                <td className="px-2 py-3 text-muted-foreground">
+                                                                    {formatDateCLP(
+                                                                        factura.fecha,
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-2 py-3 text-right font-bold text-green-600">
+                                                                    {formatCurrency(
+                                                                        factura.total,
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-2 py-3 text-center">
+                                                                    {getEstadoBadge(
+                                                                        factura.estado,
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-2 py-3 text-right">
+                                                                    <div className="flex justify-end gap-1">
                                                                         <Button
                                                                             variant="ghost"
                                                                             size="sm"
-                                                                            className="h-8 w-8 p-0 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+                                                                            className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                                                                             onClick={() => {
                                                                                 setFacturaSeleccionada(
                                                                                     factura,
                                                                                 );
-                                                                                setIsEditOpen(
+                                                                                setIsVerOpen(
                                                                                     true,
                                                                                 );
                                                                             }}
-                                                                            title="Editar / Cambiar Estado"
+                                                                            title="Ver Detalles"
                                                                         >
-                                                                            <Pencil className="h-4 w-4" />
+                                                                            <Eye className="h-4 w-4" />
                                                                         </Button>
-                                                                    )}
-                                                                    <a
-                                                                        href={`/facturacion/${factura.id}/pdf`}
-                                                                        target="_blank"
-                                                                        rel="noreferrer"
-                                                                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-                                                                    >
-                                                                        <FileText className="h-4 w-4" />
-                                                                    </a>
-                                                                    {canDelete && (
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="sm"
-                                                                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                                                            onClick={() =>
-                                                                                handleDelete(
-                                                                                    factura.id,
-                                                                                )
-                                                                            }
+                                                                        {canEdit && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="h-8 w-8 p-0 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+                                                                                onClick={() => {
+                                                                                    setFacturaSeleccionada(
+                                                                                        factura,
+                                                                                    );
+                                                                                    setIsEditOpen(
+                                                                                        true,
+                                                                                    );
+                                                                                }}
+                                                                                title="Editar / Cambiar Estado"
+                                                                            >
+                                                                                <Pencil className="h-4 w-4" />
+                                                                            </Button>
+                                                                        )}
+                                                                        <a
+                                                                            href={`/facturacion/${factura.id}/pdf`}
+                                                                            target="_blank"
+                                                                            rel="noreferrer"
+                                                                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                                                                         >
-                                                                            <Trash2 className="h-4 w-4" />
-                                                                        </Button>
-                                                                    )}
-                                                                </div>
+                                                                            <FileText className="h-4 w-4" />
+                                                                        </a>
+                                                                        {canDelete && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                                onClick={() =>
+                                                                                    handleDelete(
+                                                                                        factura.id,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <Trash2 className="h-4 w-4" />
+                                                                            </Button>
+                                                                        )}
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        ),
+                                                    )}
+                                                    {facturasFiltradas.length ===
+                                                        0 && (
+                                                        <tr>
+                                                            <td
+                                                                colSpan={6}
+                                                                className="py-8 text-center text-muted-foreground"
+                                                            >
+                                                                No se
+                                                                encontraron
+                                                                facturas con los
+                                                                filtros
+                                                                aplicados
                                                             </td>
                                                         </tr>
-                                                    ),
-                                                )}
-                                                {facturasFiltradas.length === 0 && (
-                                                    <tr>
-                                                        <td
-                                                            colSpan={6}
-                                                            className="py-8 text-center text-muted-foreground"
-                                                        >
-                                                            No se encontraron
-                                                            facturas con los filtros
-                                                            aplicados
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )}
-                            </>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                </>
                             ) : (
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {facturasFiltradas.length === 0 ? (
-                                    <div className="col-span-full py-8 text-center text-muted-foreground">
-                                        No se encontraron facturas con los filtros aplicados
-                                    </div>
-                                ) : (
-                                    facturasFiltradas.map((factura) => (
-                                        <Card key={factura.id} className="flex flex-col">
-                                            <CardHeader className="pb-3">
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <CreditCard className="h-5 w-5 text-primary" />
-                                                        <CardTitle className="text-sm font-mono font-medium">
-                                                            {factura.numero}
-                                                        </CardTitle>
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    {facturasFiltradas.length === 0 ? (
+                                        <div className="col-span-full py-8 text-center text-muted-foreground">
+                                            No se encontraron facturas con los
+                                            filtros aplicados
+                                        </div>
+                                    ) : (
+                                        facturasFiltradas.map((factura) => (
+                                            <Card
+                                                key={factura.id}
+                                                className="flex flex-col"
+                                            >
+                                                <CardHeader className="pb-3">
+                                                    <div className="flex items-start justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <CreditCard className="h-5 w-5 text-primary" />
+                                                            <CardTitle className="font-mono text-sm font-medium">
+                                                                {factura.numero}
+                                                            </CardTitle>
+                                                        </div>
+                                                        {getEstadoBadge(
+                                                            factura.estado,
+                                                        )}
                                                     </div>
-                                                    {getEstadoBadge(factura.estado)}
-                                                </div>
-                                                <CardDescription>
-                                                    {factura.cliente?.nombre || 'N/A'}
-                                                </CardDescription>
-                                            </CardHeader>
-                                            <CardContent className="flex-1">
-                                                <div className="space-y-2 text-sm">
-                                                    <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Fecha:</span>
-                                                        <span>{formatDateCLP(factura.fecha)}</span>
+                                                    <CardDescription>
+                                                        {factura.cliente
+                                                            ?.nombre || 'N/A'}
+                                                    </CardDescription>
+                                                </CardHeader>
+                                                <CardContent className="flex-1">
+                                                    <div className="space-y-2 text-sm">
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">
+                                                                Fecha:
+                                                            </span>
+                                                            <span>
+                                                                {formatDateCLP(
+                                                                    factura.fecha,
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">
+                                                                Total:
+                                                            </span>
+                                                            <span className="font-bold text-green-600">
+                                                                {formatCurrency(
+                                                                    factura.total,
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">
+                                                                Tipo:
+                                                            </span>
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="capitalize"
+                                                            >
+                                                                {factura.tipo ===
+                                                                'venta'
+                                                                    ? 'Factura'
+                                                                    : factura.tipo}
+                                                            </Badge>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Total:</span>
-                                                        <span className="font-bold text-green-600">{formatCurrency(factura.total)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Tipo:</span>
-                                                        <Badge variant="outline" className="capitalize">
-                                                            {factura.tipo === 'venta' ? 'Factura' : factura.tipo}
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                            <div className="flex items-center gap-1 border-t p-3">
-                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-blue-600" onClick={() => { setFacturaSeleccionada(factura); setIsVerOpen(true); }} title="Ver Detalles">
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                                {canEdit && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-amber-600" onClick={() => { setFacturaSeleccionada(factura); setIsEditOpen(true); }} title="Editar">
-                                                        <Pencil className="h-4 w-4" />
+                                                </CardContent>
+                                                <div className="flex items-center gap-1 border-t p-3">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-8 w-8 p-0 text-blue-600"
+                                                        onClick={() => {
+                                                            setFacturaSeleccionada(
+                                                                factura,
+                                                            );
+                                                            setIsVerOpen(true);
+                                                        }}
+                                                        title="Ver Detalles"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
                                                     </Button>
-                                                )}
-                                                <a href={`/facturacion/${factura.id}/pdf`} target="_blank" rel="noreferrer" className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background text-sm font-medium transition-colors hover:bg-accent">
-                                                    <FileText className="h-4 w-4" />
-                                                </a>
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" onClick={() => handleDelete(factura.id)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </Card>
-                                    ))
-                                )}
-                            </div>
+                                                    {canEdit && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0 text-amber-600"
+                                                            onClick={() => {
+                                                                setFacturaSeleccionada(
+                                                                    factura,
+                                                                );
+                                                                setIsEditOpen(
+                                                                    true,
+                                                                );
+                                                            }}
+                                                            title="Editar"
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                    <a
+                                                        href={`/facturacion/${factura.id}/pdf`}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background text-sm font-medium transition-colors hover:bg-accent"
+                                                    >
+                                                        <FileText className="h-4 w-4" />
+                                                    </a>
+                                                    {canDelete && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0 text-destructive"
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    factura.id,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </Card>
+                                        ))
+                                    )}
+                                </div>
                             )}
                             <Pagination
                                 links={facturas.links}
@@ -1517,8 +1704,7 @@ export default function Index({
 
                                         <div className="space-y-1 rounded-lg bg-muted/30 p-3 text-right">
                                             <p className="text-sm text-muted-foreground">
-                                                Bruto:{' '}
-                                                {formatCurrency(bruto)}
+                                                Bruto: {formatCurrency(bruto)}
                                             </p>
                                             {totalDescuento > 0 && (
                                                 <p className="text-sm text-destructive">
@@ -1531,9 +1717,7 @@ export default function Index({
                                             <p className="text-sm">
                                                 Subtotal:{' '}
                                                 <span className="font-medium">
-                                                    {formatCurrency(
-                                                        subtotal,
-                                                    )}
+                                                    {formatCurrency(subtotal)}
                                                 </span>
                                             </p>
                                             <p className="text-sm">
@@ -1543,9 +1727,7 @@ export default function Index({
                                                     : 0}
                                                 %):{' '}
                                                 <span className="font-medium">
-                                                    {formatCurrency(
-                                                        impuesto,
-                                                    )}
+                                                    {formatCurrency(impuesto)}
                                                 </span>
                                             </p>
                                             <p className="mt-2 text-xl font-bold">
@@ -1612,7 +1794,7 @@ function VerFacturaDialog({
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent className="max-h-[90vh] max-w-4xl overflow-hidden bg-white p-0">
-                <div className="max-h-[calc(90vh)] overflow-y-auto overflow-x-auto p-8 font-sans text-xs text-gray-800">
+                <div className="max-h-[calc(90vh)] overflow-x-auto overflow-y-auto p-8 font-sans text-xs text-gray-800">
                     {/* Header: SII Box and Company Info */}
                     <div className="mb-8 flex flex-wrap justify-between gap-4">
                         <div className="w-full sm:w-3/5">
@@ -1807,9 +1989,7 @@ function VerFacturaDialog({
                                             Sub Total (Neto)
                                         </td>
                                         <td className="border border-gray-300 p-2 text-right font-bold">
-                                            {formatCurrency(
-                                                factura.subtotal,
-                                            )}
+                                            {formatCurrency(factura.subtotal)}
                                         </td>
                                     </tr>
                                     {factura.total_descuento > 0 && (
@@ -1831,9 +2011,7 @@ function VerFacturaDialog({
                                             %)
                                         </td>
                                         <td className="border border-gray-300 p-2 text-right font-bold">
-                                            {formatCurrency(
-                                                factura.impuesto,
-                                            )}
+                                            {formatCurrency(factura.impuesto)}
                                         </td>
                                     </tr>
                                     <tr className="bg-gray-100 text-lg">
@@ -1944,15 +2122,15 @@ function EditarFacturaDialog({
         cliente_id: factura?.cliente_id?.toString() || '',
         fecha: factura?.fecha
             ? (() => {
-                const parts = factura.fecha.split('-');
-                return `${parts[0]}-${parts[1]}-${parts[2]}`;
-            })()
+                  const parts = factura.fecha.split('-');
+                  return `${parts[0]}-${parts[1]}-${parts[2]}`;
+              })()
             : '',
         fecha_vencimiento: factura?.fecha_vencimiento
             ? (() => {
-                const parts = factura.fecha_vencimiento.split('-');
-                return `${parts[0]}-${parts[1]}-${parts[2]}`;
-            })()
+                  const parts = factura.fecha_vencimiento.split('-');
+                  return `${parts[0]}-${parts[1]}-${parts[2]}`;
+              })()
             : '',
         tipo: factura?.tipo || '',
         notas: factura?.notas || '',
@@ -1973,15 +2151,15 @@ function EditarFacturaDialog({
             cliente_id: factura.cliente_id.toString(),
             fecha: factura.fecha
                 ? (() => {
-                    const parts = factura.fecha.split('-');
-                    return `${parts[0]}-${parts[1]}-${parts[2]}`;
-                })()
+                      const parts = factura.fecha.split('-');
+                      return `${parts[0]}-${parts[1]}-${parts[2]}`;
+                  })()
                 : '',
             fecha_vencimiento: factura.fecha_vencimiento
                 ? (() => {
-                    const parts = factura.fecha_vencimiento.split('-');
-                    return `${parts[0]}-${parts[1]}-${parts[2]}`;
-                })()
+                      const parts = factura.fecha_vencimiento.split('-');
+                      return `${parts[0]}-${parts[1]}-${parts[2]}`;
+                  })()
                 : '',
             tipo: factura.tipo,
             notas: factura.notas || '',
@@ -2477,9 +2655,7 @@ function EditarFacturaDialog({
                                 <span className="text-muted-foreground">
                                     Descuento Global ({data.descuento_tipo}):
                                 </span>
-                                <span>
-                                    -{formatCurrency(totalDescuento)}
-                                </span>
+                                <span>-{formatCurrency(totalDescuento)}</span>
                             </div>
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground">

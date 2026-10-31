@@ -26,7 +26,7 @@ import {
     Dialog,
     DialogContent,
     DialogHeader,
-    DialogTitle
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -227,7 +227,11 @@ export default function Index({
                                 </div>
                                 <div className="flex items-center gap-1 rounded-lg border p-0.5">
                                     <Button
-                                        variant={viewMode === 'table' ? 'default' : 'ghost'}
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'default'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         className="h-8 w-8 p-0"
                                         onClick={() => setViewMode('table')}
@@ -235,7 +239,11 @@ export default function Index({
                                         <List className="h-4 w-4" />
                                     </Button>
                                     <Button
-                                        variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'default'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         className="h-8 w-8 p-0"
                                         onClick={() => setViewMode('cards')}
@@ -291,163 +299,216 @@ export default function Index({
                                 </Button>
                             </div>
                             {viewMode === 'table' ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-xs sm:text-sm">
-                                    <thead>
-                                        <tr className="border-b">
-                                            <th className="py-3 text-left font-medium">
-                                                Referencia / Notas
-                                            </th>
-                                            <th className="py-3 text-right font-medium">
-                                                Monto
-                                            </th>
-                                            <th className="py-3 text-left font-medium">
-                                                Fecha / Método
-                                            </th>
-                                            <th className="py-3 text-center font-medium">
-                                                Estado
-                                            </th>
-                                            <th className="py-3 text-right font-medium">
-                                                Acciones
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {cobranzasFiltradas.map((c) => (
-                                            <tr
-                                                key={c.id}
-                                                className="border-b transition-colors hover:bg-muted/30"
-                                            >
-                                                <td className="py-3">
-                                                    <div className="font-medium">
-                                                        {c.referencia ||
-                                                            'Sin ref.'}
-                                                    </div>
-                                                    <div className="max-w-[200px] truncate text-[10px] text-muted-foreground">
-                                                        {c.notas}
-                                                    </div>
-                                                </td>
-                                                <td className="py-3 text-right font-bold text-green-600">
-                                                    {formatCurrency(c.monto)}
-                                                </td>
-                                                <td className="py-3">
-                                                    <div className="text-[10px] font-medium">
-                                                        {formatDateCLP(
-                                                            c.fecha_pago,
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-xs sm:text-sm">
+                                        <thead>
+                                            <tr className="border-b">
+                                                <th className="py-3 text-left font-medium">
+                                                    Referencia / Notas
+                                                </th>
+                                                <th className="py-3 text-right font-medium">
+                                                    Monto
+                                                </th>
+                                                <th className="py-3 text-left font-medium">
+                                                    Fecha / Método
+                                                </th>
+                                                <th className="py-3 text-center font-medium">
+                                                    Estado
+                                                </th>
+                                                <th className="py-3 text-right font-medium">
+                                                    Acciones
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {cobranzasFiltradas.map((c) => (
+                                                <tr
+                                                    key={c.id}
+                                                    className="border-b transition-colors hover:bg-muted/30"
+                                                >
+                                                    <td className="py-3">
+                                                        <div className="font-medium">
+                                                            {c.referencia ||
+                                                                'Sin ref.'}
+                                                        </div>
+                                                        <div className="max-w-[200px] truncate text-[10px] text-muted-foreground">
+                                                            {c.notas}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-3 text-right font-bold text-green-600">
+                                                        {formatCurrency(
+                                                            c.monto,
                                                         )}
-                                                    </div>
-                                                    <div className="text-[10px] text-muted-foreground uppercase">
-                                                        {c.metodo_pago}
-                                                    </div>
-                                                </td>
-                                                <td className="py-3 text-center">
-                                                    {getEstadoBadge(c.estado)}
-                                                </td>
-                                                <td className="py-3 text-right">
-                                                    <div className="flex justify-end gap-1">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="h-8 w-8 p-0"
-                                                            onClick={() =>
-                                                                handleView(c)
-                                                            }
-                                                        >
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                        {canEdit && (
+                                                    </td>
+                                                    <td className="py-3">
+                                                        <div className="text-[10px] font-medium">
+                                                            {formatDateCLP(
+                                                                c.fecha_pago,
+                                                            )}
+                                                        </div>
+                                                        <div className="text-[10px] text-muted-foreground uppercase">
+                                                            {c.metodo_pago}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-3 text-center">
+                                                        {getEstadoBadge(
+                                                            c.estado,
+                                                        )}
+                                                    </td>
+                                                    <td className="py-3 text-right">
+                                                        <div className="flex justify-end gap-1">
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 className="h-8 w-8 p-0"
                                                                 onClick={() =>
-                                                                    handleEdit(c)
-                                                                }
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                        {canDelete && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                                                onClick={() =>
-                                                                    handleDelete(
-                                                                        c.id,
+                                                                    handleView(
+                                                                        c,
                                                                     )
                                                                 }
                                                             >
-                                                                <Trash2 className="h-4 w-4" />
+                                                                <Eye className="h-4 w-4" />
                                                             </Button>
+                                                            {canEdit && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0"
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            c,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {canDelete && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            c.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {cobranzasFiltradas.length ===
+                                                0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan={5}
+                                                        className="py-8 text-center text-muted-foreground"
+                                                    >
+                                                        No se encontraron
+                                                        cobranzas con los
+                                                        filtros aplicados
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                    <Pagination
+                                        links={cobranzas.links}
+                                        meta={cobranzas.meta}
+                                    />
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    {cobranzasFiltradas.map((c) => (
+                                        <Card
+                                            key={c.id}
+                                            className="overflow-hidden"
+                                        >
+                                            <CardContent className="space-y-3 p-4">
+                                                <div className="flex items-center justify-between">
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="text-xs"
+                                                    >
+                                                        {c.referencia ||
+                                                            'Sin ref.'}
+                                                    </Badge>
+                                                    {getEstadoBadge(c.estado)}
+                                                </div>
+                                                <p className="text-xl font-bold text-green-600">
+                                                    {formatCurrency(c.monto)}
+                                                </p>
+                                                <div className="space-y-1 text-sm">
+                                                    <p className="font-medium">
+                                                        {formatDateCLP(
+                                                            c.fecha_pago,
                                                         )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {cobranzasFiltradas.length === 0 && (
-                                            <tr>
-                                                <td
-                                                    colSpan={5}
-                                                    className="py-8 text-center text-muted-foreground"
-                                                >
-                                                    No se encontraron cobranzas
-                                                    con los filtros aplicados
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                                <Pagination
-                                    links={cobranzas.links}
-                                    meta={cobranzas.meta}
-                                />
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {cobranzasFiltradas.map((c) => (
-                                    <Card key={c.id} className="overflow-hidden">
-                                        <CardContent className="space-y-3 p-4">
-                                            <div className="flex items-center justify-between">
-                                                <Badge variant="outline" className="text-xs">
-                                                    {c.referencia || 'Sin ref.'}
-                                                </Badge>
-                                                {getEstadoBadge(c.estado)}
-                                            </div>
-                                            <p className="text-xl font-bold text-green-600">
-                                                {formatCurrency(c.monto)}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground uppercase">
+                                                        {c.metodo_pago}
+                                                    </p>
+                                                    {c.notas && (
+                                                        <p className="truncate text-xs text-muted-foreground">
+                                                            {c.notas}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div className="flex justify-end gap-1 border-t pt-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-8 w-8 p-0"
+                                                        onClick={() =>
+                                                            handleView(c)
+                                                        }
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                    {canEdit && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0"
+                                                            onClick={() =>
+                                                                handleEdit(c)
+                                                            }
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                    {canDelete && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    c.id,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                    {cobranzasFiltradas.length === 0 && (
+                                        <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
+                                            <DollarSign className="mb-3 h-12 w-12 opacity-20" />
+                                            <p>
+                                                No se encontraron cobranzas con
+                                                los filtros aplicados
                                             </p>
-                                            <div className="space-y-1 text-sm">
-                                                <p className="font-medium">{formatDateCLP(c.fecha_pago)}</p>
-                                                <p className="text-xs uppercase text-muted-foreground">{c.metodo_pago}</p>
-                                                {c.notas && <p className="truncate text-xs text-muted-foreground">{c.notas}</p>}
-                                            </div>
-                                            <div className="flex justify-end gap-1 border-t pt-2">
-                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleView(c)}>
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                                {canEdit && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(c)}>
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(c.id)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                                {cobranzasFiltradas.length === 0 && (
-                                    <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
-                                        <DollarSign className="mb-3 h-12 w-12 opacity-20" />
-                                        <p>No se encontraron cobranzas con los filtros aplicados</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

@@ -103,7 +103,7 @@ export default function WelcomeNew({
     cta,
     nav,
 }: WelcomeProps) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const appName = web_settings?.app_name || 'GrowERP';
     const appLogo = web_settings?.app_logo || null;
     const logoLetra = appName.charAt(0).toUpperCase();
@@ -111,8 +111,14 @@ export default function WelcomeNew({
     return (
         <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
             <Head title={web_settings?.app_title || 'Welcome'}>
-                <meta name="description" content={web_settings?.app_description || ''} />
-                <meta name="keywords" content={web_settings?.app_keywords || ''} />
+                <meta
+                    name="description"
+                    content={web_settings?.app_description || ''}
+                />
+                <meta
+                    name="keywords"
+                    content={web_settings?.app_keywords || ''}
+                />
             </Head>
 
             {/* Header */}
@@ -139,28 +145,37 @@ export default function WelcomeNew({
                         <div />
                     )}
                     <nav className="flex items-center gap-6">
-                        <div className="hidden md:flex items-center gap-6 mr-4">
+                        <div className="mr-4 hidden items-center gap-6 md:flex">
                             {(nav?.quienes_somos_visible ?? true) && (
-                                <Link href="/quienes-somos" className="text-sm font-medium text-gray-500 hover:text-amber-600 transition-colors">
+                                <Link
+                                    href="/quienes-somos"
+                                    className="text-sm font-medium text-gray-500 transition-colors hover:text-amber-600"
+                                >
                                     {nav?.quienes_somos || 'Quiénes Somos'}
                                 </Link>
                             )}
                             {(nav?.feedback_visible ?? true) && (
-                                <Link href="/feedback" className="text-sm font-medium text-gray-500 hover:text-amber-600 transition-colors">
+                                <Link
+                                    href="/feedback"
+                                    className="text-sm font-medium text-gray-500 transition-colors hover:text-amber-600"
+                                >
                                     {nav?.feedback || 'Feedback'}
                                 </Link>
                             )}
                             {(nav?.fundacion_visible ?? true) && (
-                                <Link href="/fundacion" className="text-sm font-medium text-gray-500 hover:text-amber-600 transition-colors">
+                                <Link
+                                    href="/fundacion"
+                                    className="text-sm font-medium text-gray-500 transition-colors hover:text-amber-600"
+                                >
                                     {nav?.fundacion || 'Nuestra Fundación'}
                                 </Link>
                             )}
                         </div>
-                        
+
                         <div className="flex items-center gap-3">
                             <Link
                                 href="/login"
-                                className="text-sm font-medium text-gray-600 hover:text-gray-900 px-3 py-2"
+                                className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
                             >
                                 Iniciar sesión
                             </Link>
@@ -287,8 +302,8 @@ export default function WelcomeNew({
                                             {promo.tipo === 'porcentaje'
                                                 ? '%'
                                                 : promo.tipo === 'precio_fijo'
-                                                    ? '$'
-                                                    : '2x1'}
+                                                  ? '$'
+                                                  : '2x1'}
                                         </div>
                                         <div className="relative">
                                             <div
@@ -298,8 +313,8 @@ export default function WelcomeNew({
                                                     ? '%'
                                                     : promo.tipo ===
                                                         'precio_fijo'
-                                                        ? '$'
-                                                        : '🎁'}
+                                                      ? '$'
+                                                      : '🎁'}
                                                 {formatValue()}
                                             </div>
                                             <h3 className="mb-1 text-lg font-bold text-gray-900">
@@ -374,7 +389,7 @@ export default function WelcomeNew({
                             return (
                                 <div
                                     key={index}
-                                    className={`relative w-full sm:max-w-[280px] rounded-2xl border-2 ${styles.borderColor} ${styles.color} p-6 transition-all hover:shadow-xl`}
+                                    className={`relative w-full rounded-2xl border-2 sm:max-w-[280px] ${styles.borderColor} ${styles.color} p-6 transition-all hover:shadow-xl`}
                                 >
                                     {plan.popular == true && (
                                         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
@@ -432,8 +447,8 @@ export default function WelcomeNew({
                                         {plan.nombre === 'Corporativo'
                                             ? 'Contactar ventas'
                                             : plan.nombre === 'Gratuito'
-                                                ? 'Comenzar gratis'
-                                                : 'Suscribirse'}
+                                              ? 'Comenzar gratis'
+                                              : 'Suscribirse'}
                                     </button>
                                 </div>
                             );

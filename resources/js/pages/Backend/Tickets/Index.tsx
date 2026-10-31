@@ -28,7 +28,7 @@ import {
     CardContent,
     CardDescription,
     CardHeader,
-    CardTitle
+    CardTitle,
 } from '@/components/ui/card';
 import {
     Dialog,
@@ -138,7 +138,6 @@ const ESTADOS = [
         color: 'bg-gray-500/10 text-gray-600 border-gray-200',
     },
 ];
-
 
 interface Employee {
     id: number;
@@ -351,13 +350,32 @@ export default function Index({
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
-                                        {tickets.meta?.total || tickets.data.length}{' '}
+                                        {tickets.meta?.total ||
+                                            tickets.data.length}{' '}
                                         Registros
                                     </div>
-                                    <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="icon" className="h-8 w-8" onClick={() => setViewMode('table')}>
+                                    <Button
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'default'
+                                                : 'outline'
+                                        }
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => setViewMode('table')}
+                                    >
                                         <List className="h-4 w-4" />
                                     </Button>
-                                    <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="icon" className="h-8 w-8" onClick={() => setViewMode('cards')}>
+                                    <Button
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'default'
+                                                : 'outline'
+                                        }
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => setViewMode('cards')}
+                                    >
                                         <LayoutGrid className="h-4 w-4" />
                                     </Button>
                                 </div>
@@ -432,112 +450,269 @@ export default function Index({
                             </div>
 
                             {viewMode === 'table' ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="border-b bg-muted/5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                                            <th className="px-6 py-4 text-left">
-                                                Asunto / ID
-                                            </th>
-                                            <th className="px-6 py-4 text-left">
-                                                Cliente / Producto
-                                            </th>
-                                            <th className="px-6 py-4 text-center">
-                                                Prioridad
-                                            </th>
-                                            <th className="px-6 py-4 text-center">
-                                                Estado
-                                            </th>
-                                            <th className="px-6 py-4 text-left">
-                                                Asignado
-                                            </th>
-                                            <th className="px-6 py-4 text-right">
-                                                Acciones
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-muted/50">
-                                        {tickets.data.map((t) => (
-                                            <tr
-                                                key={t.id}
-                                                className="group transition-colors hover:bg-muted/30"
-                                            >
-                                                <td className="px-6 py-4">
-                                                    <div>
-                                                        <div className="line-clamp-1 text-sm font-bold tracking-tight text-foreground">
-                                                            {t.titulo}
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="border-b bg-muted/5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                                                <th className="px-6 py-4 text-left">
+                                                    Asunto / ID
+                                                </th>
+                                                <th className="px-6 py-4 text-left">
+                                                    Cliente / Producto
+                                                </th>
+                                                <th className="px-6 py-4 text-center">
+                                                    Prioridad
+                                                </th>
+                                                <th className="px-6 py-4 text-center">
+                                                    Estado
+                                                </th>
+                                                <th className="px-6 py-4 text-left">
+                                                    Asignado
+                                                </th>
+                                                <th className="px-6 py-4 text-right">
+                                                    Acciones
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-muted/50">
+                                            {tickets.data.map((t) => (
+                                                <tr
+                                                    key={t.id}
+                                                    className="group transition-colors hover:bg-muted/30"
+                                                >
+                                                    <td className="px-6 py-4">
+                                                        <div>
+                                                            <div className="line-clamp-1 text-sm font-bold tracking-tight text-foreground">
+                                                                {t.titulo}
+                                                            </div>
+                                                            <div className="font-mono text-[10px] text-muted-foreground">
+                                                                TK-
+                                                                {t.id
+                                                                    .toString()
+                                                                    .padStart(
+                                                                        5,
+                                                                        '0',
+                                                                    )}
+                                                            </div>
                                                         </div>
-                                                        <div className="font-mono text-[10px] text-muted-foreground">
-                                                            TK-
-                                                            {t.id
-                                                                .toString()
-                                                                .padStart(
-                                                                    5,
-                                                                    '0',
-                                                                )}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="space-y-1">
+                                                            <div className="flex items-center gap-1.5 text-xs font-bold">
+                                                                <Users className="h-3 w-3 text-primary/60" />
+                                                                {t.cliente
+                                                                    ?.nombre ||
+                                                                    'General'}
+                                                            </div>
+                                                            {t.producto && (
+                                                                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                                                    <Package className="h-2.5 w-2.5" />
+                                                                    {
+                                                                        t
+                                                                            .producto
+                                                                            .nombre
+                                                                    }
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={`${getPrioridadConfig(t.prioridad).color} rounded-full border px-2 py-0.5 text-[9px] font-black uppercase`}
+                                                        >
+                                                            {
+                                                                getPrioridadConfig(
+                                                                    t.prioridad,
+                                                                ).label
+                                                            }
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={`${getEstadoConfig(t.estado).color} rounded-full border px-2 py-0.5 text-[9px] font-black uppercase`}
+                                                        >
+                                                            {
+                                                                getEstadoConfig(
+                                                                    t.estado,
+                                                                ).label
+                                                            }
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[10px] font-black text-primary">
+                                                                {t.asignado_a
+                                                                    ? t.asignado_a
+                                                                          .charAt(
+                                                                              0,
+                                                                          )
+                                                                          .toUpperCase()
+                                                                    : '?'}
+                                                            </div>
+                                                            <span className="text-xs font-medium text-muted-foreground">
+                                                                {t.asignado_a ||
+                                                                    'Sin asignar'}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-muted-foreground hover:bg-muted"
+                                                                onClick={() =>
+                                                                    handleView(
+                                                                        t,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                            {canEdit && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 text-primary hover:bg-primary/10"
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            t,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {canDelete && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            t.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {tickets.data.length === 0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan={6}
+                                                        className="py-20 text-center"
+                                                    >
+                                                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                                            <Activity className="h-10 w-10 opacity-20" />
+                                                            <p className="font-medium">
+                                                                No hay tickets
+                                                                que coincidan
+                                                                con la búsqueda
+                                                            </p>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    {tickets.data.length === 0 ? (
+                                        <div className="col-span-full flex flex-col items-center py-20 text-center text-muted-foreground">
+                                            <Activity className="mb-4 h-12 w-12 opacity-20" />
+                                            <p className="font-medium">
+                                                No hay tickets que coincidan con
+                                                la búsqueda
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        tickets.data.map((t) => (
+                                            <Card
+                                                key={t.id}
+                                                className="overflow-hidden transition-all hover:shadow-md"
+                                            >
+                                                <CardHeader className="pb-3">
+                                                    <div className="flex items-start justify-between">
+                                                        <div className="min-w-0 flex-1">
+                                                            <CardTitle className="line-clamp-1 text-sm font-bold">
+                                                                {t.titulo}
+                                                            </CardTitle>
+                                                            <CardDescription className="font-mono text-[10px]">
+                                                                TK-
+                                                                {t.id
+                                                                    .toString()
+                                                                    .padStart(
+                                                                        5,
+                                                                        '0',
+                                                                    )}
+                                                            </CardDescription>
                                                         </div>
                                                     </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="space-y-1">
-                                                        <div className="flex items-center gap-1.5 text-xs font-bold">
-                                                            <Users className="h-3 w-3 text-primary/60" />
+                                                    <div className="flex flex-wrap gap-1.5 pt-1">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={`${getPrioridadConfig(t.prioridad).color} rounded-full border px-2 py-0.5 text-[9px] font-black uppercase`}
+                                                        >
+                                                            {
+                                                                getPrioridadConfig(
+                                                                    t.prioridad,
+                                                                ).label
+                                                            }
+                                                        </Badge>
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={`${getEstadoConfig(t.estado).color} rounded-full border px-2 py-0.5 text-[9px] font-black uppercase`}
+                                                        >
+                                                            {
+                                                                getEstadoConfig(
+                                                                    t.estado,
+                                                                ).label
+                                                            }
+                                                        </Badge>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="space-y-2 pt-0">
+                                                    <div className="flex items-center gap-1.5 text-xs">
+                                                        <Users className="h-3 w-3 text-primary/60" />
+                                                        <span className="font-medium">
                                                             {t.cliente
                                                                 ?.nombre ||
                                                                 'General'}
-                                                        </div>
-                                                        {t.producto && (
-                                                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                                                <Package className="h-2.5 w-2.5" />
+                                                        </span>
+                                                    </div>
+                                                    {t.producto && (
+                                                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                                            <Package className="h-2.5 w-2.5" />
+                                                            <span>
                                                                 {
                                                                     t.producto
                                                                         .nombre
                                                                 }
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <Badge
-                                                        variant="outline"
-                                                        className={`${getPrioridadConfig(t.prioridad).color} rounded-full border px-2 py-0.5 text-[9px] font-black uppercase`}
-                                                    >
-                                                        {
-                                                            getPrioridadConfig(
-                                                                t.prioridad,
-                                                            ).label
-                                                        }
-                                                    </Badge>
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <Badge
-                                                        variant="outline"
-                                                        className={`${getEstadoConfig(t.estado).color} rounded-full border px-2 py-0.5 text-[9px] font-black uppercase`}
-                                                    >
-                                                        {
-                                                            getEstadoConfig(
-                                                                t.estado,
-                                                            ).label
-                                                        }
-                                                    </Badge>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[10px] font-black text-primary">
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[9px] font-black text-primary">
                                                             {t.asignado_a
                                                                 ? t.asignado_a
                                                                       .charAt(0)
                                                                       .toUpperCase()
                                                                 : '?'}
                                                         </div>
-                                                        <span className="text-xs font-medium text-muted-foreground">
+                                                        <span>
                                                             {t.asignado_a ||
                                                                 'Sin asignar'}
                                                         </span>
                                                     </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                                    <div className="flex justify-end gap-1 border-t pt-2">
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
@@ -554,7 +729,9 @@ export default function Index({
                                                                 size="icon"
                                                                 className="h-8 w-8 text-primary hover:bg-primary/10"
                                                                 onClick={() =>
-                                                                    handleEdit(t)
+                                                                    handleEdit(
+                                                                        t,
+                                                                    )
                                                                 }
                                                             >
                                                                 <Pencil className="h-4 w-4" />
@@ -575,92 +752,11 @@ export default function Index({
                                                             </Button>
                                                         )}
                                                     </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {tickets.data.length === 0 && (
-                                            <tr>
-                                                <td
-                                                    colSpan={6}
-                                                    className="py-20 text-center"
-                                                >
-                                                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                                                        <Activity className="h-10 w-10 opacity-20" />
-                                                        <p className="font-medium">
-                                                            No hay tickets que
-                                                            coincidan con la
-                                                            búsqueda
-                                                        </p>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                            ) : (
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {tickets.data.length === 0 ? (
-                                    <div className="col-span-full flex flex-col items-center py-20 text-center text-muted-foreground">
-                                        <Activity className="mb-4 h-12 w-12 opacity-20" />
-                                        <p className="font-medium">No hay tickets que coincidan con la búsqueda</p>
-                                    </div>
-                                ) : tickets.data.map((t) => (
-                                    <Card key={t.id} className="overflow-hidden transition-all hover:shadow-md">
-                                        <CardHeader className="pb-3">
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex-1 min-w-0">
-                                                    <CardTitle className="text-sm font-bold line-clamp-1">{t.titulo}</CardTitle>
-                                                    <CardDescription className="font-mono text-[10px]">
-                                                        TK-{t.id.toString().padStart(5, '0')}
-                                                    </CardDescription>
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-wrap gap-1.5 pt-1">
-                                                <Badge variant="outline" className={`${getPrioridadConfig(t.prioridad).color} rounded-full border px-2 py-0.5 text-[9px] font-black uppercase`}>
-                                                    {getPrioridadConfig(t.prioridad).label}
-                                                </Badge>
-                                                <Badge variant="outline" className={`${getEstadoConfig(t.estado).color} rounded-full border px-2 py-0.5 text-[9px] font-black uppercase`}>
-                                                    {getEstadoConfig(t.estado).label}
-                                                </Badge>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent className="space-y-2 pt-0">
-                                            <div className="flex items-center gap-1.5 text-xs">
-                                                <Users className="h-3 w-3 text-primary/60" />
-                                                <span className="font-medium">{t.cliente?.nombre || 'General'}</span>
-                                            </div>
-                                            {t.producto && (
-                                                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                                    <Package className="h-2.5 w-2.5" />
-                                                    <span>{t.producto.nombre}</span>
-                                                </div>
-                                            )}
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[9px] font-black text-primary">
-                                                    {t.asignado_a ? t.asignado_a.charAt(0).toUpperCase() : '?'}
-                                                </div>
-                                                <span>{t.asignado_a || 'Sin asignar'}</span>
-                                            </div>
-                                            <div className="flex justify-end gap-1 border-t pt-2">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted" onClick={() => handleView(t)}>
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                                {canEdit && (
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:bg-primary/10" onClick={() => handleEdit(t)}>
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(t.id)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
+                                                </CardContent>
+                                            </Card>
+                                        ))
+                                    )}
+                                </div>
                             )}
 
                             <div className="border-t border-muted/50 p-4">
@@ -724,7 +820,10 @@ export default function Index({
                                     <Select
                                         value={data.cliente_id.toString()}
                                         onValueChange={(v) =>
-                                            setData('cliente_id', v === 'none' ? '' : v)
+                                            setData(
+                                                'cliente_id',
+                                                v === 'none' ? '' : v,
+                                            )
                                         }
                                     >
                                         <SelectTrigger className="h-11 border-none bg-muted/30 font-bold">
@@ -754,7 +853,10 @@ export default function Index({
                                             <Select
                                                 value={data.producto_id.toString()}
                                                 onValueChange={(v) =>
-                                                    setData('producto_id', v === 'none' ? '' : v)
+                                                    setData(
+                                                        'producto_id',
+                                                        v === 'none' ? '' : v,
+                                                    )
                                                 }
                                             >
                                                 <SelectTrigger className="h-11 border-none bg-muted/30 font-bold">
@@ -762,7 +864,8 @@ export default function Index({
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="none">
-                                                        Ningún producto en particular
+                                                        Ningún producto en
+                                                        particular
                                                     </SelectItem>
                                                     {productos.map((p) => (
                                                         <SelectItem
@@ -775,7 +878,6 @@ export default function Index({
                                                 </SelectContent>
                                             </Select>
                                         </div>
-
                                     </div>
                                 </div>
                             </div>
@@ -838,7 +940,10 @@ export default function Index({
                                     <Select
                                         value={data.assigned_user_id.toString()}
                                         onValueChange={(v) =>
-                                            setData('assigned_user_id', v === 'none' ? '' : v)
+                                            setData(
+                                                'assigned_user_id',
+                                                v === 'none' ? '' : v,
+                                            )
                                         }
                                     >
                                         <SelectTrigger className="h-11 border-none bg-muted/30 font-bold">
@@ -859,8 +964,8 @@ export default function Index({
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="space-y-2 flex items-end pb-2">
-                                    <label className="flex items-center gap-3 cursor-pointer">
+                                <div className="flex items-end space-y-2 pb-2">
+                                    <label className="flex cursor-pointer items-center gap-3">
                                         <Switch
                                             id="es_soporte"
                                             checked={data.es_soporte}
@@ -869,11 +974,12 @@ export default function Index({
                                             }
                                         />
                                         <div>
-                                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                                            <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                                                 Soporte Aldia
                                             </span>
                                             <p className="text-[10px] text-muted-foreground/60">
-                                                Enviar al equipo global de soporte
+                                                Enviar al equipo global de
+                                                soporte
                                             </p>
                                         </div>
                                     </label>
@@ -1089,7 +1195,6 @@ export default function Index({
                     )}
                 </DialogContent>
             </Dialog>
-
         </AppLayout>
     );
 }

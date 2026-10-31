@@ -8,7 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PasswordInput } from '@/components/ui/password-input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/auth-layout';
 import { login } from '@/routes';
@@ -43,7 +49,9 @@ export default function Register() {
     const [selectedCountry, setSelectedCountry] = useState(defaultCountry);
     const [phoneLocalNumber, setPhoneLocalNumber] = useState('');
 
-    const selectedCountryData = countries.find((c) => c.code === selectedCountry);
+    const selectedCountryData = countries.find(
+        (c) => c.code === selectedCountry,
+    );
     const fullPhone = useMemo(() => {
         if (!phoneLocalNumber) return '';
         const cleanNumber = phoneLocalNumber.replace(/\s+/g, '');
@@ -105,25 +113,38 @@ export default function Register() {
                                 <Select
                                     name="country"
                                     defaultValue={defaultCountry}
-                                    onValueChange={(value) => setSelectedCountry(value)}
+                                    onValueChange={(value) =>
+                                        setSelectedCountry(value)
+                                    }
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Selecciona tu país" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {countries.map((country) => (
-                                            <SelectItem key={country.code} value={country.code}>
-                                                {getFlagEmoji(country.code)} {country.name} ({country.currency_symbol} {country.currency_code})
+                                            <SelectItem
+                                                key={country.code}
+                                                value={country.code}
+                                            >
+                                                {getFlagEmoji(country.code)}{' '}
+                                                {country.name} (
+                                                {country.currency_symbol}{' '}
+                                                {country.currency_code})
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                                 {selectedCountryData && (
                                     <p className="text-xs text-muted-foreground">
-                                        Moneda: {selectedCountryData.currency_symbol} {selectedCountryData.currency_code}
+                                        Moneda:{' '}
+                                        {selectedCountryData.currency_symbol}{' '}
+                                        {selectedCountryData.currency_code}
                                     </p>
                                 )}
-                                <InputError message={errors.country} className="mt-2" />
+                                <InputError
+                                    message={errors.country}
+                                    className="mt-2"
+                                />
                             </div>
 
                             <div className="grid gap-2">
@@ -139,38 +160,67 @@ export default function Register() {
                                     placeholder="Si aplica, ingresa el nombre de tu empresa"
                                 />
                                 <p className="text-xs text-muted-foreground">
-                                    Si no se provee, se usará tu nombre como nombre de empresa.
+                                    Si no se provee, se usará tu nombre como
+                                    nombre de empresa.
                                 </p>
-                                <InputError message={errors.business_name} className="mt-2" />
+                                <InputError
+                                    message={errors.business_name}
+                                    className="mt-2"
+                                />
                             </div>
 
                             <div className="grid gap-2">
                                 <Label htmlFor="telefono">
                                     Número de teléfono (Opcional)
                                 </Label>
-                                <input type="hidden" name="telefono" value={fullPhone} />
+                                <input
+                                    type="hidden"
+                                    name="telefono"
+                                    value={fullPhone}
+                                />
                                 <div className="flex gap-2">
                                     <Select
                                         defaultValue={defaultCountry}
-                                        onValueChange={(value) => setSelectedCountry(value)}
+                                        onValueChange={(value) =>
+                                            setSelectedCountry(value)
+                                        }
                                     >
                                         <SelectTrigger className="w-[140px] shrink-0">
                                             <SelectValue>
                                                 {selectedCountryData && (
                                                     <span className="flex items-center gap-1.5">
-                                                        <span>{getFlagEmoji(selectedCountryData.code)}</span>
-                                                        <span>{selectedCountryData.phone_code}</span>
+                                                        <span>
+                                                            {getFlagEmoji(
+                                                                selectedCountryData.code,
+                                                            )}
+                                                        </span>
+                                                        <span>
+                                                            {
+                                                                selectedCountryData.phone_code
+                                                            }
+                                                        </span>
                                                     </span>
                                                 )}
                                             </SelectValue>
                                         </SelectTrigger>
                                         <SelectContent>
                                             {countries.map((country) => (
-                                                <SelectItem key={country.code} value={country.code}>
+                                                <SelectItem
+                                                    key={country.code}
+                                                    value={country.code}
+                                                >
                                                     <span className="flex items-center gap-1.5">
-                                                        <span>{getFlagEmoji(country.code)}</span>
-                                                        <span>{country.phone_code}</span>
-                                                        <span className="text-muted-foreground">{country.name}</span>
+                                                        <span>
+                                                            {getFlagEmoji(
+                                                                country.code,
+                                                            )}
+                                                        </span>
+                                                        <span>
+                                                            {country.phone_code}
+                                                        </span>
+                                                        <span className="text-muted-foreground">
+                                                            {country.name}
+                                                        </span>
                                                     </span>
                                                 </SelectItem>
                                             ))}
@@ -182,8 +232,14 @@ export default function Register() {
                                         tabIndex={4}
                                         autoComplete="tel"
                                         value={phoneLocalNumber}
-                                        onChange={(e) => setPhoneLocalNumber(e.target.value)}
-                                        placeholder={selectedCountryData?.code === 'US' ? '202 555 0123' : '9 1234 5678'}
+                                        onChange={(e) =>
+                                            setPhoneLocalNumber(e.target.value)
+                                        }
+                                        placeholder={
+                                            selectedCountryData?.code === 'US'
+                                                ? '202 555 0123'
+                                                : '9 1234 5678'
+                                        }
                                         className="flex-1"
                                     />
                                 </div>
@@ -192,7 +248,10 @@ export default function Register() {
                                         Número completo: {fullPhone}
                                     </p>
                                 )}
-                                <InputError message={errors.telefono} className="mt-2" />
+                                <InputError
+                                    message={errors.telefono}
+                                    className="mt-2"
+                                />
                             </div>
 
                             <div className="grid gap-2">
@@ -226,7 +285,9 @@ export default function Register() {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="referral_code">Código de referido (Opcional)</Label>
+                                <Label htmlFor="referral_code">
+                                    Código de referido (Opcional)
+                                </Label>
                                 <Input
                                     id="referral_code"
                                     type="text"
@@ -235,9 +296,16 @@ export default function Register() {
                                     placeholder="Ej. ABCD123"
                                     defaultValue={referralCode}
                                     readOnly={!!referralCode}
-                                    className={referralCode ? 'bg-muted cursor-not-allowed' : ''}
+                                    className={
+                                        referralCode
+                                            ? 'cursor-not-allowed bg-muted'
+                                            : ''
+                                    }
                                 />
-                                <InputError message={errors.referral_code} className="mt-2" />
+                                <InputError
+                                    message={errors.referral_code}
+                                    className="mt-2"
+                                />
                             </div>
 
                             <Button

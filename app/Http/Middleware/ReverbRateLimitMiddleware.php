@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Reverb Rate Limit Middleware - Rate limits WebSocket events
  */
@@ -21,7 +22,7 @@ class ReverbRateLimitMiddleware
         $key = "reverb:{$limitType}:{$identifier}";
 
         $rateLimiter = app(ReverbRateLimiter::class);
-        
+
         if ($rateLimiter->checkLimit($key)) {
             return response()->json([
                 'error' => 'Too Many Requests',

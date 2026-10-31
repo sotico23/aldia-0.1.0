@@ -6,7 +6,7 @@ import {
     Plus,
     Trash2,
     Search,
-    X
+    X,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
@@ -224,7 +224,7 @@ export default function Index({
         <>
             <Head title="Hitos" />
             <AppLayout breadcrumbs={breadcrumbs}>
-                <div className="flex flex-col gap-4 px-4 sm:px-6 lg:px-8 py-6">
+                <div className="flex flex-col gap-4 px-4 py-6 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-2xl font-bold">Hitos</h1>
@@ -251,12 +251,17 @@ export default function Index({
                                 <div>
                                     <CardTitle>Hitos</CardTitle>
                                     <CardDescription>
-                                        {hitosFiltrados.length} registros encontrados
+                                        {hitosFiltrados.length} registros
+                                        encontrados
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-1 rounded-lg border p-1">
                                     <Button
-                                        variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'secondary'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('table')}
                                         className="h-8 w-8 p-0"
@@ -264,7 +269,11 @@ export default function Index({
                                         <List className="h-4 w-4" />
                                     </Button>
                                     <Button
-                                        variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'secondary'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('cards')}
                                         className="h-8 w-8 p-0"
@@ -275,7 +284,7 @@ export default function Index({
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 rounded-lg bg-muted/30 p-3 text-xs sm:text-sm">
+                            <div className="mb-4 grid grid-cols-1 gap-4 rounded-lg bg-muted/30 p-3 text-xs sm:grid-cols-2 sm:text-sm md:grid-cols-4">
                                 <div className="relative">
                                     <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
                                     <Input
@@ -318,153 +327,199 @@ export default function Index({
                                 </Button>
                             </div>
                             {viewMode === 'table' ? (
-                            <div className="w-full overflow-x-auto rounded-lg border border-gray-100">
-                                <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
-                                    <thead>
-                                        <tr className="border-b">
-                                            <th className="py-2 text-left font-medium">
-                                                Nombre / Descripción
-                                            </th>
-                                            <th className="py-2 text-left font-medium">
-                                                Fechas (Prev. / Real)
-                                            </th>
-                                            <th className="py-2 text-center font-medium">
-                                                Estado
-                                            </th>
-                                            <th className="py-2 text-right font-medium">
-                                                Acciones
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {hitosFiltrados.map((h) => (
-                                            <tr
-                                                key={h.id}
-                                                className="border-b transition-colors hover:bg-muted/30"
-                                            >
-                                                <td className="py-2">
-                                                    <div className="font-medium">
-                                                        {h.nombre}
-                                                    </div>
-                                                    <div className="max-w-[200px] truncate text-[10px] text-muted-foreground">
-                                                        {h.descripcion || '-'}
-                                                    </div>
-                                                </td>
-                                                <td className="py-2">
-                                                    <div className="text-[10px]">
-                                                        P:{' '}
-                                                        {h.fecha_prevista
-                                                            ? new Date(
-                                                                  h.fecha_prevista,
-                                                              ).toLocaleDateString()
-                                                            : '-'}
-                                                    </div>
-                                                    <div className="text-[10px] text-muted-foreground">
-                                                        R:{' '}
-                                                        {h.fecha_real
-                                                            ? new Date(
-                                                                  h.fecha_real,
-                                                              ).toLocaleDateString()
-                                                            : '-'}
-                                                    </div>
-                                                </td>
-                                                <td className="py-2 text-center">
-                                                    {getEstadoBadge(h.estado)}
-                                                </td>
-                                                <td className="py-2 text-right">
-                                                    <div className="flex justify-end gap-1">
-                                                        {canEdit && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-8 w-8 p-0"
-                                                                onClick={() =>
-                                                                    handleEdit(h)
-                                                                }
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                        {canDelete && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                                                onClick={() =>
-                                                                    handleDelete(
-                                                                        h.id,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </td>
+                                <div className="w-full overflow-x-auto rounded-lg border border-gray-100">
+                                    <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
+                                        <thead>
+                                            <tr className="border-b">
+                                                <th className="py-2 text-left font-medium">
+                                                    Nombre / Descripción
+                                                </th>
+                                                <th className="py-2 text-left font-medium">
+                                                    Fechas (Prev. / Real)
+                                                </th>
+                                                <th className="py-2 text-center font-medium">
+                                                    Estado
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Acciones
+                                                </th>
                                             </tr>
-                                        ))}
-                                        {hitosFiltrados.length === 0 && (
-                                            <tr>
-                                                <td
-                                                    colSpan={4}
-                                                    className="py-8 text-center text-muted-foreground"
+                                        </thead>
+                                        <tbody>
+                                            {hitosFiltrados.map((h) => (
+                                                <tr
+                                                    key={h.id}
+                                                    className="border-b transition-colors hover:bg-muted/30"
                                                 >
-                                                    No se encontraron hitos con
-                                                    los filtros aplicados
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
+                                                    <td className="py-2">
+                                                        <div className="font-medium">
+                                                            {h.nombre}
+                                                        </div>
+                                                        <div className="max-w-[200px] truncate text-[10px] text-muted-foreground">
+                                                            {h.descripcion ||
+                                                                '-'}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-2">
+                                                        <div className="text-[10px]">
+                                                            P:{' '}
+                                                            {h.fecha_prevista
+                                                                ? new Date(
+                                                                      h.fecha_prevista,
+                                                                  ).toLocaleDateString()
+                                                                : '-'}
+                                                        </div>
+                                                        <div className="text-[10px] text-muted-foreground">
+                                                            R:{' '}
+                                                            {h.fecha_real
+                                                                ? new Date(
+                                                                      h.fecha_real,
+                                                                  ).toLocaleDateString()
+                                                                : '-'}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-2 text-center">
+                                                        {getEstadoBadge(
+                                                            h.estado,
+                                                        )}
+                                                    </td>
+                                                    <td className="py-2 text-right">
+                                                        <div className="flex justify-end gap-1">
+                                                            {canEdit && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0"
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            h,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {canDelete && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            h.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {hitosFiltrados.length === 0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan={4}
+                                                        className="py-8 text-center text-muted-foreground"
+                                                    >
+                                                        No se encontraron hitos
+                                                        con los filtros
+                                                        aplicados
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             ) : (
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {hitosFiltrados.length === 0 ? (
-                                    <div className="col-span-full py-8 text-center text-muted-foreground">
-                                        No se encontraron hitos con los filtros aplicados
-                                    </div>
-                                ) : (
-                                    hitosFiltrados.map((h) => (
-                                        <Card key={h.id} className="flex flex-col">
-                                            <CardHeader className="pb-3">
-                                                <div className="flex items-start justify-between">
-                                                    <CardTitle className="text-sm">{h.nombre}</CardTitle>
-                                                    {getEstadoBadge(h.estado)}
-                                                </div>
-                                                {h.descripcion && (
-                                                    <CardDescription className="text-xs line-clamp-2">
-                                                        {h.descripcion}
-                                                    </CardDescription>
-                                                )}
-                                            </CardHeader>
-                                            <CardContent className="flex-1">
-                                                <div className="space-y-1 text-xs">
-                                                    <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Prevista:</span>
-                                                        <span>{h.fecha_prevista ? new Date(h.fecha_prevista).toLocaleDateString() : '-'}</span>
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    {hitosFiltrados.length === 0 ? (
+                                        <div className="col-span-full py-8 text-center text-muted-foreground">
+                                            No se encontraron hitos con los
+                                            filtros aplicados
+                                        </div>
+                                    ) : (
+                                        hitosFiltrados.map((h) => (
+                                            <Card
+                                                key={h.id}
+                                                className="flex flex-col"
+                                            >
+                                                <CardHeader className="pb-3">
+                                                    <div className="flex items-start justify-between">
+                                                        <CardTitle className="text-sm">
+                                                            {h.nombre}
+                                                        </CardTitle>
+                                                        {getEstadoBadge(
+                                                            h.estado,
+                                                        )}
                                                     </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Real:</span>
-                                                        <span>{h.fecha_real ? new Date(h.fecha_real).toLocaleDateString() : '-'}</span>
+                                                    {h.descripcion && (
+                                                        <CardDescription className="line-clamp-2 text-xs">
+                                                            {h.descripcion}
+                                                        </CardDescription>
+                                                    )}
+                                                </CardHeader>
+                                                <CardContent className="flex-1">
+                                                    <div className="space-y-1 text-xs">
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">
+                                                                Prevista:
+                                                            </span>
+                                                            <span>
+                                                                {h.fecha_prevista
+                                                                    ? new Date(
+                                                                          h.fecha_prevista,
+                                                                      ).toLocaleDateString()
+                                                                    : '-'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">
+                                                                Real:
+                                                            </span>
+                                                            <span>
+                                                                {h.fecha_real
+                                                                    ? new Date(
+                                                                          h.fecha_real,
+                                                                      ).toLocaleDateString()
+                                                                    : '-'}
+                                                            </span>
+                                                        </div>
                                                     </div>
+                                                </CardContent>
+                                                <div className="flex items-center justify-end gap-1 border-t p-3">
+                                                    {canEdit && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0"
+                                                            onClick={() =>
+                                                                handleEdit(h)
+                                                            }
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                    {canDelete && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0 text-destructive"
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    h.id,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
                                                 </div>
-                                            </CardContent>
-                                            <div className="flex items-center justify-end gap-1 border-t p-3">
-                                                {canEdit && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(h)}>
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" onClick={() => handleDelete(h.id)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </Card>
-                                    ))
-                                )}
-                            </div>
+                                            </Card>
+                                        ))
+                                    )}
+                                </div>
                             )}
                             <Pagination
                                 links={hitos.links}
@@ -475,13 +530,16 @@ export default function Index({
                 </div>
             </AppLayout>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="mx-4 sm:mx-auto w-full max-w-full sm:max-w-lg md:max-w-2xl p-4 sm:p-6">
+                <DialogContent className="mx-4 w-full max-w-full p-4 sm:mx-auto sm:max-w-lg sm:p-6 md:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>
                             {editando ? 'Editar' : 'Nuevo'} Hito
                         </DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="max-h-[85vh] overflow-y-auto">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="max-h-[85vh] overflow-y-auto"
+                    >
                         <div className="grid gap-4 py-4">
                             <div className="space-y-2">
                                 <Label>Nombre *</Label>

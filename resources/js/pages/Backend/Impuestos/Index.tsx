@@ -7,7 +7,7 @@ import {
     Trash2,
     Search,
     X,
-    Calculator
+    Calculator,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useMemo } from 'react';
@@ -37,7 +37,7 @@ import {
     Dialog,
     DialogContent,
     DialogHeader,
-    DialogTitle
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -354,7 +354,11 @@ export default function Index({
                                 </div>
                                 <div className="flex items-center gap-1 rounded-lg border p-1">
                                     <Button
-                                        variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'secondary'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('table')}
                                         className="h-8 w-8 p-0"
@@ -362,7 +366,11 @@ export default function Index({
                                         <List className="h-4 w-4" />
                                     </Button>
                                     <Button
-                                        variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'secondary'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('cards')}
                                         className="h-8 w-8 p-0"
@@ -418,161 +426,199 @@ export default function Index({
                                 </Button>
                             </div>
                             {viewMode === 'table' ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-xs sm:text-sm">
-                                    <thead>
-                                        <tr className="border-b">
-                                            <th className="py-3 text-left font-medium">
-                                                Nombre / Código
-                                            </th>
-                                            <th className="py-3 text-right font-medium">
-                                                Tasa
-                                            </th>
-                                            <th className="py-3 text-left font-medium">
-                                                Tipo
-                                            </th>
-                                            <th className="py-3 text-center font-medium">
-                                                Estado
-                                            </th>
-                                            <th className="py-3 text-right font-medium">
-                                                Acciones
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {impuestosFiltrados.map((i) => (
-                                            <tr
-                                                key={i.id}
-                                                className="border-b transition-colors hover:bg-muted/30"
-                                            >
-                                                <td className="py-3">
-                                                    <div className="font-medium">
-                                                        {i.nombre}
-                                                    </div>
-                                                    <div className="text-[10px] text-muted-foreground">
-                                                        {i.codigo || '-'}
-                                                    </div>
-                                                </td>
-                                                <td className="py-3 text-right font-bold text-primary">
-                                                    {i.tasa}%
-                                                </td>
-                                                <td className="py-3">
-                                                    <div className="text-[10px] font-medium uppercase">
-                                                        {i.tipo || '-'}
-                                                    </div>
-                                                </td>
-                                                <td className="py-3 text-center">
-                                                    {getEstadoBadge(i.estado)}
-                                                </td>
-                                                <td className="py-3 text-right">
-                                                    <div className="flex justify-end gap-1">
-                                                        {canEdit && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-8 w-8 p-0"
-                                                                onClick={() =>
-                                                                    handleEdit(i)
-                                                                }
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                        {canDelete && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                                                onClick={() =>
-                                                                    handleDelete(
-                                                                        i.id,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </td>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-xs sm:text-sm">
+                                        <thead>
+                                            <tr className="border-b">
+                                                <th className="py-3 text-left font-medium">
+                                                    Nombre / Código
+                                                </th>
+                                                <th className="py-3 text-right font-medium">
+                                                    Tasa
+                                                </th>
+                                                <th className="py-3 text-left font-medium">
+                                                    Tipo
+                                                </th>
+                                                <th className="py-3 text-center font-medium">
+                                                    Estado
+                                                </th>
+                                                <th className="py-3 text-right font-medium">
+                                                    Acciones
+                                                </th>
                                             </tr>
-                                        ))}
-                                        {impuestosFiltrados.length === 0 && (
-                                            <tr>
-                                                <td
-                                                    colSpan={5}
-                                                    className="py-8 text-center text-muted-foreground"
+                                        </thead>
+                                        <tbody>
+                                            {impuestosFiltrados.map((i) => (
+                                                <tr
+                                                    key={i.id}
+                                                    className="border-b transition-colors hover:bg-muted/30"
                                                 >
-                                                    No se encontraron impuestos
-                                                    con los filtros aplicados
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                            ) : (
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {impuestosFiltrados.length === 0 ? (
-                                    <div className="col-span-full py-8 text-center text-muted-foreground">
-                                        No se encontraron impuestos con los filtros aplicados
-                                    </div>
-                                ) : (
-                                    impuestosFiltrados.map((i) => (
-                                        <Card key={i.id} className="flex flex-col">
-                                            <CardHeader className="pb-3">
-                                                <div className="flex items-start justify-between">
-                                                    <div>
-                                                        <div className="flex items-center gap-2">
-                                                            <Calculator className="h-5 w-5 text-amber-500" />
-                                                            <CardTitle className="text-sm">{i.nombre}</CardTitle>
+                                                    <td className="py-3">
+                                                        <div className="font-medium">
+                                                            {i.nombre}
                                                         </div>
-                                                        {i.codigo && (
-                                                            <CardDescription className="text-xs">
-                                                                {i.codigo}
-                                                            </CardDescription>
+                                                        <div className="text-[10px] text-muted-foreground">
+                                                            {i.codigo || '-'}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-3 text-right font-bold text-primary">
+                                                        {i.tasa}%
+                                                    </td>
+                                                    <td className="py-3">
+                                                        <div className="text-[10px] font-medium uppercase">
+                                                            {i.tipo || '-'}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-3 text-center">
+                                                        {getEstadoBadge(
+                                                            i.estado,
+                                                        )}
+                                                    </td>
+                                                    <td className="py-3 text-right">
+                                                        <div className="flex justify-end gap-1">
+                                                            {canEdit && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0"
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            i,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {canDelete && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            i.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {impuestosFiltrados.length ===
+                                                0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan={5}
+                                                        className="py-8 text-center text-muted-foreground"
+                                                    >
+                                                        No se encontraron
+                                                        impuestos con los
+                                                        filtros aplicados
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    {impuestosFiltrados.length === 0 ? (
+                                        <div className="col-span-full py-8 text-center text-muted-foreground">
+                                            No se encontraron impuestos con los
+                                            filtros aplicados
+                                        </div>
+                                    ) : (
+                                        impuestosFiltrados.map((i) => (
+                                            <Card
+                                                key={i.id}
+                                                className="flex flex-col"
+                                            >
+                                                <CardHeader className="pb-3">
+                                                    <div className="flex items-start justify-between">
+                                                        <div>
+                                                            <div className="flex items-center gap-2">
+                                                                <Calculator className="h-5 w-5 text-amber-500" />
+                                                                <CardTitle className="text-sm">
+                                                                    {i.nombre}
+                                                                </CardTitle>
+                                                            </div>
+                                                            {i.codigo && (
+                                                                <CardDescription className="text-xs">
+                                                                    {i.codigo}
+                                                                </CardDescription>
+                                                            )}
+                                                        </div>
+                                                        {getEstadoBadge(
+                                                            i.estado,
                                                         )}
                                                     </div>
-                                                    {getEstadoBadge(i.estado)}
-                                                </div>
-                                            </CardHeader>
-                                            <CardContent className="flex-1">
-                                                <div className="space-y-1 text-xs">
-                                                    <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Tasa:</span>
-                                                        <span className="font-bold text-primary">{i.tasa}%</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Tipo:</span>
-                                                        <span className="font-medium uppercase">{i.tipo || '-'}</span>
-                                                    </div>
-                                                    {i.descripcion && (
-                                                        <div className="pt-1 text-muted-foreground line-clamp-2">
-                                                            {i.descripcion}
+                                                </CardHeader>
+                                                <CardContent className="flex-1">
+                                                    <div className="space-y-1 text-xs">
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">
+                                                                Tasa:
+                                                            </span>
+                                                            <span className="font-bold text-primary">
+                                                                {i.tasa}%
+                                                            </span>
                                                         </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">
+                                                                Tipo:
+                                                            </span>
+                                                            <span className="font-medium uppercase">
+                                                                {i.tipo || '-'}
+                                                            </span>
+                                                        </div>
+                                                        {i.descripcion && (
+                                                            <div className="line-clamp-2 pt-1 text-muted-foreground">
+                                                                {i.descripcion}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </CardContent>
+                                                <div className="flex items-center justify-end gap-1 border-t p-3">
+                                                    {canEdit && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0"
+                                                            onClick={() =>
+                                                                handleEdit(i)
+                                                            }
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                    {canDelete && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0 text-destructive"
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    i.id,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
                                                     )}
                                                 </div>
-                                            </CardContent>
-                                            <div className="flex items-center justify-end gap-1 border-t p-3">
-                                                {canEdit && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(i)}>
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" onClick={() => handleDelete(i.id)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </Card>
-                                    ))
-                                )}
-                            </div>
+                                            </Card>
+                                        ))
+                                    )}
+                                </div>
                             )}
                             <Pagination
-                                    links={impuestos.links}
-                                    meta={impuestos.meta || impuestos}
-                                />
+                                links={impuestos.links}
+                                meta={impuestos.meta || impuestos}
+                            />
                         </CardContent>
                     </Card>
                 </div>

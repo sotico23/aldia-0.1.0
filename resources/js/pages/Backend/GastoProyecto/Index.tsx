@@ -6,7 +6,7 @@ import {
     Plus,
     Trash2,
     Search,
-    X
+    X,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useMemo } from 'react';
@@ -192,7 +192,7 @@ export default function Index({
         <>
             <Head title="Gastos de Proyecto" />
             <AppLayout breadcrumbs={breadcrumbs}>
-                <div className="flex flex-col gap-4 px-4 sm:px-6 lg:px-8 py-6">
+                <div className="flex flex-col gap-4 px-4 py-6 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-2xl font-bold">
@@ -226,7 +226,11 @@ export default function Index({
                                 </div>
                                 <div className="flex items-center gap-1 rounded-lg border p-1">
                                     <Button
-                                        variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'secondary'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('table')}
                                         className="h-8 w-8 p-0"
@@ -234,7 +238,11 @@ export default function Index({
                                         <List className="h-4 w-4" />
                                     </Button>
                                     <Button
-                                        variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'secondary'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('cards')}
                                         className="h-8 w-8 p-0"
@@ -245,7 +253,7 @@ export default function Index({
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 rounded-lg bg-muted/30 p-3 text-xs sm:text-sm">
+                            <div className="mb-4 grid grid-cols-1 gap-4 rounded-lg bg-muted/30 p-3 text-xs sm:grid-cols-2 sm:text-sm md:grid-cols-4">
                                 <div className="relative">
                                     <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
                                     <Input
@@ -332,176 +340,228 @@ export default function Index({
                                 </Button>
                             </div>
                             {viewMode === 'table' ? (
-                            <div className="w-full overflow-x-auto rounded-lg border border-gray-100">
-                                <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
-                                    <thead>
-                                        <tr className="border-b">
-                                            <th className="py-2 text-left font-medium">
-                                                Categoría / Ref.
-                                            </th>
-                                            <th className="px-4 py-2 text-right font-medium">
-                                                Monto
-                                            </th>
-                                            <th className="py-2 text-left font-medium">
-                                                Fecha
-                                            </th>
-                                            <th className="py-2 text-center font-medium">
-                                                Aprobado
-                                            </th>
-                                            <th className="py-2 text-right font-medium">
-                                                Acciones
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {gastosFiltrados.map((g) => (
-                                            <tr
-                                                key={g.id}
-                                                className="border-b transition-colors hover:bg-muted/30"
-                                            >
-                                                <td className="py-2">
-                                                    <div className="text-[10px] font-medium whitespace-nowrap uppercase">
-                                                        {g.categoria?.replace(
-                                                            '_',
-                                                            ' ',
-                                                        ) || '-'}
-                                                    </div>
-                                                    <div className="max-w-[150px] truncate text-[10px] text-muted-foreground">
-                                                        {g.referencia || ''}
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-2 text-right font-bold text-green-600">
-                                                    {formatCurrency(g.monto)}
-                                                </td>
-                                                <td className="py-2 whitespace-nowrap text-muted-foreground">
-                                                    {formatDateCLP(g.fecha)}
-                                                </td>
-                                                <td className="py-2 text-center">
-                                                    <Badge
-                                                        variant={
-                                                            g.aprobado
-                                                                ? 'default'
-                                                                : 'secondary'
-                                                        }
-                                                        className={
-                                                            g.aprobado
-                                                                ? 'bg-green-500 hover:bg-green-600'
-                                                                : 'bg-yellow-500 hover:bg-yellow-600'
-                                                        }
-                                                    >
-                                                        {g.aprobado
-                                                            ? 'Aprobado'
-                                                            : 'Pendiente'}
-                                                    </Badge>
-                                                </td>
-                                                <td className="py-2 text-right">
-                                                    <div className="flex justify-end gap-1">
-                                                        {canEdit && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-8 w-8 p-0"
-                                                                onClick={() =>
-                                                                    handleEdit(g)
-                                                                }
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                        {canDelete && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                                                onClick={() =>
-                                                                    handleDelete(
-                                                                        g.id,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </td>
+                                <div className="w-full overflow-x-auto rounded-lg border border-gray-100">
+                                    <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
+                                        <thead>
+                                            <tr className="border-b">
+                                                <th className="py-2 text-left font-medium">
+                                                    Categoría / Ref.
+                                                </th>
+                                                <th className="px-4 py-2 text-right font-medium">
+                                                    Monto
+                                                </th>
+                                                <th className="py-2 text-left font-medium">
+                                                    Fecha
+                                                </th>
+                                                <th className="py-2 text-center font-medium">
+                                                    Aprobado
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Acciones
+                                                </th>
                                             </tr>
-                                        ))}
-                                        {gastosFiltrados.length === 0 && (
-                                            <tr>
-                                                <td
-                                                    colSpan={5}
-                                                    className="py-8 text-center text-muted-foreground"
+                                        </thead>
+                                        <tbody>
+                                            {gastosFiltrados.map((g) => (
+                                                <tr
+                                                    key={g.id}
+                                                    className="border-b transition-colors hover:bg-muted/30"
                                                 >
-                                                    No se encontraron gastos con
-                                                    los filtros aplicados
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
+                                                    <td className="py-2">
+                                                        <div className="text-[10px] font-medium whitespace-nowrap uppercase">
+                                                            {g.categoria?.replace(
+                                                                '_',
+                                                                ' ',
+                                                            ) || '-'}
+                                                        </div>
+                                                        <div className="max-w-[150px] truncate text-[10px] text-muted-foreground">
+                                                            {g.referencia || ''}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-2 text-right font-bold text-green-600">
+                                                        {formatCurrency(
+                                                            g.monto,
+                                                        )}
+                                                    </td>
+                                                    <td className="py-2 whitespace-nowrap text-muted-foreground">
+                                                        {formatDateCLP(g.fecha)}
+                                                    </td>
+                                                    <td className="py-2 text-center">
+                                                        <Badge
+                                                            variant={
+                                                                g.aprobado
+                                                                    ? 'default'
+                                                                    : 'secondary'
+                                                            }
+                                                            className={
+                                                                g.aprobado
+                                                                    ? 'bg-green-500 hover:bg-green-600'
+                                                                    : 'bg-yellow-500 hover:bg-yellow-600'
+                                                            }
+                                                        >
+                                                            {g.aprobado
+                                                                ? 'Aprobado'
+                                                                : 'Pendiente'}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="py-2 text-right">
+                                                        <div className="flex justify-end gap-1">
+                                                            {canEdit && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0"
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            g,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {canDelete && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            g.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {gastosFiltrados.length === 0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan={5}
+                                                        className="py-8 text-center text-muted-foreground"
+                                                    >
+                                                        No se encontraron gastos
+                                                        con los filtros
+                                                        aplicados
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             ) : (
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {gastosFiltrados.length === 0 ? (
-                                    <div className="col-span-full py-8 text-center text-muted-foreground">
-                                        No se encontraron gastos con los filtros aplicados
-                                    </div>
-                                ) : (
-                                    gastosFiltrados.map((g) => (
-                                        <Card key={g.id} className="flex flex-col">
-                                            <CardHeader className="pb-3">
-                                                <div className="flex items-start justify-between">
-                                                    <div>
-                                                        <CardTitle className="text-sm uppercase">
-                                                            {g.categoria?.replace('_', ' ') || '-'}
-                                                        </CardTitle>
-                                                        {g.referencia && (
-                                                            <CardDescription className="text-xs">
-                                                                {g.referencia}
-                                                            </CardDescription>
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    {gastosFiltrados.length === 0 ? (
+                                        <div className="col-span-full py-8 text-center text-muted-foreground">
+                                            No se encontraron gastos con los
+                                            filtros aplicados
+                                        </div>
+                                    ) : (
+                                        gastosFiltrados.map((g) => (
+                                            <Card
+                                                key={g.id}
+                                                className="flex flex-col"
+                                            >
+                                                <CardHeader className="pb-3">
+                                                    <div className="flex items-start justify-between">
+                                                        <div>
+                                                            <CardTitle className="text-sm uppercase">
+                                                                {g.categoria?.replace(
+                                                                    '_',
+                                                                    ' ',
+                                                                ) || '-'}
+                                                            </CardTitle>
+                                                            {g.referencia && (
+                                                                <CardDescription className="text-xs">
+                                                                    {
+                                                                        g.referencia
+                                                                    }
+                                                                </CardDescription>
+                                                            )}
+                                                        </div>
+                                                        <Badge
+                                                            variant={
+                                                                g.aprobado
+                                                                    ? 'default'
+                                                                    : 'secondary'
+                                                            }
+                                                            className={
+                                                                g.aprobado
+                                                                    ? 'bg-green-500'
+                                                                    : 'bg-yellow-500'
+                                                            }
+                                                        >
+                                                            {g.aprobado
+                                                                ? 'Aprobado'
+                                                                : 'Pendiente'}
+                                                        </Badge>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="flex-1">
+                                                    <div className="space-y-1 text-xs">
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">
+                                                                Monto:
+                                                            </span>
+                                                            <span className="font-bold text-green-600">
+                                                                {formatCurrency(
+                                                                    g.monto,
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">
+                                                                Fecha:
+                                                            </span>
+                                                            <span>
+                                                                {formatDateCLP(
+                                                                    g.fecha,
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                        {g.descripcion && (
+                                                            <div className="line-clamp-2 pt-1 text-muted-foreground">
+                                                                {g.descripcion}
+                                                            </div>
                                                         )}
                                                     </div>
-                                                    <Badge
-                                                        variant={g.aprobado ? 'default' : 'secondary'}
-                                                        className={g.aprobado ? 'bg-green-500' : 'bg-yellow-500'}
-                                                    >
-                                                        {g.aprobado ? 'Aprobado' : 'Pendiente'}
-                                                    </Badge>
-                                                </div>
-                                            </CardHeader>
-                                            <CardContent className="flex-1">
-                                                <div className="space-y-1 text-xs">
-                                                    <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Monto:</span>
-                                                        <span className="font-bold text-green-600">{formatCurrency(g.monto)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Fecha:</span>
-                                                        <span>{formatDateCLP(g.fecha)}</span>
-                                                    </div>
-                                                    {g.descripcion && (
-                                                        <div className="pt-1 text-muted-foreground line-clamp-2">
-                                                            {g.descripcion}
-                                                        </div>
+                                                </CardContent>
+                                                <div className="flex items-center justify-end gap-1 border-t p-3">
+                                                    {canEdit && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0"
+                                                            onClick={() =>
+                                                                handleEdit(g)
+                                                            }
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                    {canDelete && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0 text-destructive"
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    g.id,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
                                                     )}
                                                 </div>
-                                            </CardContent>
-                                            <div className="flex items-center justify-end gap-1 border-t p-3">
-                                                {canEdit && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(g)}>
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" onClick={() => handleDelete(g.id)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </Card>
-                                    ))
-                                )}
-                            </div>
+                                            </Card>
+                                        ))
+                                    )}
+                                </div>
                             )}
                             <Pagination
                                 links={gastos.links}
@@ -518,13 +578,16 @@ export default function Index({
                 </div>
             </AppLayout>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="mx-4 sm:mx-auto w-full max-w-full sm:max-w-lg md:max-w-2xl p-4 sm:p-6">
+                <DialogContent className="mx-4 w-full max-w-full p-4 sm:mx-auto sm:max-w-lg sm:p-6 md:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>
                             {editando ? 'Editar' : 'Nuevo'} Gasto
                         </DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="max-h-[85vh] overflow-y-auto">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="max-h-[85vh] overflow-y-auto"
+                    >
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">

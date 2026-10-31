@@ -97,7 +97,7 @@ export function SocialLoginButtons({
                 <a
                     href="/auth/telegram/redirect"
                     className={cn(
-                        'inline-flex h-9 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium whitespace-nowrap text-[#229ED9] shadow-xs transition-[color,box-shadow] outline-none hover:bg-accent hover:text-accent-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-[>svg]:px-4 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 sm:col-span-2',
+                        'inline-flex h-9 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium whitespace-nowrap text-[#229ED9] shadow-xs transition-[color,box-shadow] outline-none hover:bg-accent hover:text-accent-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-[>svg]:px-4 aria-invalid:border-destructive aria-invalid:ring-destructive/20 sm:col-span-2 dark:aria-invalid:ring-destructive/40',
                     )}
                 >
                     <TelegramIcon />
@@ -106,7 +106,7 @@ export function SocialLoginButtons({
             );
         }
 
-return (
+        return (
             <div className="sm:col-span-2">
                 <div
                     ref={containerRef}

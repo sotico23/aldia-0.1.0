@@ -285,7 +285,7 @@ export default function Reportes({
                                 0 Nuevas
                             </div>
                             <p className="mt-1 animate-pulse text-[10px] font-bold font-medium tracking-wider text-amber-700 italic">
-                                Wait sync...
+                                esperando nuevas ventas
                             </p>
                         </CardContent>
                     </Card>

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * DeliveryPositionUpdated Event Test
  */
@@ -12,7 +13,8 @@ class DeliveryPositionUpdatedTest extends TestCase
 {
     public function test_delivery_position_updated_event_has_correct_structure(): void
     {
-        $event = new class extends DeliveryPositionUpdated {
+        $event = new class extends DeliveryPositionUpdated
+        {
             public function __construct()
             {
                 parent::__construct();
@@ -20,7 +22,7 @@ class DeliveryPositionUpdatedTest extends TestCase
         };
 
         $data = $event->getEventData();
-        
+
         $this->assertArrayHasKey('id', $data);
         $this->assertArrayHasKey('type', $data);
         $this->assertArrayHasKey('position_id', $data);
@@ -31,13 +33,14 @@ class DeliveryPositionUpdatedTest extends TestCase
         $this->assertArrayHasKey('distance_km', $data);
         $this->assertArrayHasKey('estado_actual', $data);
         $this->assertArrayHasKey('created_at', $data);
-        
+
         $this->assertEquals('delivery.position.updated', $data['type']);
     }
 
     public function test_delivery_position_updated_event_channel_format(): void
     {
-        $event = new class extends DeliveryPositionUpdated {
+        $event = new class extends DeliveryPositionUpdated
+        {
             public function __construct()
             {
                 parent::__construct();
@@ -45,7 +48,7 @@ class DeliveryPositionUpdatedTest extends TestCase
         };
 
         $channel = $event->getChannel();
-        
+
         $this->assertStringContainsString('delivery.orders', $channel);
         $this->assertStringContainsString('{orderId}', $channel);
     }

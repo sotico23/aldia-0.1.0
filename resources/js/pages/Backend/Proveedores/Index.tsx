@@ -21,7 +21,7 @@ import {
     Tag,
     Globe,
     Briefcase,
-    MessageSquare
+    MessageSquare,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
@@ -219,7 +219,10 @@ export default function Index({
                     toast.success('Proveedor actualizado');
                 },
                 onError: (errs) => {
-                    toast.error('Error de validación: ' + Object.values(errs).join(', '));
+                    toast.error(
+                        'Error de validación: ' +
+                            Object.values(errs).join(', '),
+                    );
                 },
             });
         } else {
@@ -230,7 +233,10 @@ export default function Index({
                     toast.success('Proveedor registrado');
                 },
                 onError: (errs) => {
-                    toast.error('Error de validación: ' + Object.values(errs).join(', '));
+                    toast.error(
+                        'Error de validación: ' +
+                            Object.values(errs).join(', '),
+                    );
                 },
             });
         }
@@ -296,7 +302,9 @@ export default function Index({
                     <div className="flex flex-wrap gap-2">
                         <div className="flex gap-1 rounded-xl bg-muted/30 p-1">
                             <Button
-                                variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                                variant={
+                                    viewMode === 'cards' ? 'default' : 'ghost'
+                                }
                                 size="sm"
                                 onClick={() => setViewMode('cards')}
                                 className="h-8 rounded-lg"
@@ -304,7 +312,9 @@ export default function Index({
                                 <LayoutGrid className="h-4 w-4" />
                             </Button>
                             <Button
-                                variant={viewMode === 'table' ? 'default' : 'ghost'}
+                                variant={
+                                    viewMode === 'table' ? 'default' : 'ghost'
+                                }
                                 size="sm"
                                 onClick={() => setViewMode('table')}
                                 className="h-8 rounded-lg"
@@ -368,7 +378,8 @@ export default function Index({
                                 }}
                                 className="h-9 rounded-full bg-primary px-5 font-bold shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
                             >
-                                <Plus className="mr-2 h-4 w-4" /> Nuevo Proveedor
+                                <Plus className="mr-2 h-4 w-4" /> Nuevo
+                                Proveedor
                             </Button>
                         )}
                     </div>
@@ -431,7 +442,7 @@ export default function Index({
                                 >
                                     <CardHeader className="pb-4">
                                         <div className="mb-2 flex items-start justify-between gap-2">
-                                            <div className="min-w-0 flex-1 flex-wrap flex gap-1">
+                                            <div className="flex min-w-0 flex-1 flex-wrap gap-1">
                                                 <Badge
                                                     variant="outline"
                                                     className={`shrink-0 ${p.activo ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'} rounded-full border-none px-2 py-0.5 text-[9px] font-black uppercase`}
@@ -463,32 +474,36 @@ export default function Index({
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
-                                                    onClick={() => handleView(p)}
+                                                    onClick={() =>
+                                                        handleView(p)
+                                                    }
                                                 >
                                                     <Eye className="h-4 w-4" />
                                                 </Button>
                                                 {canEdit && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 rounded-full text-primary hover:bg-primary/10"
-                                                    onClick={() => handleEdit(p)}
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                </Button>
-                                            )}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 rounded-full text-primary hover:bg-primary/10"
+                                                        onClick={() =>
+                                                            handleEdit(p)
+                                                        }
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                )}
                                                 {canDelete && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 rounded-full text-destructive hover:bg-destructive/10"
-                                                    onClick={() =>
-                                                        handleDelete(p.id)
-                                                    }
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            )}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 rounded-full text-destructive hover:bg-destructive/10"
+                                                        onClick={() =>
+                                                            handleDelete(p.id)
+                                                        }
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
                                             </div>
                                         </div>
                                         <CardTitle className="truncate text-xl font-black transition-colors group-hover:text-primary">
@@ -522,7 +537,8 @@ export default function Index({
                                                     <Phone className="h-4 w-4" />
                                                 </div>
                                                 <span className="min-w-0 truncate">
-                                                    {p.telefono || 'No registrado'}
+                                                    {p.telefono ||
+                                                        'No registrado'}
                                                 </span>
                                                 {p.telefono && (
                                                     <WhatsAppButton
@@ -537,7 +553,8 @@ export default function Index({
                                                     <MapPin className="h-4 w-4" />
                                                 </div>
                                                 <span className="min-w-0 truncate">
-                                                    {p.direccion || 'No registrada'}
+                                                    {p.direccion ||
+                                                        'No registrada'}
                                                 </span>
                                             </div>
                                             {p.sitio_web && (
@@ -545,7 +562,7 @@ export default function Index({
                                                     href={p.sitio_web}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="group/item flex items-center gap-3 rounded-2xl bg-muted/30 p-3 text-sm font-medium text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                                                    className="group/item flex items-center gap-3 rounded-2xl bg-muted/30 p-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                                                 >
                                                     <div className="rounded-xl bg-background p-2 text-purple-600 shadow-sm transition-transform group-hover/item:scale-110">
                                                         <Globe className="h-4 w-4" />
@@ -558,7 +575,7 @@ export default function Index({
                                         </div>
 
                                         <div className="flex items-center justify-between border-t border-muted/50 pt-4">
-                                            <div className="flex items-center gap-2 min-w-0">
+                                            <div className="flex min-w-0 items-center gap-2">
                                                 <User className="h-4 w-4 shrink-0 text-muted-foreground" />
                                                 <span className="truncate text-[10px] font-black tracking-tight text-muted-foreground uppercase">
                                                     {p.contacto_principal ||
@@ -583,52 +600,106 @@ export default function Index({
                             <table className="w-full text-xs sm:text-sm">
                                 <thead>
                                     <tr className="border-b bg-muted/5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                                        <th className="px-4 py-3 text-left">Proveedor</th>
-                                        <th className="px-4 py-3 text-left">RUT / Contacto</th>
-                                        <th className="px-4 py-3 text-left">Categoría</th>
-                                        <th className="px-4 py-3 text-center">Estado</th>
-                                        <th className="px-4 py-3 text-right">Acciones</th>
+                                        <th className="px-4 py-3 text-left">
+                                            Proveedor
+                                        </th>
+                                        <th className="px-4 py-3 text-left">
+                                            RUT / Contacto
+                                        </th>
+                                        <th className="px-4 py-3 text-left">
+                                            Categoría
+                                        </th>
+                                        <th className="px-4 py-3 text-center">
+                                            Estado
+                                        </th>
+                                        <th className="px-4 py-3 text-right">
+                                            Acciones
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-muted/50">
                                     {proveedors.data.map((p) => (
-                                        <tr key={p.id} className="group transition-colors hover:bg-muted/30">
+                                        <tr
+                                            key={p.id}
+                                            className="group transition-colors hover:bg-muted/30"
+                                        >
                                             <td className="px-4 py-3">
-                                                <div className="font-medium">{p.nombre}</div>
+                                                <div className="font-medium">
+                                                    {p.nombre}
+                                                </div>
                                                 {p.nombre_empresa && (
-                                                    <div className="text-[10px] text-muted-foreground">{p.nombre_empresa}</div>
+                                                    <div className="text-[10px] text-muted-foreground">
+                                                        {p.nombre_empresa}
+                                                    </div>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3">
-                                                <div className="text-xs">{p.nit || 'Sin RUT'}</div>
-                                                <div className="text-[10px] text-muted-foreground">{p.email || 'Sin email'}</div>
+                                                <div className="text-xs">
+                                                    {p.nit || 'Sin RUT'}
+                                                </div>
+                                                <div className="text-[10px] text-muted-foreground">
+                                                    {p.email || 'Sin email'}
+                                                </div>
                                             </td>
                                             <td className="px-4 py-3">
                                                 {p.categoria ? (
-                                                    <Badge variant="outline" className="rounded-full border-none bg-primary/10 px-2 py-0.5 text-[9px] font-black text-primary uppercase">
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="rounded-full border-none bg-primary/10 px-2 py-0.5 text-[9px] font-black text-primary uppercase"
+                                                    >
                                                         {p.categoria.nombre}
                                                     </Badge>
                                                 ) : (
-                                                    <span className="text-xs text-muted-foreground">General</span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        General
+                                                    </span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-center">
-                                                <Badge variant="outline" className={`${p.activo ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'} rounded-full border-none px-2 py-0.5 text-[9px] font-black uppercase`}>
-                                                    {p.activo ? 'Activo' : 'Inactivo'}
+                                                <Badge
+                                                    variant="outline"
+                                                    className={`${p.activo ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'} rounded-full border-none px-2 py-0.5 text-[9px] font-black uppercase`}
+                                                >
+                                                    {p.activo
+                                                        ? 'Activo'
+                                                        : 'Inactivo'}
                                                 </Badge>
                                             </td>
                                             <td className="px-4 py-3 text-right">
                                                 <div className="flex justify-end gap-1">
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => handleView(p)}>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                        onClick={() =>
+                                                            handleView(p)
+                                                        }
+                                                    >
                                                         <Eye className="h-4 w-4" />
                                                     </Button>
                                                     {canEdit && (
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:bg-primary/10" onClick={() => handleEdit(p)}>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-primary hover:bg-primary/10"
+                                                            onClick={() =>
+                                                                handleEdit(p)
+                                                            }
+                                                        >
                                                             <Pencil className="h-4 w-4" />
                                                         </Button>
                                                     )}
                                                     {canDelete && (
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(p.id)}>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    p.id,
+                                                                )
+                                                            }
+                                                        >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
                                                     )}
@@ -638,8 +709,12 @@ export default function Index({
                                     ))}
                                     {proveedors.data.length === 0 && (
                                         <tr>
-                                            <td colSpan={5} className="py-8 text-center text-muted-foreground">
-                                                No se encontraron proveedores con los filtros aplicados
+                                            <td
+                                                colSpan={5}
+                                                className="py-8 text-center text-muted-foreground"
+                                            >
+                                                No se encontraron proveedores
+                                                con los filtros aplicados
                                             </td>
                                         </tr>
                                     )}
@@ -683,252 +758,270 @@ export default function Index({
                     >
                         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                             <div className="grid grid-cols-1 gap-4 py-3 md:grid-cols-2 md:gap-6">
-                            <div className="space-y-4">
-                                <h3 className="flex items-center gap-2 text-[11px] font-black tracking-widest text-primary uppercase">
-                                    <Store className="h-4 w-4" /> Información
-                                    Comercial
-                                </h3>
-                                <div className="space-y-3">
-                                    <div className="space-y-1.5">
-                                        <Label className="text-xs font-bold text-muted-foreground uppercase">
-                                            Nombre Comercial / Razon Social *
-                                        </Label>
-                                        <Input
-                                            value={data.nombre}
-                                            onChange={(e) =>
-                                                setData(
-                                                    'nombre',
-                                                    e.target.value,
-                                                )
-                                            }
-                                            required
-                                            className="h-10 rounded-2xl border-none bg-muted/30 font-bold"
-                                            placeholder="Ej: Importaciones Globales S.A."
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                    <div className="space-y-1.5">
-                                        <Label className="text-xs font-bold text-muted-foreground uppercase">
-                                            RUT / NIT *
-                                        </Label>
-                                        <Input
-                                            value={data.nit}
-                                            onChange={(e) => {
-                                                const raw = e.target.value;
-                                                const prev = data.nit;
-                                                if (raw.length > prev.length) {
-                                                    setData('nit', formatRut(raw));
-                                                } else {
-                                                    setData('nit', raw);
-                                                }
-                                            }}
-                                            className="h-10 rounded-2xl border-none bg-muted/30 font-bold"
-                                            placeholder="12.345.678-9"
-                                        />
-                                    </div>
+                                <div className="space-y-4">
+                                    <h3 className="flex items-center gap-2 text-[11px] font-black tracking-widest text-primary uppercase">
+                                        <Store className="h-4 w-4" />{' '}
+                                        Información Comercial
+                                    </h3>
+                                    <div className="space-y-3">
                                         <div className="space-y-1.5">
                                             <Label className="text-xs font-bold text-muted-foreground uppercase">
-                                                Categoría
-                                            </Label>
-                                            <Select
-                                                value={String(
-                                                    data.categoria_id,
-                                                )}
-                                                onValueChange={(v) =>
-                                                    setData('categoria_id', v)
-                                                }
-                                            >
-                                                <SelectTrigger className="h-10 rounded-2xl border-none bg-muted/30 font-bold">
-                                                    <SelectValue placeholder="Seleccione..." />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {categorias.map((c) => (
-                                                        <SelectItem
-                                                            key={c.id}
-                                                            value={String(c.id)}
-                                                        >
-                                                            {c.nombre}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                        <div className="space-y-1.5">
-                                            <Label className="text-xs font-bold text-muted-foreground uppercase">
-                                                Email de Contacto
+                                                Nombre Comercial / Razon Social
+                                                *
                                             </Label>
                                             <Input
-                                                type="email"
-                                                value={data.email}
+                                                value={data.nombre}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'email',
+                                                        'nombre',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                required
+                                                className="h-10 rounded-2xl border-none bg-muted/30 font-bold"
+                                                placeholder="Ej: Importaciones Globales S.A."
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-bold text-muted-foreground uppercase">
+                                                    RUT / NIT *
+                                                </Label>
+                                                <Input
+                                                    value={data.nit}
+                                                    onChange={(e) => {
+                                                        const raw =
+                                                            e.target.value;
+                                                        const prev = data.nit;
+                                                        if (
+                                                            raw.length >
+                                                            prev.length
+                                                        ) {
+                                                            setData(
+                                                                'nit',
+                                                                formatRut(raw),
+                                                            );
+                                                        } else {
+                                                            setData('nit', raw);
+                                                        }
+                                                    }}
+                                                    className="h-10 rounded-2xl border-none bg-muted/30 font-bold"
+                                                    placeholder="12.345.678-9"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-bold text-muted-foreground uppercase">
+                                                    Categoría
+                                                </Label>
+                                                <Select
+                                                    value={String(
+                                                        data.categoria_id,
+                                                    )}
+                                                    onValueChange={(v) =>
+                                                        setData(
+                                                            'categoria_id',
+                                                            v,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger className="h-10 rounded-2xl border-none bg-muted/30 font-bold">
+                                                        <SelectValue placeholder="Seleccione..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {categorias.map((c) => (
+                                                            <SelectItem
+                                                                key={c.id}
+                                                                value={String(
+                                                                    c.id,
+                                                                )}
+                                                            >
+                                                                {c.nombre}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-bold text-muted-foreground uppercase">
+                                                    Email de Contacto
+                                                </Label>
+                                                <Input
+                                                    type="email"
+                                                    value={data.email}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'email',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className="h-10 rounded-2xl border-none bg-muted/30 font-bold"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-bold text-muted-foreground uppercase">
+                                                    Teléfono
+                                                </Label>
+                                                <Input
+                                                    value={data.telefono}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'telefono',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className="h-10 rounded-2xl border-none bg-muted/30 font-bold"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-bold text-muted-foreground uppercase">
+                                                Dirección
+                                            </Label>
+                                            <Input
+                                                value={data.direccion}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'direccion',
                                                         e.target.value,
                                                     )
                                                 }
                                                 className="h-10 rounded-2xl border-none bg-muted/30 font-bold"
                                             />
                                         </div>
-                                        <div className="space-y-1.5">
-                                            <Label className="text-xs font-bold text-muted-foreground uppercase">
-                                                Teléfono
-                                            </Label>
-                                            <Input
-                                                value={data.telefono}
-                                                onChange={(e) =>
-                                                    setData(
-                                                        'telefono',
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="h-10 rounded-2xl border-none bg-muted/30 font-bold"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <Label className="text-xs font-bold text-muted-foreground uppercase">
-                                            Dirección
-                                        </Label>
-                                        <Input
-                                            value={data.direccion}
-                                            onChange={(e) =>
-                                                setData(
-                                                    'direccion',
-                                                    e.target.value,
-                                                )
-                                            }
-                                            className="h-10 rounded-2xl border-none bg-muted/30 font-bold"
-                                        />
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="space-y-4">
-                                <h3 className="flex items-center gap-2 text-[11px] font-black tracking-widest text-primary uppercase">
-                                    <Globe className="h-4 w-4" /> Detalles
-                                    Operativos
-                                </h3>
-                                <div className="space-y-3 rounded-3xl border-2 border-dashed border-primary/20 bg-primary/5 p-4 sm:p-6">
-                                    <div className="space-y-1.5">
-                                        <Label className="text-xs font-bold text-muted-foreground uppercase">
-                                            Contacto Principal
-                                        </Label>
-                                        <Input
-                                            value={data.contacto_principal}
-                                            onChange={(e) =>
-                                                setData(
-                                                    'contacto_principal',
-                                                    e.target.value,
-                                                )
-                                            }
-                                            className="h-10 rounded-xl border-none bg-background font-bold shadow-sm"
-                                            placeholder="Nombre de la persona"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <div className="space-y-4">
+                                    <h3 className="flex items-center gap-2 text-[11px] font-black tracking-widest text-primary uppercase">
+                                        <Globe className="h-4 w-4" /> Detalles
+                                        Operativos
+                                    </h3>
+                                    <div className="space-y-3 rounded-3xl border-2 border-dashed border-primary/20 bg-primary/5 p-4 sm:p-6">
                                         <div className="space-y-1.5">
                                             <Label className="text-xs font-bold text-muted-foreground uppercase">
-                                                Términos de Pago
+                                                Contacto Principal
                                             </Label>
                                             <Input
-                                                value={data.terminos_pago}
+                                                value={data.contacto_principal}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'terminos_pago',
+                                                        'contacto_principal',
                                                         e.target.value,
                                                     )
                                                 }
                                                 className="h-10 rounded-xl border-none bg-background font-bold shadow-sm"
-                                                placeholder="Ej: 30 días"
+                                                placeholder="Nombre de la persona"
                                             />
                                         </div>
-                                        <div className="space-y-1.5">
-                                            <Label className="text-xs font-bold text-muted-foreground uppercase">
-                                                Estado
-                                            </Label>
-                                            <div className="flex h-10 items-center justify-center rounded-xl border bg-background">
-                                                <Label className="flex cursor-pointer items-center gap-2">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={data.activo}
-                                                        onChange={(e) =>
-                                                            setData(
-                                                                'activo',
-                                                                e.target
-                                                                    .checked,
-                                                            )
-                                                        }
-                                                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                                    />
-                                                    <span className="text-xs font-black uppercase">
-                                                        {data.activo
-                                                            ? 'Activo'
-                                                            : 'Inactivo'}
-                                                    </span>
+                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-bold text-muted-foreground uppercase">
+                                                    Términos de Pago
                                                 </Label>
+                                                <Input
+                                                    value={data.terminos_pago}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'terminos_pago',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className="h-10 rounded-xl border-none bg-background font-bold shadow-sm"
+                                                    placeholder="Ej: 30 días"
+                                                />
                                             </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="border-t border-primary/10 pt-3">
-                                        <Label className="flex cursor-pointer items-center gap-2 mb-3">
-                                            <input
-                                                type="checkbox"
-                                                checked={data.crear_usuario}
-                                                onChange={(e) =>
-                                                    setData(
-                                                        'crear_usuario',
-                                                        e.target.checked,
-                                                    )
-                                                }
-                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                            />
-                                            <span className="text-xs font-black uppercase">
-                                                Acceso a Portal de Proveedor
-                                            </span>
-                                        </Label>
-
-                                        {data.crear_usuario && (
-                                            <div className="animate-in space-y-3 duration-300 fade-in slide-in-from-top-2">
-                                                <div className="space-y-1.5">
-                                                    <Label className="text-[10px] font-black text-muted-foreground uppercase">
-                                                        Contraseña (Mín. 8
-                                                        caracteres)
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-bold text-muted-foreground uppercase">
+                                                    Estado
+                                                </Label>
+                                                <div className="flex h-10 items-center justify-center rounded-xl border bg-background">
+                                                    <Label className="flex cursor-pointer items-center gap-2">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={
+                                                                data.activo
+                                                            }
+                                                            onChange={(e) =>
+                                                                setData(
+                                                                    'activo',
+                                                                    e.target
+                                                                        .checked,
+                                                                )
+                                                            }
+                                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                                        />
+                                                        <span className="text-xs font-black uppercase">
+                                                            {data.activo
+                                                                ? 'Activo'
+                                                                : 'Inactivo'}
+                                                        </span>
                                                     </Label>
-                                                    <PasswordInput
-                                                        value={data.password}
-                                                        onChange={(e) =>
-                                                            setData(
-                                                                'password',
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        className="h-10 rounded-xl border-none bg-background font-bold shadow-sm"
-                                                        placeholder="Dejar en blanco para default"
-                                                    />
                                                 </div>
                                             </div>
-                                        )}
+                                        </div>
+
+                                        <div className="border-t border-primary/10 pt-3">
+                                            <Label className="mb-3 flex cursor-pointer items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={data.crear_usuario}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'crear_usuario',
+                                                            e.target.checked,
+                                                        )
+                                                    }
+                                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                                />
+                                                <span className="text-xs font-black uppercase">
+                                                    Acceso a Portal de Proveedor
+                                                </span>
+                                            </Label>
+
+                                            {data.crear_usuario && (
+                                                <div className="animate-in space-y-3 duration-300 fade-in slide-in-from-top-2">
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-[10px] font-black text-muted-foreground uppercase">
+                                                            Contraseña (Mín. 8
+                                                            caracteres)
+                                                        </Label>
+                                                        <PasswordInput
+                                                            value={
+                                                                data.password
+                                                            }
+                                                            onChange={(e) =>
+                                                                setData(
+                                                                    'password',
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className="h-10 rounded-xl border-none bg-background font-bold shadow-sm"
+                                                            placeholder="Dejar en blanco para default"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="mt-4 space-y-1.5 border-t pt-4">
-                            <Label className="text-xs font-bold text-muted-foreground uppercase">
-                                Notas Internas
-                            </Label>
-                            <textarea
-                                value={data.notas}
-                                onChange={(e) =>
-                                    setData('notas', e.target.value)
-                                }
-                                className="flex min-h-[80px] w-full rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
-                                placeholder="Historial, acuerdos especiales, etc."
-                            />
-                        </div>
+                            <div className="mt-4 space-y-1.5 border-t pt-4">
+                                <Label className="text-xs font-bold text-muted-foreground uppercase">
+                                    Notas Internas
+                                </Label>
+                                <textarea
+                                    value={data.notas}
+                                    onChange={(e) =>
+                                        setData('notas', e.target.value)
+                                    }
+                                    className="flex min-h-[80px] w-full rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                                    placeholder="Historial, acuerdos especiales, etc."
+                                />
+                            </div>
                         </div>
 
                         <DialogFooter className="shrink-0 gap-2 border-t px-4 py-4 font-black uppercase sm:px-6">
@@ -994,7 +1087,8 @@ export default function Index({
                                             Categoría
                                         </span>
                                         <Badge className="block w-fit border-none bg-primary/10 text-[10px] font-bold text-primary">
-                                            {viendo.categoria?.nombre || 'General'}
+                                            {viendo.categoria?.nombre ||
+                                                'General'}
                                         </Badge>
                                     </div>
                                     <div className="space-y-1 rounded-2xl bg-muted/30 p-3">
@@ -1030,8 +1124,12 @@ export default function Index({
                                                     {viendo.telefono || '---'}
                                                     {viendo.telefono && (
                                                         <WhatsAppButton
-                                                            phone={viendo.telefono}
-                                                            nombre={viendo.nombre}
+                                                            phone={
+                                                                viendo.telefono
+                                                            }
+                                                            nombre={
+                                                                viendo.nombre
+                                                            }
                                                         />
                                                     )}
                                                 </span>

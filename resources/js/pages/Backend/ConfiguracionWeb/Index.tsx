@@ -489,7 +489,10 @@ export default function Index({
 }) {
     const { hasPermission } = usePermissions();
     const canAccess = hasPermission('admin.web-settings.viewAny');
-    const isN8nAllowed = hasPermission(['admin.web-settings.viewAny', 'admin.web-settings.edit']);
+    const isN8nAllowed = hasPermission([
+        'admin.web-settings.viewAny',
+        'admin.web-settings.edit',
+    ]);
     const { data, setData, post, processing } = useForm<FormFields>({
         _method: 'PUT',
         app_name: settings.app_name || '',
@@ -508,23 +511,23 @@ export default function Index({
         maintenance_mode: settings.maintenance_mode || false,
         hero: settings.hero_titulo
             ? {
-                titulo: settings.hero_titulo,
-                subtitulo: settings.hero_subtitulo || '',
-                boton_principal: settings.hero_boton_principal || '',
-                boton_secundario: settings.hero_boton_secundario || '',
-                badge: settings.hero_boton_principal
-                    ? settings.hero_badge || ''
-                    : '',
-            }
+                  titulo: settings.hero_titulo,
+                  subtitulo: settings.hero_subtitulo || '',
+                  boton_principal: settings.hero_boton_principal || '',
+                  boton_secundario: settings.hero_boton_secundario || '',
+                  badge: settings.hero_boton_principal
+                      ? settings.hero_badge || ''
+                      : '',
+              }
             : defaultHero,
         caracteristicas: settings.caracteristicas || defaultCaracteristicas,
         planes: settings.planes || defaultPlanes,
         cta: settings.cta_titulo
             ? {
-                titulo: settings.cta_titulo,
-                descripcion: settings.cta_descripcion || '',
-                boton: settings.cta_boton || '',
-            }
+                  titulo: settings.cta_titulo,
+                  descripcion: settings.cta_descripcion || '',
+                  boton: settings.cta_boton || '',
+              }
             : defaultCta,
         nav: {
             app_brand_visible: settings.nav_app_brand_visible ?? true,
@@ -556,7 +559,8 @@ export default function Index({
         telegram_login_bot_name: settings.telegram_login_bot_name || '',
         telegram_login_bot_token: settings.telegram_login_bot_token || '',
         telegram_login_redirect_uri: settings.telegram_login_redirect_uri || '',
-        global_telegram_bot_username: settings.global_telegram_bot_username || '',
+        global_telegram_bot_username:
+            settings.global_telegram_bot_username || '',
         global_telegram_bot_token: settings.global_telegram_bot_token || '',
         whatsapp_webhook_url: settings.whatsapp_webhook_url || '',
         whatsapp_phone_number_id: settings.whatsapp_phone_number_id || '',
@@ -570,7 +574,8 @@ export default function Index({
     const [testingFacebook, setTestingFacebook] = useState(false);
     const [testingTelegram, setTestingTelegram] = useState(false);
     const [testingTelegramLogin, setTestingTelegramLogin] = useState(false);
-    const [disconnectingTelegramLogin, setDisconnectingTelegramLogin] = useState(false);
+    const [disconnectingTelegramLogin, setDisconnectingTelegramLogin] =
+        useState(false);
     const [isTelegramTested, setIsTelegramTested] = useState(false);
     const [testingWhatsApp, setTestingWhatsApp] = useState(false);
     const [isWhatsAppTested, setIsWhatsAppTested] = useState(false);
@@ -592,44 +597,64 @@ export default function Index({
 
     useEffect(() => {
         if (activeSection === 'n8n' && !n8nLoaded) {
-            axios.get('/api/system-integrations/n8n').then((res) => {
-                const data = res.data?.data ?? res.data;
-                setN8nConfig({
-                    provider: 'n8n',
-                    base_url: data.base_url || '',
-                    webhook_url: data.webhook_url || '',
-                    telegram_proxy_url: data.telegram_proxy_url || '',
-                    api_key: '',
-                    is_active: data.is_active ?? true,
+            axios
+                .get('/api/system-integrations/n8n')
+                .then((res) => {
+                    const data = res.data?.data ?? res.data;
+                    setN8nConfig({
+                        provider: 'n8n',
+                        base_url: data.base_url || '',
+                        webhook_url: data.webhook_url || '',
+                        telegram_proxy_url: data.telegram_proxy_url || '',
+                        api_key: '',
+                        is_active: data.is_active ?? true,
+                    });
+                    setN8nLoaded(true);
+                })
+                .catch(() => {
+                    setN8nLoaded(true);
                 });
-                setN8nLoaded(true);
-            }).catch(() => {
-                setN8nLoaded(true);
-            });
         }
     }, [activeSection, n8nLoaded]);
 
     const testSocialConnection = async (provider: 'google' | 'facebook') => {
-        const setTesting = provider === 'google' ? setTestingGoogle : setTestingFacebook;
+        const setTesting =
+            provider === 'google' ? setTestingGoogle : setTestingFacebook;
         setTesting(true);
 
-        const clientId = provider === 'google' ? data.google_client_id : data.facebook_client_id;
-        const clientSecret = provider === 'google' ? data.google_client_secret : data.facebook_client_secret;
-        const redirectUri = provider === 'google' ? data.google_redirect_uri : data.facebook_redirect_uri;
+        const clientId =
+            provider === 'google'
+                ? data.google_client_id
+                : data.facebook_client_id;
+        const clientSecret =
+            provider === 'google'
+                ? data.google_client_secret
+                : data.facebook_client_secret;
+        const redirectUri =
+            provider === 'google'
+                ? data.google_redirect_uri
+                : data.facebook_redirect_uri;
 
         if (!clientId || !clientSecret || !redirectUri) {
-            toast.error('Completa todos los campos de ' + (provider === 'google' ? 'Google' : 'Facebook') + ' antes de probar.');
+            toast.error(
+                'Completa todos los campos de ' +
+                    (provider === 'google' ? 'Google' : 'Facebook') +
+                    ' antes de probar.',
+            );
             setTesting(false);
             return;
         }
 
         try {
-            const response = await axios.post('/configuracion-web/test-social', {
-                provider,
-                client_id: clientId,
-                client_secret: clientSecret,
-                redirect_uri: redirectUri,
-            });
+            const response = await axios.post(
+                '/configuracion-web/test-social',
+                {
+                    provider,
+                    client_id: clientId,
+                    client_secret: clientSecret,
+                    redirect_uri: redirectUri,
+                },
+            );
 
             if (response.data.success) {
                 toast.success(response.data.message);
@@ -637,7 +662,10 @@ export default function Index({
                 toast.error(response.data.message);
             }
         } catch (error: any) {
-            const msg = error.response?.data?.message || 'Error al conectar con ' + (provider === 'google' ? 'Google' : 'Facebook');
+            const msg =
+                error.response?.data?.message ||
+                'Error al conectar con ' +
+                    (provider === 'google' ? 'Google' : 'Facebook');
             toast.error(msg);
         } finally {
             setTesting(false);
@@ -647,17 +675,25 @@ export default function Index({
     const testTelegramConnection = async () => {
         setTestingTelegram(true);
 
-        if (!data.global_telegram_bot_token || !data.global_telegram_bot_username) {
-            toast.error('Completa el token y el username del bot de Telegram antes de probar.');
+        if (
+            !data.global_telegram_bot_token ||
+            !data.global_telegram_bot_username
+        ) {
+            toast.error(
+                'Completa el token y el username del bot de Telegram antes de probar.',
+            );
             setTestingTelegram(false);
             return;
         }
 
         try {
-            const response = await axios.post('/configuracion-web/test-telegram', {
-                bot_token: data.global_telegram_bot_token,
-                bot_username: data.global_telegram_bot_username,
-            });
+            const response = await axios.post(
+                '/configuracion-web/test-telegram',
+                {
+                    bot_token: data.global_telegram_bot_token,
+                    bot_username: data.global_telegram_bot_username,
+                },
+            );
 
             if (response.data.success) {
                 setIsTelegramTested(true);
@@ -668,7 +704,9 @@ export default function Index({
             }
         } catch (error: any) {
             setIsTelegramTested(false);
-            const msg = error.response?.data?.message || 'Error al conectar con Telegram';
+            const msg =
+                error.response?.data?.message ||
+                'Error al conectar con Telegram';
             toast.error(msg);
         } finally {
             setTestingTelegram(false);
@@ -679,15 +717,20 @@ export default function Index({
         setTestingWhatsApp(true);
 
         if (!data.whatsapp_webhook_url) {
-            toast.error('Completa la URL del webhook de WhatsApp antes de probar.');
+            toast.error(
+                'Completa la URL del webhook de WhatsApp antes de probar.',
+            );
             setTestingWhatsApp(false);
             return;
         }
 
         try {
-            const response = await axios.post('/configuracion-web/test-whatsapp', {
-                webhook_url: data.whatsapp_webhook_url,
-            });
+            const response = await axios.post(
+                '/configuracion-web/test-whatsapp',
+                {
+                    webhook_url: data.whatsapp_webhook_url,
+                },
+            );
 
             if (response.data.success) {
                 setIsWhatsAppTested(true);
@@ -698,7 +741,9 @@ export default function Index({
             }
         } catch (error: any) {
             setIsWhatsAppTested(false);
-            const msg = error.response?.data?.message || 'Error al conectar con WhatsApp';
+            const msg =
+                error.response?.data?.message ||
+                'Error al conectar con WhatsApp';
             toast.error(msg);
         } finally {
             setTestingWhatsApp(false);
@@ -710,7 +755,10 @@ export default function Index({
             toast.error('Configura primero el username del bot de Telegram.');
             return;
         }
-        window.open(`https://t.me/${data.global_telegram_bot_username.replace(/^@/, '')}`, '_blank');
+        window.open(
+            `https://t.me/${data.global_telegram_bot_username.replace(/^@/, '')}`,
+            '_blank',
+        );
     };
 
     const openWhatsAppChat = () => {
@@ -723,16 +771,21 @@ export default function Index({
 
     const setTelegramWebhook = async () => {
         if (!data.global_telegram_bot_token) {
-            toast.error('Completa el token del bot de Telegram antes de establecer el webhook.');
+            toast.error(
+                'Completa el token del bot de Telegram antes de establecer el webhook.',
+            );
             return;
         }
 
         setSettingTelegramWebhook(true);
 
         try {
-            const response = await axios.post('/configuracion-web/set-telegram-webhook', {
-                bot_token: data.global_telegram_bot_token,
-            });
+            const response = await axios.post(
+                '/configuracion-web/set-telegram-webhook',
+                {
+                    bot_token: data.global_telegram_bot_token,
+                },
+            );
 
             if (response.data.success) {
                 toast.success(response.data.message);
@@ -740,7 +793,9 @@ export default function Index({
                 toast.error(response.data.message);
             }
         } catch (error: any) {
-            const msg = error.response?.data?.message || 'Error al establecer el webhook de Telegram';
+            const msg =
+                error.response?.data?.message ||
+                'Error al establecer el webhook de Telegram';
             toast.error(msg);
         } finally {
             setSettingTelegramWebhook(false);
@@ -749,20 +804,25 @@ export default function Index({
 
     const setWhatsAppWebhook = async () => {
         if (!data.whatsapp_access_token || !data.whatsapp_business_id) {
-            toast.error('Completa el Access Token y el Business ID de WhatsApp antes de establecer el webhook.');
+            toast.error(
+                'Completa el Access Token y el Business ID de WhatsApp antes de establecer el webhook.',
+            );
             return;
         }
 
         setSettingWhatsAppWebhook(true);
 
         try {
-            const response = await axios.post('/configuracion-web/set-whatsapp-webhook', {
-                webhook_url: data.whatsapp_webhook_url,
-                phone_number_id: data.whatsapp_phone_number_id,
-                access_token: data.whatsapp_access_token,
-                business_id: data.whatsapp_business_id,
-                api_version: data.whatsapp_api_version,
-            });
+            const response = await axios.post(
+                '/configuracion-web/set-whatsapp-webhook',
+                {
+                    webhook_url: data.whatsapp_webhook_url,
+                    phone_number_id: data.whatsapp_phone_number_id,
+                    access_token: data.whatsapp_access_token,
+                    business_id: data.whatsapp_business_id,
+                    api_version: data.whatsapp_api_version,
+                },
+            );
 
             if (response.data.success) {
                 toast.success(response.data.message);
@@ -770,7 +830,9 @@ export default function Index({
                 toast.error(response.data.message);
             }
         } catch (error: any) {
-            const msg = error.response?.data?.message || 'Error al establecer el webhook de WhatsApp';
+            const msg =
+                error.response?.data?.message ||
+                'Error al establecer el webhook de WhatsApp';
             toast.error(msg);
         } finally {
             setSettingWhatsAppWebhook(false);
@@ -781,16 +843,21 @@ export default function Index({
         setTestingTelegramLogin(true);
 
         if (!data.telegram_login_bot_token || !data.telegram_login_bot_name) {
-            toast.error('Completa el token y el username del bot de Telegram Login antes de probar.');
+            toast.error(
+                'Completa el token y el username del bot de Telegram Login antes de probar.',
+            );
             setTestingTelegramLogin(false);
             return;
         }
 
         try {
-            const response = await axios.post('/web-settings/telegram-login/test', {
-                bot_token: data.telegram_login_bot_token,
-                bot_username: data.telegram_login_bot_name,
-            });
+            const response = await axios.post(
+                '/web-settings/telegram-login/test',
+                {
+                    bot_token: data.telegram_login_bot_token,
+                    bot_username: data.telegram_login_bot_name,
+                },
+            );
 
             if (response.data.success) {
                 toast.success(response.data.message);
@@ -798,7 +865,9 @@ export default function Index({
                 toast.error(response.data.message);
             }
         } catch (error: any) {
-            const msg = error.response?.data?.message || 'Error al conectar con Telegram';
+            const msg =
+                error.response?.data?.message ||
+                'Error al conectar con Telegram';
             toast.error(msg);
         } finally {
             setTestingTelegramLogin(false);
@@ -806,14 +875,20 @@ export default function Index({
     };
 
     const disconnectTelegramLogin = async () => {
-        if (!window.confirm('¿Estás seguro de que deseas desvincular el bot de Telegram Login? Se eliminarán las credenciales guardadas y se desactivará el inicio de sesión con Telegram.')) {
+        if (
+            !window.confirm(
+                '¿Estás seguro de que deseas desvincular el bot de Telegram Login? Se eliminarán las credenciales guardadas y se desactivará el inicio de sesión con Telegram.',
+            )
+        ) {
             return;
         }
 
         setDisconnectingTelegramLogin(true);
 
         try {
-            const response = await axios.post('/web-settings/telegram-login/disconnect');
+            const response = await axios.post(
+                '/web-settings/telegram-login/disconnect',
+            );
 
             if (response.data.success) {
                 setData('telegram_login_bot_name', '');
@@ -824,7 +899,9 @@ export default function Index({
                 toast.error(response.data.message);
             }
         } catch (error: any) {
-            const msg = error.response?.data?.message || 'Error al desvincular el bot de Telegram';
+            const msg =
+                error.response?.data?.message ||
+                'Error al desvincular el bot de Telegram';
             toast.error(msg);
         } finally {
             setDisconnectingTelegramLogin(false);
@@ -952,7 +1029,9 @@ export default function Index({
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );
@@ -1323,13 +1402,13 @@ export default function Index({
                                                                 data.planes!.map(
                                                                     (p, i) =>
                                                                         i ===
-                                                                            planIndex
+                                                                        planIndex
                                                                             ? {
-                                                                                ...p,
-                                                                                nombre: e
-                                                                                    .target
-                                                                                    .value,
-                                                                            }
+                                                                                  ...p,
+                                                                                  nombre: e
+                                                                                      .target
+                                                                                      .value,
+                                                                              }
                                                                             : p,
                                                                 );
                                                             setData(
@@ -1349,14 +1428,14 @@ export default function Index({
                                                                 data.planes!.map(
                                                                     (p, i) =>
                                                                         i ===
-                                                                            planIndex
+                                                                        planIndex
                                                                             ? {
-                                                                                ...p,
-                                                                                popular:
-                                                                                    Boolean(
-                                                                                        checked,
-                                                                                    ),
-                                                                            }
+                                                                                  ...p,
+                                                                                  popular:
+                                                                                      Boolean(
+                                                                                          checked,
+                                                                                      ),
+                                                                              }
                                                                             : p,
                                                                 );
                                                             setData(
@@ -1387,7 +1466,7 @@ export default function Index({
                                             </div>
                                         </CardHeader>
                                         <CardContent className="space-y-4">
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                                                 <div className="space-y-2">
                                                     <Label className="text-xs">
                                                         Precio
@@ -1399,13 +1478,13 @@ export default function Index({
                                                                 data.planes!.map(
                                                                     (p, i) =>
                                                                         i ===
-                                                                            planIndex
+                                                                        planIndex
                                                                             ? {
-                                                                                ...p,
-                                                                                precio: e
-                                                                                    .target
-                                                                                    .value,
-                                                                            }
+                                                                                  ...p,
+                                                                                  precio: e
+                                                                                      .target
+                                                                                      .value,
+                                                                              }
                                                                             : p,
                                                                 );
                                                             setData(
@@ -1427,14 +1506,14 @@ export default function Index({
                                                                 data.planes!.map(
                                                                     (p, i) =>
                                                                         i ===
-                                                                            planIndex
+                                                                        planIndex
                                                                             ? {
-                                                                                ...p,
-                                                                                periodo:
-                                                                                    e
-                                                                                        .target
-                                                                                        .value,
-                                                                            }
+                                                                                  ...p,
+                                                                                  periodo:
+                                                                                      e
+                                                                                          .target
+                                                                                          .value,
+                                                                              }
                                                                             : p,
                                                                 );
                                                             setData(
@@ -1456,14 +1535,14 @@ export default function Index({
                                                                 data.planes!.map(
                                                                     (p, i) =>
                                                                         i ===
-                                                                            planIndex
+                                                                        planIndex
                                                                             ? {
-                                                                                ...p,
-                                                                                descripcion:
-                                                                                    e
-                                                                                        .target
-                                                                                        .value,
-                                                                            }
+                                                                                  ...p,
+                                                                                  descripcion:
+                                                                                      e
+                                                                                          .target
+                                                                                          .value,
+                                                                              }
                                                                             : p,
                                                                 );
                                                             setData(
@@ -1677,10 +1756,12 @@ export default function Index({
                                 <Card>
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2">
-                                            <span>📄</span> Páginas de Navegación
+                                            <span>📄</span> Páginas de
+                                            Navegación
                                         </CardTitle>
                                         <CardDescription>
-                                            Controla la visibilidad y edita el contenido de cada página
+                                            Controla la visibilidad y edita el
+                                            contenido de cada página
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-8">
@@ -1688,13 +1769,28 @@ export default function Index({
                                         <div className="rounded-xl border bg-muted/30 p-4">
                                             <div className="flex items-center justify-between">
                                                 <div>
-                                                    <h4 className="font-semibold">Nombre / Logo de la aplicación</h4>
-                                                    <p className="text-sm text-muted-foreground">Muestra u oculta el logo y nombre en el header del sitio público</p>
+                                                    <h4 className="font-semibold">
+                                                        Nombre / Logo de la
+                                                        aplicación
+                                                    </h4>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Muestra u oculta el logo
+                                                        y nombre en el header
+                                                        del sitio público
+                                                    </p>
                                                 </div>
                                                 <Switch
-                                                    checked={data.nav?.app_brand_visible ?? true}
+                                                    checked={
+                                                        data.nav
+                                                            ?.app_brand_visible ??
+                                                        true
+                                                    }
                                                     onCheckedChange={(v) =>
-                                                        setData('nav', { ...data.nav!, app_brand_visible: v })
+                                                        setData('nav', {
+                                                            ...data.nav!,
+                                                            app_brand_visible:
+                                                                v,
+                                                        })
                                                     }
                                                 />
                                             </div>
@@ -1702,56 +1798,123 @@ export default function Index({
 
                                         {/* Quiénes Somos */}
                                         <div className="rounded-xl border p-4">
-                                            <div className="flex items-center justify-between mb-4">
+                                            <div className="mb-4 flex items-center justify-between">
                                                 <div>
-                                                    <h4 className="font-semibold">Quiénes Somos</h4>
-                                                    <p className="text-sm text-muted-foreground">/{'quienes-somos'}</p>
+                                                    <h4 className="font-semibold">
+                                                        Quiénes Somos
+                                                    </h4>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        /{'quienes-somos'}
+                                                    </p>
                                                 </div>
                                                 <Switch
-                                                    checked={data.nav?.quienes_somos_visible ?? true}
+                                                    checked={
+                                                        data.nav
+                                                            ?.quienes_somos_visible ??
+                                                        true
+                                                    }
                                                     onCheckedChange={(v) =>
-                                                        setData('nav', { ...data.nav!, quienes_somos_visible: v })
+                                                        setData('nav', {
+                                                            ...data.nav!,
+                                                            quienes_somos_visible:
+                                                                v,
+                                                        })
                                                     }
                                                 />
                                             </div>
                                             <div className="space-y-4">
                                                 <div className="grid gap-4 sm:grid-cols-2">
                                                     <div className="space-y-1.5">
-                                                        <Label className="text-xs">Etiqueta del enlace</Label>
+                                                        <Label className="text-xs">
+                                                            Etiqueta del enlace
+                                                        </Label>
                                                         <Input
-                                                            value={data.nav?.quienes_somos_label || ''}
+                                                            value={
+                                                                data.nav
+                                                                    ?.quienes_somos_label ||
+                                                                ''
+                                                            }
                                                             onChange={(e) =>
-                                                                setData('nav', { ...data.nav!, quienes_somos_label: e.target.value })
+                                                                setData('nav', {
+                                                                    ...data.nav!,
+                                                                    quienes_somos_label:
+                                                                        e.target
+                                                                            .value,
+                                                                })
                                                             }
                                                             placeholder="Quiénes Somos"
                                                         />
                                                     </div>
                                                     <div className="space-y-1.5">
-                                                        <Label className="text-xs">Subtítulo</Label>
+                                                        <Label className="text-xs">
+                                                            Subtítulo
+                                                        </Label>
                                                         <Input
-                                                            value={data.nav?.quienes_somos_subtitle || ''}
+                                                            value={
+                                                                data.nav
+                                                                    ?.quienes_somos_subtitle ||
+                                                                ''
+                                                            }
                                                             onChange={(e) =>
-                                                                setData('nav', { ...data.nav!, quienes_somos_subtitle: e.target.value })
+                                                                setData('nav', {
+                                                                    ...data.nav!,
+                                                                    quienes_somos_subtitle:
+                                                                        e.target
+                                                                            .value,
+                                                                })
                                                             }
                                                             placeholder="Conoce nuestra historia"
                                                         />
                                                     </div>
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <Label className="text-xs">Imagen de portada</Label>
+                                                    <Label className="text-xs">
+                                                        Imagen de portada
+                                                    </Label>
                                                     <ImageUploadField
                                                         label="Imagen - Quiénes Somos"
-                                                        currentUrl={settings.nav_quienes_somos_image || null}
-                                                        urlValue={data.nav?.quienes_somos_image || ''}
-                                                        onUrlChange={(v) => setData('nav', { ...data.nav!, quienes_somos_image: v })}
-                                                        onFileChange={(f) => setData('nav', { ...data.nav!, quienes_somos_image_file: f })}
+                                                        currentUrl={
+                                                            settings.nav_quienes_somos_image ||
+                                                            null
+                                                        }
+                                                        urlValue={
+                                                            data.nav
+                                                                ?.quienes_somos_image ||
+                                                            ''
+                                                        }
+                                                        onUrlChange={(v) =>
+                                                            setData('nav', {
+                                                                ...data.nav!,
+                                                                quienes_somos_image:
+                                                                    v,
+                                                            })
+                                                        }
+                                                        onFileChange={(f) =>
+                                                            setData('nav', {
+                                                                ...data.nav!,
+                                                                quienes_somos_image_file:
+                                                                    f,
+                                                            })
+                                                        }
                                                     />
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <Label className="text-xs">Contenido de la página</Label>
+                                                    <Label className="text-xs">
+                                                        Contenido de la página
+                                                    </Label>
                                                     <RichEditor
-                                                        value={data.nav?.quienes_somos_content || ''}
-                                                        onChange={(html) => setData('nav', { ...data.nav!, quienes_somos_content: html })}
+                                                        value={
+                                                            data.nav
+                                                                ?.quienes_somos_content ||
+                                                            ''
+                                                        }
+                                                        onChange={(html) =>
+                                                            setData('nav', {
+                                                                ...data.nav!,
+                                                                quienes_somos_content:
+                                                                    html,
+                                                            })
+                                                        }
                                                         placeholder="Escribe el contenido de la página Quiénes Somos..."
                                                     />
                                                 </div>
@@ -1760,56 +1923,122 @@ export default function Index({
 
                                         {/* Feedback */}
                                         <div className="rounded-xl border p-4">
-                                            <div className="flex items-center justify-between mb-4">
+                                            <div className="mb-4 flex items-center justify-between">
                                                 <div>
-                                                    <h4 className="font-semibold">Feedback</h4>
-                                                    <p className="text-sm text-muted-foreground">/{'feedback'}</p>
+                                                    <h4 className="font-semibold">
+                                                        Feedback
+                                                    </h4>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        /{'feedback'}
+                                                    </p>
                                                 </div>
                                                 <Switch
-                                                    checked={data.nav?.feedback_visible ?? true}
+                                                    checked={
+                                                        data.nav
+                                                            ?.feedback_visible ??
+                                                        true
+                                                    }
                                                     onCheckedChange={(v) =>
-                                                        setData('nav', { ...data.nav!, feedback_visible: v })
+                                                        setData('nav', {
+                                                            ...data.nav!,
+                                                            feedback_visible: v,
+                                                        })
                                                     }
                                                 />
                                             </div>
                                             <div className="space-y-4">
                                                 <div className="grid gap-4 sm:grid-cols-2">
                                                     <div className="space-y-1.5">
-                                                        <Label className="text-xs">Etiqueta del enlace</Label>
+                                                        <Label className="text-xs">
+                                                            Etiqueta del enlace
+                                                        </Label>
                                                         <Input
-                                                            value={data.nav?.feedback_label || ''}
+                                                            value={
+                                                                data.nav
+                                                                    ?.feedback_label ||
+                                                                ''
+                                                            }
                                                             onChange={(e) =>
-                                                                setData('nav', { ...data.nav!, feedback_label: e.target.value })
+                                                                setData('nav', {
+                                                                    ...data.nav!,
+                                                                    feedback_label:
+                                                                        e.target
+                                                                            .value,
+                                                                })
                                                             }
                                                             placeholder="Feedback"
                                                         />
                                                     </div>
                                                     <div className="space-y-1.5">
-                                                        <Label className="text-xs">Subtítulo</Label>
+                                                        <Label className="text-xs">
+                                                            Subtítulo
+                                                        </Label>
                                                         <Input
-                                                            value={data.nav?.feedback_subtitle || ''}
+                                                            value={
+                                                                data.nav
+                                                                    ?.feedback_subtitle ||
+                                                                ''
+                                                            }
                                                             onChange={(e) =>
-                                                                setData('nav', { ...data.nav!, feedback_subtitle: e.target.value })
+                                                                setData('nav', {
+                                                                    ...data.nav!,
+                                                                    feedback_subtitle:
+                                                                        e.target
+                                                                            .value,
+                                                                })
                                                             }
                                                             placeholder="Tu opinión importa"
                                                         />
                                                     </div>
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <Label className="text-xs">Imagen de portada</Label>
+                                                    <Label className="text-xs">
+                                                        Imagen de portada
+                                                    </Label>
                                                     <ImageUploadField
                                                         label="Imagen - Feedback"
-                                                        currentUrl={settings.nav_feedback_image || null}
-                                                        urlValue={data.nav?.feedback_image || ''}
-                                                        onUrlChange={(v) => setData('nav', { ...data.nav!, feedback_image: v })}
-                                                        onFileChange={(f) => setData('nav', { ...data.nav!, feedback_image_file: f })}
+                                                        currentUrl={
+                                                            settings.nav_feedback_image ||
+                                                            null
+                                                        }
+                                                        urlValue={
+                                                            data.nav
+                                                                ?.feedback_image ||
+                                                            ''
+                                                        }
+                                                        onUrlChange={(v) =>
+                                                            setData('nav', {
+                                                                ...data.nav!,
+                                                                feedback_image:
+                                                                    v,
+                                                            })
+                                                        }
+                                                        onFileChange={(f) =>
+                                                            setData('nav', {
+                                                                ...data.nav!,
+                                                                feedback_image_file:
+                                                                    f,
+                                                            })
+                                                        }
                                                     />
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <Label className="text-xs">Contenido de la página</Label>
+                                                    <Label className="text-xs">
+                                                        Contenido de la página
+                                                    </Label>
                                                     <RichEditor
-                                                        value={data.nav?.feedback_content || ''}
-                                                        onChange={(html) => setData('nav', { ...data.nav!, feedback_content: html })}
+                                                        value={
+                                                            data.nav
+                                                                ?.feedback_content ||
+                                                            ''
+                                                        }
+                                                        onChange={(html) =>
+                                                            setData('nav', {
+                                                                ...data.nav!,
+                                                                feedback_content:
+                                                                    html,
+                                                            })
+                                                        }
                                                         placeholder="Escribe el contenido de la página Feedback..."
                                                     />
                                                 </div>
@@ -1818,56 +2047,123 @@ export default function Index({
 
                                         {/* Nuestra Fundación */}
                                         <div className="rounded-xl border p-4">
-                                            <div className="flex items-center justify-between mb-4">
+                                            <div className="mb-4 flex items-center justify-between">
                                                 <div>
-                                                    <h4 className="font-semibold">Nuestra Fundación</h4>
-                                                    <p className="text-sm text-muted-foreground">/{'fundacion'}</p>
+                                                    <h4 className="font-semibold">
+                                                        Nuestra Fundación
+                                                    </h4>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        /{'fundacion'}
+                                                    </p>
                                                 </div>
                                                 <Switch
-                                                    checked={data.nav?.fundacion_visible ?? true}
+                                                    checked={
+                                                        data.nav
+                                                            ?.fundacion_visible ??
+                                                        true
+                                                    }
                                                     onCheckedChange={(v) =>
-                                                        setData('nav', { ...data.nav!, fundacion_visible: v })
+                                                        setData('nav', {
+                                                            ...data.nav!,
+                                                            fundacion_visible:
+                                                                v,
+                                                        })
                                                     }
                                                 />
                                             </div>
                                             <div className="space-y-4">
                                                 <div className="grid gap-4 sm:grid-cols-2">
                                                     <div className="space-y-1.5">
-                                                        <Label className="text-xs">Etiqueta del enlace</Label>
+                                                        <Label className="text-xs">
+                                                            Etiqueta del enlace
+                                                        </Label>
                                                         <Input
-                                                            value={data.nav?.fundacion_label || ''}
+                                                            value={
+                                                                data.nav
+                                                                    ?.fundacion_label ||
+                                                                ''
+                                                            }
                                                             onChange={(e) =>
-                                                                setData('nav', { ...data.nav!, fundacion_label: e.target.value })
+                                                                setData('nav', {
+                                                                    ...data.nav!,
+                                                                    fundacion_label:
+                                                                        e.target
+                                                                            .value,
+                                                                })
                                                             }
                                                             placeholder="Nuestra Fundación"
                                                         />
                                                     </div>
                                                     <div className="space-y-1.5">
-                                                        <Label className="text-xs">Subtítulo</Label>
+                                                        <Label className="text-xs">
+                                                            Subtítulo
+                                                        </Label>
                                                         <Input
-                                                            value={data.nav?.fundacion_subtitle || ''}
+                                                            value={
+                                                                data.nav
+                                                                    ?.fundacion_subtitle ||
+                                                                ''
+                                                            }
                                                             onChange={(e) =>
-                                                                setData('nav', { ...data.nav!, fundacion_subtitle: e.target.value })
+                                                                setData('nav', {
+                                                                    ...data.nav!,
+                                                                    fundacion_subtitle:
+                                                                        e.target
+                                                                            .value,
+                                                                })
                                                             }
                                                             placeholder="Transformando vidas"
                                                         />
                                                     </div>
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <Label className="text-xs">Imagen de portada</Label>
+                                                    <Label className="text-xs">
+                                                        Imagen de portada
+                                                    </Label>
                                                     <ImageUploadField
                                                         label="Imagen - Fundación"
-                                                        currentUrl={settings.nav_fundacion_image || null}
-                                                        urlValue={data.nav?.fundacion_image || ''}
-                                                        onUrlChange={(v) => setData('nav', { ...data.nav!, fundacion_image: v })}
-                                                        onFileChange={(f) => setData('nav', { ...data.nav!, fundacion_image_file: f })}
+                                                        currentUrl={
+                                                            settings.nav_fundacion_image ||
+                                                            null
+                                                        }
+                                                        urlValue={
+                                                            data.nav
+                                                                ?.fundacion_image ||
+                                                            ''
+                                                        }
+                                                        onUrlChange={(v) =>
+                                                            setData('nav', {
+                                                                ...data.nav!,
+                                                                fundacion_image:
+                                                                    v,
+                                                            })
+                                                        }
+                                                        onFileChange={(f) =>
+                                                            setData('nav', {
+                                                                ...data.nav!,
+                                                                fundacion_image_file:
+                                                                    f,
+                                                            })
+                                                        }
                                                     />
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <Label className="text-xs">Contenido de la página</Label>
+                                                    <Label className="text-xs">
+                                                        Contenido de la página
+                                                    </Label>
                                                     <RichEditor
-                                                        value={data.nav?.fundacion_content || ''}
-                                                        onChange={(html) => setData('nav', { ...data.nav!, fundacion_content: html })}
+                                                        value={
+                                                            data.nav
+                                                                ?.fundacion_content ||
+                                                            ''
+                                                        }
+                                                        onChange={(html) =>
+                                                            setData('nav', {
+                                                                ...data.nav!,
+                                                                fundacion_content:
+                                                                    html,
+                                                            })
+                                                        }
                                                         placeholder="Escribe el contenido de la página Fundación..."
                                                     />
                                                 </div>
@@ -1901,41 +2197,73 @@ export default function Index({
                                                 <span>🔵 Google</span>
                                             </CardTitle>
                                             <CardDescription>
-                                                Credenciales de Google OAuth para inicio de sesión con Google
+                                                Credenciales de Google OAuth
+                                                para inicio de sesión con Google
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent className="space-y-4">
                                             <div className="space-y-1.5">
-                                                <Label htmlFor="google_client_id">Google Client ID</Label>
+                                                <Label htmlFor="google_client_id">
+                                                    Google Client ID
+                                                </Label>
                                                 <Input
                                                     id="google_client_id"
-                                                    value={data.google_client_id}
-                                                    onChange={(e) => setData('google_client_id', e.target.value)}
+                                                    value={
+                                                        data.google_client_id
+                                                    }
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'google_client_id',
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     placeholder="515936358278-xxxxx.apps.googleusercontent.com"
                                                 />
                                             </div>
                                             <div className="space-y-1.5">
-                                                <Label htmlFor="google_client_secret">Google Client Secret</Label>
+                                                <Label htmlFor="google_client_secret">
+                                                    Google Client Secret
+                                                </Label>
                                                 <Input
                                                     id="google_client_secret"
-                                                    value={data.google_client_secret}
-                                                    onChange={(e) => setData('google_client_secret', e.target.value)}
+                                                    value={
+                                                        data.google_client_secret
+                                                    }
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'google_client_secret',
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     placeholder="GOCSPX-xxxxx"
                                                 />
                                             </div>
                                             <div className="space-y-1.5">
-                                                <Label htmlFor="google_redirect_uri">Google Redirect URI</Label>
+                                                <Label htmlFor="google_redirect_uri">
+                                                    Google Redirect URI
+                                                </Label>
                                                 <Input
                                                     id="google_redirect_uri"
-                                                    value={data.google_redirect_uri}
-                                                    onChange={(e) => setData('google_redirect_uri', e.target.value)}
+                                                    value={
+                                                        data.google_redirect_uri
+                                                    }
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'google_redirect_uri',
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     placeholder="http://localhost:8000/auth/google/callback"
                                                 />
                                             </div>
                                             <Button
                                                 type="button"
                                                 variant="outline"
-                                                onClick={() => testSocialConnection('google')}
+                                                onClick={() =>
+                                                    testSocialConnection(
+                                                        'google',
+                                                    )
+                                                }
                                                 disabled={testingGoogle}
                                                 className="w-full gap-2"
                                             >
@@ -1944,7 +2272,9 @@ export default function Index({
                                                 ) : (
                                                     <RefreshCw className="h-4 w-4" />
                                                 )}
-                                                {testingGoogle ? 'Probando conexión...' : 'Probar Conexión con Google'}
+                                                {testingGoogle
+                                                    ? 'Probando conexión...'
+                                                    : 'Probar Conexión con Google'}
                                             </Button>
                                         </CardContent>
                                     </Card>
@@ -1954,41 +2284,74 @@ export default function Index({
                                                 <span>📘 Facebook</span>
                                             </CardTitle>
                                             <CardDescription>
-                                                Credenciales de Facebook OAuth para inicio de sesión con Facebook
+                                                Credenciales de Facebook OAuth
+                                                para inicio de sesión con
+                                                Facebook
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent className="space-y-4">
                                             <div className="space-y-1.5">
-                                                <Label htmlFor="facebook_client_id">Facebook Client ID</Label>
+                                                <Label htmlFor="facebook_client_id">
+                                                    Facebook Client ID
+                                                </Label>
                                                 <Input
                                                     id="facebook_client_id"
-                                                    value={data.facebook_client_id}
-                                                    onChange={(e) => setData('facebook_client_id', e.target.value)}
+                                                    value={
+                                                        data.facebook_client_id
+                                                    }
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'facebook_client_id',
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     placeholder="1320052013408272"
                                                 />
                                             </div>
                                             <div className="space-y-1.5">
-                                                <Label htmlFor="facebook_client_secret">Facebook Client Secret</Label>
+                                                <Label htmlFor="facebook_client_secret">
+                                                    Facebook Client Secret
+                                                </Label>
                                                 <Input
                                                     id="facebook_client_secret"
-                                                    value={data.facebook_client_secret}
-                                                    onChange={(e) => setData('facebook_client_secret', e.target.value)}
+                                                    value={
+                                                        data.facebook_client_secret
+                                                    }
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'facebook_client_secret',
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     placeholder="910fb902e5c544a6ed152e2906048266"
                                                 />
                                             </div>
                                             <div className="space-y-1.5">
-                                                <Label htmlFor="facebook_redirect_uri">Facebook Redirect URI</Label>
+                                                <Label htmlFor="facebook_redirect_uri">
+                                                    Facebook Redirect URI
+                                                </Label>
                                                 <Input
                                                     id="facebook_redirect_uri"
-                                                    value={data.facebook_redirect_uri}
-                                                    onChange={(e) => setData('facebook_redirect_uri', e.target.value)}
+                                                    value={
+                                                        data.facebook_redirect_uri
+                                                    }
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'facebook_redirect_uri',
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     placeholder="http://localhost:8000/auth/facebook/callback"
                                                 />
                                             </div>
                                             <Button
                                                 type="button"
                                                 variant="outline"
-                                                onClick={() => testSocialConnection('facebook')}
+                                                onClick={() =>
+                                                    testSocialConnection(
+                                                        'facebook',
+                                                    )
+                                                }
                                                 disabled={testingFacebook}
                                                 className="w-full gap-2"
                                             >
@@ -1997,7 +2360,9 @@ export default function Index({
                                                 ) : (
                                                     <RefreshCw className="h-4 w-4" />
                                                 )}
-                                                {testingFacebook ? 'Probando conexión...' : 'Probar Conexión con Facebook'}
+                                                {testingFacebook
+                                                    ? 'Probando conexión...'
+                                                    : 'Probar Conexión con Facebook'}
                                             </Button>
                                         </CardContent>
                                     </Card>
@@ -2007,37 +2372,70 @@ export default function Index({
                                                 <span>✈️ Telegram Login</span>
                                             </CardTitle>
                                             <CardDescription>
-                                                Credenciales del bot para el inicio de sesión con Telegram. Crea el bot en @BotFather
-                                                y ejecuta <code className="rounded bg-muted px-1">/setdomain</code> con el dominio de la app
+                                                Credenciales del bot para el
+                                                inicio de sesión con Telegram.
+                                                Crea el bot en @BotFather y
+                                                ejecuta{' '}
+                                                <code className="rounded bg-muted px-1">
+                                                    /setdomain
+                                                </code>{' '}
+                                                con el dominio de la app
                                                 (requiere HTTPS).
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent className="space-y-4">
                                             <div className="space-y-1.5">
-                                                <Label htmlFor="telegram_login_bot_name">Bot Username</Label>
+                                                <Label htmlFor="telegram_login_bot_name">
+                                                    Bot Username
+                                                </Label>
                                                 <Input
                                                     id="telegram_login_bot_name"
-                                                    value={data.telegram_login_bot_name}
-                                                    onChange={(e) => setData('telegram_login_bot_name', e.target.value)}
+                                                    value={
+                                                        data.telegram_login_bot_name
+                                                    }
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'telegram_login_bot_name',
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     placeholder="mi_plataforma_bot"
                                                 />
                                             </div>
                                             <div className="space-y-1.5">
-                                                <Label htmlFor="telegram_login_bot_token">Bot Token</Label>
+                                                <Label htmlFor="telegram_login_bot_token">
+                                                    Bot Token
+                                                </Label>
                                                 <Input
                                                     id="telegram_login_bot_token"
                                                     type="password"
-                                                    value={data.telegram_login_bot_token}
-                                                    onChange={(e) => setData('telegram_login_bot_token', e.target.value)}
+                                                    value={
+                                                        data.telegram_login_bot_token
+                                                    }
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'telegram_login_bot_token',
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     placeholder="123456789:AA..."
                                                 />
                                             </div>
                                             <div className="space-y-1.5">
-                                                <Label htmlFor="telegram_login_redirect_uri">Redirect URI</Label>
+                                                <Label htmlFor="telegram_login_redirect_uri">
+                                                    Redirect URI
+                                                </Label>
                                                 <Input
                                                     id="telegram_login_redirect_uri"
-                                                    value={data.telegram_login_redirect_uri}
-                                                    onChange={(e) => setData('telegram_login_redirect_uri', e.target.value)}
+                                                    value={
+                                                        data.telegram_login_redirect_uri
+                                                    }
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'telegram_login_redirect_uri',
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     placeholder="https://tu-dominio.cl/auth/telegram/callback"
                                                 />
                                             </div>
@@ -2045,8 +2443,12 @@ export default function Index({
                                                 <Button
                                                     type="button"
                                                     variant="outline"
-                                                    onClick={testTelegramLoginConnection}
-                                                    disabled={testingTelegramLogin}
+                                                    onClick={
+                                                        testTelegramLoginConnection
+                                                    }
+                                                    disabled={
+                                                        testingTelegramLogin
+                                                    }
                                                     className="w-full gap-2"
                                                 >
                                                     {testingTelegramLogin ? (
@@ -2054,7 +2456,9 @@ export default function Index({
                                                     ) : (
                                                         <RefreshCw className="h-4 w-4" />
                                                     )}
-                                                    {testingTelegramLogin ? 'Probando conexión...' : 'Probar Conexión'}
+                                                    {testingTelegramLogin
+                                                        ? 'Probando conexión...'
+                                                        : 'Probar Conexión'}
                                                 </Button>
                                                 <Button
                                                     type="submit"
@@ -2067,13 +2471,19 @@ export default function Index({
                                                     ) : (
                                                         <Check className="h-4 w-4" />
                                                     )}
-                                                    {processing ? 'Guardando...' : 'Guardar Cambios'}
+                                                    {processing
+                                                        ? 'Guardando...'
+                                                        : 'Guardar Cambios'}
                                                 </Button>
                                                 <Button
                                                     type="button"
                                                     variant="destructive"
-                                                    onClick={disconnectTelegramLogin}
-                                                    disabled={disconnectingTelegramLogin}
+                                                    onClick={
+                                                        disconnectTelegramLogin
+                                                    }
+                                                    disabled={
+                                                        disconnectingTelegramLogin
+                                                    }
                                                     className="w-full gap-2"
                                                 >
                                                     {disconnectingTelegramLogin ? (
@@ -2081,7 +2491,9 @@ export default function Index({
                                                     ) : (
                                                         <Trash2 className="h-4 w-4" />
                                                     )}
-                                                    {disconnectingTelegramLogin ? 'Desvinculando...' : 'Desvincular Bot'}
+                                                    {disconnectingTelegramLogin
+                                                        ? 'Desvinculando...'
+                                                        : 'Desvincular Bot'}
                                                 </Button>
                                             </div>
                                         </CardContent>
@@ -2097,41 +2509,71 @@ export default function Index({
                                                     Telegram Global
                                                 </CardTitle>
                                                 <CardDescription>
-                                                    Configura el bot oficial de Telegram para la plataforma
+                                                    Configura el bot oficial de
+                                                    Telegram para la plataforma
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent className="space-y-4">
                                                 <div className="space-y-1.5">
-                                                    <Label htmlFor="global_telegram_bot_token">Token del Bot</Label>
+                                                    <Label htmlFor="global_telegram_bot_token">
+                                                        Token del Bot
+                                                    </Label>
                                                     <Input
                                                         id="global_telegram_bot_token"
                                                         type="password"
-                                                        value={data.global_telegram_bot_token}
-                                                        onChange={(e) => handleTelegramChange('global_telegram_bot_token', e.target.value)}
+                                                        value={
+                                                            data.global_telegram_bot_token
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleTelegramChange(
+                                                                'global_telegram_bot_token',
+                                                                e.target.value,
+                                                            )
+                                                        }
                                                         placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
                                                     />
                                                     <p className="text-[11px] text-muted-foreground">
-                                                        El token del bot de Telegram que se usará para enviar notificaciones.
+                                                        El token del bot de
+                                                        Telegram que se usará
+                                                        para enviar
+                                                        notificaciones.
                                                     </p>
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <Label htmlFor="global_telegram_bot_username">Username del Bot Oficial</Label>
+                                                    <Label htmlFor="global_telegram_bot_username">
+                                                        Username del Bot Oficial
+                                                    </Label>
                                                     <Input
                                                         id="global_telegram_bot_username"
-                                                        value={data.global_telegram_bot_username}
-                                                        onChange={(e) => handleTelegramChange('global_telegram_bot_username', e.target.value)}
+                                                        value={
+                                                            data.global_telegram_bot_username
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleTelegramChange(
+                                                                'global_telegram_bot_username',
+                                                                e.target.value,
+                                                            )
+                                                        }
                                                         placeholder="@aldia_bot"
                                                     />
                                                     <p className="text-[11px] text-muted-foreground">
-                                                        El username del bot oficial de Telegram que todos los negocios usarán para recibir notificaciones.
+                                                        El username del bot
+                                                        oficial de Telegram que
+                                                        todos los negocios
+                                                        usarán para recibir
+                                                        notificaciones.
                                                     </p>
                                                 </div>
                                                 <div className="flex gap-2">
                                                     <Button
                                                         type="button"
                                                         variant="outline"
-                                                        onClick={testTelegramConnection}
-                                                        disabled={testingTelegram}
+                                                        onClick={
+                                                            testTelegramConnection
+                                                        }
+                                                        disabled={
+                                                            testingTelegram
+                                                        }
                                                         className="flex-1 gap-2"
                                                     >
                                                         {testingTelegram ? (
@@ -2139,7 +2581,9 @@ export default function Index({
                                                         ) : (
                                                             <RefreshCw className="h-4 w-4" />
                                                         )}
-                                                        {testingTelegram ? 'Probando...' : 'Probar Conexión'}
+                                                        {testingTelegram
+                                                            ? 'Probando...'
+                                                            : 'Probar Conexión'}
                                                     </Button>
                                                     {isTelegramTested && (
                                                         <Button
@@ -2154,8 +2598,12 @@ export default function Index({
                                                     <Button
                                                         type="button"
                                                         variant="outline"
-                                                        onClick={openTelegramChat}
-                                                        disabled={!isTelegramTested}
+                                                        onClick={
+                                                            openTelegramChat
+                                                        }
+                                                        disabled={
+                                                            !isTelegramTested
+                                                        }
                                                         className="gap-2"
                                                     >
                                                         <MessageSquare className="h-4 w-4" />
@@ -2166,7 +2614,9 @@ export default function Index({
                                                     type="button"
                                                     variant="default"
                                                     onClick={setTelegramWebhook}
-                                                    disabled={settingTelegramWebhook}
+                                                    disabled={
+                                                        settingTelegramWebhook
+                                                    }
                                                     className="w-full gap-2"
                                                 >
                                                     {settingTelegramWebhook ? (
@@ -2174,7 +2624,9 @@ export default function Index({
                                                     ) : (
                                                         <LinkIcon className="h-4 w-4" />
                                                     )}
-                                                    {settingTelegramWebhook ? 'Estableciendo webhook...' : 'Establecer Webhook Global'}
+                                                    {settingTelegramWebhook
+                                                        ? 'Estableciendo webhook...'
+                                                        : 'Establecer Webhook Global'}
                                                 </Button>
                                             </CardContent>
                                         </Card>
@@ -2185,56 +2637,105 @@ export default function Index({
                                                     WhatsApp Global
                                                 </CardTitle>
                                                 <CardDescription>
-                                                    Configura el webhook global de WhatsApp para la plataforma
+                                                    Configura el webhook global
+                                                    de WhatsApp para la
+                                                    plataforma
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent className="space-y-4">
                                                 <div className="space-y-1.5">
-                                                    <Label htmlFor="whatsapp_webhook_url">Webhook URL de WhatsApp</Label>
+                                                    <Label htmlFor="whatsapp_webhook_url">
+                                                        Webhook URL de WhatsApp
+                                                    </Label>
                                                     <Input
                                                         id="whatsapp_webhook_url"
-                                                        value={data.whatsapp_webhook_url}
-                                                        onChange={(e) => handleWhatsAppChange('whatsapp_webhook_url', e.target.value)}
+                                                        value={
+                                                            data.whatsapp_webhook_url
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleWhatsAppChange(
+                                                                'whatsapp_webhook_url',
+                                                                e.target.value,
+                                                            )
+                                                        }
                                                         placeholder="https://tu-dominio.com/webhooks/whatsapp"
                                                     />
                                                     <p className="text-[11px] text-muted-foreground">
-                                                        La URL del webhook donde WhatsApp Cloud enviará los eventos de mensajes.
+                                                        La URL del webhook donde
+                                                        WhatsApp Cloud enviará
+                                                        los eventos de mensajes.
                                                     </p>
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <Label htmlFor="whatsapp_phone_number_id">WhatsApp Phone Number ID</Label>
+                                                    <Label htmlFor="whatsapp_phone_number_id">
+                                                        WhatsApp Phone Number ID
+                                                    </Label>
                                                     <Input
                                                         id="whatsapp_phone_number_id"
-                                                        value={data.whatsapp_phone_number_id}
-                                                        onChange={(e) => handleWhatsAppChange('whatsapp_phone_number_id', e.target.value)}
+                                                        value={
+                                                            data.whatsapp_phone_number_id
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleWhatsAppChange(
+                                                                'whatsapp_phone_number_id',
+                                                                e.target.value,
+                                                            )
+                                                        }
                                                         placeholder="1234567890"
                                                     />
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <Label htmlFor="whatsapp_access_token">WhatsApp Access Token</Label>
+                                                    <Label htmlFor="whatsapp_access_token">
+                                                        WhatsApp Access Token
+                                                    </Label>
                                                     <Input
                                                         id="whatsapp_access_token"
                                                         type="password"
-                                                        value={data.whatsapp_access_token}
-                                                        onChange={(e) => handleWhatsAppChange('whatsapp_access_token', e.target.value)}
+                                                        value={
+                                                            data.whatsapp_access_token
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleWhatsAppChange(
+                                                                'whatsapp_access_token',
+                                                                e.target.value,
+                                                            )
+                                                        }
                                                         placeholder="Ingresa el Access Token"
                                                     />
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <Label htmlFor="whatsapp_business_id">WhatsApp Business ID</Label>
+                                                    <Label htmlFor="whatsapp_business_id">
+                                                        WhatsApp Business ID
+                                                    </Label>
                                                     <Input
                                                         id="whatsapp_business_id"
-                                                        value={data.whatsapp_business_id}
-                                                        onChange={(e) => handleWhatsAppChange('whatsapp_business_id', e.target.value)}
+                                                        value={
+                                                            data.whatsapp_business_id
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleWhatsAppChange(
+                                                                'whatsapp_business_id',
+                                                                e.target.value,
+                                                            )
+                                                        }
                                                         placeholder="123456789012345"
                                                     />
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <Label htmlFor="whatsapp_api_version">WhatsApp API Version</Label>
+                                                    <Label htmlFor="whatsapp_api_version">
+                                                        WhatsApp API Version
+                                                    </Label>
                                                     <Input
                                                         id="whatsapp_api_version"
-                                                        value={data.whatsapp_api_version}
-                                                        onChange={(e) => handleWhatsAppChange('whatsapp_api_version', e.target.value)}
+                                                        value={
+                                                            data.whatsapp_api_version
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleWhatsAppChange(
+                                                                'whatsapp_api_version',
+                                                                e.target.value,
+                                                            )
+                                                        }
                                                         placeholder="v22.0"
                                                     />
                                                 </div>
@@ -2242,8 +2743,12 @@ export default function Index({
                                                     <Button
                                                         type="button"
                                                         variant="outline"
-                                                        onClick={testWhatsAppConnection}
-                                                        disabled={testingWhatsApp}
+                                                        onClick={
+                                                            testWhatsAppConnection
+                                                        }
+                                                        disabled={
+                                                            testingWhatsApp
+                                                        }
                                                         className="flex-1 gap-2"
                                                     >
                                                         {testingWhatsApp ? (
@@ -2251,7 +2756,9 @@ export default function Index({
                                                         ) : (
                                                             <RefreshCw className="h-4 w-4" />
                                                         )}
-                                                        {testingWhatsApp ? 'Probando...' : 'Probar Conexión'}
+                                                        {testingWhatsApp
+                                                            ? 'Probando...'
+                                                            : 'Probar Conexión'}
                                                     </Button>
                                                     {isWhatsAppTested && (
                                                         <Button
@@ -2266,8 +2773,12 @@ export default function Index({
                                                     <Button
                                                         type="button"
                                                         variant="outline"
-                                                        onClick={openWhatsAppChat}
-                                                        disabled={!isWhatsAppTested}
+                                                        onClick={
+                                                            openWhatsAppChat
+                                                        }
+                                                        disabled={
+                                                            !isWhatsAppTested
+                                                        }
                                                         className="gap-2"
                                                     >
                                                         <Phone className="h-4 w-4" />
@@ -2278,7 +2789,9 @@ export default function Index({
                                                     type="button"
                                                     variant="default"
                                                     onClick={setWhatsAppWebhook}
-                                                    disabled={settingWhatsAppWebhook}
+                                                    disabled={
+                                                        settingWhatsAppWebhook
+                                                    }
                                                     className="w-full gap-2"
                                                 >
                                                     {settingWhatsAppWebhook ? (
@@ -2286,7 +2799,9 @@ export default function Index({
                                                     ) : (
                                                         <LinkIcon className="h-4 w-4" />
                                                     )}
-                                                    {settingWhatsAppWebhook ? 'Estableciendo webhook...' : 'Establecer Webhook Global'}
+                                                    {settingWhatsAppWebhook
+                                                        ? 'Estableciendo webhook...'
+                                                        : 'Establecer Webhook Global'}
                                                 </Button>
                                             </CardContent>
                                         </Card>
@@ -2303,61 +2818,113 @@ export default function Index({
                                             <span>⚡ n8n</span>
                                         </CardTitle>
                                         <CardDescription>
-                                            Configuración global de n8n para automatización de reportes.
-                                            Esta integración es utilizada por todos los negocios del sistema.
+                                            Configuración global de n8n para
+                                            automatización de reportes. Esta
+                                            integración es utilizada por todos
+                                            los negocios del sistema.
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
                                         <div className="space-y-1.5">
-                                            <Label htmlFor="n8n_base_url">Base URL *</Label>
+                                            <Label htmlFor="n8n_base_url">
+                                                Base URL *
+                                            </Label>
                                             <Input
                                                 id="n8n_base_url"
                                                 value={n8nConfig.base_url}
-                                                onChange={(e) => setN8nConfig((prev) => ({ ...prev, base_url: e.target.value }))}
+                                                onChange={(e) =>
+                                                    setN8nConfig((prev) => ({
+                                                        ...prev,
+                                                        base_url:
+                                                            e.target.value,
+                                                    }))
+                                                }
                                                 placeholder="https://n8n.tudominio.com"
                                             />
                                         </div>
                                         <div className="space-y-1.5">
-                                            <Label htmlFor="n8n_webhook_url">Webhook URL</Label>
+                                            <Label htmlFor="n8n_webhook_url">
+                                                Webhook URL
+                                            </Label>
                                             <Input
                                                 id="n8n_webhook_url"
                                                 value={n8nConfig.webhook_url}
-                                                onChange={(e) => setN8nConfig((prev) => ({ ...prev, webhook_url: e.target.value }))}
+                                                onChange={(e) =>
+                                                    setN8nConfig((prev) => ({
+                                                        ...prev,
+                                                        webhook_url:
+                                                            e.target.value,
+                                                    }))
+                                                }
                                                 placeholder="https://n8n.tudominio.com/webhook/reporte-diario"
                                             />
                                         </div>
                                         <div className="space-y-1.5">
-                                            <Label htmlFor="n8n_telegram_proxy_url">Telegram Proxy URL</Label>
+                                            <Label htmlFor="n8n_telegram_proxy_url">
+                                                Telegram Proxy URL
+                                            </Label>
                                             <Input
                                                 id="n8n_telegram_proxy_url"
-                                                value={n8nConfig.telegram_proxy_url}
-                                                onChange={(e) => setN8nConfig((prev) => ({ ...prev, telegram_proxy_url: e.target.value }))}
+                                                value={
+                                                    n8nConfig.telegram_proxy_url
+                                                }
+                                                onChange={(e) =>
+                                                    setN8nConfig((prev) => ({
+                                                        ...prev,
+                                                        telegram_proxy_url:
+                                                            e.target.value,
+                                                    }))
+                                                }
                                                 placeholder="https://n8n.redcliente.cl/webhook/telegram-proxy"
                                             />
                                             <p className="text-xs text-muted-foreground">
-                                                URL del webhook de n8n para el proxy de Telegram. Se usa para notificar la configuración de canales.
+                                                URL del webhook de n8n para el
+                                                proxy de Telegram. Se usa para
+                                                notificar la configuración de
+                                                canales.
                                             </p>
                                         </div>
                                         <div className="space-y-1.5">
-                                            <Label htmlFor="n8n_api_key">API Key</Label>
+                                            <Label htmlFor="n8n_api_key">
+                                                API Key
+                                            </Label>
                                             <Input
                                                 id="n8n_api_key"
                                                 type="password"
                                                 value={n8nConfig.api_key}
-                                                onChange={(e) => setN8nConfig((prev) => ({ ...prev, api_key: e.target.value }))}
-                                                placeholder={n8nLoaded && !n8nConfig.api_key ? '•••••••••••••••• (ya configurada)' : 'Ingresa la API Key'}
+                                                onChange={(e) =>
+                                                    setN8nConfig((prev) => ({
+                                                        ...prev,
+                                                        api_key: e.target.value,
+                                                    }))
+                                                }
+                                                placeholder={
+                                                    n8nLoaded &&
+                                                    !n8nConfig.api_key
+                                                        ? '•••••••••••••••• (ya configurada)'
+                                                        : 'Ingresa la API Key'
+                                                }
                                             />
                                             <p className="text-xs text-muted-foreground">
-                                                La API Key se almacena encriptada. Si se deja vacía, se mantendrá la existente.
+                                                La API Key se almacena
+                                                encriptada. Si se deja vacía, se
+                                                mantendrá la existente.
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Switch
                                                 id="n8n_is_active"
                                                 checked={n8nConfig.is_active}
-                                                onCheckedChange={(checked) => setN8nConfig((prev) => ({ ...prev, is_active: checked }))}
+                                                onCheckedChange={(checked) =>
+                                                    setN8nConfig((prev) => ({
+                                                        ...prev,
+                                                        is_active: checked,
+                                                    }))
+                                                }
                                             />
-                                            <Label htmlFor="n8n_is_active">Activo</Label>
+                                            <Label htmlFor="n8n_is_active">
+                                                Activo
+                                            </Label>
                                         </div>
                                         <div className="flex gap-3">
                                             <Button
@@ -2365,16 +2932,32 @@ export default function Index({
                                                 onClick={async () => {
                                                     setSavingN8n(true);
                                                     try {
-                                                        await axios.put('/api/system-integrations/n8n', {
-                                                            base_url: n8nConfig.base_url || null,
-                                                            webhook_url: n8nConfig.webhook_url || null,
-                                                            telegram_proxy_url: n8nConfig.telegram_proxy_url || null,
-                                                            api_key: n8nConfig.api_key || undefined,
-                                                            is_active: n8nConfig.is_active,
-                                                        });
-                                                        toast.success('Configuración guardada correctamente');
+                                                        await axios.put(
+                                                            '/api/system-integrations/n8n',
+                                                            {
+                                                                base_url:
+                                                                    n8nConfig.base_url ||
+                                                                    null,
+                                                                webhook_url:
+                                                                    n8nConfig.webhook_url ||
+                                                                    null,
+                                                                telegram_proxy_url:
+                                                                    n8nConfig.telegram_proxy_url ||
+                                                                    null,
+                                                                api_key:
+                                                                    n8nConfig.api_key ||
+                                                                    undefined,
+                                                                is_active:
+                                                                    n8nConfig.is_active,
+                                                            },
+                                                        );
+                                                        toast.success(
+                                                            'Configuración guardada correctamente',
+                                                        );
                                                     } catch {
-                                                        toast.error('Error al guardar la configuración');
+                                                        toast.error(
+                                                            'Error al guardar la configuración',
+                                                        );
                                                     } finally {
                                                         setSavingN8n(false);
                                                     }
@@ -2385,7 +2968,9 @@ export default function Index({
                                                 {savingN8n ? (
                                                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                                                 ) : null}
-                                                {savingN8n ? 'Guardando...' : 'Guardar Configuración'}
+                                                {savingN8n
+                                                    ? 'Guardando...'
+                                                    : 'Guardar Configuración'}
                                             </Button>
                                             <Button
                                                 type="button"
@@ -2393,14 +2978,29 @@ export default function Index({
                                                 onClick={async () => {
                                                     setTestingN8n(true);
                                                     try {
-                                                        const res = await axios.post('/api/system-integrations/n8n/test');
+                                                        const res =
+                                                            await axios.post(
+                                                                '/api/system-integrations/n8n/test',
+                                                            );
                                                         if (res.data.success) {
-                                                            toast.success(res.data.message || 'Conexión exitosa');
+                                                            toast.success(
+                                                                res.data
+                                                                    .message ||
+                                                                    'Conexión exitosa',
+                                                            );
                                                         } else {
-                                                            toast.error(res.data.message || 'No se pudo conectar');
+                                                            toast.error(
+                                                                res.data
+                                                                    .message ||
+                                                                    'No se pudo conectar',
+                                                            );
                                                         }
                                                     } catch (error: any) {
-                                                        toast.error(error.response?.data?.message || 'Error al probar la conexión');
+                                                        toast.error(
+                                                            error.response?.data
+                                                                ?.message ||
+                                                                'Error al probar la conexión',
+                                                        );
                                                     } finally {
                                                         setTestingN8n(false);
                                                     }
@@ -2413,7 +3013,9 @@ export default function Index({
                                                 ) : (
                                                     <RefreshCw className="h-4 w-4" />
                                                 )}
-                                                {testingN8n ? 'Probando conexión...' : 'Probar Conexión n8n'}
+                                                {testingN8n
+                                                    ? 'Probando conexión...'
+                                                    : 'Probar Conexión n8n'}
                                             </Button>
                                         </div>
                                     </CardContent>
@@ -2450,17 +3052,35 @@ export default function Index({
                                                 <div className="flex items-center gap-2">
                                                     <div className="flex items-center gap-1 rounded-lg border p-0.5">
                                                         <Button
-                                                            variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                                                            variant={
+                                                                viewMode ===
+                                                                'table'
+                                                                    ? 'secondary'
+                                                                    : 'ghost'
+                                                            }
                                                             size="sm"
-                                                            onClick={() => setViewMode('table')}
+                                                            onClick={() =>
+                                                                setViewMode(
+                                                                    'table',
+                                                                )
+                                                            }
                                                             className="h-8 w-8 p-0"
                                                         >
                                                             <List className="h-4 w-4" />
                                                         </Button>
                                                         <Button
-                                                            variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                                                            variant={
+                                                                viewMode ===
+                                                                'cards'
+                                                                    ? 'secondary'
+                                                                    : 'ghost'
+                                                            }
                                                             size="sm"
-                                                            onClick={() => setViewMode('cards')}
+                                                            onClick={() =>
+                                                                setViewMode(
+                                                                    'cards',
+                                                                )
+                                                            }
                                                             className="h-8 w-8 p-0"
                                                         >
                                                             <LayoutGrid className="h-4 w-4" />
@@ -2499,30 +3119,64 @@ export default function Index({
                                                     <table className="w-full text-sm">
                                                         <thead className="bg-muted/50 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                                                             <tr>
-                                                                <th className="px-4 py-3 text-left">Nivel</th>
-                                                                <th className="px-4 py-3 text-left">Entorno</th>
-                                                                <th className="px-4 py-3 text-left">Fecha</th>
-                                                                <th className="px-4 py-3 text-left">Mensaje</th>
+                                                                <th className="px-4 py-3 text-left">
+                                                                    Nivel
+                                                                </th>
+                                                                <th className="px-4 py-3 text-left">
+                                                                    Entorno
+                                                                </th>
+                                                                <th className="px-4 py-3 text-left">
+                                                                    Fecha
+                                                                </th>
+                                                                <th className="px-4 py-3 text-left">
+                                                                    Mensaje
+                                                                </th>
                                                             </tr>
                                                         </thead>
                                                         <tbody className="divide-y divide-border/30">
-                                                            {logs.map((log: any, index: number) => (
-                                                                <tr key={index} className="group transition-colors hover:bg-muted/30">
-                                                                    <td className="px-4 py-3">
-                                                                        <span className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold tracking-wider uppercase shadow-sm ${log.level === 'ERROR' || log.level === 'EMERGENCY' || log.level === 'CRITICAL' || log.level === 'ALERT' ? 'border border-red-200 bg-red-100 text-red-700' : log.level === 'WARNING' || log.level === 'NOTICE' ? 'border border-amber-200 bg-amber-100 text-amber-700' : log.level === 'DEBUG' ? 'border border-gray-200 bg-gray-100 text-gray-700' : 'border border-blue-200 bg-blue-100 text-blue-700'}`}>
-                                                                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
-                                                                            {log.level}
-                                                                        </span>
-                                                                    </td>
-                                                                    <td className="px-4 py-3">
-                                                                        <span className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">{log.environment}</span>
-                                                                    </td>
-                                                                    <td className="px-4 py-3 font-mono text-[11px] text-muted-foreground">{log.date}</td>
-                                                                    <td className="px-4 py-3">
-                                                                        <p className="font-mono text-xs leading-relaxed break-words whitespace-pre-wrap text-foreground/80 line-clamp-2">{log.message}</p>
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
+                                                            {logs.map(
+                                                                (
+                                                                    log: any,
+                                                                    index: number,
+                                                                ) => (
+                                                                    <tr
+                                                                        key={
+                                                                            index
+                                                                        }
+                                                                        className="group transition-colors hover:bg-muted/30"
+                                                                    >
+                                                                        <td className="px-4 py-3">
+                                                                            <span
+                                                                                className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold tracking-wider uppercase shadow-sm ${log.level === 'ERROR' || log.level === 'EMERGENCY' || log.level === 'CRITICAL' || log.level === 'ALERT' ? 'border border-red-200 bg-red-100 text-red-700' : log.level === 'WARNING' || log.level === 'NOTICE' ? 'border border-amber-200 bg-amber-100 text-amber-700' : log.level === 'DEBUG' ? 'border border-gray-200 bg-gray-100 text-gray-700' : 'border border-blue-200 bg-blue-100 text-blue-700'}`}
+                                                                            >
+                                                                                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
+                                                                                {
+                                                                                    log.level
+                                                                                }
+                                                                            </span>
+                                                                        </td>
+                                                                        <td className="px-4 py-3">
+                                                                            <span className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                                                                                {
+                                                                                    log.environment
+                                                                                }
+                                                                            </span>
+                                                                        </td>
+                                                                        <td className="px-4 py-3 font-mono text-[11px] text-muted-foreground">
+                                                                            {
+                                                                                log.date
+                                                                            }
+                                                                        </td>
+                                                                        <td className="px-4 py-3">
+                                                                            <p className="line-clamp-2 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap text-foreground/80">
+                                                                                {
+                                                                                    log.message
+                                                                                }
+                                                                            </p>
+                                                                        </td>
+                                                                    </tr>
+                                                                ),
+                                                            )}
                                                         </tbody>
                                                     </table>
                                                 </div>
@@ -2541,25 +3195,26 @@ export default function Index({
                                                                     <div className="flex items-start justify-between gap-4">
                                                                         <div className="flex flex-wrap items-center gap-2">
                                                                             <span
-                                                                                className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold tracking-wider uppercase shadow-sm ${log.level ===
-                                                                                    'ERROR' ||
+                                                                                className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold tracking-wider uppercase shadow-sm ${
                                                                                     log.level ===
-                                                                                    'EMERGENCY' ||
+                                                                                        'ERROR' ||
                                                                                     log.level ===
-                                                                                    'CRITICAL' ||
+                                                                                        'EMERGENCY' ||
                                                                                     log.level ===
-                                                                                    'ALERT'
-                                                                                    ? 'border border-red-200 bg-red-100 text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400'
-                                                                                    : log.level ===
-                                                                                        'WARNING' ||
-                                                                                        log.level ===
-                                                                                        'NOTICE'
-                                                                                        ? 'border border-amber-200 bg-amber-100 text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                                                                                        'CRITICAL' ||
+                                                                                    log.level ===
+                                                                                        'ALERT'
+                                                                                        ? 'border border-red-200 bg-red-100 text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400'
                                                                                         : log.level ===
-                                                                                            'DEBUG'
+                                                                                                'WARNING' ||
+                                                                                            log.level ===
+                                                                                                'NOTICE'
+                                                                                          ? 'border border-amber-200 bg-amber-100 text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                                                                                          : log.level ===
+                                                                                              'DEBUG'
                                                                                             ? 'border border-gray-200 bg-gray-100 text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400'
                                                                                             : 'border border-blue-200 bg-blue-100 text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                                                                                    }`}
+                                                                                }`}
                                                                             >
                                                                                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
                                                                                 {
@@ -2616,12 +3271,12 @@ export default function Index({
                                                         {onlineUsers.length}{' '}
                                                         usuario
                                                         {onlineUsers.length !==
-                                                            1
+                                                        1
                                                             ? 's'
                                                             : ''}{' '}
                                                         activo
                                                         {onlineUsers.length !==
-                                                            1
+                                                        1
                                                             ? 's'
                                                             : ''}
                                                     </CardDescription>
@@ -2630,7 +3285,7 @@ export default function Index({
                                         </CardHeader>
                                         <CardContent className="p-3">
                                             {!onlineUsers ||
-                                                onlineUsers.length === 0 ? (
+                                            onlineUsers.length === 0 ? (
                                                 <div className="flex flex-col items-center justify-center py-8 text-center">
                                                     <div className="mb-3 rounded-full bg-muted p-3">
                                                         <Users className="h-5 w-5 text-muted-foreground" />

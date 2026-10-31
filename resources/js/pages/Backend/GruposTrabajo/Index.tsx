@@ -9,9 +9,6 @@ import {
     Eye,
     Users,
     Truck,
-    Package,
-    Weight,
-    Droplets,
     Download,
     Upload,
     FileSpreadsheet,
@@ -101,7 +98,7 @@ export default function Index({
     conductores: Conductor[];
     puedeGestionar?: boolean;
 }) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const { hasPermission } = usePermissions();
     const canCreate = hasPermission('flota.grupos-trabajo.create');
     const canEdit = hasPermission('flota.grupos-trabajo.edit');
@@ -291,7 +288,9 @@ export default function Index({
                     <div className="flex items-center gap-2">
                         <Button
                             variant="outline"
-                            onClick={() => router.get('/grupos-trabajo/rendimiento')}
+                            onClick={() =>
+                                router.get('/grupos-trabajo/rendimiento')
+                            }
                             className="gap-2"
                         >
                             <BarChart3 className="h-4 w-4" />
@@ -299,7 +298,10 @@ export default function Index({
                         </Button>
                         {puedeGestionar && canCreate && (
                             <>
-                                <Button onClick={handleOpenNew} className="gap-2">
+                                <Button
+                                    onClick={handleOpenNew}
+                                    className="gap-2"
+                                >
                                     <Plus className="h-4 w-4" />
                                     Nuevo Grupo
                                 </Button>
@@ -318,7 +320,9 @@ export default function Index({
                                         align="end"
                                         className="w-48"
                                     >
-                                        <DropdownMenuItem onClick={handleImportCSV}>
+                                        <DropdownMenuItem
+                                            onClick={handleImportCSV}
+                                        >
                                             <Upload className="mr-2 h-4 w-4" />
                                             Importar CSV
                                         </DropdownMenuItem>
@@ -401,7 +405,9 @@ export default function Index({
                                 <Input
                                     placeholder="Buscar grupos por nombre o descripción..."
                                     value={busqueda}
-                                    onChange={(e) => setBusqueda(e.target.value)}
+                                    onChange={(e) =>
+                                        setBusqueda(e.target.value)
+                                    }
                                     className="h-10 border-none bg-background/50 pl-10 focus-visible:ring-primary/20"
                                 />
                             </div>
@@ -413,76 +419,164 @@ export default function Index({
                                     <table className="w-full">
                                         <thead>
                                             <tr className="border-b bg-muted/5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                                                <th className="px-4 py-4 text-left">Nombre</th>
-                                                <th className="px-4 py-4 text-left">Descripción</th>
-                                                <th className="px-4 py-4 text-center">Estado</th>
-                                                <th className="px-4 py-4 text-center">Miembros</th>
-                                                <th className="px-4 py-4 text-right">Ventas</th>
-                                                <th className="px-4 py-4 text-right">Acciones</th>
+                                                <th className="px-4 py-4 text-left">
+                                                    Nombre
+                                                </th>
+                                                <th className="px-4 py-4 text-left">
+                                                    Descripción
+                                                </th>
+                                                <th className="px-4 py-4 text-center">
+                                                    Estado
+                                                </th>
+                                                <th className="px-4 py-4 text-center">
+                                                    Miembros
+                                                </th>
+                                                <th className="px-4 py-4 text-right">
+                                                    Ventas
+                                                </th>
+                                                <th className="px-4 py-4 text-right">
+                                                    Acciones
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-muted/50">
                                             {gruposFiltrados.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan={6} className="py-16 text-center">
+                                                    <td
+                                                        colSpan={6}
+                                                        className="py-16 text-center"
+                                                    >
                                                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                                                             <Users className="h-10 w-10 opacity-20" />
-                                                            <p className="font-medium">No se encontraron grupos</p>
+                                                            <p className="font-medium">
+                                                                No se
+                                                                encontraron
+                                                                grupos
+                                                            </p>
                                                         </div>
                                                     </td>
                                                 </tr>
                                             ) : (
                                                 gruposFiltrados.map((grupo) => (
-                                                    <tr key={grupo.id} className="group transition-colors hover:bg-muted/30">
+                                                    <tr
+                                                        key={grupo.id}
+                                                        className="group transition-colors hover:bg-muted/30"
+                                                    >
                                                         <td className="px-4 py-4">
                                                             <div className="flex items-center gap-3">
                                                                 <div
                                                                     className="flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm"
-                                                                    style={{ backgroundColor: grupo.color || '#3b82f6' }}
+                                                                    style={{
+                                                                        backgroundColor:
+                                                                            grupo.color ||
+                                                                            '#3b82f6',
+                                                                    }}
                                                                 >
                                                                     <Users className="h-5 w-5" />
                                                                 </div>
                                                                 <div>
-                                                                    <div className="text-sm font-bold tracking-tight">{grupo.nombre}</div>
+                                                                    <div className="text-sm font-bold tracking-tight">
+                                                                        {
+                                                                            grupo.nombre
+                                                                        }
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </td>
                                                         <td className="max-w-[200px] truncate px-4 py-4 text-sm text-muted-foreground">
-                                                            {grupo.descripcion || '-'}
+                                                            {grupo.descripcion ||
+                                                                '-'}
                                                         </td>
-                                                        <td className="px-4 py-4 text-center">{getEstadoBadge(grupo.estado)}</td>
+                                                        <td className="px-4 py-4 text-center">
+                                                            {getEstadoBadge(
+                                                                grupo.estado,
+                                                            )}
+                                                        </td>
                                                         <td className="px-4 py-4 text-center">
                                                             <div className="flex items-center justify-center gap-1.5">
                                                                 <Users className="h-3.5 w-3.5 text-muted-foreground" />
                                                                 <span className="text-xs font-medium">
-                                                                    {grupo.miembros?.length || 0}
+                                                                    {grupo
+                                                                        .miembros
+                                                                        ?.length ||
+                                                                        0}
                                                                 </span>
-                                                                {grupo.conductores?.length ? (
+                                                                {grupo
+                                                                    .conductores
+                                                                    ?.length ? (
                                                                     <>
                                                                         <Truck className="ml-1 h-3.5 w-3.5 text-muted-foreground" />
-                                                                        <span className="text-xs font-medium">{grupo.conductores.length}</span>
+                                                                        <span className="text-xs font-medium">
+                                                                            {
+                                                                                grupo
+                                                                                    .conductores
+                                                                                    .length
+                                                                            }
+                                                                        </span>
                                                                     </>
                                                                 ) : null}
                                                             </div>
                                                         </td>
                                                         <td className="px-4 py-4 text-right font-mono text-sm font-bold">
-                                                             {new Intl.NumberFormat(currency.locale, { style: 'currency', currency: currency.code }).format(grupo.total_ventas || 0)}
+                                                            {new Intl.NumberFormat(
+                                                                currency.locale,
+                                                                {
+                                                                    style: 'currency',
+                                                                    currency:
+                                                                        currency.code,
+                                                                },
+                                                            ).format(
+                                                                grupo.total_ventas ||
+                                                                    0,
+                                                            )}
                                                         </td>
                                                         <td className="px-4 py-4 text-right">
                                                             <div className="flex justify-end gap-1">
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted" onClick={() => { setGrupoVer(grupo); setVerOpen(true); }}>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 text-muted-foreground hover:bg-muted"
+                                                                    onClick={() => {
+                                                                        setGrupoVer(
+                                                                            grupo,
+                                                                        );
+                                                                        setVerOpen(
+                                                                            true,
+                                                                        );
+                                                                    }}
+                                                                >
                                                                     <Eye className="h-4 w-4" />
                                                                 </Button>
-                                                                {puedeGestionar && canEdit && (
-                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:bg-primary/10" onClick={() => handleOpenEdit(grupo)}>
-                                                                        <Pencil className="h-4 w-4" />
-                                                                    </Button>
-                                                                )}
-                                                                {puedeGestionar && canDelete && (
-                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(grupo.id)}>
-                                                                        <Trash2 className="h-4 w-4" />
-                                                                    </Button>
-                                                                )}
+                                                                {puedeGestionar &&
+                                                                    canEdit && (
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-8 w-8 text-primary hover:bg-primary/10"
+                                                                            onClick={() =>
+                                                                                handleOpenEdit(
+                                                                                    grupo,
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <Pencil className="h-4 w-4" />
+                                                                        </Button>
+                                                                    )}
+                                                                {puedeGestionar &&
+                                                                    canDelete && (
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                                                            onClick={() =>
+                                                                                handleDelete(
+                                                                                    grupo.id,
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </Button>
+                                                                    )}
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -517,66 +611,185 @@ export default function Index({
                                             >
                                                 <div
                                                     className="relative flex h-32 items-end p-5"
-                                                    style={{ backgroundColor: grupo.color || '#3b82f6' }}
+                                                    style={{
+                                                        backgroundColor:
+                                                            grupo.color ||
+                                                            '#3b82f6',
+                                                    }}
                                                 >
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                                                     <div className="relative z-10">
                                                         <Badge className="mb-2 w-fit border-none bg-white/20 px-2 py-0.5 text-[9px] font-bold tracking-widest text-white uppercase hover:bg-white/30">
                                                             Grupo
                                                         </Badge>
-                                                        <h3 className="text-lg font-black text-white">{grupo.nombre}</h3>
+                                                        <h3 className="text-lg font-black text-white">
+                                                            {grupo.nombre}
+                                                        </h3>
                                                     </div>
                                                     <div className="absolute top-3 right-3 z-10">
-                                                        {getEstadoBadge(grupo.estado)}
+                                                        {getEstadoBadge(
+                                                            grupo.estado,
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className="space-y-3 p-4">
                                                     {grupo.descripcion && (
-                                                        <p className="text-xs text-muted-foreground line-clamp-2">{grupo.descripcion}</p>
+                                                        <p className="line-clamp-2 text-xs text-muted-foreground">
+                                                            {grupo.descripcion}
+                                                        </p>
                                                     )}
-                                                    {(grupo.miembros?.length || grupo.conductores?.length) ? (
+                                                    {grupo.miembros?.length ||
+                                                    grupo.conductores
+                                                        ?.length ? (
                                                         <div className="flex flex-wrap gap-1">
-                                                            {grupo.miembros?.slice(0, 3).map((m) => (
-                                                                <Badge key={m.id} variant="secondary" className="text-[10px]">{m.name}</Badge>
-                                                            ))}
-                                                            {grupo.miembros && grupo.miembros.length > 3 && (
-                                                                <Badge variant="outline" className="text-[10px]">+{grupo.miembros.length - 3}</Badge>
-                                                            )}
-                                                            {grupo.conductores?.slice(0, 2).map((c) => (
-                                                                <Badge key={c.id} variant="secondary" className="bg-blue-50 text-[10px] text-blue-700">
-                                                                    <Truck className="mr-0.5 h-2.5 w-2.5" />{c.nombre}
-                                                                </Badge>
-                                                            ))}
+                                                            {grupo.miembros
+                                                                ?.slice(0, 3)
+                                                                .map((m) => (
+                                                                    <Badge
+                                                                        key={
+                                                                            m.id
+                                                                        }
+                                                                        variant="secondary"
+                                                                        className="text-[10px]"
+                                                                    >
+                                                                        {m.name}
+                                                                    </Badge>
+                                                                ))}
+                                                            {grupo.miembros &&
+                                                                grupo.miembros
+                                                                    .length >
+                                                                    3 && (
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="text-[10px]"
+                                                                    >
+                                                                        +
+                                                                        {grupo
+                                                                            .miembros
+                                                                            .length -
+                                                                            3}
+                                                                    </Badge>
+                                                                )}
+                                                            {grupo.conductores
+                                                                ?.slice(0, 2)
+                                                                .map((c) => (
+                                                                    <Badge
+                                                                        key={
+                                                                            c.id
+                                                                        }
+                                                                        variant="secondary"
+                                                                        className="bg-blue-50 text-[10px] text-blue-700"
+                                                                    >
+                                                                        <Truck className="mr-0.5 h-2.5 w-2.5" />
+                                                                        {
+                                                                            c.nombre
+                                                                        }
+                                                                    </Badge>
+                                                                ))}
                                                         </div>
                                                     ) : (
-                                                        <p className="text-[10px] italic text-muted-foreground">Sin miembros asignados</p>
+                                                        <p className="text-[10px] text-muted-foreground italic">
+                                                            Sin miembros
+                                                            asignados
+                                                        </p>
                                                     )}
                                                     <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted/30 p-3">
                                                         <div>
-                                                            <p className="text-[9px] font-bold text-muted-foreground uppercase">Ventas</p>
-                                                             <p className="truncate text-xs font-bold">{new Intl.NumberFormat(currency.locale, { style: 'currency', currency: currency.code }).format(grupo.total_ventas || 0)}</p>
-                                                             <p className="text-[9px] text-muted-foreground">{grupo.cantidad_ventas || 0} pedidos</p>
-                                                         </div>
-                                                         <div className="text-right">
-                                                             <p className="text-[9px] font-bold text-muted-foreground uppercase">Producción</p>
-                                                             <p className="text-xs font-bold text-orange-600">{(grupo.total_kg || 0).toLocaleString(currency.locale)} Kg</p>
-                                                             <p className="text-[9px] font-medium text-blue-600">{(grupo.total_l || 0).toLocaleString(currency.locale)} L</p>
+                                                            <p className="text-[9px] font-bold text-muted-foreground uppercase">
+                                                                Ventas
+                                                            </p>
+                                                            <p className="truncate text-xs font-bold">
+                                                                {new Intl.NumberFormat(
+                                                                    currency.locale,
+                                                                    {
+                                                                        style: 'currency',
+                                                                        currency:
+                                                                            currency.code,
+                                                                    },
+                                                                ).format(
+                                                                    grupo.total_ventas ||
+                                                                        0,
+                                                                )}
+                                                            </p>
+                                                            <p className="text-[9px] text-muted-foreground">
+                                                                {grupo.cantidad_ventas ||
+                                                                    0}{' '}
+                                                                pedidos
+                                                            </p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-[9px] font-bold text-muted-foreground uppercase">
+                                                                Producción
+                                                            </p>
+                                                            <p className="text-xs font-bold text-orange-600">
+                                                                {(
+                                                                    grupo.total_kg ||
+                                                                    0
+                                                                ).toLocaleString(
+                                                                    currency.locale,
+                                                                )}{' '}
+                                                                Kg
+                                                            </p>
+                                                            <p className="text-[9px] font-medium text-blue-600">
+                                                                {(
+                                                                    grupo.total_l ||
+                                                                    0
+                                                                ).toLocaleString(
+                                                                    currency.locale,
+                                                                )}{' '}
+                                                                L
+                                                            </p>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-1 pt-1">
-                                                        <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => { setGrupoVer(grupo); setVerOpen(true); }}>
-                                                            <Eye className="mr-1 h-3.5 w-3.5" /> Ver
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 px-2 text-xs"
+                                                            onClick={() => {
+                                                                setGrupoVer(
+                                                                    grupo,
+                                                                );
+                                                                setVerOpen(
+                                                                    true,
+                                                                );
+                                                            }}
+                                                        >
+                                                            <Eye className="mr-1 h-3.5 w-3.5" />{' '}
+                                                            Ver
                                                         </Button>
-                                                        {puedeGestionar && canEdit && (
-                                                            <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handleOpenEdit(grupo)}>
-                                                                <Pencil className="mr-1 h-3.5 w-3.5" /> Editar
-                                                            </Button>
-                                                        )}
-                                                        {puedeGestionar && canDelete && (
-                                                            <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-destructive hover:text-destructive" onClick={() => handleDelete(grupo.id)}>
-                                                                <Trash2 className="mr-1 h-3.5 w-3.5" /> Eliminar
-                                                            </Button>
-                                                        )}
+                                                        {puedeGestionar &&
+                                                            canEdit && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 px-2 text-xs"
+                                                                    onClick={() =>
+                                                                        handleOpenEdit(
+                                                                            grupo,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Pencil className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                    Editar
+                                                                </Button>
+                                                            )}
+                                                        {puedeGestionar &&
+                                                            canDelete && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 px-2 text-xs text-destructive hover:text-destructive"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            grupo.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                    Eliminar
+                                                                </Button>
+                                                            )}
                                                     </div>
                                                 </div>
                                             </div>
@@ -983,10 +1196,10 @@ export default function Index({
                                         </span>
                                     </div>
                                     <span className="font-medium text-foreground">
-                                         {new Date(
-                                             grupoVer.created_at,
-                                         ).toLocaleDateString(currency.locale)}
-                                     </span>
+                                        {new Date(
+                                            grupoVer.created_at,
+                                        ).toLocaleDateString(currency.locale)}
+                                    </span>
                                 </div>
                             </div>
 

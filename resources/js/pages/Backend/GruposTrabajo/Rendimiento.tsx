@@ -81,7 +81,6 @@ import { useCountry } from '@/hooks/use-country';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import { formatCurrency, formatNumberLocale } from '@/lib/utils';
-import { cn } from '@/lib/utils';
 import type { BreadcrumbItem } from '@/types';
 
 interface GrupoItem {
@@ -125,7 +124,14 @@ interface TendenciaMes {
     l: number;
 }
 
-const CHART_COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899'];
+const CHART_COLORS = [
+    '#6366f1',
+    '#f59e0b',
+    '#10b981',
+    '#ef4444',
+    '#8b5cf6',
+    '#ec4899',
+];
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -160,7 +166,7 @@ export default function Rendimiento({
     fechaInicio: string;
     fechaFin: string;
 }) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const { hasPermission } = usePermissions();
     const canEdit = hasPermission('flota.grupos-trabajo.edit');
     const canDelete = hasPermission('flota.grupos-trabajo.delete');
@@ -171,8 +177,11 @@ export default function Rendimiento({
 
     const [selectedGroups, setSelectedGroups] = useState<number[]>([]);
     const [isAsignacionOpen, setIsAsignacionOpen] = useState(false);
-    const [editandoAsignacion, setEditandoAsignacion] = useState<Asignacion | null>(null);
-    const [datePickerOpen, setDatePickerOpen] = useState<'inicio' | 'fin' | null>(null);
+    const [editandoAsignacion, setEditandoAsignacion] =
+        useState<Asignacion | null>(null);
+    const [datePickerOpen, setDatePickerOpen] = useState<
+        'inicio' | 'fin' | null
+    >(null);
 
     const {
         data,
@@ -199,13 +208,21 @@ export default function Rendimiento({
         return [
             {
                 label: 'Esta Semana',
-                start: format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd'),
+                start: format(
+                    startOfWeek(now, { weekStartsOn: 1 }),
+                    'yyyy-MM-dd',
+                ),
                 end: format(endOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd'),
             },
             {
                 label: 'Esta Quincena',
                 start: format(startOfMonth(now), 'yyyy-MM-dd'),
-                end: format(now.getDate() <= 15 ? new Date(now.getFullYear(), now.getMonth(), 15) : now, 'yyyy-MM-dd'),
+                end: format(
+                    now.getDate() <= 15
+                        ? new Date(now.getFullYear(), now.getMonth(), 15)
+                        : now,
+                    'yyyy-MM-dd',
+                ),
             },
             {
                 label: 'Este Mes',
@@ -221,15 +238,20 @@ export default function Rendimiento({
     }, []);
 
     const handleQuickPeriod = (start: string, end: string) => {
-        router.get('/grupos-trabajo/rendimiento', {
-            fecha_inicio: start,
-            fecha_fin: end,
-            grupo_ids: selectedGroups.length > 0 ? selectedGroups : undefined,
-        }, {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
+        router.get(
+            '/grupos-trabajo/rendimiento',
+            {
+                fecha_inicio: start,
+                fecha_fin: end,
+                grupo_ids:
+                    selectedGroups.length > 0 ? selectedGroups : undefined,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
     };
 
     const toggleGroup = (id: number) => {
@@ -237,15 +259,19 @@ export default function Rendimiento({
             const next = prev.includes(id)
                 ? prev.filter((g) => g !== id)
                 : [...prev, id];
-            router.get('/grupos-trabajo/rendimiento', {
-                fecha_inicio: fechaInicio,
-                fecha_fin: fechaFin,
-                grupo_ids: next.length > 0 ? next : undefined,
-            }, {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            });
+            router.get(
+                '/grupos-trabajo/rendimiento',
+                {
+                    fecha_inicio: fechaInicio,
+                    fecha_fin: fechaFin,
+                    grupo_ids: next.length > 0 ? next : undefined,
+                },
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                },
+            );
             return next;
         });
     };
@@ -286,8 +312,12 @@ export default function Rendimiento({
 
         transform((formData) => ({
             ...formData,
-            meta_monto: formData.meta_monto ? parseFloat(formData.meta_monto) : 0,
-            meta_cantidad: formData.meta_cantidad ? parseInt(formData.meta_cantidad) : 0,
+            meta_monto: formData.meta_monto
+                ? parseFloat(formData.meta_monto)
+                : 0,
+            meta_cantidad: formData.meta_cantidad
+                ? parseInt(formData.meta_cantidad)
+                : 0,
             meta_kg: formData.meta_kg ? parseFloat(formData.meta_kg) : 0,
             meta_l: formData.meta_l ? parseFloat(formData.meta_l) : 0,
         }));
@@ -316,19 +346,51 @@ export default function Rendimiento({
         }
     };
 
-    const computeProgress = (asignacion: Asignacion, grupoRendimiento?: GrupoRendimiento) => {
+    const computeProgress = (
+        asignacion: Asignacion,
+        grupoRendimiento?: GrupoRendimiento,
+    ) => {
         if (!grupoRendimiento) return null;
         return {
-            monto: asignacion.meta_monto > 0 ? Math.min(grupoRendimiento.monto / asignacion.meta_monto * 100, 100) : 0,
-            cantidad: asignacion.meta_cantidad > 0 ? Math.min(grupoRendimiento.cantidad / asignacion.meta_cantidad * 100, 100) : 0,
-            kg: asignacion.meta_kg > 0 ? Math.min(grupoRendimiento.kg / asignacion.meta_kg * 100, 100) : 0,
-            l: asignacion.meta_l > 0 ? Math.min(grupoRendimiento.l / asignacion.meta_l * 100, 100) : 0,
+            monto:
+                asignacion.meta_monto > 0
+                    ? Math.min(
+                          (grupoRendimiento.monto / asignacion.meta_monto) *
+                              100,
+                          100,
+                      )
+                    : 0,
+            cantidad:
+                asignacion.meta_cantidad > 0
+                    ? Math.min(
+                          (grupoRendimiento.cantidad /
+                              asignacion.meta_cantidad) *
+                              100,
+                          100,
+                      )
+                    : 0,
+            kg:
+                asignacion.meta_kg > 0
+                    ? Math.min(
+                          (grupoRendimiento.kg / asignacion.meta_kg) * 100,
+                          100,
+                      )
+                    : 0,
+            l:
+                asignacion.meta_l > 0
+                    ? Math.min(
+                          (grupoRendimiento.l / asignacion.meta_l) * 100,
+                          100,
+                      )
+                    : 0,
         };
     };
 
     const rendimientoPorGrupoId = useMemo(() => {
         const map: Record<number, GrupoRendimiento> = {};
-        rendimiento.porGrupo.forEach((g) => { map[g.id] = g; });
+        rendimiento.porGrupo.forEach((g) => {
+            map[g.id] = g;
+        });
         return map;
     }, [rendimiento]);
 
@@ -385,7 +447,8 @@ export default function Rendimiento({
                                 Rendimiento de Grupos
                             </h1>
                             <p className="text-sm text-muted-foreground">
-                                Métricas, comparativas y asignaciones por período
+                                Métricas, comparativas y asignaciones por
+                                período
                             </p>
                         </div>
                     </div>
@@ -395,9 +458,16 @@ export default function Rendimiento({
                     {quickPeriods.map((period) => (
                         <Button
                             key={period.label}
-                            variant={fechaInicio === period.start && fechaFin === period.end ? 'default' : 'outline'}
+                            variant={
+                                fechaInicio === period.start &&
+                                fechaFin === period.end
+                                    ? 'default'
+                                    : 'outline'
+                            }
                             size="sm"
-                            onClick={() => handleQuickPeriod(period.start, period.end)}
+                            onClick={() =>
+                                handleQuickPeriod(period.start, period.end)
+                            }
                             className="h-8"
                         >
                             {period.label}
@@ -406,7 +476,9 @@ export default function Rendimiento({
                     <div className="flex items-center gap-1">
                         <Popover
                             open={datePickerOpen === 'inicio'}
-                            onOpenChange={(open) => setDatePickerOpen(open ? 'inicio' : null)}
+                            onOpenChange={(open) =>
+                                setDatePickerOpen(open ? 'inicio' : null)
+                            }
                         >
                             <PopoverTrigger asChild>
                                 <Button
@@ -415,26 +487,43 @@ export default function Rendimiento({
                                     className="h-8 gap-1"
                                 >
                                     <Calendar className="h-3.5 w-3.5" />
-                                    {format(new Date(fechaInicio), 'dd/MM/yyyy')}
+                                    {format(
+                                        new Date(fechaInicio),
+                                        'dd/MM/yyyy',
+                                    )}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
+                            <PopoverContent
+                                className="w-auto p-0"
+                                align="start"
+                            >
                                 <CalendarPicker
                                     mode="single"
                                     selected={new Date(fechaInicio)}
                                     onSelect={(date) => {
                                         if (date) {
-                                            const start = format(date, 'yyyy-MM-dd');
+                                            const start = format(
+                                                date,
+                                                'yyyy-MM-dd',
+                                            );
                                             setDatePickerOpen('fin');
-                                            router.get('/grupos-trabajo/rendimiento', {
-                                                fecha_inicio: start,
-                                                fecha_fin: fechaFin,
-                                                grupo_ids: selectedGroups.length > 0 ? selectedGroups : undefined,
-                                            }, {
-                                                preserveState: true,
-                                                preserveScroll: true,
-                                                replace: true,
-                                            });
+                                            router.get(
+                                                '/grupos-trabajo/rendimiento',
+                                                {
+                                                    fecha_inicio: start,
+                                                    fecha_fin: fechaFin,
+                                                    grupo_ids:
+                                                        selectedGroups.length >
+                                                        0
+                                                            ? selectedGroups
+                                                            : undefined,
+                                                },
+                                                {
+                                                    preserveState: true,
+                                                    preserveScroll: true,
+                                                    replace: true,
+                                                },
+                                            );
                                         }
                                     }}
                                     initialFocus
@@ -444,7 +533,9 @@ export default function Rendimiento({
                         <span className="text-xs text-muted-foreground">a</span>
                         <Popover
                             open={datePickerOpen === 'fin'}
-                            onOpenChange={(open) => setDatePickerOpen(open ? 'fin' : null)}
+                            onOpenChange={(open) =>
+                                setDatePickerOpen(open ? 'fin' : null)
+                            }
                         >
                             <PopoverTrigger asChild>
                                 <Button
@@ -456,23 +547,37 @@ export default function Rendimiento({
                                     {format(new Date(fechaFin), 'dd/MM/yyyy')}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
+                            <PopoverContent
+                                className="w-auto p-0"
+                                align="start"
+                            >
                                 <CalendarPicker
                                     mode="single"
                                     selected={new Date(fechaFin)}
                                     onSelect={(date) => {
                                         if (date) {
-                                            const end = format(date, 'yyyy-MM-dd');
+                                            const end = format(
+                                                date,
+                                                'yyyy-MM-dd',
+                                            );
                                             setDatePickerOpen(null);
-                                            router.get('/grupos-trabajo/rendimiento', {
-                                                fecha_inicio: fechaInicio,
-                                                fecha_fin: end,
-                                                grupo_ids: selectedGroups.length > 0 ? selectedGroups : undefined,
-                                            }, {
-                                                preserveState: true,
-                                                preserveScroll: true,
-                                                replace: true,
-                                            });
+                                            router.get(
+                                                '/grupos-trabajo/rendimiento',
+                                                {
+                                                    fecha_inicio: fechaInicio,
+                                                    fecha_fin: end,
+                                                    grupo_ids:
+                                                        selectedGroups.length >
+                                                        0
+                                                            ? selectedGroups
+                                                            : undefined,
+                                                },
+                                                {
+                                                    preserveState: true,
+                                                    preserveScroll: true,
+                                                    replace: true,
+                                                },
+                                            );
                                         }
                                     }}
                                     initialFocus
@@ -490,9 +595,19 @@ export default function Rendimiento({
                         {grupos.map((grupo) => (
                             <Badge
                                 key={grupo.id}
-                                variant={selectedGroups.length === 0 || selectedGroups.includes(grupo.id) ? 'default' : 'outline'}
+                                variant={
+                                    selectedGroups.length === 0 ||
+                                    selectedGroups.includes(grupo.id)
+                                        ? 'default'
+                                        : 'outline'
+                                }
                                 className="cursor-pointer"
-                                style={selectedGroups.length === 0 || selectedGroups.includes(grupo.id) ? { backgroundColor: grupo.color } : {}}
+                                style={
+                                    selectedGroups.length === 0 ||
+                                    selectedGroups.includes(grupo.id)
+                                        ? { backgroundColor: grupo.color }
+                                        : {}
+                                }
                                 onClick={() => toggleGroup(grupo.id)}
                             >
                                 {grupo.nombre}
@@ -505,14 +620,18 @@ export default function Rendimiento({
                                 className="h-6 px-2 text-xs"
                                 onClick={() => {
                                     setSelectedGroups([]);
-                                    router.get('/grupos-trabajo/rendimiento', {
-                                        fecha_inicio: fechaInicio,
-                                        fecha_fin: fechaFin,
-                                    }, {
-                                        preserveState: true,
-                                        preserveScroll: true,
-                                        replace: true,
-                                    });
+                                    router.get(
+                                        '/grupos-trabajo/rendimiento',
+                                        {
+                                            fecha_inicio: fechaInicio,
+                                            fecha_fin: fechaFin,
+                                        },
+                                        {
+                                            preserveState: true,
+                                            preserveScroll: true,
+                                            replace: true,
+                                        },
+                                    );
                                 }}
                             >
                                 <X className="mr-1 h-3 w-3" />
@@ -550,7 +669,9 @@ export default function Rendimiento({
                             <div className="text-2xl font-bold">
                                 {formatNumber(rendimiento.totalKg)}
                             </div>
-                            <p className="text-xs text-muted-foreground">Kilogramos</p>
+                            <p className="text-xs text-muted-foreground">
+                                Kilogramos
+                            </p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -564,7 +685,9 @@ export default function Rendimiento({
                             <div className="text-2xl font-bold">
                                 {formatNumber(rendimiento.totalL)}
                             </div>
-                            <p className="text-xs text-muted-foreground">Litros</p>
+                            <p className="text-xs text-muted-foreground">
+                                Litros
+                            </p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -578,7 +701,9 @@ export default function Rendimiento({
                             <div className="text-2xl font-bold">
                                 {formatNumber(rendimiento.totalCantidad)}
                             </div>
-                            <p className="text-xs text-muted-foreground">Unidades</p>
+                            <p className="text-xs text-muted-foreground">
+                                Unidades
+                            </p>
                         </CardContent>
                     </Card>
                 </div>
@@ -597,18 +722,45 @@ export default function Rendimiento({
                         <CardContent>
                             {comparativaMonto.length > 0 ? (
                                 <div className="h-72">
-                                    <ResponsiveContainer width="100%" height="100%">
+                                    <ResponsiveContainer
+                                        width="100%"
+                                        height="100%"
+                                    >
                                         <BarChart data={comparativaMonto}>
-                                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                                            <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                                            <CartesianGrid
+                                                strokeDasharray="3 3"
+                                                className="stroke-muted"
+                                            />
+                                            <XAxis
+                                                dataKey="name"
+                                                tick={{ fontSize: 11 }}
+                                            />
                                             <YAxis tick={{ fontSize: 11 }} />
                                             <Tooltip
-                                                formatter={(value) => formatCurrency(Number(value) || 0)}
+                                                formatter={(value) =>
+                                                    formatCurrency(
+                                                        Number(value) || 0,
+                                                    )
+                                                }
                                             />
-                                            <Bar dataKey="Monto" radius={[4, 4, 0, 0]}>
-                                                {comparativaMonto.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.fill || CHART_COLORS[index % CHART_COLORS.length]} />
-                                                ))}
+                                            <Bar
+                                                dataKey="Monto"
+                                                radius={[4, 4, 0, 0]}
+                                            >
+                                                {comparativaMonto.map(
+                                                    (entry, index) => (
+                                                        <Cell
+                                                            key={`cell-${index}`}
+                                                            fill={
+                                                                entry.fill ||
+                                                                CHART_COLORS[
+                                                                    index %
+                                                                        CHART_COLORS.length
+                                                                ]
+                                                            }
+                                                        />
+                                                    ),
+                                                )}
                                             </Bar>
                                         </BarChart>
                                     </ResponsiveContainer>
@@ -634,13 +786,26 @@ export default function Rendimiento({
                         <CardContent>
                             {tendencia.length > 0 ? (
                                 <div className="h-72">
-                                    <ResponsiveContainer width="100%" height="100%">
+                                    <ResponsiveContainer
+                                        width="100%"
+                                        height="100%"
+                                    >
                                         <LineChart data={tendencia}>
-                                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                                            <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+                                            <CartesianGrid
+                                                strokeDasharray="3 3"
+                                                className="stroke-muted"
+                                            />
+                                            <XAxis
+                                                dataKey="mes"
+                                                tick={{ fontSize: 11 }}
+                                            />
                                             <YAxis tick={{ fontSize: 11 }} />
                                             <Tooltip
-                                                formatter={(value) => formatCurrency(Number(value) || 0)}
+                                                formatter={(value) =>
+                                                    formatCurrency(
+                                                        Number(value) || 0,
+                                                    )
+                                                }
                                             />
                                             <Line
                                                 type="monotone"
@@ -674,7 +839,10 @@ export default function Rendimiento({
                         <CardContent>
                             {pieData.length > 0 ? (
                                 <div className="h-72">
-                                    <ResponsiveContainer width="100%" height="100%">
+                                    <ResponsiveContainer
+                                        width="100%"
+                                        height="100%"
+                                    >
                                         <PieChart>
                                             <Pie
                                                 data={pieData}
@@ -690,10 +858,25 @@ export default function Rendimiento({
                                                 labelLine={false}
                                             >
                                                 {pieData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]} />
+                                                    <Cell
+                                                        key={`cell-${index}`}
+                                                        fill={
+                                                            entry.color ||
+                                                            CHART_COLORS[
+                                                                index %
+                                                                    CHART_COLORS.length
+                                                            ]
+                                                        }
+                                                    />
                                                 ))}
                                             </Pie>
-                                            <Tooltip formatter={(value) => formatCurrency(Number(value) || 0)} />
+                                            <Tooltip
+                                                formatter={(value) =>
+                                                    formatCurrency(
+                                                        Number(value) || 0,
+                                                    )
+                                                }
+                                            />
                                         </PieChart>
                                     </ResponsiveContainer>
                                 </div>
@@ -713,15 +896,25 @@ export default function Rendimiento({
                                     Producción Mensual (Kg / L)
                                 </CardTitle>
                                 <CardDescription>
-                                    Tendencia de producción en los últimos {tendencia.length} meses
+                                    Tendencia de producción en los últimos{' '}
+                                    {tendencia.length} meses
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="h-72">
-                                    <ResponsiveContainer width="100%" height="100%">
+                                    <ResponsiveContainer
+                                        width="100%"
+                                        height="100%"
+                                    >
                                         <LineChart data={tendencia}>
-                                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                                            <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+                                            <CartesianGrid
+                                                strokeDasharray="3 3"
+                                                className="stroke-muted"
+                                            />
+                                            <XAxis
+                                                dataKey="mes"
+                                                tick={{ fontSize: 11 }}
+                                            />
                                             <YAxis tick={{ fontSize: 11 }} />
                                             <Tooltip />
                                             <Line
@@ -760,7 +953,10 @@ export default function Rendimiento({
                             </CardDescription>
                         </div>
                         {canEdit && (
-                            <Button onClick={handleOpenNewAsignacion} className="gap-2">
+                            <Button
+                                onClick={handleOpenNewAsignacion}
+                                className="gap-2"
+                            >
                                 <Plus className="h-4 w-4" />
                                 Nueva Asignación
                             </Button>
@@ -774,7 +970,8 @@ export default function Rendimiento({
                                     No hay asignaciones activas
                                 </p>
                                 <p className="text-sm text-muted-foreground">
-                                    Crea asignaciones para establecer metas a los grupos
+                                    Crea asignaciones para establecer metas a
+                                    los grupos
                                 </p>
                             </div>
                         ) : (
@@ -782,102 +979,220 @@ export default function Rendimiento({
                                 <table className="w-full">
                                     <thead>
                                         <tr className="border-b bg-muted/5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                                            <th className="px-4 py-3 text-left">Grupo</th>
-                                            <th className="px-4 py-3 text-left">Período</th>
-                                            <th className="px-4 py-3 text-right">Meta $</th>
-                                            <th className="px-4 py-3 text-right">Real $</th>
-                                            <th className="px-4 py-3 text-right">%</th>
-                                            <th className="px-4 py-3 text-right">Meta Kg</th>
-                                            <th className="px-4 py-3 text-right">Real Kg</th>
-                                            <th className="px-4 py-3 text-right">Meta L</th>
-                                            <th className="px-4 py-3 text-right">Real L</th>
-                                            <th className="px-4 py-3 text-center">Estado</th>
-                                            {canEdit && <th className="px-4 py-3 text-right">Acciones</th>}
+                                            <th className="px-4 py-3 text-left">
+                                                Grupo
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Período
+                                            </th>
+                                            <th className="px-4 py-3 text-right">
+                                                Meta $
+                                            </th>
+                                            <th className="px-4 py-3 text-right">
+                                                Real $
+                                            </th>
+                                            <th className="px-4 py-3 text-right">
+                                                %
+                                            </th>
+                                            <th className="px-4 py-3 text-right">
+                                                Meta Kg
+                                            </th>
+                                            <th className="px-4 py-3 text-right">
+                                                Real Kg
+                                            </th>
+                                            <th className="px-4 py-3 text-right">
+                                                Meta L
+                                            </th>
+                                            <th className="px-4 py-3 text-right">
+                                                Real L
+                                            </th>
+                                            <th className="px-4 py-3 text-center">
+                                                Estado
+                                            </th>
+                                            {canEdit && (
+                                                <th className="px-4 py-3 text-right">
+                                                    Acciones
+                                                </th>
+                                            )}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-muted/50">
-                                        {asignacionesActivas.map((asignacion) => {
-                                            const real = rendimientoPorGrupoId[asignacion.grupo_trabajo_id];
-                                            const progress = computeProgress(asignacion, real);
-                                            return (
-                                                <tr key={asignacion.id} className="transition-colors hover:bg-muted/30">
-                                                    <td className="px-4 py-3">
-                                                        <div className="flex items-center gap-2">
-                                                            <div
-                                                                className="h-3 w-3 rounded-full"
-                                                                style={{ backgroundColor: asignacion.grupo_trabajo.color }}
-                                                            />
-                                                            <span className="text-sm font-medium">
-                                                                {asignacion.grupo_trabajo.nombre}
-                                                            </span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">
-                                                        {format(new Date(asignacion.fecha_inicio), 'dd/MM/yyyy')}
-                                                        {' - '}
-                                                        {format(new Date(asignacion.fecha_fin), 'dd/MM/yyyy')}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right font-mono text-xs">
-                                                        {formatCurrency(asignacion.meta_monto)}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right font-mono text-xs font-bold">
-                                                        {real ? formatCurrency(real.monto) : '-'}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        {progress && (
-                                                            <span className={`text-xs font-bold ${progress.monto >= 100 ? 'text-green-600' : progress.monto >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
-                                                                {progress.monto.toFixed(0)}%
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right font-mono text-xs">
-                                                        {formatNumber(asignacion.meta_kg)}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right font-mono text-xs font-bold">
-                                                        {real ? formatNumber(real.kg) : '-'}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right font-mono text-xs">
-                                                        {formatNumber(asignacion.meta_l)}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right font-mono text-xs font-bold">
-                                                        {real ? formatNumber(real.l) : '-'}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-center">
-                                                        <Badge className={asignacion.estado === 'activa' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
-                                                            {asignacion.estado === 'activa' ? 'Activa' : asignacion.estado === 'completada' ? 'Completada' : 'Cancelada'}
-                                                        </Badge>
-                                                    </td>
-                                                    {canEdit && (
-                                                        <td className="px-4 py-3 text-right">
-                                                            <div className="flex justify-end gap-1">
-                                                                <TooltipProvider>
-                                                                    <ShadcnTooltip>
-                                                                        <TooltipTrigger asChild>
-                                                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditAsignacion(asignacion)}>
-                                                                                <Pencil className="h-3.5 w-3.5" />
-                                                                            </Button>
-                                                                        </TooltipTrigger>
-                                                                        <TooltipContent>Editar</TooltipContent>
-                                                                    </ShadcnTooltip>
-                                                                </TooltipProvider>
-                                                                {canDelete && (
-                                                                    <TooltipProvider>
-                                                                        <ShadcnTooltip>
-                                                                            <TooltipTrigger asChild>
-                                                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteAsignacion(asignacion.id)}>
-                                                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                                                </Button>
-                                                                            </TooltipTrigger>
-                                                                            <TooltipContent>Eliminar</TooltipContent>
-                                                                        </ShadcnTooltip>
-                                                                    </TooltipProvider>
-                                                                )}
+                                        {asignacionesActivas.map(
+                                            (asignacion) => {
+                                                const real =
+                                                    rendimientoPorGrupoId[
+                                                        asignacion
+                                                            .grupo_trabajo_id
+                                                    ];
+                                                const progress =
+                                                    computeProgress(
+                                                        asignacion,
+                                                        real,
+                                                    );
+                                                return (
+                                                    <tr
+                                                        key={asignacion.id}
+                                                        className="transition-colors hover:bg-muted/30"
+                                                    >
+                                                        <td className="px-4 py-3">
+                                                            <div className="flex items-center gap-2">
+                                                                <div
+                                                                    className="h-3 w-3 rounded-full"
+                                                                    style={{
+                                                                        backgroundColor:
+                                                                            asignacion
+                                                                                .grupo_trabajo
+                                                                                .color,
+                                                                    }}
+                                                                />
+                                                                <span className="text-sm font-medium">
+                                                                    {
+                                                                        asignacion
+                                                                            .grupo_trabajo
+                                                                            .nombre
+                                                                    }
+                                                                </span>
                                                             </div>
                                                         </td>
-                                                    )}
-                                                </tr>
-                                            );
-                                        })}
+                                                        <td className="px-4 py-3 text-xs whitespace-nowrap text-muted-foreground">
+                                                            {format(
+                                                                new Date(
+                                                                    asignacion.fecha_inicio,
+                                                                ),
+                                                                'dd/MM/yyyy',
+                                                            )}
+                                                            {' - '}
+                                                            {format(
+                                                                new Date(
+                                                                    asignacion.fecha_fin,
+                                                                ),
+                                                                'dd/MM/yyyy',
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right font-mono text-xs">
+                                                            {formatCurrency(
+                                                                asignacion.meta_monto,
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right font-mono text-xs font-bold">
+                                                            {real
+                                                                ? formatCurrency(
+                                                                      real.monto,
+                                                                  )
+                                                                : '-'}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right">
+                                                            {progress && (
+                                                                <span
+                                                                    className={`text-xs font-bold ${progress.monto >= 100 ? 'text-green-600' : progress.monto >= 50 ? 'text-amber-600' : 'text-red-600'}`}
+                                                                >
+                                                                    {progress.monto.toFixed(
+                                                                        0,
+                                                                    )}
+                                                                    %
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right font-mono text-xs">
+                                                            {formatNumber(
+                                                                asignacion.meta_kg,
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right font-mono text-xs font-bold">
+                                                            {real
+                                                                ? formatNumber(
+                                                                      real.kg,
+                                                                  )
+                                                                : '-'}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right font-mono text-xs">
+                                                            {formatNumber(
+                                                                asignacion.meta_l,
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right font-mono text-xs font-bold">
+                                                            {real
+                                                                ? formatNumber(
+                                                                      real.l,
+                                                                  )
+                                                                : '-'}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-center">
+                                                            <Badge
+                                                                className={
+                                                                    asignacion.estado ===
+                                                                    'activa'
+                                                                        ? 'bg-green-100 text-green-700'
+                                                                        : 'bg-gray-100 text-gray-700'
+                                                                }
+                                                            >
+                                                                {asignacion.estado ===
+                                                                'activa'
+                                                                    ? 'Activa'
+                                                                    : asignacion.estado ===
+                                                                        'completada'
+                                                                      ? 'Completada'
+                                                                      : 'Cancelada'}
+                                                            </Badge>
+                                                        </td>
+                                                        {canEdit && (
+                                                            <td className="px-4 py-3 text-right">
+                                                                <div className="flex justify-end gap-1">
+                                                                    <TooltipProvider>
+                                                                        <ShadcnTooltip>
+                                                                            <TooltipTrigger
+                                                                                asChild
+                                                                            >
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className="h-7 w-7"
+                                                                                    onClick={() =>
+                                                                                        handleEditAsignacion(
+                                                                                            asignacion,
+                                                                                        )
+                                                                                    }
+                                                                                >
+                                                                                    <Pencil className="h-3.5 w-3.5" />
+                                                                                </Button>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>
+                                                                                Editar
+                                                                            </TooltipContent>
+                                                                        </ShadcnTooltip>
+                                                                    </TooltipProvider>
+                                                                    {canDelete && (
+                                                                        <TooltipProvider>
+                                                                            <ShadcnTooltip>
+                                                                                <TooltipTrigger
+                                                                                    asChild
+                                                                                >
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="icon"
+                                                                                        className="h-7 w-7 text-destructive"
+                                                                                        onClick={() =>
+                                                                                            handleDeleteAsignacion(
+                                                                                                asignacion.id,
+                                                                                            )
+                                                                                        }
+                                                                                    >
+                                                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                                                    </Button>
+                                                                                </TooltipTrigger>
+                                                                                <TooltipContent>
+                                                                                    Eliminar
+                                                                                </TooltipContent>
+                                                                            </ShadcnTooltip>
+                                                                        </TooltipProvider>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                        )}
+                                                    </tr>
+                                                );
+                                            },
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -890,15 +1205,22 @@ export default function Rendimiento({
                 <DialogContent className="flex max-h-[90vh] max-w-full flex-col overflow-y-auto sm:max-w-lg md:max-w-xl lg:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>
-                            {editandoAsignacion ? 'Editar Asignación' : 'Nueva Asignación'}
+                            {editandoAsignacion
+                                ? 'Editar Asignación'
+                                : 'Nueva Asignación'}
                         </DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleSubmitAsignacion} className="space-y-4">
+                    <form
+                        onSubmit={handleSubmitAsignacion}
+                        className="space-y-4"
+                    >
                         <div className="space-y-2">
                             <Label>Grupo de Trabajo</Label>
                             <Select
                                 value={data.grupo_trabajo_id}
-                                onValueChange={(val) => setData('grupo_trabajo_id', val)}
+                                onValueChange={(val) =>
+                                    setData('grupo_trabajo_id', val)
+                                }
                                 disabled={!!editandoAsignacion}
                             >
                                 <SelectTrigger>
@@ -906,9 +1228,18 @@ export default function Rendimiento({
                                 </SelectTrigger>
                                 <SelectContent>
                                     {grupos.map((grupo) => (
-                                        <SelectItem key={grupo.id} value={String(grupo.id)}>
+                                        <SelectItem
+                                            key={grupo.id}
+                                            value={String(grupo.id)}
+                                        >
                                             <div className="flex items-center gap-2">
-                                                <div className="h-3 w-3 rounded-full" style={{ backgroundColor: grupo.color }} />
+                                                <div
+                                                    className="h-3 w-3 rounded-full"
+                                                    style={{
+                                                        backgroundColor:
+                                                            grupo.color,
+                                                    }}
+                                                />
                                                 {grupo.nombre}
                                             </div>
                                         </SelectItem>
@@ -916,7 +1247,9 @@ export default function Rendimiento({
                                 </SelectContent>
                             </Select>
                             {errors.grupo_trabajo_id && (
-                                <p className="text-sm text-red-500">{errors.grupo_trabajo_id}</p>
+                                <p className="text-sm text-red-500">
+                                    {errors.grupo_trabajo_id}
+                                </p>
                             )}
                         </div>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -925,7 +1258,9 @@ export default function Rendimiento({
                                 <Input
                                     type="date"
                                     value={data.fecha_inicio}
-                                    onChange={(e) => setData('fecha_inicio', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('fecha_inicio', e.target.value)
+                                    }
                                 />
                             </div>
                             <div className="space-y-2">
@@ -933,7 +1268,9 @@ export default function Rendimiento({
                                 <Input
                                     type="date"
                                     value={data.fecha_fin}
-                                    onChange={(e) => setData('fecha_fin', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('fecha_fin', e.target.value)
+                                    }
                                 />
                             </div>
                         </div>
@@ -945,7 +1282,9 @@ export default function Rendimiento({
                                     min="0"
                                     step="0.01"
                                     value={data.meta_monto}
-                                    onChange={(e) => setData('meta_monto', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('meta_monto', e.target.value)
+                                    }
                                     placeholder="0"
                                 />
                             </div>
@@ -956,7 +1295,9 @@ export default function Rendimiento({
                                     min="0"
                                     step="1"
                                     value={data.meta_cantidad}
-                                    onChange={(e) => setData('meta_cantidad', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('meta_cantidad', e.target.value)
+                                    }
                                     placeholder="0"
                                 />
                             </div>
@@ -969,7 +1310,9 @@ export default function Rendimiento({
                                     min="0"
                                     step="0.01"
                                     value={data.meta_kg}
-                                    onChange={(e) => setData('meta_kg', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('meta_kg', e.target.value)
+                                    }
                                     placeholder="0"
                                 />
                             </div>
@@ -980,7 +1323,9 @@ export default function Rendimiento({
                                     min="0"
                                     step="0.01"
                                     value={data.meta_l}
-                                    onChange={(e) => setData('meta_l', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('meta_l', e.target.value)
+                                    }
                                     placeholder="0"
                                 />
                             </div>
@@ -989,12 +1334,18 @@ export default function Rendimiento({
                             <Label>Notas</Label>
                             <Input
                                 value={data.notas}
-                                onChange={(e) => setData('notas', e.target.value)}
+                                onChange={(e) =>
+                                    setData('notas', e.target.value)
+                                }
                                 placeholder="Notas opcionales"
                             />
                         </div>
                         <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                            <Button type="button" variant="outline" onClick={() => setIsAsignacionOpen(false)}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsAsignacionOpen(false)}
+                            >
                                 Cancelar
                             </Button>
                             <Button type="submit">

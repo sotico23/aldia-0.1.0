@@ -13,7 +13,7 @@ import {
     Target,
     HeadphonesIcon,
     ArrowUpRight,
-    ArrowDownRight
+    ArrowDownRight,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -36,19 +36,47 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface Kpis {
-    ventas_mes: number; ventas_cambio: number;
-    clientes_total: number; clientes_nuevos: number;
+    ventas_mes: number;
+    ventas_cambio: number;
+    clientes_total: number;
+    clientes_nuevos: number;
     compras_mes: number;
-    productos_total: number; stock_bajo: number;
-    cotizaciones_mes: number; cotizaciones_total: number;
-    prospectos_mes: number; oportunidades: number;
+    productos_total: number;
+    stock_bajo: number;
+    cotizaciones_mes: number;
+    cotizaciones_total: number;
+    prospectos_mes: number;
+    oportunidades: number;
     tickets_abiertos: number;
 }
-interface MesSales { mes: string; total: number; cantidad: number; }
-interface TopItem { nombre: string; unidades?: number; ingreso?: number; total?: number; pedidos?: number; }
-interface EstadoItem { estado: string; cantidad: number; total: number; }
-interface StockItem { producto: string; cantidad: number; minimo: number; deficit: number; }
-interface PipelineItem { etapa: string; cantidad: number; valor: number; }
+interface MesSales {
+    mes: string;
+    total: number;
+    cantidad: number;
+}
+interface TopItem {
+    nombre: string;
+    unidades?: number;
+    ingreso?: number;
+    total?: number;
+    pedidos?: number;
+}
+interface EstadoItem {
+    estado: string;
+    cantidad: number;
+    total: number;
+}
+interface StockItem {
+    producto: string;
+    cantidad: number;
+    minimo: number;
+    deficit: number;
+}
+interface PipelineItem {
+    etapa: string;
+    cantidad: number;
+    valor: number;
+}
 
 interface Props {
     kpis: Kpis;
@@ -61,8 +89,16 @@ interface Props {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-const fmt = (n: number, locale: string = 'es-CL', currencyCode: string = 'CLP') =>
-    new Intl.NumberFormat(locale, { style: 'currency', currency: currencyCode, maximumFractionDigits: 0 }).format(n);
+const fmt = (
+    n: number,
+    locale: string = 'es-CL',
+    currencyCode: string = 'CLP',
+) =>
+    new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: currencyCode,
+        maximumFractionDigits: 0,
+    }).format(n);
 
 const fmtNum = (n: number, locale: string = 'es-CL') =>
     new Intl.NumberFormat(locale).format(n);
@@ -73,27 +109,50 @@ const shortMonth = (ym: string, locale: string = 'es-CL') => {
 };
 
 // ── Mini SVG bar chart ────────────────────────────────────────────────────────
-function BarChart({ data, fmtFn, fmtNumFn, shortMonthFn }: { data: MesSales[]; fmtFn: (n: number) => string; fmtNumFn: (n: number) => string; shortMonthFn: (ym: string) => string }) {
-    if (!data.length) return <div className="flex h-48 items-center justify-center text-muted-foreground text-sm">Sin datos</div>;
-    const max = Math.max(...data.map(d => d.total), 1);
+function BarChart({
+    data,
+    fmtFn,
+    fmtNumFn,
+    shortMonthFn,
+}: {
+    data: MesSales[];
+    fmtFn: (n: number) => string;
+    fmtNumFn: (n: number) => string;
+    shortMonthFn: (ym: string) => string;
+}) {
+    if (!data.length)
+        return (
+            <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+                Sin datos
+            </div>
+        );
+    const max = Math.max(...data.map((d) => d.total), 1);
     return (
-        <div className="flex h-48 items-end gap-1 pt-4 pb-6 relative">
+        <div className="relative flex h-48 items-end gap-1 pt-4 pb-6">
             {data.map((d, i) => {
                 const h = Math.max(4, (d.total / max) * 148);
                 return (
-                    <div key={i} className="group flex flex-1 flex-col items-center gap-1 relative">
+                    <div
+                        key={i}
+                        className="group relative flex flex-1 flex-col items-center gap-1"
+                    >
                         {/* tooltip */}
-                        <div className="absolute bottom-full mb-1 hidden group-hover:flex flex-col items-center z-10">
-                            <div className="bg-foreground text-background text-[10px] rounded px-2 py-1 whitespace-nowrap shadow-lg">
-                                {shortMonthFn(d.mes)}: {fmtFn(d.total)}<br />
-                                <span className="opacity-70">{fmtNumFn(d.cantidad)} ventas</span>
+                        <div className="absolute bottom-full z-10 mb-1 hidden flex-col items-center group-hover:flex">
+                            <div className="rounded bg-foreground px-2 py-1 text-[10px] whitespace-nowrap text-background shadow-lg">
+                                {shortMonthFn(d.mes)}: {fmtFn(d.total)}
+                                <br />
+                                <span className="opacity-70">
+                                    {fmtNumFn(d.cantidad)} ventas
+                                </span>
                             </div>
                         </div>
                         <div
-                            className="w-full rounded-t-sm bg-primary/80 hover:bg-primary transition-colors cursor-pointer"
+                            className="w-full cursor-pointer rounded-t-sm bg-primary/80 transition-colors hover:bg-primary"
                             style={{ height: `${h}px` }}
                         />
-                        <span className="text-[9px] text-muted-foreground absolute -bottom-4">{shortMonthFn(d.mes)}</span>
+                        <span className="absolute -bottom-4 text-[9px] text-muted-foreground">
+                            {shortMonthFn(d.mes)}
+                        </span>
                     </div>
                 );
             })}
@@ -102,43 +161,88 @@ function BarChart({ data, fmtFn, fmtNumFn, shortMonthFn }: { data: MesSales[]; f
 }
 
 // ── Horizontal bar ────────────────────────────────────────────────────────────
-function HBar({ label, value, max, color, sub, fmtFn, fmtNumFn }: { label: string; value: number; max: number; color: string; sub?: string; fmtFn?: (n: number) => string; fmtNumFn?: (n: number) => string }) {
+function HBar({
+    label,
+    value,
+    max,
+    color,
+    sub,
+    fmtNumFn,
+}: {
+    label: string;
+    value: number;
+    max: number;
+    color: string;
+    sub?: string;
+    fmtNumFn?: (n: number) => string;
+}) {
     const pct = max > 0 ? (value / max) * 100 : 0;
     return (
         <div className="space-y-1">
             <div className="flex justify-between text-xs">
-                <span className="font-medium truncate max-w-[60%]">{label}</span>
-                <span className="text-muted-foreground">{sub ?? (fmtNumFn ? fmtNumFn(value) : fmtNum(value))}</span>
+                <span className="max-w-[60%] truncate font-medium">
+                    {label}
+                </span>
+                <span className="text-muted-foreground">
+                    {sub ?? (fmtNumFn ? fmtNumFn(value) : fmtNum(value))}
+                </span>
             </div>
             <div className="h-2 w-full rounded-full bg-muted">
-                <div className={`h-2 rounded-full ${color} transition-all duration-500`} style={{ width: `${Math.max(2, pct)}%` }} />
+                <div
+                    className={`h-2 rounded-full ${color} transition-all duration-500`}
+                    style={{ width: `${Math.max(2, pct)}%` }}
+                />
             </div>
         </div>
     );
 }
 
 // ── KPI Card ──────────────────────────────────────────────────────────────────
-function KPI({ title, value, sub, icon: Icon, color, trend, warn }: {
-    title: string; value: string; sub: string;
-    icon: React.ElementType; color: string; trend?: number; warn?: boolean;
+function KPI({
+    title,
+    value,
+    sub,
+    icon: Icon,
+    color,
+    trend,
+    warn,
+}: {
+    title: string;
+    value: string;
+    sub: string;
+    icon: React.ElementType;
+    color: string;
+    trend?: number;
+    warn?: boolean;
 }) {
     return (
-        <Card className="border-none shadow-md ring-1 ring-border/40 hover:shadow-lg transition-all bg-card/60">
+        <Card className="border-none bg-card/60 shadow-md ring-1 ring-border/40 transition-all hover:shadow-lg">
             <CardContent className="p-5">
                 <div className="flex items-start justify-between">
-                    <div className="space-y-1 min-w-0">
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{title}</p>
-                        <p className="text-2xl font-black tracking-tight">{value}</p>
+                    <div className="min-w-0 space-y-1">
+                        <p className="text-[11px] font-bold tracking-widest text-muted-foreground uppercase">
+                            {title}
+                        </p>
+                        <p className="text-2xl font-black tracking-tight">
+                            {value}
+                        </p>
                         <div className="flex items-center gap-1 text-[11px]">
-                            {trend !== undefined && (
-                                trend >= 0
-                                    ? <ArrowUpRight className="h-3 w-3 text-emerald-500" />
-                                    : <ArrowDownRight className="h-3 w-3 text-red-500" />
-                            )}
-                            <span className={`${warn ? 'text-amber-600' : 'text-muted-foreground'}`}>{sub}</span>
+                            {trend !== undefined &&
+                                (trend >= 0 ? (
+                                    <ArrowUpRight className="h-3 w-3 text-emerald-500" />
+                                ) : (
+                                    <ArrowDownRight className="h-3 w-3 text-red-500" />
+                                ))}
+                            <span
+                                className={`${warn ? 'text-amber-600' : 'text-muted-foreground'}`}
+                            >
+                                {sub}
+                            </span>
                         </div>
                     </div>
-                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${color}`}>
+                    <div
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${color}`}
+                    >
                         <Icon className="h-5 w-5" />
                     </div>
                 </div>
@@ -150,20 +254,29 @@ function KPI({ title, value, sub, icon: Icon, color, trend, warn }: {
 // ── Badge pills for estado ────────────────────────────────────────────────────
 const estadoColor: Record<string, string> = {
     pagada: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
-    pendiente: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
+    pendiente:
+        'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
     anulada: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
     enviada: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
     default: 'bg-muted text-muted-foreground',
 };
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function Index({ kpis, ventas_por_mes, top_productos, top_clientes, ventas_por_estado, stock_bajo, pipeline }: Props) {
-    const { code: countryCode, currency } = useCountry();
+export default function Index({
+    kpis,
+    ventas_por_mes,
+    top_productos,
+    top_clientes,
+    ventas_por_estado,
+    stock_bajo,
+    pipeline,
+}: Props) {
+    const { currency } = useCountry();
     const { hasPermission } = usePermissions();
     const canAccess = hasPermission('admin.reportes.viewAny');
-    const maxProd = Math.max(...top_productos.map(p => p.unidades ?? 0), 1);
-    const maxClient = Math.max(...top_clientes.map(c => c.total ?? 0), 1);
-    const maxPipe = Math.max(...pipeline.map(p => p.valor), 1);
+    const maxProd = Math.max(...top_productos.map((p) => p.unidades ?? 0), 1);
+    const maxClient = Math.max(...top_clientes.map((c) => c.total ?? 0), 1);
+    const maxPipe = Math.max(...pipeline.map((p) => p.valor), 1);
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
     const fmtLocal = (n: number) => fmt(n, currency.locale, currency.code);
@@ -174,7 +287,9 @@ export default function Index({ kpis, ventas_por_mes, top_productos, top_cliente
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );
@@ -184,11 +299,15 @@ export default function Index({ kpis, ventas_por_mes, top_productos, top_cliente
         <>
             <Head title="Reportes BI" />
             <AppLayout breadcrumbs={breadcrumbs}>
-                <div className="flex flex-col gap-6 p-6 max-w-[1600px] mx-auto">
+                <div className="mx-auto flex max-w-[1600px] flex-col gap-6 p-6">
                     {/* Header */}
                     <div>
-                        <h1 className="text-2xl font-extrabold tracking-tight">Reportes y Análisis (BI)</h1>
-                        <p className="text-muted-foreground">Métricas clave del negocio en tiempo real</p>
+                        <h1 className="text-2xl font-extrabold tracking-tight">
+                            Reportes y Análisis (BI)
+                        </h1>
+                        <p className="text-muted-foreground">
+                            Métricas clave del negocio en tiempo real
+                        </p>
                     </div>
 
                     {/* ── KPI Grid ── */}
@@ -257,47 +376,79 @@ export default function Index({ kpis, ventas_por_mes, top_productos, top_cliente
                     {/* ── Main grid ── */}
                     <div className="grid gap-6 lg:grid-cols-3">
                         {/* Sales trend chart */}
-                        <Card className="lg:col-span-2 border-none shadow-md ring-1 ring-border/40 bg-card/60">
+                        <Card className="border-none bg-card/60 shadow-md ring-1 ring-border/40 lg:col-span-2">
                             <CardHeader className="pb-2">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <CardTitle className="flex items-center gap-2">
-                                            <BarChart3 className="h-4 w-4 text-primary" /> Ventas Mensuales
+                                            <BarChart3 className="h-4 w-4 text-primary" />{' '}
+                                            Ventas Mensuales
                                         </CardTitle>
-                                        <CardDescription>Últimos 12 meses</CardDescription>
+                                        <CardDescription>
+                                            Últimos 12 meses
+                                        </CardDescription>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm font-bold">{fmtLocal(kpis.ventas_mes)}</p>
-                                        <p className={`text-xs flex items-center gap-0.5 justify-end ${kpis.ventas_cambio >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                            {kpis.ventas_cambio >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                                        <p className="text-sm font-bold">
+                                            {fmtLocal(kpis.ventas_mes)}
+                                        </p>
+                                        <p
+                                            className={`flex items-center justify-end gap-0.5 text-xs ${kpis.ventas_cambio >= 0 ? 'text-emerald-600' : 'text-red-600'}`}
+                                        >
+                                            {kpis.ventas_cambio >= 0 ? (
+                                                <ArrowUpRight className="h-3 w-3" />
+                                            ) : (
+                                                <ArrowDownRight className="h-3 w-3" />
+                                            )}
                                             {kpis.ventas_cambio}%
                                         </p>
                                     </div>
                                 </div>
                             </CardHeader>
                             <CardContent className="px-6 pb-6">
-                                <BarChart data={ventas_por_mes} fmtFn={fmtLocal} fmtNumFn={fmtNumLocal} shortMonthFn={shortMonthLocal} />
+                                <BarChart
+                                    data={ventas_por_mes}
+                                    fmtFn={fmtLocal}
+                                    fmtNumFn={fmtNumLocal}
+                                    shortMonthFn={shortMonthLocal}
+                                />
                             </CardContent>
                         </Card>
 
                         {/* Ventas por estado */}
-                        <Card className="border-none shadow-md ring-1 ring-border/40 bg-card/60">
+                        <Card className="border-none bg-card/60 shadow-md ring-1 ring-border/40">
                             <CardHeader className="pb-3">
-                                <CardTitle className="text-base">Estado de Ventas</CardTitle>
-                                <CardDescription>Distribución por estado</CardDescription>
+                                <CardTitle className="text-base">
+                                    Estado de Ventas
+                                </CardTitle>
+                                <CardDescription>
+                                    Distribución por estado
+                                </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 {ventas_por_estado.length === 0 && (
-                                    <p className="text-sm text-muted-foreground">Sin datos</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        Sin datos
+                                    </p>
                                 )}
                                 {ventas_por_estado.map((e) => (
-                                    <div key={e.estado} className="flex items-center justify-between text-sm">
-                                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold capitalize ${estadoColor[e.estado] ?? estadoColor.default}`}>
+                                    <div
+                                        key={e.estado}
+                                        className="flex items-center justify-between text-sm"
+                                    >
+                                        <span
+                                            className={`rounded-full px-2.5 py-0.5 text-xs font-bold capitalize ${estadoColor[e.estado] ?? estadoColor.default}`}
+                                        >
                                             {e.estado}
                                         </span>
                                         <div className="text-right">
-                                            <p className="font-semibold">{fmtLocal(e.total)}</p>
-                                            <p className="text-[11px] text-muted-foreground">{fmtNumLocal(e.cantidad)} pedidos</p>
+                                            <p className="font-semibold">
+                                                {fmtLocal(e.total)}
+                                            </p>
+                                            <p className="text-[11px] text-muted-foreground">
+                                                {fmtNumLocal(e.cantidad)}{' '}
+                                                pedidos
+                                            </p>
                                         </div>
                                     </div>
                                 ))}
@@ -308,15 +459,22 @@ export default function Index({ kpis, ventas_por_mes, top_productos, top_cliente
                     {/* ── Second row ── */}
                     <div className="grid gap-6 lg:grid-cols-3">
                         {/* Top productos */}
-                        <Card className="border-none shadow-md ring-1 ring-border/40 bg-card/60">
+                        <Card className="border-none bg-card/60 shadow-md ring-1 ring-border/40">
                             <CardHeader className="pb-3">
                                 <CardTitle className="flex items-center gap-2 text-base">
-                                    <Package className="h-4 w-4 text-primary" /> Top 5 Productos
+                                    <Package className="h-4 w-4 text-primary" />{' '}
+                                    Top 5 Productos
                                 </CardTitle>
-                                <CardDescription>Por unidades vendidas</CardDescription>
+                                <CardDescription>
+                                    Por unidades vendidas
+                                </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                {top_productos.length === 0 && <p className="text-sm text-muted-foreground">Sin datos</p>}
+                                {top_productos.length === 0 && (
+                                    <p className="text-sm text-muted-foreground">
+                                        Sin datos
+                                    </p>
+                                )}
                                 {top_productos.map((p, i) => (
                                     <HBar
                                         key={i}
@@ -331,15 +489,22 @@ export default function Index({ kpis, ventas_por_mes, top_productos, top_cliente
                         </Card>
 
                         {/* Top clientes */}
-                        <Card className="border-none shadow-md ring-1 ring-border/40 bg-card/60">
+                        <Card className="border-none bg-card/60 shadow-md ring-1 ring-border/40">
                             <CardHeader className="pb-3">
                                 <CardTitle className="flex items-center gap-2 text-base">
-                                    <Users className="h-4 w-4 text-blue-500" /> Top 5 Clientes
+                                    <Users className="h-4 w-4 text-blue-500" />{' '}
+                                    Top 5 Clientes
                                 </CardTitle>
-                                <CardDescription>Por ingresos generados</CardDescription>
+                                <CardDescription>
+                                    Por ingresos generados
+                                </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                {top_clientes.length === 0 && <p className="text-sm text-muted-foreground">Sin datos</p>}
+                                {top_clientes.length === 0 && (
+                                    <p className="text-sm text-muted-foreground">
+                                        Sin datos
+                                    </p>
+                                )}
                                 {top_clientes.map((c, i) => (
                                     <HBar
                                         key={i}
@@ -354,15 +519,22 @@ export default function Index({ kpis, ventas_por_mes, top_productos, top_cliente
                         </Card>
 
                         {/* Pipeline CRM */}
-                        <Card className="border-none shadow-md ring-1 ring-border/40 bg-card/60">
+                        <Card className="border-none bg-card/60 shadow-md ring-1 ring-border/40">
                             <CardHeader className="pb-3">
                                 <CardTitle className="flex items-center gap-2 text-base">
-                                    <Target className="h-4 w-4 text-pink-500" /> Pipeline CRM
+                                    <Target className="h-4 w-4 text-pink-500" />{' '}
+                                    Pipeline CRM
                                 </CardTitle>
-                                <CardDescription>Por etapa de oportunidades</CardDescription>
+                                <CardDescription>
+                                    Por etapa de oportunidades
+                                </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                {pipeline.length === 0 && <p className="text-sm text-muted-foreground">Sin datos</p>}
+                                {pipeline.length === 0 && (
+                                    <p className="text-sm text-muted-foreground">
+                                        Sin datos
+                                    </p>
+                                )}
                                 {pipeline.map((p, i) => (
                                     <HBar
                                         key={i}
@@ -379,25 +551,36 @@ export default function Index({ kpis, ventas_por_mes, top_productos, top_cliente
 
                     {/* ── Stock bajo ── */}
                     {stock_bajo.length > 0 && (
-                        <Card className="border-none shadow-md ring-1 ring-amber-500/30 bg-amber-50/50 dark:bg-amber-900/10">
+                        <Card className="border-none bg-amber-50/50 shadow-md ring-1 ring-amber-500/30 dark:bg-amber-900/10">
                             <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <CardTitle className="flex items-center gap-2 text-base text-amber-700 dark:text-amber-400">
-                                            <AlertTriangle className="h-4 w-4" /> Alertas de Stock
+                                            <AlertTriangle className="h-4 w-4" />{' '}
+                                            Alertas de Stock
                                         </CardTitle>
-                                        <CardDescription>Productos por debajo del mínimo</CardDescription>
+                                        <CardDescription>
+                                            Productos por debajo del mínimo
+                                        </CardDescription>
                                     </div>
                                     <div className="flex items-center gap-1 rounded-lg border p-1">
                                         <Button
-                                            variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                                            variant={
+                                                viewMode === 'table'
+                                                    ? 'secondary'
+                                                    : 'ghost'
+                                            }
                                             size="sm"
                                             onClick={() => setViewMode('table')}
                                         >
                                             <List className="h-4 w-4" />
                                         </Button>
                                         <Button
-                                            variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                                            variant={
+                                                viewMode === 'cards'
+                                                    ? 'secondary'
+                                                    : 'ghost'
+                                            }
                                             size="sm"
                                             onClick={() => setViewMode('cards')}
                                         >
@@ -412,21 +595,42 @@ export default function Index({ kpis, ventas_por_mes, top_productos, top_cliente
                                         <table className="w-full text-sm">
                                             <thead>
                                                 <tr className="border-b text-xs font-semibold text-muted-foreground uppercase">
-                                                    <th className="pb-2 text-left">Producto</th>
-                                                    <th className="pb-2 text-right">Stock</th>
-                                                    <th className="pb-2 text-right">Mínimo</th>
-                                                    <th className="pb-2 text-right">Déficit</th>
+                                                    <th className="pb-2 text-left">
+                                                        Producto
+                                                    </th>
+                                                    <th className="pb-2 text-right">
+                                                        Stock
+                                                    </th>
+                                                    <th className="pb-2 text-right">
+                                                        Mínimo
+                                                    </th>
+                                                    <th className="pb-2 text-right">
+                                                        Déficit
+                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-border/50">
                                                 {stock_bajo.map((s, i) => (
                                                     <tr key={i}>
-                                                        <td className="py-2 font-medium">{s.producto}</td>
-                                                        <td className="py-2 text-right text-red-600 font-bold">{fmtNumLocal(s.cantidad)}</td>
-                                                        <td className="py-2 text-right text-muted-foreground">{fmtNumLocal(s.minimo)}</td>
+                                                        <td className="py-2 font-medium">
+                                                            {s.producto}
+                                                        </td>
+                                                        <td className="py-2 text-right font-bold text-red-600">
+                                                            {fmtNumLocal(
+                                                                s.cantidad,
+                                                            )}
+                                                        </td>
+                                                        <td className="py-2 text-right text-muted-foreground">
+                                                            {fmtNumLocal(
+                                                                s.minimo,
+                                                            )}
+                                                        </td>
                                                         <td className="py-2 text-right">
-                                                            <span className="rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-xs font-bold dark:bg-red-900/40 dark:text-red-400">
-                                                                -{fmtNumLocal(s.deficit)}
+                                                            <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700 dark:bg-red-900/40 dark:text-red-400">
+                                                                -
+                                                                {fmtNumLocal(
+                                                                    s.deficit,
+                                                                )}
                                                             </span>
                                                         </td>
                                                     </tr>
@@ -440,19 +644,36 @@ export default function Index({ kpis, ventas_por_mes, top_productos, top_cliente
                                             <Card key={i}>
                                                 <CardContent className="p-4">
                                                     <div className="mb-3 flex items-start justify-between">
-                                                        <h3 className="font-semibold">{s.producto}</h3>
-                                                        <span className="rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-xs font-bold dark:bg-red-900/40 dark:text-red-400">
-                                                             -{fmtNumLocal(s.deficit)}
-                                                         </span>
-                                                     </div>
-                                                     <div className="space-y-1 text-sm">
-                                                         <div className="flex justify-between">
-                                                             <span className="text-muted-foreground">Stock</span>
-                                                             <span className="font-bold text-red-600">{fmtNumLocal(s.cantidad)}</span>
-                                                         </div>
-                                                         <div className="flex justify-between">
-                                                             <span className="text-muted-foreground">Mínimo</span>
-                                                             <span>{fmtNumLocal(s.minimo)}</span>
+                                                        <h3 className="font-semibold">
+                                                            {s.producto}
+                                                        </h3>
+                                                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700 dark:bg-red-900/40 dark:text-red-400">
+                                                            -
+                                                            {fmtNumLocal(
+                                                                s.deficit,
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                    <div className="space-y-1 text-sm">
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">
+                                                                Stock
+                                                            </span>
+                                                            <span className="font-bold text-red-600">
+                                                                {fmtNumLocal(
+                                                                    s.cantidad,
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">
+                                                                Mínimo
+                                                            </span>
+                                                            <span>
+                                                                {fmtNumLocal(
+                                                                    s.minimo,
+                                                                )}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 </CardContent>

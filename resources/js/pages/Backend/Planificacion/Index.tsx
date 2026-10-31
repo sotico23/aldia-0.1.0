@@ -1,5 +1,13 @@
 import { Head, useForm } from '@inertiajs/react';
-import { LayoutGrid, List, Pencil, Plus, Trash2, Search, X } from 'lucide-react';
+import {
+    LayoutGrid,
+    List,
+    Pencil,
+    Plus,
+    Trash2,
+    Search,
+    X,
+} from 'lucide-react';
 import { useState } from 'react';
 import { useMemo } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
@@ -46,7 +54,6 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const estados = ['pendiente', 'en_progreso', 'completado', 'cancelado'];
 const prioridades = ['baja', 'media', 'alta', 'urgente'];
-
 
 export default function Index({
     planificaciones,
@@ -191,16 +198,19 @@ export default function Index({
                             </p>
                         </div>
                         <div className="flex items-center gap-2">
-                            <BulkActions 
-                                baseUrl="/planificacion" 
+                            <BulkActions
+                                baseUrl="/planificacion"
                                 modelName="Planificaciones"
                                 filters={{
                                     search: filtros.busqueda,
-                                    estado: filtros.estado
+                                    estado: filtros.estado,
                                 }}
                             />
                             {canCreate && (
-                                <Button onClick={handleNew} className="w-full sm:w-auto">
+                                <Button
+                                    onClick={handleNew}
+                                    className="w-full sm:w-auto"
+                                >
                                     <Plus className="mr-2 h-4 w-4" /> Nuevo
                                 </Button>
                             )}
@@ -210,14 +220,21 @@ export default function Index({
                         <CardHeader className="p-4 sm:p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle className="text-sm sm:text-base">Planificaciones</CardTitle>
+                                    <CardTitle className="text-sm sm:text-base">
+                                        Planificaciones
+                                    </CardTitle>
                                     <CardDescription className="text-xs sm:text-sm">
-                                        {planificacionesFiltradas.length} registros encontrados
+                                        {planificacionesFiltradas.length}{' '}
+                                        registros encontrados
                                     </CardDescription>
                                 </div>
                                 <div className="flex gap-1 rounded-lg bg-muted p-1">
                                     <Button
-                                        variant={viewMode === 'table' ? 'default' : 'ghost'}
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'default'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('table')}
                                         className="h-8 w-8 p-0"
@@ -225,7 +242,11 @@ export default function Index({
                                         <List className="h-4 w-4" />
                                     </Button>
                                     <Button
-                                        variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'default'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('cards')}
                                         className="h-8 w-8 p-0"
@@ -261,7 +282,7 @@ export default function Index({
                                             estado: e.target.value,
                                         })
                                     }
-                                    className="flex h-9 rounded-md border bg-background px-3 py-1 min-w-[150px]"
+                                    className="flex h-9 min-w-[150px] rounded-md border bg-background px-3 py-1"
                                 >
                                     <option value="">Todos los estados</option>
                                     {estados.map((e) => (
@@ -285,80 +306,186 @@ export default function Index({
                                     <table className="w-full text-xs sm:text-sm">
                                         <thead>
                                             <tr className="border-b">
-                                                <th className="py-2 pr-2 text-left font-medium">Título / Descripción</th>
-                                                <th className="py-2 pr-2 text-left font-medium">Fechas</th>
-                                                <th className="py-2 pr-2 text-center font-medium">Estado</th>
-                                                <th className="py-2 text-right font-medium">Acciones</th>
+                                                <th className="py-2 pr-2 text-left font-medium">
+                                                    Título / Descripción
+                                                </th>
+                                                <th className="py-2 pr-2 text-left font-medium">
+                                                    Fechas
+                                                </th>
+                                                <th className="py-2 pr-2 text-center font-medium">
+                                                    Estado
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Acciones
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {planificacionesFiltradas.map((p) => (
-                                                <tr key={p.id} className="border-b transition-colors hover:bg-muted/30">
-                                                    <td className="py-2 pr-2">
-                                                        <div className="font-medium">{p.titulo}</div>
-                                                        <div className="text-[10px] text-muted-foreground truncate max-w-[200px]">{p.descripcion}</div>
-                                                    </td>
-                                                    <td className="py-2 pr-2">
-                                                        <div className="text-[10px] font-medium">Inicio: {p.fecha_inicio ? formatDateCLP(p.fecha_inicio) : '-'}</div>
-                                                        <div className="text-[10px] text-muted-foreground">Fin: {p.fecha_fin ? formatDateCLP(p.fecha_fin) : '-'}</div>
-                                                    </td>
-                                                    <td className="py-2 pr-2 text-center">{getEstadoBadge(p.estado)}</td>
-                                                    <td className="py-2 text-right">
-                                                        <div className="flex justify-end gap-1">
-                                                            {canEdit && (
-                                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(p)}>
-                                                                    <Pencil className="h-4 w-4" />
-                                                                </Button>
+                                            {planificacionesFiltradas.map(
+                                                (p) => (
+                                                    <tr
+                                                        key={p.id}
+                                                        className="border-b transition-colors hover:bg-muted/30"
+                                                    >
+                                                        <td className="py-2 pr-2">
+                                                            <div className="font-medium">
+                                                                {p.titulo}
+                                                            </div>
+                                                            <div className="max-w-[200px] truncate text-[10px] text-muted-foreground">
+                                                                {p.descripcion}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-2 pr-2">
+                                                            <div className="text-[10px] font-medium">
+                                                                Inicio:{' '}
+                                                                {p.fecha_inicio
+                                                                    ? formatDateCLP(
+                                                                          p.fecha_inicio,
+                                                                      )
+                                                                    : '-'}
+                                                            </div>
+                                                            <div className="text-[10px] text-muted-foreground">
+                                                                Fin:{' '}
+                                                                {p.fecha_fin
+                                                                    ? formatDateCLP(
+                                                                          p.fecha_fin,
+                                                                      )
+                                                                    : '-'}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-2 pr-2 text-center">
+                                                            {getEstadoBadge(
+                                                                p.estado,
                                                             )}
-                                                            {canDelete && (
-                                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(p.id)}>
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
-                                                        </div>
+                                                        </td>
+                                                        <td className="py-2 text-right">
+                                                            <div className="flex justify-end gap-1">
+                                                                {canEdit && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-8 w-8 p-0"
+                                                                        onClick={() =>
+                                                                            handleEdit(
+                                                                                p,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Pencil className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
+                                                                {canDelete && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                        onClick={() =>
+                                                                            handleDelete(
+                                                                                p.id,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ),
+                                            )}
+                                            {planificacionesFiltradas.length ===
+                                                0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan={4}
+                                                        className="py-8 text-center text-muted-foreground"
+                                                    >
+                                                        No se encontraron
+                                                        planificaciones con los
+                                                        filtros aplicados
                                                     </td>
                                                 </tr>
-                                            ))}
-                                            {planificacionesFiltradas.length === 0 && (
-                                                <tr><td colSpan={4} className="py-8 text-center text-muted-foreground">No se encontraron planificaciones con los filtros aplicados</td></tr>
                                             )}
                                         </tbody>
                                     </table>
                                 ) : (
                                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                         {planificacionesFiltradas.map((p) => (
-                                            <Card key={p.id} className="overflow-hidden">
+                                            <Card
+                                                key={p.id}
+                                                className="overflow-hidden"
+                                            >
                                                 <CardHeader className="pb-3">
                                                     <div className="flex items-start justify-between">
                                                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                                                            <span className="text-sm font-bold text-primary">{p.titulo.charAt(0).toUpperCase()}</span>
+                                                            <span className="text-sm font-bold text-primary">
+                                                                {p.titulo
+                                                                    .charAt(0)
+                                                                    .toUpperCase()}
+                                                            </span>
                                                         </div>
-                                                        {getEstadoBadge(p.estado)}
+                                                        {getEstadoBadge(
+                                                            p.estado,
+                                                        )}
                                                     </div>
-                                                    <CardTitle className="mt-2 text-sm">{p.titulo}</CardTitle>
+                                                    <CardTitle className="mt-2 text-sm">
+                                                        {p.titulo}
+                                                    </CardTitle>
                                                     {p.descripcion && (
-                                                        <CardDescription className="line-clamp-2 text-xs">{p.descripcion}</CardDescription>
+                                                        <CardDescription className="line-clamp-2 text-xs">
+                                                            {p.descripcion}
+                                                        </CardDescription>
                                                     )}
                                                 </CardHeader>
                                                 <CardContent>
                                                     <div className="space-y-1 text-xs text-muted-foreground">
                                                         <div className="flex justify-between">
                                                             <span>Inicio:</span>
-                                                            <span className="font-medium text-foreground">{p.fecha_inicio ? formatDateCLP(p.fecha_inicio) : '-'}</span>
+                                                            <span className="font-medium text-foreground">
+                                                                {p.fecha_inicio
+                                                                    ? formatDateCLP(
+                                                                          p.fecha_inicio,
+                                                                      )
+                                                                    : '-'}
+                                                            </span>
                                                         </div>
                                                         <div className="flex justify-between">
                                                             <span>Fin:</span>
-                                                            <span className="font-medium text-foreground">{p.fecha_fin ? formatDateCLP(p.fecha_fin) : '-'}</span>
+                                                            <span className="font-medium text-foreground">
+                                                                {p.fecha_fin
+                                                                    ? formatDateCLP(
+                                                                          p.fecha_fin,
+                                                                      )
+                                                                    : '-'}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                     <div className="mt-3 flex justify-end gap-1 border-t pt-2">
                                                         {canEdit && (
-                                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(p)}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-8 w-8 p-0"
+                                                                onClick={() =>
+                                                                    handleEdit(
+                                                                        p,
+                                                                    )
+                                                                }
+                                                            >
                                                                 <Pencil className="h-4 w-4" />
                                                             </Button>
                                                         )}
                                                         {canDelete && (
-                                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(p.id)}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        p.id,
+                                                                    )
+                                                                }
+                                                            >
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         )}
@@ -366,10 +493,15 @@ export default function Index({
                                                 </CardContent>
                                             </Card>
                                         ))}
-                                        {planificacionesFiltradas.length === 0 && (
+                                        {planificacionesFiltradas.length ===
+                                            0 && (
                                             <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
                                                 <LayoutGrid className="mb-2 h-8 w-8" />
-                                                <p className="text-sm">No se encontraron planificaciones con los filtros aplicados</p>
+                                                <p className="text-sm">
+                                                    No se encontraron
+                                                    planificaciones con los
+                                                    filtros aplicados
+                                                </p>
                                             </div>
                                         )}
                                     </div>
@@ -378,37 +510,75 @@ export default function Index({
 
                             <div className="flex flex-col gap-3 md:hidden">
                                 {planificacionesFiltradas.length === 0 ? (
-                                    <p className="py-8 text-center text-xs text-muted-foreground">No se encontraron planificaciones con los filtros aplicados</p>
+                                    <p className="py-8 text-center text-xs text-muted-foreground">
+                                        No se encontraron planificaciones con
+                                        los filtros aplicados
+                                    </p>
                                 ) : (
                                     planificacionesFiltradas.map((p) => (
-                                        <div key={p.id} className="rounded-lg border bg-card p-3 text-xs shadow-sm">
+                                        <div
+                                            key={p.id}
+                                            className="rounded-lg border bg-card p-3 text-xs shadow-sm"
+                                        >
                                             <div className="mb-2 flex items-center justify-between">
-                                                <span className="font-semibold">{p.titulo}</span>
+                                                <span className="font-semibold">
+                                                    {p.titulo}
+                                                </span>
                                                 {getEstadoBadge(p.estado)}
                                             </div>
                                             <div className="space-y-1 text-muted-foreground">
                                                 <div className="flex justify-between">
                                                     <span>Descripción:</span>
-                                                    <span className="max-w-[50%] truncate text-foreground">{p.descripcion || '-'}</span>
+                                                    <span className="max-w-[50%] truncate text-foreground">
+                                                        {p.descripcion || '-'}
+                                                    </span>
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span>Inicio:</span>
-                                                    <span>{p.fecha_inicio ? formatDateCLP(p.fecha_inicio) : '-'}</span>
+                                                    <span>
+                                                        {p.fecha_inicio
+                                                            ? formatDateCLP(
+                                                                  p.fecha_inicio,
+                                                              )
+                                                            : '-'}
+                                                    </span>
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span>Fin:</span>
-                                                    <span>{p.fecha_fin ? formatDateCLP(p.fecha_fin) : '-'}</span>
+                                                    <span>
+                                                        {p.fecha_fin
+                                                            ? formatDateCLP(
+                                                                  p.fecha_fin,
+                                                              )
+                                                            : '-'}
+                                                    </span>
                                                 </div>
                                             </div>
                                             <div className="mt-2 flex justify-end gap-1 border-t pt-2">
                                                 {canEdit && (
-                                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => handleEdit(p)}>
-                                                        <Pencil className="mr-1 h-3 w-3" /> Editar
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-7 px-2 text-xs"
+                                                        onClick={() =>
+                                                            handleEdit(p)
+                                                        }
+                                                    >
+                                                        <Pencil className="mr-1 h-3 w-3" />{' '}
+                                                        Editar
                                                     </Button>
                                                 )}
                                                 {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={() => handleDelete(p.id)}>
-                                                        <Trash2 className="mr-1 h-3 w-3" /> Eliminar
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                                                        onClick={() =>
+                                                            handleDelete(p.id)
+                                                        }
+                                                    >
+                                                        <Trash2 className="mr-1 h-3 w-3" />{' '}
+                                                        Eliminar
                                                     </Button>
                                                 )}
                                             </div>
@@ -425,7 +595,10 @@ export default function Index({
                 </div>
             </AppLayout>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="w-[95vw] max-w-lg overflow-y-auto p-3 sm:p-6" style={{ maxHeight: '85vh' }}>
+                <DialogContent
+                    className="w-[95vw] max-w-lg overflow-y-auto p-3 sm:p-6"
+                    style={{ maxHeight: '85vh' }}
+                >
                     <DialogHeader className="mb-2 sm:mb-4">
                         <DialogTitle className="text-base sm:text-lg">
                             {editando ? 'Editar' : 'Nueva'} Planificación
@@ -433,73 +606,108 @@ export default function Index({
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-1.5 sm:space-y-2">
-                            <Label className="text-xs sm:text-sm">Título *</Label>
+                            <Label className="text-xs sm:text-sm">
+                                Título *
+                            </Label>
                             <Input
                                 value={data.titulo}
-                                onChange={(e) => setData('titulo', e.target.value)}
+                                onChange={(e) =>
+                                    setData('titulo', e.target.value)
+                                }
                                 required
                                 className="h-10 text-xs sm:text-sm"
                             />
                         </div>
                         <div className="space-y-1.5 sm:space-y-2">
-                            <Label className="text-xs sm:text-sm">Descripción</Label>
+                            <Label className="text-xs sm:text-sm">
+                                Descripción
+                            </Label>
                             <Input
                                 value={data.descripcion}
-                                onChange={(e) => setData('descripcion', e.target.value)}
+                                onChange={(e) =>
+                                    setData('descripcion', e.target.value)
+                                }
                                 className="h-10 text-xs sm:text-sm"
                             />
                         </div>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Fecha Inicio</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Fecha Inicio
+                                </Label>
                                 <Input
                                     type="date"
                                     value={data.fecha_inicio}
-                                    onChange={(e) => setData('fecha_inicio', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('fecha_inicio', e.target.value)
+                                    }
                                     className="h-10 text-xs sm:text-sm"
                                 />
                             </div>
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Fecha Fin</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Fecha Fin
+                                </Label>
                                 <Input
                                     type="date"
                                     value={data.fecha_fin}
-                                    onChange={(e) => setData('fecha_fin', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('fecha_fin', e.target.value)
+                                    }
                                     className="h-10 text-xs sm:text-sm"
                                 />
                             </div>
                         </div>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Estado</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Estado
+                                </Label>
                                 <select
                                     value={data.estado}
-                                    onChange={(e) => setData('estado', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('estado', e.target.value)
+                                    }
                                     className="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-xs sm:text-sm"
                                 >
                                     {estados.map((e) => (
-                                        <option key={e} value={e}>{e}</option>
+                                        <option key={e} value={e}>
+                                            {e}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Prioridad</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Prioridad
+                                </Label>
                                 <select
                                     value={data.prioridad}
-                                    onChange={(e) => setData('prioridad', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('prioridad', e.target.value)
+                                    }
                                     className="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-xs sm:text-sm"
                                 >
                                     {prioridades.map((p) => (
-                                        <option key={p} value={p}>{p}</option>
+                                        <option key={p} value={p}>
+                                            {p}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
                         </div>
                         <DialogFooter className="flex-col gap-2 sm:flex-row">
-                            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="w-full sm:w-auto">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsOpen(false)}
+                                className="w-full sm:w-auto"
+                            >
                                 Cancelar
                             </Button>
-                            <Button type="submit" className="w-full sm:w-auto">Guardar</Button>
+                            <Button type="submit" className="w-full sm:w-auto">
+                                Guardar
+                            </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>

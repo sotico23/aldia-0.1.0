@@ -10,7 +10,7 @@ import {
     BarChart3,
     PieChart as PieChartIcon,
     Clock,
-    CheckCircle2
+    CheckCircle2,
 } from 'lucide-react';
 import { useRef } from 'react';
 import {
@@ -22,7 +22,7 @@ import {
     ResponsiveContainer,
     PieChart,
     Pie,
-    Cell
+    Cell,
 } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,7 +42,16 @@ export default function Dashboard({
     topServices,
 }: {
     citasHoy: any[];
-    stats: { hoy: number; semana: number; mes: number; ingresosHoy: number; ingresosSemana: number; ingresosMes: number; clientesHoy: number; ocupacion: number };
+    stats: {
+        hoy: number;
+        semana: number;
+        mes: number;
+        ingresosHoy: number;
+        ingresosSemana: number;
+        ingresosMes: number;
+        clientesHoy: number;
+        ocupacion: number;
+    };
     appointmentsByDay: { date: string; total: number; ingresos: number }[];
     statusDistribution: { name: string; value: number; color: string }[];
     topServices: { name: string; value: number }[];
@@ -104,7 +113,7 @@ export default function Dashboard({
                     <div className="flex gap-2">
                         <Button
                             size="sm"
-                            className="gap-2 rounded-xl bg-primary text-white font-bold hover:bg-primary/90"
+                            className="gap-2 rounded-xl bg-primary font-bold text-white hover:bg-primary/90"
                             onClick={() => router.visit('/appointments/create')}
                         >
                             <CalendarIcon className="h-3.5 w-3.5" />
@@ -168,44 +177,71 @@ export default function Dashboard({
                 {/* Stats Grid - Daily/Weekly/Monthly */}
                 <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
                     <Card className="rounded-2xl border-slate-200/70">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 px-5 pt-4">
-                            <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Citas Hoy</CardTitle>
+                        <CardHeader className="flex flex-row items-center justify-between px-5 pt-4 pb-2">
+                            <CardTitle className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+                                Citas Hoy
+                            </CardTitle>
                             <CalendarIcon className="h-4 w-4 text-indigo-500" />
                         </CardHeader>
                         <CardContent className="px-5 pb-4">
-                            <div className="text-2xl font-black text-slate-900">{stats.hoy}</div>
-                            <p className="text-[11px] text-slate-400 font-semibold">{stats.clientesHoy} cliente(s)</p>
+                            <div className="text-2xl font-black text-slate-900">
+                                {stats.hoy}
+                            </div>
+                            <p className="text-[11px] font-semibold text-slate-400">
+                                {stats.clientesHoy} cliente(s)
+                            </p>
                         </CardContent>
                     </Card>
                     <Card className="rounded-2xl border-slate-200/70">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 px-5 pt-4">
-                            <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Esta Semana</CardTitle>
+                        <CardHeader className="flex flex-row items-center justify-between px-5 pt-4 pb-2">
+                            <CardTitle className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+                                Esta Semana
+                            </CardTitle>
                             <Clock className="h-4 w-4 text-blue-500" />
                         </CardHeader>
                         <CardContent className="px-5 pb-4">
-                            <div className="text-2xl font-black text-slate-900">{stats.semana}</div>
-                            <p className="text-[11px] text-slate-400 font-semibold">${stats.ingresosSemana.toLocaleString()}</p>
+                            <div className="text-2xl font-black text-slate-900">
+                                {stats.semana}
+                            </div>
+                            <p className="text-[11px] font-semibold text-slate-400">
+                                ${stats.ingresosSemana.toLocaleString()}
+                            </p>
                         </CardContent>
                     </Card>
                     <Card className="rounded-2xl border-slate-200/70">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 px-5 pt-4">
-                            <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Este Mes</CardTitle>
+                        <CardHeader className="flex flex-row items-center justify-between px-5 pt-4 pb-2">
+                            <CardTitle className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+                                Este Mes
+                            </CardTitle>
                             <TrendingUp className="h-4 w-4 text-emerald-500" />
                         </CardHeader>
                         <CardContent className="px-5 pb-4">
-                            <div className="text-2xl font-black text-slate-900">{stats.mes}</div>
-                            <p className="text-[11px] text-slate-400 font-semibold">${stats.ingresosMes.toLocaleString()}</p>
+                            <div className="text-2xl font-black text-slate-900">
+                                {stats.mes}
+                            </div>
+                            <p className="text-[11px] font-semibold text-slate-400">
+                                ${stats.ingresosMes.toLocaleString()}
+                            </p>
                         </CardContent>
                     </Card>
                     <Card className="rounded-2xl border-slate-200/70">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 px-5 pt-4">
-                            <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Ocupación</CardTitle>
+                        <CardHeader className="flex flex-row items-center justify-between px-5 pt-4 pb-2">
+                            <CardTitle className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+                                Ocupación
+                            </CardTitle>
                             <BarChart3 className="h-4 w-4 text-amber-500" />
                         </CardHeader>
                         <CardContent className="px-5 pb-4">
-                            <div className="text-2xl font-black text-slate-900">{stats.ocupacion}%</div>
-                            <div className="mt-1 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min(stats.ocupacion, 100)}%` }} />
+                            <div className="text-2xl font-black text-slate-900">
+                                {stats.ocupacion}%
+                            </div>
+                            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                <div
+                                    className="h-full rounded-full bg-amber-500"
+                                    style={{
+                                        width: `${Math.min(stats.ocupacion, 100)}%`,
+                                    }}
+                                />
                             </div>
                         </CardContent>
                     </Card>
@@ -220,15 +256,65 @@ export default function Dashboard({
                                 Citas e Ingresos (Últimos 7 días)
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="px-2 pb-4 pt-0">
+                        <CardContent className="px-2 pt-0 pb-4">
                             <ResponsiveContainer width="100%" height={220}>
                                 <BarChart data={appointmentsByDay}>
-                                    <XAxis dataKey="date" tickFormatter={(d) => format(new Date(d), 'EEE', { locale: es })} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                                    <YAxis yAxisId="left" allowDecimals={false} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
-                                    <Tooltip labelFormatter={(d) => format(new Date(d), "EEEE d 'de' MMMM", { locale: es })} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
-                                    <Bar yAxisId="left" dataKey="total" radius={[4, 4, 0, 0]} fill="#6366f1" maxBarSize={24} name="Citas" />
-                                    <Bar yAxisId="right" dataKey="ingresos" radius={[4, 4, 0, 0]} fill="#22c55e" maxBarSize={24} name="Ingresos" />
+                                    <XAxis
+                                        dataKey="date"
+                                        tickFormatter={(d) =>
+                                            format(new Date(d), 'EEE', {
+                                                locale: es,
+                                            })
+                                        }
+                                        tick={{ fontSize: 10, fill: '#94a3b8' }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
+                                    <YAxis
+                                        yAxisId="left"
+                                        allowDecimals={false}
+                                        tick={{ fontSize: 10, fill: '#94a3b8' }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
+                                    <YAxis
+                                        yAxisId="right"
+                                        orientation="right"
+                                        tick={{ fontSize: 10, fill: '#94a3b8' }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tickFormatter={(v) => `$${v}`}
+                                    />
+                                    <Tooltip
+                                        labelFormatter={(d) =>
+                                            format(
+                                                new Date(d as string),
+                                                "EEEE d 'de' MMMM",
+                                                { locale: es },
+                                            )
+                                        }
+                                        contentStyle={{
+                                            borderRadius: 12,
+                                            border: '1px solid #e2e8f0',
+                                            fontSize: 12,
+                                        }}
+                                    />
+                                    <Bar
+                                        yAxisId="left"
+                                        dataKey="total"
+                                        radius={[4, 4, 0, 0]}
+                                        fill="#6366f1"
+                                        maxBarSize={24}
+                                        name="Citas"
+                                    />
+                                    <Bar
+                                        yAxisId="right"
+                                        dataKey="ingresos"
+                                        radius={[4, 4, 0, 0]}
+                                        fill="#22c55e"
+                                        maxBarSize={24}
+                                        name="Ingresos"
+                                    />
                                 </BarChart>
                             </ResponsiveContainer>
                         </CardContent>
@@ -241,22 +327,59 @@ export default function Dashboard({
                                 Estado
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="px-2 pb-4 pt-0">
+                        <CardContent className="px-2 pt-0 pb-4">
                             <ResponsiveContainer width="100%" height={180}>
                                 <PieChart>
-                                    <Pie data={statusDistribution.filter(d => d.value > 0)} cx="50%" cy="50%" innerRadius={45} outerRadius={70} dataKey="value" stroke="none">
-                                        {statusDistribution.filter(d => d.value > 0).map(e => <Cell key={e.name} fill={e.color} />)}
+                                    <Pie
+                                        data={statusDistribution.filter(
+                                            (d) => d.value > 0,
+                                        )}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={45}
+                                        outerRadius={70}
+                                        dataKey="value"
+                                        stroke="none"
+                                    >
+                                        {statusDistribution
+                                            .filter((d) => d.value > 0)
+                                            .map((e) => (
+                                                <Cell
+                                                    key={e.name}
+                                                    fill={e.color}
+                                                />
+                                            ))}
                                     </Pie>
-                                    <Tooltip formatter={(value, name) => [value, name]} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
+                                    <Tooltip
+                                        formatter={(value, name) => [
+                                            value,
+                                            name,
+                                        ]}
+                                        contentStyle={{
+                                            borderRadius: 12,
+                                            border: '1px solid #e2e8f0',
+                                            fontSize: 12,
+                                        }}
+                                    />
                                 </PieChart>
                             </ResponsiveContainer>
                             <div className="mt-2 grid grid-cols-2 gap-1 px-3">
-                                {statusDistribution.filter(d => d.value > 0).map(d => (
-                                    <div key={d.name} className="flex items-center gap-2 text-[11px] font-semibold text-slate-600">
-                                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: d.color }} />
-                                        {d.name}: {d.value}
-                                    </div>
-                                ))}
+                                {statusDistribution
+                                    .filter((d) => d.value > 0)
+                                    .map((d) => (
+                                        <div
+                                            key={d.name}
+                                            className="flex items-center gap-2 text-[11px] font-semibold text-slate-600"
+                                        >
+                                            <span
+                                                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                                                style={{
+                                                    backgroundColor: d.color,
+                                                }}
+                                            />
+                                            {d.name}: {d.value}
+                                        </div>
+                                    ))}
                             </div>
                         </CardContent>
                     </Card>
@@ -265,8 +388,8 @@ export default function Dashboard({
                 {/* Bottom Row: Today's Agenda + Top Services */}
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                     <div className="rounded-2xl border border-slate-200/70 bg-white">
-                        <div className="px-5 py-4 border-b border-slate-100">
-                            <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                        <div className="border-b border-slate-100 px-5 py-4">
+                            <h2 className="flex items-center gap-2 text-sm font-bold text-slate-700">
                                 <CalendarIcon className="h-4 w-4 text-indigo-500" />
                                 Agenda del Día
                             </h2>
@@ -274,22 +397,43 @@ export default function Dashboard({
                         <div className="p-5">
                             {citasHoy.length === 0 ? (
                                 <div className="py-8 text-center text-slate-400">
-                                    <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-emerald-400" />
-                                    <p className="text-sm font-semibold">Sin citas programadas</p>
+                                    <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-emerald-400" />
+                                    <p className="text-sm font-semibold">
+                                        Sin citas programadas
+                                    </p>
                                 </div>
                             ) : (
                                 <div className="space-y-3">
                                     {citasHoy.map((cita) => (
-                                        <div key={cita.id} className="flex items-center gap-4 rounded-xl border border-slate-100 bg-slate-50 p-3">
-                                            <div className="text-center shrink-0">
-                                                <div className="text-lg font-black text-slate-900 leading-none">{format(new Date(cita.start_time), 'HH:mm')}</div>
-                                                <div className="text-[10px] text-slate-400 font-semibold mt-0.5">{cita.producto?.duracion} min</div>
+                                        <div
+                                            key={cita.id}
+                                            className="flex items-center gap-4 rounded-xl border border-slate-100 bg-slate-50 p-3"
+                                        >
+                                            <div className="shrink-0 text-center">
+                                                <div className="text-lg leading-none font-black text-slate-900">
+                                                    {format(
+                                                        new Date(
+                                                            cita.start_time,
+                                                        ),
+                                                        'HH:mm',
+                                                    )}
+                                                </div>
+                                                <div className="mt-0.5 text-[10px] font-semibold text-slate-400">
+                                                    {cita.producto?.duracion}{' '}
+                                                    min
+                                                </div>
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className="font-bold text-sm text-slate-900 truncate">{cita.client?.name}</h4>
-                                                <p className="text-xs text-slate-500 truncate">{cita.producto?.nombre}</p>
+                                            <div className="min-w-0 flex-1">
+                                                <h4 className="truncate text-sm font-bold text-slate-900">
+                                                    {cita.client?.name}
+                                                </h4>
+                                                <p className="truncate text-xs text-slate-500">
+                                                    {cita.producto?.nombre}
+                                                </p>
                                             </div>
-                                            <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${cita.status === 'confirmada' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                                            <span
+                                                className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${cita.status === 'confirmada' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}
+                                            >
                                                 {cita.status}
                                             </span>
                                         </div>
@@ -300,8 +444,8 @@ export default function Dashboard({
                     </div>
 
                     <div className="rounded-2xl border border-slate-200/70 bg-white">
-                        <div className="px-5 py-4 border-b border-slate-100">
-                            <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                        <div className="border-b border-slate-100 px-5 py-4">
+                            <h2 className="flex items-center gap-2 text-sm font-bold text-slate-700">
                                 <BarChart3 className="h-4 w-4 text-violet-500" />
                                 Top Servicios
                             </h2>
@@ -309,19 +453,35 @@ export default function Dashboard({
                         <div className="p-5">
                             {topServices.length === 0 ? (
                                 <div className="py-8 text-center text-slate-400">
-                                    <p className="text-sm font-semibold">Sin datos de reservas</p>
+                                    <p className="text-sm font-semibold">
+                                        Sin datos de reservas
+                                    </p>
                                 </div>
                             ) : (
                                 <div className="space-y-3">
                                     {topServices.map((s, i) => (
-                                        <div key={s.name} className="flex items-center gap-3">
-                                            <span className="text-xs font-black text-slate-400 w-5 text-center">{i + 1}</span>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-semibold text-slate-800 truncate">{s.name}</p>
-                                                <p className="text-[11px] text-slate-400">{s.value} reservas</p>
+                                        <div
+                                            key={s.name}
+                                            className="flex items-center gap-3"
+                                        >
+                                            <span className="w-5 text-center text-xs font-black text-slate-400">
+                                                {i + 1}
+                                            </span>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-semibold text-slate-800">
+                                                    {s.name}
+                                                </p>
+                                                <p className="text-[11px] text-slate-400">
+                                                    {s.value} reservas
+                                                </p>
                                             </div>
-                                            <div className="h-2 w-20 bg-slate-100 rounded-full overflow-hidden">
-                                                <div className="h-full bg-violet-500 rounded-full" style={{ width: `${Math.min((s.value / Math.max(...topServices.map(x => x.value))) * 100, 100)}%` }} />
+                                            <div className="h-2 w-20 overflow-hidden rounded-full bg-slate-100">
+                                                <div
+                                                    className="h-full rounded-full bg-violet-500"
+                                                    style={{
+                                                        width: `${Math.min((s.value / Math.max(...topServices.map((x) => x.value))) * 100, 100)}%`,
+                                                    }}
+                                                />
                                             </div>
                                         </div>
                                     ))}

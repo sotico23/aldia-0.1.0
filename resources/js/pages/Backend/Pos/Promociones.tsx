@@ -74,7 +74,7 @@ const tipoColors: Record<string, string> = {
 };
 
 export default function Promociones({ promociones, categorias, flash }: Props) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const { hasPermission } = usePermissions();
     const canAccess = hasPermission('ventas.pos.viewAny');
     const [isOpen, setIsOpen] = useState(false);
@@ -220,7 +220,9 @@ export default function Promociones({ promociones, categorias, flash }: Props) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );
@@ -353,11 +355,13 @@ export default function Promociones({ promociones, categorias, flash }: Props) {
                                                 <span className="text-muted-foreground">
                                                     Condición:
                                                 </span>
-                                <span className="font-semibold">
-                                                     Mín. compra $
+                                                <span className="font-semibold">
+                                                    Mín. compra $
                                                     {Number(
                                                         p.compra_minima,
-                                                    ).toLocaleString(currency.locale)}
+                                                    ).toLocaleString(
+                                                        currency.locale,
+                                                    )}
                                                 </span>
                                             </div>
                                         )}

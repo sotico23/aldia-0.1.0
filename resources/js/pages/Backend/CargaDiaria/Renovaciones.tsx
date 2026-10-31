@@ -54,12 +54,8 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Historial de Recargas', href: '#' },
 ];
 
-export default function Renovaciones({
-    carga,
-}: {
-    carga: CargaDiaria;
-}) {
-    const { code: countryCode, currency } = useCountry();
+export default function Renovaciones({ carga }: { carga: CargaDiaria }) {
+    const { currency } = useCountry();
     return (
         <>
             <Head title={`Recargas - ${carga.vehiculo?.placa || ''}`} />

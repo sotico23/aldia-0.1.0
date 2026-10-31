@@ -1,5 +1,17 @@
 import { useForm, router } from '@inertiajs/react';
-import { Pencil, Plus, Trash2, Eye, EyeOff, Save, X, Power, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import {
+    Pencil,
+    Plus,
+    Trash2,
+    Eye,
+    EyeOff,
+    Save,
+    X,
+    Power,
+    ArrowUpDown,
+    ChevronUp,
+    ChevronDown,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,8 +32,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePermissions } from '@/hooks/use-permissions';
-import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
 
 export interface Country {
     id: number;
@@ -58,12 +68,6 @@ interface CountryFormData {
     is_active: boolean;
 }
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Configuración Web', href: '/configuracion-web' },
-    { title: 'Países', href: '/configuracion-web#paises' },
-];
-
 function getFlagEmoji(countryCode: string): string {
     const codePoints = [...countryCode.toUpperCase()].map(
         (c) => 0x1f1e6 - 65 + c.charCodeAt(0),
@@ -97,7 +101,15 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
     const [isOpen, setIsOpen] = useState(false);
     const [editando, setEditando] = useState<Country | null>(null);
     const [showOnlyActive, setShowOnlyActive] = useState(false);
-    const { data, setData, post, put, delete: destroy, reset, processing } = useForm<CountryFormData>(emptyCountry);
+    const {
+        data,
+        setData,
+        post,
+        put,
+        delete: destroy,
+        reset,
+        processing,
+    } = useForm<CountryFormData>(emptyCountry);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -170,8 +182,10 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
         }
     };
 
-    const filteredCountries = showOnlyActive ? countries.filter(c => c.is_active) : countries;
-    
+    const filteredCountries = showOnlyActive
+        ? countries.filter((c) => c.is_active)
+        : countries;
+
     const sortedCountries = [...filteredCountries].sort((a, b) => {
         let valA: string | number | boolean | null = a[sortColumn];
         let valB: string | number | boolean | null = b[sortColumn];
@@ -191,11 +205,12 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold">Países</h1>
                     <p className="text-muted-foreground">
-                        Gestiona los países disponibles para el registro de usuarios
+                        Gestiona los países disponibles para el registro de
+                        usuarios
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -212,7 +227,8 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
                         ) : (
                             <>
                                 <Eye className="mr-2 h-4 w-4" />
-                                Solo activos ({countries.filter(c => c.is_active).length})
+                                Solo activos (
+                                {countries.filter((c) => c.is_active).length})
                             </>
                         )}
                     </Button>
@@ -228,7 +244,8 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
                 <CardHeader>
                     <CardTitle>Países Soportados</CardTitle>
                     <CardDescription>
-                        {countries.filter(c => c.is_active).length} activos de {countries.length} países en total
+                        {countries.filter((c) => c.is_active).length} activos de{' '}
+                        {countries.length} países en total
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -239,80 +256,261 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
                                 : 'No hay países registrados'}
                         </p>
                     ) : (
-                        <div className="overflow-auto max-h-[65vh] border rounded-md">
-                            <table className="w-full min-w-[1000px] text-sm relative">
-                                <thead className="sticky top-0 bg-background z-10 shadow-sm border-b">
+                        <div className="max-h-[65vh] overflow-auto rounded-md border">
+                            <table className="relative w-full min-w-[1000px] text-sm">
+                                <thead className="sticky top-0 z-10 border-b bg-background shadow-sm">
                                     <tr>
-                                        <th className="py-3 px-4 text-left font-medium text-muted-foreground whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('name')}>
-                                            <div className="flex items-center gap-1">País {sortColumn === 'name' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                        <th
+                                            className="group cursor-pointer px-4 py-3 text-left font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
+                                            onClick={() => handleSort('name')}
+                                        >
+                                            <div className="flex items-center gap-1">
+                                                País{' '}
+                                                {sortColumn === 'name' ? (
+                                                    sortDirection === 'asc' ? (
+                                                        <ChevronUp className="h-4 w-4" />
+                                                    ) : (
+                                                        <ChevronDown className="h-4 w-4" />
+                                                    )
+                                                ) : (
+                                                    <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                )}
+                                            </div>
                                         </th>
-                                        <th className="py-3 px-4 text-left font-medium text-muted-foreground whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('code')}>
-                                            <div className="flex items-center gap-1">Código {sortColumn === 'code' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                        <th
+                                            className="group cursor-pointer px-4 py-3 text-left font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
+                                            onClick={() => handleSort('code')}
+                                        >
+                                            <div className="flex items-center gap-1">
+                                                Código{' '}
+                                                {sortColumn === 'code' ? (
+                                                    sortDirection === 'asc' ? (
+                                                        <ChevronUp className="h-4 w-4" />
+                                                    ) : (
+                                                        <ChevronDown className="h-4 w-4" />
+                                                    )
+                                                ) : (
+                                                    <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                )}
+                                            </div>
                                         </th>
-                                        <th className="py-3 px-4 text-left font-medium text-muted-foreground whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('currency_code')}>
-                                            <div className="flex items-center gap-1">Moneda {sortColumn === 'currency_code' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                        <th
+                                            className="group cursor-pointer px-4 py-3 text-left font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
+                                            onClick={() =>
+                                                handleSort('currency_code')
+                                            }
+                                        >
+                                            <div className="flex items-center gap-1">
+                                                Moneda{' '}
+                                                {sortColumn ===
+                                                'currency_code' ? (
+                                                    sortDirection === 'asc' ? (
+                                                        <ChevronUp className="h-4 w-4" />
+                                                    ) : (
+                                                        <ChevronDown className="h-4 w-4" />
+                                                    )
+                                                ) : (
+                                                    <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                )}
+                                            </div>
                                         </th>
-                                        <th className="py-3 px-4 text-left font-medium text-muted-foreground whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('phone_code')}>
-                                            <div className="flex items-center gap-1">Teléfono {sortColumn === 'phone_code' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                        <th
+                                            className="group cursor-pointer px-4 py-3 text-left font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
+                                            onClick={() =>
+                                                handleSort('phone_code')
+                                            }
+                                        >
+                                            <div className="flex items-center gap-1">
+                                                Teléfono{' '}
+                                                {sortColumn === 'phone_code' ? (
+                                                    sortDirection === 'asc' ? (
+                                                        <ChevronUp className="h-4 w-4" />
+                                                    ) : (
+                                                        <ChevronDown className="h-4 w-4" />
+                                                    )
+                                                ) : (
+                                                    <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                )}
+                                            </div>
                                         </th>
-                                        <th className="py-3 px-4 text-left font-medium text-muted-foreground whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('tax_name')}>
-                                            <div className="flex items-center gap-1">Impuesto {sortColumn === 'tax_name' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                        <th
+                                            className="group cursor-pointer px-4 py-3 text-left font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
+                                            onClick={() =>
+                                                handleSort('tax_name')
+                                            }
+                                        >
+                                            <div className="flex items-center gap-1">
+                                                Impuesto{' '}
+                                                {sortColumn === 'tax_name' ? (
+                                                    sortDirection === 'asc' ? (
+                                                        <ChevronUp className="h-4 w-4" />
+                                                    ) : (
+                                                        <ChevronDown className="h-4 w-4" />
+                                                    )
+                                                ) : (
+                                                    <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                )}
+                                            </div>
                                         </th>
-                                        <th className="py-3 px-4 text-left font-medium text-muted-foreground whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('fiscal_id_label')}>
-                                            <div className="flex items-center gap-1">ID Fiscal {sortColumn === 'fiscal_id_label' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                        <th
+                                            className="group cursor-pointer px-4 py-3 text-left font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
+                                            onClick={() =>
+                                                handleSort('fiscal_id_label')
+                                            }
+                                        >
+                                            <div className="flex items-center gap-1">
+                                                ID Fiscal{' '}
+                                                {sortColumn ===
+                                                'fiscal_id_label' ? (
+                                                    sortDirection === 'asc' ? (
+                                                        <ChevronUp className="h-4 w-4" />
+                                                    ) : (
+                                                        <ChevronDown className="h-4 w-4" />
+                                                    )
+                                                ) : (
+                                                    <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                )}
+                                            </div>
                                         </th>
-                                        <th className="py-3 px-4 text-left font-medium text-muted-foreground whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('timezone')}>
-                                            <div className="flex items-center gap-1">Timezone {sortColumn === 'timezone' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                        <th
+                                            className="group cursor-pointer px-4 py-3 text-left font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
+                                            onClick={() =>
+                                                handleSort('timezone')
+                                            }
+                                        >
+                                            <div className="flex items-center gap-1">
+                                                Timezone{' '}
+                                                {sortColumn === 'timezone' ? (
+                                                    sortDirection === 'asc' ? (
+                                                        <ChevronUp className="h-4 w-4" />
+                                                    ) : (
+                                                        <ChevronDown className="h-4 w-4" />
+                                                    )
+                                                ) : (
+                                                    <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                )}
+                                            </div>
                                         </th>
-                                        <th className="py-3 px-4 text-center font-medium text-muted-foreground whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('is_active')}>
-                                            <div className="flex items-center justify-center gap-1">Activo {sortColumn === 'is_active' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                        <th
+                                            className="group cursor-pointer px-4 py-3 text-center font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
+                                            onClick={() =>
+                                                handleSort('is_active')
+                                            }
+                                        >
+                                            <div className="flex items-center justify-center gap-1">
+                                                Activo{' '}
+                                                {sortColumn === 'is_active' ? (
+                                                    sortDirection === 'asc' ? (
+                                                        <ChevronUp className="h-4 w-4" />
+                                                    ) : (
+                                                        <ChevronDown className="h-4 w-4" />
+                                                    )
+                                                ) : (
+                                                    <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                )}
+                                            </div>
                                         </th>
-                                        <th className="py-3 px-4 text-right font-medium text-muted-foreground whitespace-nowrap">Acciones</th>
+                                        <th className="px-4 py-3 text-right font-medium whitespace-nowrap text-muted-foreground">
+                                            Acciones
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {sortedCountries.map((c) => (
-                                        <tr key={c.id} className="border-b hover:bg-muted/50 transition-colors">
-                                            <td className="py-3 px-4 whitespace-nowrap">
-                                                <span className="mr-2 text-lg">{getFlagEmoji(c.code)}</span>
-                                                <span className="font-medium">{c.name}</span>
+                                        <tr
+                                            key={c.id}
+                                            className="border-b transition-colors hover:bg-muted/50"
+                                        >
+                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                <span className="mr-2 text-lg">
+                                                    {getFlagEmoji(c.code)}
+                                                </span>
+                                                <span className="font-medium">
+                                                    {c.name}
+                                                </span>
                                             </td>
-                                            <td className="py-3 px-4 font-mono text-sm whitespace-nowrap">{c.code}</td>
-                                            <td className="py-3 px-4 whitespace-nowrap">
-                                                <span className="font-medium">{c.currency_symbol}</span>{' '}
-                                                <span className="text-muted-foreground">{c.currency_code}</span>
+                                            <td className="px-4 py-3 font-mono text-sm whitespace-nowrap">
+                                                {c.code}
                                             </td>
-                                            <td className="py-3 px-4 font-mono text-sm whitespace-nowrap">{c.phone_code}</td>
-                                            <td className="py-3 px-4 whitespace-nowrap">
+                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                <span className="font-medium">
+                                                    {c.currency_symbol}
+                                                </span>{' '}
+                                                <span className="text-muted-foreground">
+                                                    {c.currency_code}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 font-mono text-sm whitespace-nowrap">
+                                                {c.phone_code}
+                                            </td>
+                                            <td className="px-4 py-3 whitespace-nowrap">
                                                 {c.tax_name} ({c.tax_rate}%)
                                             </td>
-                                            <td className="py-3 px-4 whitespace-nowrap">{c.fiscal_id_label}</td>
-                                            <td className="py-3 px-4 text-sm text-muted-foreground whitespace-nowrap">{c.timezone}</td>
-                                            <td className="py-3 px-4 text-center whitespace-nowrap">
-                                                <Badge className={c.is_active ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-500 hover:bg-gray-600'}>
-                                                    {c.is_active ? 'Activo' : 'Inactivo'}
+                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                {c.fiscal_id_label}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap text-muted-foreground">
+                                                {c.timezone}
+                                            </td>
+                                            <td className="px-4 py-3 text-center whitespace-nowrap">
+                                                <Badge
+                                                    className={
+                                                        c.is_active
+                                                            ? 'bg-green-500 hover:bg-green-600'
+                                                            : 'bg-gray-500 hover:bg-gray-600'
+                                                    }
+                                                >
+                                                    {c.is_active
+                                                        ? 'Activo'
+                                                        : 'Inactivo'}
                                                 </Badge>
                                             </td>
-                                            <td className="py-3 px-4 text-right whitespace-nowrap">
+                                            <td className="px-4 py-3 text-right whitespace-nowrap">
                                                 {canEdit && (
                                                     <>
-                                                        <Button 
-                                                            type="button" 
-                                                            variant="ghost" 
-                                                            size="icon" 
-                                                            onClick={() => handleToggle(c.id)}
-                                                            title={c.is_active ? 'Desactivar' : 'Activar'}
-                                                            className={c.is_active ? 'text-green-600 hover:text-green-700 hover:bg-green-100' : 'text-gray-500 hover:text-gray-600 hover:bg-gray-100'}
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() =>
+                                                                handleToggle(
+                                                                    c.id,
+                                                                )
+                                                            }
+                                                            title={
+                                                                c.is_active
+                                                                    ? 'Desactivar'
+                                                                    : 'Activar'
+                                                            }
+                                                            className={
+                                                                c.is_active
+                                                                    ? 'text-green-600 hover:bg-green-100 hover:text-green-700'
+                                                                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-600'
+                                                            }
                                                         >
                                                             <Power className="h-4 w-4" />
                                                         </Button>
-                                                        <Button type="button" variant="ghost" size="icon" onClick={() => handleEdit(c)}>
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() =>
+                                                                handleEdit(c)
+                                                            }
+                                                        >
                                                             <Pencil className="h-4 w-4" />
                                                         </Button>
                                                     </>
                                                 )}
                                                 {canDelete && (
-                                                    <Button type="button" variant="ghost" size="icon" onClick={() => handleDelete(c.id)}>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() =>
+                                                            handleDelete(c.id)
+                                                        }
+                                                    >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
                                                 )}
@@ -327,7 +525,7 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
             </Card>
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
                             {editando ? 'Editar' : 'Nuevo'} País
@@ -335,12 +533,17 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
                     </DialogHeader>
                     <form onSubmit={handleSubmit}>
                         <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                                 <div className="space-y-2">
                                     <Label>Código (2 letras) *</Label>
                                     <Input
                                         value={data.code as string}
-                                        onChange={(e) => setData('code', e.target.value.toUpperCase())}
+                                        onChange={(e) =>
+                                            setData(
+                                                'code',
+                                                e.target.value.toUpperCase(),
+                                            )
+                                        }
                                         placeholder="CL"
                                         maxLength={2}
                                         required
@@ -351,19 +554,26 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
                                     <Label>Nombre del País *</Label>
                                     <Input
                                         value={data.name as string}
-                                        onChange={(e) => setData('name', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('name', e.target.value)
+                                        }
                                         placeholder="Chile"
                                         required
                                     />
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                                 <div className="space-y-2">
                                     <Label>Código Moneda *</Label>
                                     <Input
                                         value={data.currency_code as string}
-                                        onChange={(e) => setData('currency_code', e.target.value.toUpperCase())}
+                                        onChange={(e) =>
+                                            setData(
+                                                'currency_code',
+                                                e.target.value.toUpperCase(),
+                                            )
+                                        }
                                         placeholder="CLP"
                                         maxLength={3}
                                         required
@@ -373,7 +583,12 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
                                     <Label>Símbolo *</Label>
                                     <Input
                                         value={data.currency_symbol as string}
-                                        onChange={(e) => setData('currency_symbol', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'currency_symbol',
+                                                e.target.value,
+                                            )
+                                        }
                                         placeholder="$"
                                         maxLength={10}
                                         required
@@ -384,7 +599,12 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
                                     <Input
                                         type="number"
                                         value={data.currency_decimals as number}
-                                        onChange={(e) => setData('currency_decimals', parseInt(e.target.value) || 0)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'currency_decimals',
+                                                parseInt(e.target.value) || 0,
+                                            )
+                                        }
                                         min={0}
                                         max={4}
                                         required
@@ -394,19 +614,26 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
                                     <Label>Formato Fecha *</Label>
                                     <Input
                                         value={data.date_format as string}
-                                        onChange={(e) => setData('date_format', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'date_format',
+                                                e.target.value,
+                                            )
+                                        }
                                         placeholder="DD/MM/YYYY"
                                         required
                                     />
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                                 <div className="space-y-2">
                                     <Label>Locale *</Label>
                                     <Input
                                         value={data.locale as string}
-                                        onChange={(e) => setData('locale', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('locale', e.target.value)
+                                        }
                                         placeholder="es-CL"
                                         required
                                     />
@@ -415,7 +642,9 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
                                     <Label>Timezone *</Label>
                                     <Input
                                         value={data.timezone as string}
-                                        onChange={(e) => setData('timezone', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('timezone', e.target.value)
+                                        }
                                         placeholder="America/Santiago"
                                         required
                                     />
@@ -424,7 +653,12 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
                                     <Label>Código Teléfono *</Label>
                                     <Input
                                         value={data.phone_code as string}
-                                        onChange={(e) => setData('phone_code', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'phone_code',
+                                                e.target.value,
+                                            )
+                                        }
                                         placeholder="+56"
                                         maxLength={5}
                                         required
@@ -432,12 +666,14 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                                 <div className="space-y-2">
                                     <Label>Nombre Impuesto *</Label>
                                     <Input
                                         value={data.tax_name as string}
-                                        onChange={(e) => setData('tax_name', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('tax_name', e.target.value)
+                                        }
                                         placeholder="IVA"
                                         required
                                     />
@@ -448,7 +684,12 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
                                         type="number"
                                         step="0.01"
                                         value={data.tax_rate as number}
-                                        onChange={(e) => setData('tax_rate', parseFloat(e.target.value) || 0)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'tax_rate',
+                                                parseFloat(e.target.value) || 0,
+                                            )
+                                        }
                                         min={0}
                                         max={100}
                                         required
@@ -458,7 +699,12 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
                                     <Label>ID Fiscal *</Label>
                                     <Input
                                         value={data.fiscal_id_label as string}
-                                        onChange={(e) => setData('fiscal_id_label', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'fiscal_id_label',
+                                                e.target.value,
+                                            )
+                                        }
                                         placeholder="RUT"
                                         required
                                     />
@@ -467,7 +713,12 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
                                     <Label>Patrón ID Fiscal</Label>
                                     <Input
                                         value={data.fiscal_id_pattern as string}
-                                        onChange={(e) => setData('fiscal_id_pattern', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'fiscal_id_pattern',
+                                                e.target.value,
+                                            )
+                                        }
                                         placeholder="/^\d{7,8}[\dkK]$/"
                                     />
                                 </div>
@@ -477,14 +728,20 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
                                 <input
                                     type="checkbox"
                                     checked={data.is_active as boolean}
-                                    onChange={(e) => setData('is_active', e.target.checked)}
+                                    onChange={(e) =>
+                                        setData('is_active', e.target.checked)
+                                    }
                                     className="h-4 w-4"
                                 />
                                 <Label>País activo (visible en registro)</Label>
                             </div>
                         </div>
                         <DialogFooter className="flex flex-col sm:flex-row">
-                            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsOpen(false)}
+                            >
                                 <X className="mr-2 h-4 w-4" /> Cancelar
                             </Button>
                             <Button type="submit" disabled={processing}>

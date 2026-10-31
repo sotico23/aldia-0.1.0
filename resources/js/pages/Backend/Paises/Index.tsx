@@ -95,7 +95,15 @@ export default function Index({ countries }: { countries: Country[] }) {
 
     const [isOpen, setIsOpen] = useState(false);
     const [editando, setEditando] = useState<Country | null>(null);
-    const { data, setData, post, put, delete: destroy, reset, processing } = useForm<CountryFormData>(emptyCountry);
+    const {
+        data,
+        setData,
+        post,
+        put,
+        delete: destroy,
+        reset,
+        processing,
+    } = useForm<CountryFormData>(emptyCountry);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -157,7 +165,8 @@ export default function Index({ countries }: { countries: Country[] }) {
                         <div>
                             <h1 className="text-2xl font-bold">Países</h1>
                             <p className="text-muted-foreground">
-                                Gestiona los países, monedas y prefijos telefónicos disponibles en la plataforma
+                                Gestiona los países, monedas y prefijos
+                                telefónicos disponibles en la plataforma
                             </p>
                         </div>
                         {canCreate && (
@@ -184,48 +193,112 @@ export default function Index({ countries }: { countries: Country[] }) {
                                     <table className="w-full">
                                         <thead>
                                             <tr className="border-b">
-                                                <th className="py-2 text-left">País</th>
-                                                <th className="py-2 text-left">Código</th>
-                                                <th className="py-2 text-left">Moneda</th>
-                                                <th className="py-2 text-left">Teléfono</th>
-                                                <th className="py-2 text-left">Impuesto</th>
-                                                <th className="py-2 text-left">ID Fiscal</th>
-                                                <th className="py-2 text-left">Timezone</th>
-                                                <th className="py-2 text-center">Activo</th>
-                                                <th className="py-2 text-right">Acciones</th>
+                                                <th className="py-2 text-left">
+                                                    País
+                                                </th>
+                                                <th className="py-2 text-left">
+                                                    Código
+                                                </th>
+                                                <th className="py-2 text-left">
+                                                    Moneda
+                                                </th>
+                                                <th className="py-2 text-left">
+                                                    Teléfono
+                                                </th>
+                                                <th className="py-2 text-left">
+                                                    Impuesto
+                                                </th>
+                                                <th className="py-2 text-left">
+                                                    ID Fiscal
+                                                </th>
+                                                <th className="py-2 text-left">
+                                                    Timezone
+                                                </th>
+                                                <th className="py-2 text-center">
+                                                    Activo
+                                                </th>
+                                                <th className="py-2 text-right">
+                                                    Acciones
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {countries.map((c) => (
-                                                <tr key={c.id} className="border-b hover:bg-muted/50">
+                                                <tr
+                                                    key={c.id}
+                                                    className="border-b hover:bg-muted/50"
+                                                >
                                                     <td className="py-2">
-                                                        <span className="mr-2 text-lg">{getFlagEmoji(c.code)}</span>
-                                                        <span className="font-medium">{c.name}</span>
+                                                        <span className="mr-2 text-lg">
+                                                            {getFlagEmoji(
+                                                                c.code,
+                                                            )}
+                                                        </span>
+                                                        <span className="font-medium">
+                                                            {c.name}
+                                                        </span>
                                                     </td>
-                                                    <td className="py-2 font-mono text-sm">{c.code}</td>
+                                                    <td className="py-2 font-mono text-sm">
+                                                        {c.code}
+                                                    </td>
                                                     <td className="py-2">
-                                                        <span className="font-medium">{c.currency_symbol}</span>{' '}
-                                                        <span className="text-muted-foreground">{c.currency_code}</span>
+                                                        <span className="font-medium">
+                                                            {c.currency_symbol}
+                                                        </span>{' '}
+                                                        <span className="text-muted-foreground">
+                                                            {c.currency_code}
+                                                        </span>
                                                     </td>
-                                                    <td className="py-2 font-mono text-sm">{c.phone_code}</td>
+                                                    <td className="py-2 font-mono text-sm">
+                                                        {c.phone_code}
+                                                    </td>
                                                     <td className="py-2">
-                                                        {c.tax_name} ({c.tax_rate}%)
+                                                        {c.tax_name} (
+                                                        {c.tax_rate}%)
                                                     </td>
-                                                    <td className="py-2">{c.fiscal_id_label}</td>
-                                                    <td className="py-2 text-sm text-muted-foreground">{c.timezone}</td>
+                                                    <td className="py-2">
+                                                        {c.fiscal_id_label}
+                                                    </td>
+                                                    <td className="py-2 text-sm text-muted-foreground">
+                                                        {c.timezone}
+                                                    </td>
                                                     <td className="py-2 text-center">
-                                                        <Badge className={c.is_active ? 'bg-green-500' : 'bg-gray-500'}>
-                                                            {c.is_active ? 'Activo' : 'Inactivo'}
+                                                        <Badge
+                                                            className={
+                                                                c.is_active
+                                                                    ? 'bg-green-500'
+                                                                    : 'bg-gray-500'
+                                                            }
+                                                        >
+                                                            {c.is_active
+                                                                ? 'Activo'
+                                                                : 'Inactivo'}
                                                         </Badge>
                                                     </td>
                                                     <td className="py-2 text-right">
                                                         {canEdit && (
-                                                            <Button variant="ghost" size="icon" onClick={() => handleEdit(c)}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() =>
+                                                                    handleEdit(
+                                                                        c,
+                                                                    )
+                                                                }
+                                                            >
                                                                 <Pencil className="h-4 w-4" />
                                                             </Button>
                                                         )}
                                                         {canDelete && (
-                                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        c.id,
+                                                                    )
+                                                                }
+                                                            >
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         )}
@@ -250,12 +323,17 @@ export default function Index({ countries }: { countries: Country[] }) {
                     </DialogHeader>
                     <form onSubmit={handleSubmit}>
                         <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                                 <div className="space-y-2">
                                     <Label>Código (2 letras) *</Label>
                                     <Input
                                         value={data.code as string}
-                                        onChange={(e) => setData('code', e.target.value.toUpperCase())}
+                                        onChange={(e) =>
+                                            setData(
+                                                'code',
+                                                e.target.value.toUpperCase(),
+                                            )
+                                        }
                                         placeholder="CL"
                                         maxLength={2}
                                         required
@@ -266,19 +344,26 @@ export default function Index({ countries }: { countries: Country[] }) {
                                     <Label>Nombre del País *</Label>
                                     <Input
                                         value={data.name as string}
-                                        onChange={(e) => setData('name', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('name', e.target.value)
+                                        }
                                         placeholder="Chile"
                                         required
                                     />
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                                 <div className="space-y-2">
                                     <Label>Código Moneda *</Label>
                                     <Input
                                         value={data.currency_code as string}
-                                        onChange={(e) => setData('currency_code', e.target.value.toUpperCase())}
+                                        onChange={(e) =>
+                                            setData(
+                                                'currency_code',
+                                                e.target.value.toUpperCase(),
+                                            )
+                                        }
                                         placeholder="CLP"
                                         maxLength={3}
                                         required
@@ -288,7 +373,12 @@ export default function Index({ countries }: { countries: Country[] }) {
                                     <Label>Símbolo *</Label>
                                     <Input
                                         value={data.currency_symbol as string}
-                                        onChange={(e) => setData('currency_symbol', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'currency_symbol',
+                                                e.target.value,
+                                            )
+                                        }
                                         placeholder="$"
                                         maxLength={10}
                                         required
@@ -299,7 +389,12 @@ export default function Index({ countries }: { countries: Country[] }) {
                                     <Input
                                         type="number"
                                         value={data.currency_decimals as number}
-                                        onChange={(e) => setData('currency_decimals', parseInt(e.target.value) || 0)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'currency_decimals',
+                                                parseInt(e.target.value) || 0,
+                                            )
+                                        }
                                         min={0}
                                         max={4}
                                         required
@@ -309,19 +404,26 @@ export default function Index({ countries }: { countries: Country[] }) {
                                     <Label>Formato Fecha *</Label>
                                     <Input
                                         value={data.date_format as string}
-                                        onChange={(e) => setData('date_format', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'date_format',
+                                                e.target.value,
+                                            )
+                                        }
                                         placeholder="DD/MM/YYYY"
                                         required
                                     />
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                                 <div className="space-y-2">
                                     <Label>Locale *</Label>
                                     <Input
                                         value={data.locale as string}
-                                        onChange={(e) => setData('locale', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('locale', e.target.value)
+                                        }
                                         placeholder="es-CL"
                                         required
                                     />
@@ -330,7 +432,9 @@ export default function Index({ countries }: { countries: Country[] }) {
                                     <Label>Timezone *</Label>
                                     <Input
                                         value={data.timezone as string}
-                                        onChange={(e) => setData('timezone', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('timezone', e.target.value)
+                                        }
                                         placeholder="America/Santiago"
                                         required
                                     />
@@ -339,7 +443,12 @@ export default function Index({ countries }: { countries: Country[] }) {
                                     <Label>Código Teléfono *</Label>
                                     <Input
                                         value={data.phone_code as string}
-                                        onChange={(e) => setData('phone_code', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'phone_code',
+                                                e.target.value,
+                                            )
+                                        }
                                         placeholder="+56"
                                         maxLength={5}
                                         required
@@ -347,12 +456,14 @@ export default function Index({ countries }: { countries: Country[] }) {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                                 <div className="space-y-2">
                                     <Label>Nombre Impuesto *</Label>
                                     <Input
                                         value={data.tax_name as string}
-                                        onChange={(e) => setData('tax_name', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('tax_name', e.target.value)
+                                        }
                                         placeholder="IVA"
                                         required
                                     />
@@ -363,7 +474,12 @@ export default function Index({ countries }: { countries: Country[] }) {
                                         type="number"
                                         step="0.01"
                                         value={data.tax_rate as number}
-                                        onChange={(e) => setData('tax_rate', parseFloat(e.target.value) || 0)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'tax_rate',
+                                                parseFloat(e.target.value) || 0,
+                                            )
+                                        }
                                         min={0}
                                         max={100}
                                         required
@@ -373,7 +489,12 @@ export default function Index({ countries }: { countries: Country[] }) {
                                     <Label>ID Fiscal *</Label>
                                     <Input
                                         value={data.fiscal_id_label as string}
-                                        onChange={(e) => setData('fiscal_id_label', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'fiscal_id_label',
+                                                e.target.value,
+                                            )
+                                        }
                                         placeholder="RUT"
                                         required
                                     />
@@ -382,7 +503,12 @@ export default function Index({ countries }: { countries: Country[] }) {
                                     <Label>Patrón ID Fiscal</Label>
                                     <Input
                                         value={data.fiscal_id_pattern as string}
-                                        onChange={(e) => setData('fiscal_id_pattern', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'fiscal_id_pattern',
+                                                e.target.value,
+                                            )
+                                        }
                                         placeholder="/^\d{7,8}[\dkK]$/"
                                     />
                                 </div>
@@ -392,14 +518,20 @@ export default function Index({ countries }: { countries: Country[] }) {
                                 <input
                                     type="checkbox"
                                     checked={data.is_active as boolean}
-                                    onChange={(e) => setData('is_active', e.target.checked)}
+                                    onChange={(e) =>
+                                        setData('is_active', e.target.checked)
+                                    }
                                     className="h-4 w-4"
                                 />
                                 <Label>País activo (visible en registro)</Label>
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsOpen(false)}
+                            >
                                 Cancelar
                             </Button>
                             <Button type="submit" disabled={processing}>

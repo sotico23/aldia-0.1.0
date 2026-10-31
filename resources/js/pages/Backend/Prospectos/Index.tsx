@@ -16,7 +16,7 @@ import {
     LayoutGrid,
     UserPlus,
     Briefcase,
-    DollarSign
+    DollarSign,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -135,7 +135,6 @@ const PRIORIDADES = [
     },
 ];
 
-
 export default function Index({
     prospectos,
     filters,
@@ -241,7 +240,7 @@ export default function Index({
             } else {
                 toast.error(result.message || 'RUT no encontrado');
             }
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e) {
             toast.error('Error al conectar con el servicio');
         } finally {
@@ -447,7 +446,8 @@ export default function Index({
                                 }}
                                 className="h-9 rounded-full bg-primary px-5 font-bold shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
                             >
-                                <Plus className="mr-2 h-4 w-4" /> Nuevo Prospecto
+                                <Plus className="mr-2 h-4 w-4" /> Nuevo
+                                Prospecto
                             </Button>
                         )}
                     </div>
@@ -521,7 +521,7 @@ export default function Index({
                     </div>
 
                     {vistaKanban ? (
-                        <div className="flex gap-5 overflow-x-auto pb-6 items-start min-h-[65vh]">
+                        <div className="flex min-h-[65vh] items-start gap-5 overflow-x-auto pb-6">
                             {ESTADOS.map((est) => {
                                 const prospEnEst =
                                     (groupedProspectos as any)[est.value] || [];
@@ -646,7 +646,9 @@ export default function Index({
                                                                 size="icon"
                                                                 className="h-7 w-7 text-primary hover:bg-primary/10"
                                                                 onClick={() =>
-                                                                    handleEdit(p)
+                                                                    handleEdit(
+                                                                        p,
+                                                                    )
                                                                 }
                                                             >
                                                                 <Pencil className="h-4 w-4" />
@@ -685,10 +687,16 @@ export default function Index({
                         <Card className="overflow-hidden border-none shadow-xl shadow-foreground/5">
                             <CardHeader className="px-6 py-4">
                                 <div className="flex items-center justify-between">
-                                    <CardTitle className="text-base">Prospectos</CardTitle>
+                                    <CardTitle className="text-base">
+                                        Prospectos
+                                    </CardTitle>
                                     <div className="flex gap-1 rounded-lg bg-muted p-1">
                                         <Button
-                                            variant={viewMode === 'table' ? 'default' : 'ghost'}
+                                            variant={
+                                                viewMode === 'table'
+                                                    ? 'default'
+                                                    : 'ghost'
+                                            }
                                             size="sm"
                                             onClick={() => setViewMode('table')}
                                             className="h-8 w-8 p-0"
@@ -696,7 +704,11 @@ export default function Index({
                                             <List className="h-4 w-4" />
                                         </Button>
                                         <Button
-                                            variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                                            variant={
+                                                viewMode === 'cards'
+                                                    ? 'default'
+                                                    : 'ghost'
+                                            }
                                             size="sm"
                                             onClick={() => setViewMode('cards')}
                                             className="h-8 w-8 p-0"
@@ -803,7 +815,9 @@ export default function Index({
                                                                     variant="outline"
                                                                     className={`rounded-full px-2 py-0 text-[8px] font-bold ${PRIORIDADES.find((pr) => pr.value === p.prioridad)?.color || ''}`}
                                                                 >
-                                                                    {p.prioridad}
+                                                                    {
+                                                                        p.prioridad
+                                                                    }
                                                                 </Badge>
                                                             </div>
                                                         </td>
@@ -862,25 +876,41 @@ export default function Index({
                                 ) : (
                                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                                         {prospectos.data.map((p) => (
-                                            <Card key={p.id} className="overflow-hidden">
+                                            <Card
+                                                key={p.id}
+                                                className="overflow-hidden"
+                                            >
                                                 <CardHeader className="pb-3">
                                                     <div className="flex items-start justify-between">
                                                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                                                             <Building2 className="h-5 w-5 text-primary" />
                                                         </div>
                                                         <div className="flex gap-1">
-                                                            <Badge variant="outline" className={`${getEstadoConfig(p.estado).color} rounded-full border px-2 py-0.5 text-[8px] font-black uppercase`}>
-                                                                {getEstadoConfig(p.estado).label}
+                                                            <Badge
+                                                                variant="outline"
+                                                                className={`${getEstadoConfig(p.estado).color} rounded-full border px-2 py-0.5 text-[8px] font-black uppercase`}
+                                                            >
+                                                                {
+                                                                    getEstadoConfig(
+                                                                        p.estado,
+                                                                    ).label
+                                                                }
                                                             </Badge>
-                                                            <Badge variant="outline" className={`rounded-full px-2 py-0 text-[8px] font-bold ${PRIORIDADES.find((pr) => pr.value === p.prioridad)?.color || ''}`}>
+                                                            <Badge
+                                                                variant="outline"
+                                                                className={`rounded-full px-2 py-0 text-[8px] font-bold ${PRIORIDADES.find((pr) => pr.value === p.prioridad)?.color || ''}`}
+                                                            >
                                                                 {p.prioridad}
                                                             </Badge>
                                                         </div>
                                                     </div>
-                                                    <CardTitle className="mt-2 text-sm">{p.nombre}</CardTitle>
+                                                    <CardTitle className="mt-2 text-sm">
+                                                        {p.nombre}
+                                                    </CardTitle>
                                                     <CardDescription className="flex items-center gap-1 text-xs">
                                                         <Building2 className="h-3 w-3" />
-                                                        {p.empresa || 'Particular'}
+                                                        {p.empresa ||
+                                                            'Particular'}
                                                     </CardDescription>
                                                 </CardHeader>
                                                 <CardContent>
@@ -888,32 +918,69 @@ export default function Index({
                                                         {p.email && (
                                                             <div className="flex items-center gap-2 text-muted-foreground">
                                                                 <Mail className="h-3 w-3" />
-                                                                <span>{p.email}</span>
+                                                                <span>
+                                                                    {p.email}
+                                                                </span>
                                                             </div>
                                                         )}
                                                         <div className="flex items-center justify-between">
-                                                            <span className="text-muted-foreground">Valor estimado</span>
-                                                            <span className="font-black text-primary">{formatCurrency(p.valor_estimado)}</span>
+                                                            <span className="text-muted-foreground">
+                                                                Valor estimado
+                                                            </span>
+                                                            <span className="font-black text-primary">
+                                                                {formatCurrency(
+                                                                    p.valor_estimado,
+                                                                )}
+                                                            </span>
                                                         </div>
                                                         {p.fuente && (
                                                             <div className="text-muted-foreground">
-                                                                Fuente: {p.fuente}
+                                                                Fuente:{' '}
+                                                                {p.fuente}
                                                             </div>
                                                         )}
                                                     </div>
                                                     <div className="mt-3 flex justify-end gap-1 border-t pt-2">
-                                                        {p.estado !== 'convertido' && (
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:bg-green-50" onClick={() => handleConvertir(p.id)}>
+                                                        {p.estado !==
+                                                            'convertido' && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-green-600 hover:bg-green-50"
+                                                                onClick={() =>
+                                                                    handleConvertir(
+                                                                        p.id,
+                                                                    )
+                                                                }
+                                                            >
                                                                 <UserPlus className="h-4 w-4" />
                                                             </Button>
                                                         )}
                                                         {canEdit && (
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:bg-primary/10" onClick={() => handleEdit(p)}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-primary hover:bg-primary/10"
+                                                                onClick={() =>
+                                                                    handleEdit(
+                                                                        p,
+                                                                    )
+                                                                }
+                                                            >
                                                                 <Pencil className="h-4 w-4" />
                                                             </Button>
                                                         )}
                                                         {canDelete && (
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(p.id)}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        p.id,
+                                                                    )
+                                                                }
+                                                            >
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         )}
@@ -924,7 +991,10 @@ export default function Index({
                                         {prospectos.data.length === 0 && (
                                             <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
                                                 <LayoutGrid className="mb-2 h-8 w-8" />
-                                                <p className="text-sm">No se encontraron prospectos con los filtros aplicados</p>
+                                                <p className="text-sm">
+                                                    No se encontraron prospectos
+                                                    con los filtros aplicados
+                                                </p>
                                             </div>
                                         )}
                                     </div>
@@ -993,22 +1063,25 @@ export default function Index({
                                                     RUT Empresa/Persona
                                                 </Label>
                                                 <div className="flex gap-2">
-                                                     <Input
-                                                         value={data.rut}
-                                                         onChange={(e) =>
-                                                             setData(
-                                                                 'rut',
-                                                                 e.target.value,
-                                                             )
-                                                         }
-                                                         onBlur={(e) =>
-                                                             setData(
-                                                                 'rut',
-                                                                 formatRut(e.target.value),
-                                                             )
-                                                         }
-                                                         className="h-11 rounded-xl border-none bg-muted/30 font-bold"
-                                                     />
+                                                    <Input
+                                                        value={data.rut}
+                                                        onChange={(e) =>
+                                                            setData(
+                                                                'rut',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        onBlur={(e) =>
+                                                            setData(
+                                                                'rut',
+                                                                formatRut(
+                                                                    e.target
+                                                                        .value,
+                                                                ),
+                                                            )
+                                                        }
+                                                        className="h-11 rounded-xl border-none bg-muted/30 font-bold"
+                                                    />
                                                     <Button
                                                         type="button"
                                                         size="icon"

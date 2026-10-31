@@ -339,7 +339,8 @@ export default function Index({
 
                             {canCreate && (
                                 <Button onClick={handleNew}>
-                                    <Plus className="mr-2 h-4 w-4" /> Nuevo Proyecto
+                                    <Plus className="mr-2 h-4 w-4" /> Nuevo
+                                    Proyecto
                                 </Button>
                             )}
                         </div>
@@ -356,7 +357,11 @@ export default function Index({
                                 </div>
                                 <div className="flex gap-1 rounded-lg bg-muted p-1">
                                     <Button
-                                        variant={viewMode === 'table' ? 'default' : 'ghost'}
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'default'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('table')}
                                         className="h-8 w-8 p-0"
@@ -364,7 +369,11 @@ export default function Index({
                                         <List className="h-4 w-4" />
                                     </Button>
                                     <Button
-                                        variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'default'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('cards')}
                                         className="h-8 w-8 p-0"
@@ -485,7 +494,9 @@ export default function Index({
                                                         </div>
                                                     </td>
                                                     <td className="py-3 text-center">
-                                                        {getEstadoBadge(p.estado)}
+                                                        {getEstadoBadge(
+                                                            p.estado,
+                                                        )}
                                                     </td>
                                                     <td className="py-3 text-right">
                                                         <div className="flex justify-end gap-1">
@@ -506,7 +517,9 @@ export default function Index({
                                                                     size="sm"
                                                                     className="h-8 w-8 p-0"
                                                                     onClick={() =>
-                                                                        handleEdit(p)
+                                                                        handleEdit(
+                                                                            p,
+                                                                        )
                                                                     }
                                                                     title="Editar"
                                                                 >
@@ -531,14 +544,16 @@ export default function Index({
                                                     </td>
                                                 </tr>
                                             ))}
-                                            {proyectosFiltrados.length === 0 && (
+                                            {proyectosFiltrados.length ===
+                                                0 && (
                                                 <tr>
                                                     <td
                                                         colSpan={5}
                                                         className="py-8 text-center text-muted-foreground"
                                                     >
-                                                        No se encontraron proyectos
-                                                        con los filtros aplicados
+                                                        No se encontraron
+                                                        proyectos con los
+                                                        filtros aplicados
                                                     </td>
                                                 </tr>
                                             )}
@@ -547,44 +562,96 @@ export default function Index({
                                 ) : (
                                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                                         {proyectosFiltrados.map((p) => (
-                                            <Card key={p.id} className="overflow-hidden">
+                                            <Card
+                                                key={p.id}
+                                                className="overflow-hidden"
+                                            >
                                                 <CardHeader className="pb-3">
                                                     <div className="flex items-start justify-between">
                                                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                                                             <Briefcase className="h-5 w-5 text-primary" />
                                                         </div>
-                                                        {getEstadoBadge(p.estado)}
+                                                        {getEstadoBadge(
+                                                            p.estado,
+                                                        )}
                                                     </div>
-                                                    <CardTitle className="mt-2 text-sm">{p.nombre}</CardTitle>
+                                                    <CardTitle className="mt-2 text-sm">
+                                                        {p.nombre}
+                                                    </CardTitle>
                                                     <CardDescription className="text-xs">
-                                                        {p.cliente || 'Sin cliente'} {p.responsable ? `· ${p.responsable}` : ''}
+                                                        {p.cliente ||
+                                                            'Sin cliente'}{' '}
+                                                        {p.responsable
+                                                            ? `· ${p.responsable}`
+                                                            : ''}
                                                     </CardDescription>
                                                 </CardHeader>
                                                 <CardContent>
                                                     <div className="space-y-2">
                                                         <div className="flex items-center justify-between text-xs">
-                                                            <span className="text-muted-foreground">Presupuesto</span>
-                                                            <span className="font-medium">{formatCurrency(p.presupuesto)}</span>
+                                                            <span className="text-muted-foreground">
+                                                                Presupuesto
+                                                            </span>
+                                                            <span className="font-medium">
+                                                                {formatCurrency(
+                                                                    p.presupuesto,
+                                                                )}
+                                                            </span>
                                                         </div>
                                                         <div className="flex items-center justify-between text-xs">
-                                                            <span className="text-muted-foreground">Progreso</span>
-                                                            <span className="font-medium">{p.progreso}%</span>
+                                                            <span className="text-muted-foreground">
+                                                                Progreso
+                                                            </span>
+                                                            <span className="font-medium">
+                                                                {p.progreso}%
+                                                            </span>
                                                         </div>
                                                         <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                                                            <div className="h-full bg-primary transition-all" style={{ width: `${p.progreso}%` }} />
+                                                            <div
+                                                                className="h-full bg-primary transition-all"
+                                                                style={{
+                                                                    width: `${p.progreso}%`,
+                                                                }}
+                                                            />
                                                         </div>
                                                     </div>
                                                     <div className="mt-3 flex justify-end gap-1 border-t pt-2">
-                                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50" onClick={() => handleVer(p)} title="Ver Detalles">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
+                                                            onClick={() =>
+                                                                handleVer(p)
+                                                            }
+                                                            title="Ver Detalles"
+                                                        >
                                                             <Eye className="h-4 w-4" />
                                                         </Button>
                                                         {canEdit && (
-                                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(p)}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-8 w-8 p-0"
+                                                                onClick={() =>
+                                                                    handleEdit(
+                                                                        p,
+                                                                    )
+                                                                }
+                                                            >
                                                                 <Pencil className="h-4 w-4" />
                                                             </Button>
                                                         )}
                                                         {canDelete && (
-                                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(p.id)}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        p.id,
+                                                                    )
+                                                                }
+                                                            >
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         )}
@@ -595,7 +662,10 @@ export default function Index({
                                         {proyectosFiltrados.length === 0 && (
                                             <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
                                                 <LayoutGrid className="mb-2 h-8 w-8" />
-                                                <p className="text-sm">No se encontraron proyectos con los filtros aplicados</p>
+                                                <p className="text-sm">
+                                                    No se encontraron proyectos
+                                                    con los filtros aplicados
+                                                </p>
                                             </div>
                                         )}
                                     </div>

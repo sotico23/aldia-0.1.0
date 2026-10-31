@@ -36,6 +36,8 @@ const FALLBACK: CountrySettings = {
 };
 
 export function useCountry(): CountrySettings {
-    const { country_settings } = usePage().props as { country_settings?: CountrySettings };
+    const { country_settings } = usePage().props as {
+        country_settings?: CountrySettings;
+    };
     return country_settings ?? FALLBACK;
 }

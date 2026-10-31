@@ -27,9 +27,10 @@ export default function SubirCaf() {
     const fileRef = useRef<HTMLInputElement>(null);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { data, setData, post, processing, errors, wasSuccessful, reset } = useForm<{
-        archivo_caf: File | null;
-    }>({ archivo_caf: null });
+    const { data, setData, post, processing, errors, wasSuccessful, reset } =
+        useForm<{
+            archivo_caf: File | null;
+        }>({ archivo_caf: null });
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] ?? null;
@@ -51,7 +52,9 @@ export default function SubirCaf() {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );
@@ -69,16 +72,18 @@ export default function SubirCaf() {
                                 Subir Código de Autorización de Folios (CAF)
                             </CardTitle>
                             <CardDescription>
-                                Descarga el archivo XML del CAF desde el portal web del SII
-                                (maullin para certificación) y súbelo aquí para habilitarlo
-                                en el sistema.
+                                Descarga el archivo XML del CAF desde el portal
+                                web del SII (maullin para certificación) y
+                                súbelo aquí para habilitarlo en el sistema.
                             </CardDescription>
                         </CardHeader>
 
                         <CardContent className="space-y-6">
                             {/* Instrucciones */}
                             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                                <p className="mb-2 font-semibold">¿Cómo obtener el CAF?</p>
+                                <p className="mb-2 font-semibold">
+                                    ¿Cómo obtener el CAF?
+                                </p>
                                 <ol className="list-inside list-decimal space-y-1">
                                     <li>
                                         Ingresa al portal:{' '}
@@ -93,10 +98,16 @@ export default function SubirCaf() {
                                         (certificación)
                                     </li>
                                     <li>
-                                        Ve a <strong>Boleta/Factura Electrónica → Obtención
-                                        de Folios</strong>
+                                        Ve a{' '}
+                                        <strong>
+                                            Boleta/Factura Electrónica →
+                                            Obtención de Folios
+                                        </strong>
                                     </li>
-                                    <li>Selecciona el tipo de documento (ej. 33 – Factura)</li>
+                                    <li>
+                                        Selecciona el tipo de documento (ej. 33
+                                        – Factura)
+                                    </li>
                                     <li>Descarga el archivo XML del CAF</li>
                                     <li>Súbelo en el formulario de abajo</li>
                                 </ol>
@@ -126,7 +137,11 @@ export default function SubirCaf() {
                                                         {data.archivo_caf.name}
                                                     </p>
                                                     <p className="text-xs text-muted-foreground">
-                                                        {(data.archivo_caf.size / 1024).toFixed(1)} KB
+                                                        {(
+                                                            data.archivo_caf
+                                                                .size / 1024
+                                                        ).toFixed(1)}{' '}
+                                                        KB
                                                     </p>
                                                 </div>
                                             </>
@@ -135,10 +150,13 @@ export default function SubirCaf() {
                                                 <FileText className="h-10 w-10 text-muted-foreground" />
                                                 <div className="text-center">
                                                     <p className="text-sm font-medium">
-                                                        Haz clic para seleccionar el archivo CAF
+                                                        Haz clic para
+                                                        seleccionar el archivo
+                                                        CAF
                                                     </p>
                                                     <p className="text-xs text-muted-foreground">
-                                                        Solo archivos .xml (máximo 512 KB)
+                                                        Solo archivos .xml
+                                                        (máximo 512 KB)
                                                     </p>
                                                 </div>
                                             </>

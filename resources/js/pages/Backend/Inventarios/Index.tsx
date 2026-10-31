@@ -17,7 +17,6 @@ import {
     ClipboardList,
     LayoutGrid,
     List,
-    Info,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import {
@@ -34,7 +33,7 @@ import {
     Bar,
     PieChart,
     Pie,
-    Cell
+    Cell,
 } from 'recharts';
 import { BulkActions } from '@/components/shared/BulkActions';
 import { Badge } from '@/components/ui/badge';
@@ -51,7 +50,7 @@ import {
     DialogContent,
     DialogFooter,
     DialogHeader,
-    DialogTitle
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -404,7 +403,8 @@ export default function Index({
                                 onClick={handleNew}
                                 className="h-10 rounded-xl bg-primary px-6 font-bold shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
                             >
-                                <Plus className="mr-2 h-4 w-4" /> Registrar Stock
+                                <Plus className="mr-2 h-4 w-4" /> Registrar
+                                Stock
                             </Button>
                         )}
                     </div>
@@ -598,33 +598,41 @@ export default function Index({
                     <Card className="overflow-hidden border-none shadow-xl shadow-foreground/5 lg:col-span-2">
                         <CardHeader className="bg-gradient-to-r from-muted/50 to-transparent pb-4">
                             <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <Boxes className="h-5 w-5 text-primary" />
-                                <CardTitle>Listado Consolidado</CardTitle>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-1 rounded-lg border bg-background/50 p-0.5">
-                                    <Button
-                                        variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-                                        size="sm"
-                                        onClick={() => setViewMode('table')}
-                                        className="h-7 w-7 p-0"
-                                    >
-                                        <List className="h-3.5 w-3.5" />
-                                    </Button>
-                                    <Button
-                                        variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
-                                        size="sm"
-                                        onClick={() => setViewMode('cards')}
-                                        className="h-7 w-7 p-0"
-                                    >
-                                        <LayoutGrid className="h-3.5 w-3.5" />
-                                    </Button>
+                                <div className="flex items-center gap-2">
+                                    <Boxes className="h-5 w-5 text-primary" />
+                                    <CardTitle>Listado Consolidado</CardTitle>
                                 </div>
-                                <div className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
-                                    {inventarios.total} Productos Reflejados
+                                <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1 rounded-lg border bg-background/50 p-0.5">
+                                        <Button
+                                            variant={
+                                                viewMode === 'table'
+                                                    ? 'secondary'
+                                                    : 'ghost'
+                                            }
+                                            size="sm"
+                                            onClick={() => setViewMode('table')}
+                                            className="h-7 w-7 p-0"
+                                        >
+                                            <List className="h-3.5 w-3.5" />
+                                        </Button>
+                                        <Button
+                                            variant={
+                                                viewMode === 'cards'
+                                                    ? 'secondary'
+                                                    : 'ghost'
+                                            }
+                                            size="sm"
+                                            onClick={() => setViewMode('cards')}
+                                            className="h-7 w-7 p-0"
+                                        >
+                                            <LayoutGrid className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </div>
+                                    <div className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
+                                        {inventarios.total} Productos Reflejados
+                                    </div>
                                 </div>
-                            </div>
                             </div>
                         </CardHeader>
                         <CardContent className="p-0">
@@ -637,7 +645,7 @@ export default function Index({
                                         onChange={(e) =>
                                             setSearchTerm(e.target.value)
                                         }
-                                        className="h-10 border-none bg-background/50 pl-10 pr-10 focus-visible:ring-primary/20"
+                                        className="h-10 border-none bg-background/50 pr-10 pl-10 focus-visible:ring-primary/20"
                                     />
                                 </div>
                                 <div className="flex gap-2">
@@ -680,72 +688,331 @@ export default function Index({
                             </div>
 
                             {viewMode === 'table' ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="border-b bg-muted/5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                                            <th className="px-6 py-4 text-left">
-                                                SKU / Artículo
-                                            </th>
-                                            <th className="px-6 py-4 text-center">
-                                                {almacenFilter === 'all'
-                                                    ? 'Stock Total (Consolidado)'
-                                                    : `Stock en ${almacenes.find((a) => a.id.toString() === almacenFilter)?.nombre || 'Bodega'}`}
-                                            </th>
-                                            <th className="px-6 py-4 text-center">
-                                                Mínimo
-                                            </th>
-                                            <th className="px-6 py-4 text-center">
-                                                Días Restantes
-                                            </th>
-                                            <th className="px-6 py-4 text-right">
-                                                Acciones
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-muted/50">
-                                        {inventarios.data.map((inv) => (
-                                            <tr
-                                                key={inv.id}
-                                                className={`group cursor-pointer transition-all hover:bg-muted/30 ${viewingProjection?.id === inv.id ? 'bg-primary/5' : ''}`}
-                                                onClick={() =>
-                                                    setViewingProjection(inv)
-                                                }
-                                            >
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        {inv.imagen ? (
-                                                            <img
-                                                                src={`/storage/${inv.imagen}`}
-                                                                alt={inv.nombre}
-                                                                className="h-10 w-10 rounded-lg object-cover"
-                                                            />
-                                                        ) : (
-                                                            <div
-                                                                className={`flex h-10 w-10 items-center justify-center rounded-lg ${inv.status === 'low' ? 'bg-red-500/10 text-red-600' : 'bg-primary/10 text-primary'}`}
-                                                            >
-                                                                <Package className="h-5 w-5" />
-                                                            </div>
-                                                        )}
-                                                        <div>
-                                                            <div className="text-sm font-bold tracking-tight">
-                                                                {inv.nombre}
-                                                            </div>
-                                                            <div className="font-mono text-[10px] text-muted-foreground">
-                                                                {inv.codigo}
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="border-b bg-muted/5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                                                <th className="px-6 py-4 text-left">
+                                                    SKU / Artículo
+                                                </th>
+                                                <th className="px-6 py-4 text-center">
+                                                    {almacenFilter === 'all'
+                                                        ? 'Stock Total (Consolidado)'
+                                                        : `Stock en ${almacenes.find((a) => a.id.toString() === almacenFilter)?.nombre || 'Bodega'}`}
+                                                </th>
+                                                <th className="px-6 py-4 text-center">
+                                                    Mínimo
+                                                </th>
+                                                <th className="px-6 py-4 text-center">
+                                                    Días Restantes
+                                                </th>
+                                                <th className="px-6 py-4 text-right">
+                                                    Acciones
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-muted/50">
+                                            {inventarios.data.map((inv) => (
+                                                <tr
+                                                    key={inv.id}
+                                                    className={`group cursor-pointer transition-all hover:bg-muted/30 ${viewingProjection?.id === inv.id ? 'bg-primary/5' : ''}`}
+                                                    onClick={() =>
+                                                        setViewingProjection(
+                                                            inv,
+                                                        )
+                                                    }
+                                                >
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-3">
+                                                            {inv.imagen ? (
+                                                                <img
+                                                                    src={`/storage/${inv.imagen}`}
+                                                                    alt={
+                                                                        inv.nombre
+                                                                    }
+                                                                    className="h-10 w-10 rounded-lg object-cover"
+                                                                />
+                                                            ) : (
+                                                                <div
+                                                                    className={`flex h-10 w-10 items-center justify-center rounded-lg ${inv.status === 'low' ? 'bg-red-500/10 text-red-600' : 'bg-primary/10 text-primary'}`}
+                                                                >
+                                                                    <Package className="h-5 w-5" />
+                                                                </div>
+                                                            )}
+                                                            <div>
+                                                                <div className="text-sm font-bold tracking-tight">
+                                                                    {inv.nombre}
+                                                                </div>
+                                                                <div className="font-mono text-[10px] text-muted-foreground">
+                                                                    {inv.codigo}
+                                                                </div>
                                                             </div>
                                                         </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <div className="flex flex-col items-center">
+                                                            <Tooltip>
+                                                                <TooltipTrigger
+                                                                    asChild
+                                                                >
+                                                                    <div className="flex cursor-pointer items-center">
+                                                                        <Badge
+                                                                            className={`rounded-xl border-none px-3 py-1 font-mono text-sm font-black ${inv.status === 'low' ? 'animate-pulse bg-red-500 text-white' : 'bg-green-500 text-white'}`}
+                                                                        >
+                                                                            {
+                                                                                inv.total_stock
+                                                                            }
+                                                                        </Badge>
+                                                                        {almacenFilter ===
+                                                                            'all' && (
+                                                                            <Badge
+                                                                                variant="outline"
+                                                                                className="ml-2 border-slate-200 bg-slate-50 text-[10px] text-slate-600"
+                                                                            >
+                                                                                Consolidado
+                                                                            </Badge>
+                                                                        )}
+                                                                    </div>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent className="border border-slate-100 bg-white p-3 shadow-xl">
+                                                                    <div className="min-w-[180px] space-y-1.5">
+                                                                        <p className="border-b pb-1 text-xs font-bold text-slate-700">
+                                                                            Desglose
+                                                                            por
+                                                                            Bodega
+                                                                        </p>
+                                                                        {inv.inventarios &&
+                                                                        inv
+                                                                            .inventarios
+                                                                            .length >
+                                                                            0 ? (
+                                                                            inv.inventarios.map(
+                                                                                (
+                                                                                    invAlm: any,
+                                                                                    idx: number,
+                                                                                ) => (
+                                                                                    <div
+                                                                                        key={
+                                                                                            idx
+                                                                                        }
+                                                                                        className="flex justify-between text-xs text-slate-600"
+                                                                                    >
+                                                                                        <span>
+                                                                                            {invAlm.almacen ||
+                                                                                                'Bodega'}
+                                                                                        </span>
+                                                                                        <span className="font-mono font-bold">
+                                                                                            {
+                                                                                                invAlm.cantidad
+                                                                                            }
+                                                                                        </span>
+                                                                                    </div>
+                                                                                ),
+                                                                            )
+                                                                        ) : (
+                                                                            <p className="text-xs text-slate-500">
+                                                                                Sin
+                                                                                existencias
+                                                                                registradas
+                                                                            </p>
+                                                                        )}
+                                                                        <div className="flex justify-between border-t pt-1 text-xs font-bold text-slate-800">
+                                                                            <span>
+                                                                                Total
+                                                                            </span>
+                                                                            <span className="font-mono">
+                                                                                {
+                                                                                    inv.total_stock
+                                                                                }
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+
+                                                            {almacenFilter ===
+                                                                'all' &&
+                                                                inv.inventarios &&
+                                                                inv.inventarios
+                                                                    .length >
+                                                                    0 && (
+                                                                    <div className="mt-1 flex max-w-[200px] flex-wrap justify-center gap-1">
+                                                                        {inv.inventarios.map(
+                                                                            (
+                                                                                invAlm: any,
+                                                                                idx: number,
+                                                                            ) => (
+                                                                                <span
+                                                                                    key={
+                                                                                        idx
+                                                                                    }
+                                                                                    className="rounded bg-slate-100/80 px-1 text-[10px] text-slate-500"
+                                                                                >
+                                                                                    {(
+                                                                                        invAlm.almacen ||
+                                                                                        'Bod'
+                                                                                    ).substring(
+                                                                                        0,
+                                                                                        8,
+                                                                                    )}
+
+                                                                                    :{' '}
+                                                                                    <strong>
+                                                                                        {
+                                                                                            invAlm.cantidad
+                                                                                        }
+                                                                                    </strong>
+                                                                                </span>
+                                                                            ),
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center text-xs font-bold text-muted-foreground">
+                                                        {inv.stock_minimo}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <div
+                                                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${inv.days_remaining <= 7 ? 'bg-orange-500/10 text-orange-600' : 'bg-blue-500/10 text-blue-600'}`}
+                                                        >
+                                                            <History className="h-3 w-3" />
+                                                            {inv.days_remaining >
+                                                            365
+                                                                ? 'Estable'
+                                                                : `${inv.days_remaining} días`}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <div className="flex justify-end gap-1">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-blue-600 hover:bg-blue-100"
+                                                                onClick={(
+                                                                    e,
+                                                                ) => {
+                                                                    e.stopPropagation();
+                                                                    setViewingItem(
+                                                                        inv,
+                                                                    );
+                                                                    setShowViewModal(
+                                                                        true,
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                            {canEdit && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 text-primary hover:bg-primary/10"
+                                                                    onClick={(
+                                                                        e,
+                                                                    ) => {
+                                                                        e.stopPropagation();
+                                                                        setEditando(
+                                                                            {
+                                                                                id: inv.id,
+                                                                            },
+                                                                        );
+                                                                        setData(
+                                                                            {
+                                                                                producto_id:
+                                                                                    '',
+                                                                                cantidad: 0,
+                                                                                cantidad_minima:
+                                                                                    inv.stock_minimo ||
+                                                                                    0,
+                                                                                ubicacion:
+                                                                                    '',
+                                                                                almacen_id:
+                                                                                    '',
+                                                                            },
+                                                                        );
+                                                                        setAjuste(
+                                                                            '',
+                                                                        );
+                                                                        setIsOpen(
+                                                                            true,
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {canDelete && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                                                    onClick={(
+                                                                        e,
+                                                                    ) => {
+                                                                        e.stopPropagation();
+                                                                        handleDelete(
+                                                                            inv.id,
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    {inventarios.data.map((inv) => (
+                                        <Card
+                                            key={inv.id}
+                                            className="overflow-hidden border-none shadow-md transition-all hover:shadow-lg"
+                                            onClick={() =>
+                                                setViewingProjection(inv)
+                                            }
+                                        >
+                                            <CardContent className="p-4">
+                                                <div className="mb-3 flex items-center gap-3">
+                                                    {inv.imagen ? (
+                                                        <img
+                                                            src={`/storage/${inv.imagen}`}
+                                                            alt={inv.nombre}
+                                                            className="h-10 w-10 rounded-lg object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div
+                                                            className={`flex h-10 w-10 items-center justify-center rounded-lg ${inv.status === 'low' ? 'bg-red-500/10 text-red-600' : 'bg-primary/10 text-primary'}`}
+                                                        >
+                                                            <Package className="h-5 w-5" />
+                                                        </div>
+                                                    )}
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="truncate text-sm font-bold">
+                                                            {inv.nombre}
+                                                        </div>
+                                                        <div className="font-mono text-[10px] text-muted-foreground">
+                                                            {inv.codigo}
+                                                        </div>
                                                     </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <div className="flex flex-col items-center">
+                                                </div>
+                                                <div className="mb-2 flex items-center justify-between">
+                                                    <div className="flex flex-col items-start">
                                                         <Tooltip>
-                                                            <TooltipTrigger asChild>
+                                                            <TooltipTrigger
+                                                                asChild
+                                                            >
                                                                 <div className="flex cursor-pointer items-center">
                                                                     <Badge
                                                                         className={`rounded-xl border-none px-3 py-1 font-mono text-sm font-black ${inv.status === 'low' ? 'animate-pulse bg-red-500 text-white' : 'bg-green-500 text-white'}`}
                                                                     >
-                                                                        {inv.total_stock}
+                                                                        {
+                                                                            inv.total_stock
+                                                                        }
                                                                     </Badge>
                                                                     {almacenFilter ===
                                                                         'all' && (
@@ -761,10 +1028,13 @@ export default function Index({
                                                             <TooltipContent className="border border-slate-100 bg-white p-3 shadow-xl">
                                                                 <div className="min-w-[180px] space-y-1.5">
                                                                     <p className="border-b pb-1 text-xs font-bold text-slate-700">
-                                                                        Desglose por Bodega
+                                                                        Desglose
+                                                                        por
+                                                                        Bodega
                                                                     </p>
                                                                     {inv.inventarios &&
-                                                                    inv.inventarios
+                                                                    inv
+                                                                        .inventarios
                                                                         .length >
                                                                         0 ? (
                                                                         inv.inventarios.map(
@@ -783,7 +1053,9 @@ export default function Index({
                                                                                             'Bodega'}
                                                                                     </span>
                                                                                     <span className="font-mono font-bold">
-                                                                                        {invAlm.cantidad}
+                                                                                        {
+                                                                                            invAlm.cantidad
+                                                                                        }
                                                                                     </span>
                                                                                 </div>
                                                                             ),
@@ -813,9 +1085,8 @@ export default function Index({
                                                             'all' &&
                                                             inv.inventarios &&
                                                             inv.inventarios
-                                                                .length >
-                                                                0 && (
-                                                                <div className="mt-1 flex max-w-[200px] flex-wrap justify-center gap-1">
+                                                                .length > 0 && (
+                                                                <div className="mt-1 flex max-w-[200px] flex-wrap gap-1">
                                                                     {inv.inventarios.map(
                                                                         (
                                                                             invAlm: any,
@@ -834,6 +1105,7 @@ export default function Index({
                                                                                     0,
                                                                                     8,
                                                                                 )}
+
                                                                                 :{' '}
                                                                                 <strong>
                                                                                     {
@@ -846,11 +1118,6 @@ export default function Index({
                                                                 </div>
                                                             )}
                                                     </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-center text-xs font-bold text-muted-foreground">
-                                                    {inv.stock_minimo}
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
                                                     <div
                                                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${inv.days_remaining <= 7 ? 'bg-orange-500/10 text-orange-600' : 'bg-blue-500/10 text-blue-600'}`}
                                                     >
@@ -860,13 +1127,16 @@ export default function Index({
                                                             ? 'Estable'
                                                             : `${inv.days_remaining} días`}
                                                     </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <div className="flex justify-end gap-1">
+                                                </div>
+                                                <div className="flex items-center justify-between border-t border-muted/20 pt-2">
+                                                    <span className="text-xs text-muted-foreground">
+                                                        Mín: {inv.stock_minimo}
+                                                    </span>
+                                                    <div className="flex gap-1">
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-8 w-8 text-blue-600 hover:bg-blue-100"
+                                                            className="h-7 w-7 text-blue-600 hover:bg-blue-100"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setViewingItem(
@@ -877,18 +1147,22 @@ export default function Index({
                                                                 );
                                                             }}
                                                         >
-                                                            <Eye className="h-4 w-4" />
+                                                            <Eye className="h-3.5 w-3.5" />
                                                         </Button>
                                                         {canEdit && (
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                className="h-8 w-8 text-primary hover:bg-primary/10"
-                                                                onClick={(e) => {
+                                                                className="h-7 w-7 text-primary hover:bg-primary/10"
+                                                                onClick={(
+                                                                    e,
+                                                                ) => {
                                                                     e.stopPropagation();
-                                                                    setEditando({
-                                                                        id: inv.id,
-                                                                    });
+                                                                    setEditando(
+                                                                        {
+                                                                            id: inv.id,
+                                                                        },
+                                                                    );
                                                                     setData({
                                                                         producto_id:
                                                                             '',
@@ -901,191 +1175,48 @@ export default function Index({
                                                                         almacen_id:
                                                                             '',
                                                                     });
-                                                                    setAjuste('');
-                                                                    setIsOpen(true);
+                                                                    setAjuste(
+                                                                        '',
+                                                                    );
+                                                                    setIsOpen(
+                                                                        true,
+                                                                    );
                                                                 }}
                                                             >
-                                                                <Pencil className="h-4 w-4" />
+                                                                <Pencil className="h-3.5 w-3.5" />
                                                             </Button>
                                                         )}
                                                         {canDelete && (
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                                                onClick={(e) => {
+                                                                className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                                                                onClick={(
+                                                                    e,
+                                                                ) => {
                                                                     e.stopPropagation();
                                                                     handleDelete(
                                                                         inv.id,
                                                                     );
                                                                 }}
                                                             >
-                                                                <Trash2 className="h-4 w-4" />
+                                                                <Trash2 className="h-3.5 w-3.5" />
                                                             </Button>
                                                         )}
                                                     </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            ) : (
-                            <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {inventarios.data.map((inv) => (
-                                    <Card key={inv.id} className="overflow-hidden border-none shadow-md transition-all hover:shadow-lg" onClick={() => setViewingProjection(inv)}>
-                                        <CardContent className="p-4">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                {inv.imagen ? (
-                                                    <img src={`/storage/${inv.imagen}`} alt={inv.nombre} className="h-10 w-10 rounded-lg object-cover" />
-                                                ) : (
-                                                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${inv.status === 'low' ? 'bg-red-500/10 text-red-600' : 'bg-primary/10 text-primary'}`}>
-                                                        <Package className="h-5 w-5" />
-                                                    </div>
-                                                )}
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="truncate text-sm font-bold">{inv.nombre}</div>
-                                                    <div className="font-mono text-[10px] text-muted-foreground">{inv.codigo}</div>
                                                 </div>
-                                            </div>
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="flex flex-col items-start">
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <div className="flex cursor-pointer items-center">
-                                                                <Badge className={`rounded-xl border-none px-3 py-1 font-mono text-sm font-black ${inv.status === 'low' ? 'animate-pulse bg-red-500 text-white' : 'bg-green-500 text-white'}`}>
-                                                                    {inv.total_stock}
-                                                                </Badge>
-                                                                {almacenFilter ===
-                                                                    'all' && (
-                                                                    <Badge
-                                                                        variant="outline"
-                                                                        className="ml-2 border-slate-200 bg-slate-50 text-[10px] text-slate-600"
-                                                                    >
-                                                                        Consolidado
-                                                                    </Badge>
-                                                                )}
-                                                            </div>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent className="border border-slate-100 bg-white p-3 shadow-xl">
-                                                            <div className="min-w-[180px] space-y-1.5">
-                                                                <p className="border-b pb-1 text-xs font-bold text-slate-700">
-                                                                    Desglose por Bodega
-                                                                </p>
-                                                                {inv.inventarios &&
-                                                                inv.inventarios
-                                                                    .length >
-                                                                    0 ? (
-                                                                    inv.inventarios.map(
-                                                                        (
-                                                                            invAlm: any,
-                                                                            idx: number,
-                                                                        ) => (
-                                                                            <div
-                                                                                key={
-                                                                                    idx
-                                                                                }
-                                                                                className="flex justify-between text-xs text-slate-600"
-                                                                            >
-                                                                                <span>
-                                                                                    {invAlm.almacen ||
-                                                                                        'Bodega'}
-                                                                                </span>
-                                                                                <span className="font-mono font-bold">
-                                                                                    {invAlm.cantidad}
-                                                                                </span>
-                                                                            </div>
-                                                                        ),
-                                                                    )
-                                                                ) : (
-                                                                    <p className="text-xs text-slate-500">
-                                                                        Sin
-                                                                        existencias
-                                                                        registradas
-                                                                    </p>
-                                                                )}
-                                                                <div className="flex justify-between border-t pt-1 text-xs font-bold text-slate-800">
-                                                                    <span>
-                                                                        Total
-                                                                    </span>
-                                                                    <span className="font-mono">
-                                                                        {
-                                                                            inv.total_stock
-                                                                        }
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-
-                                                    {almacenFilter === 'all' &&
-                                                        inv.inventarios &&
-                                                        inv.inventarios.length >
-                                                            0 && (
-                                                            <div className="mt-1 flex max-w-[200px] flex-wrap gap-1">
-                                                                {inv.inventarios.map(
-                                                                    (
-                                                                        invAlm: any,
-                                                                        idx: number,
-                                                                    ) => (
-                                                                        <span
-                                                                            key={
-                                                                                idx
-                                                                            }
-                                                                            className="rounded bg-slate-100/80 px-1 text-[10px] text-slate-500"
-                                                                        >
-                                                                            {(
-                                                                                invAlm.almacen ||
-                                                                                'Bod'
-                                                                            ).substring(
-                                                                                0,
-                                                                                8,
-                                                                            )}
-                                                                            :{' '}
-                                                                            <strong>
-                                                                                {
-                                                                                    invAlm.cantidad
-                                                                                }
-                                                                            </strong>
-                                                                        </span>
-                                                                    ),
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                </div>
-                                                <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${inv.days_remaining <= 7 ? 'bg-orange-500/10 text-orange-600' : 'bg-blue-500/10 text-blue-600'}`}>
-                                                    <History className="h-3 w-3" />
-                                                    {inv.days_remaining > 365 ? 'Estable' : `${inv.days_remaining} días`}
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center justify-between pt-2 border-t border-muted/20">
-                                                <span className="text-xs text-muted-foreground">Mín: {inv.stock_minimo}</span>
-                                                <div className="flex gap-1">
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-600 hover:bg-blue-100" onClick={(e) => { e.stopPropagation(); setViewingItem(inv); setShowViewModal(true); }}>
-                                                        <Eye className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                    {canEdit && (
-                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:bg-primary/10" onClick={(e) => { e.stopPropagation(); setEditando({ id: inv.id }); setData({ producto_id: '', cantidad: 0, cantidad_minima: inv.stock_minimo || 0, ubicacion: '', almacen_id: '' }); setAjuste(''); setIsOpen(true); }}>
-                                                            <Pencil className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                    )}
-                                                    {canDelete && (
-                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); handleDelete(inv.id); }}>
-                                                            <Trash2 className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                                {inventarios.data.length === 0 && (
-                                    <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
-                                        <Package className="mb-2 h-12 w-12" />
-                                        <p className="font-bold">No se encontraron productos</p>
-                                    </div>
-                                )}
-                            </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                    {inventarios.data.length === 0 && (
+                                        <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
+                                            <Package className="mb-2 h-12 w-12" />
+                                            <p className="font-bold">
+                                                No se encontraron productos
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
                             )}
                             <div className="border-t border-muted/50 p-4">
                                 <Pagination
@@ -1307,7 +1438,7 @@ export default function Index({
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 rounded-xl bg-muted/30 p-2">
+                        <div className="grid grid-cols-1 gap-2 rounded-xl bg-muted/30 p-2 sm:grid-cols-3">
                             <div className="text-center">
                                 <p className="text-[8px] font-black text-muted-foreground uppercase">
                                     Stock

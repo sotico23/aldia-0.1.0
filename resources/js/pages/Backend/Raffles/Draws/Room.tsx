@@ -8,7 +8,7 @@ import {
     CheckCircle,
     XCircle,
     Crown,
-    ArrowLeft
+    ArrowLeft,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -66,7 +66,7 @@ interface Props {
 }
 
 export default function DrawRoom({ raffle }: Props) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const [isDrawing, setIsDrawing] = useState(false);
     const [showResults, setShowResults] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -108,7 +108,7 @@ export default function DrawRoom({ raffle }: Props) {
             } else {
                 toast.error(data.message || 'Error al realizar el sorteo');
             }
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
             toast.error('Error al realizar el sorteo');
         } finally {

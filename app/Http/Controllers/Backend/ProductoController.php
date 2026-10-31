@@ -30,6 +30,10 @@ class ProductoController extends Controller implements HasMiddleware
 {
     use HasBulkOperations;
 
+    private const IMAGE_KEYS = ['imagen', 'imagen2', 'imagen3', 'imagen4', 'imagen5'];
+
+    private const MAX_IMAGE_KB = 2048;
+
     public static function middleware(): array
     {
         return [
@@ -39,6 +43,61 @@ class ProductoController extends Controller implements HasMiddleware
             new Middleware('permission:comercial.productos.export', only: ['exportCsv', 'exportExcel']),
             new Middleware('permission:comercial.productos.import', only: ['importCsv', 'importExcel']),
         ];
+    }
+
+    /**
+     * @return array<string, array<int, string>>
+     */
+    private function imageValidationRules(): array
+    {
+        $rules = [];
+
+        foreach (self::IMAGE_KEYS as $key) {
+            $rules[$key] = [
+                'nullable',
+                'image',
+                'mimes:jpeg,jpg,png,webp',
+                'max:'.self::MAX_IMAGE_KB,
+            ];
+        }
+
+        return $rules;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function imageValidationMessages(): array
+    {
+        $messages = [];
+
+        foreach (self::IMAGE_KEYS as $index => $key) {
+            $label = $index === 0
+                ? 'La imagen principal'
+                : 'La imagen '.($index + 1);
+
+            $messages[$key.'.image'] = "{$label} debe ser un archivo de imagen válido.";
+            $messages[$key.'.mimes'] = "{$label} debe ser JPG, JPEG, PNG o WEBP.";
+            $messages[$key.'.max'] = "{$label} no debe superar los 2 MB.";
+        }
+
+        return $messages;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function storeUploadedImages(Request $request): array
+    {
+        $images = [];
+
+        foreach (self::IMAGE_KEYS as $key) {
+            if ($request->hasFile($key)) {
+                $images[$key] = $request->file($key)->store('productos', 'public');
+            }
+        }
+
+        return $images;
     }
 
     public function getExportClass(array $filters): object
@@ -159,11 +218,7 @@ class ProductoController extends Controller implements HasMiddleware
             'cantidad_medida' => 'nullable|numeric|min:0',
             'contenido_por_unidad' => 'nullable|numeric|min:0',
             'peso_base' => 'nullable|numeric|min:0',
-            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
-            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
-            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
-            'imagen4' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
-            'imagen5' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            ...$this->imageValidationRules(),
             'video' => 'nullable|mimes:mp4,webm,ogv|max:10240',
             'mostrar_en_perfil' => 'boolean',
             'tiene_variantes' => 'boolean',
@@ -190,7 +245,7 @@ class ProductoController extends Controller implements HasMiddleware
             'variantes_legacy.*.codigo' => 'nullable|string',
             'variantes_legacy.*.stock' => 'nullable|numeric|min:0',
             'variantes_legacy.*.almacen_id' => 'nullable|exists:almacenes,id',
-        ]);
+        ], $this->imageValidationMessages());
 
         // Validación para productos con envase retornable (cilindros de gas)
         // Nota: Se permite que sean medibles (medida_pesable = true) si el usuario lo configura así
@@ -242,13 +297,7 @@ class ProductoController extends Controller implements HasMiddleware
 
         unset($data['stock'], $data['warehouse_ids'], $data['variante_ids'], $data['variantes'], $data['skus'], $data['variantes_legacy']);
 
-        $imagenes = [];
-        for ($i = 1; $i <= 5; $i++) {
-            $key = 'imagen'.($i === 1 ? '' : $i);
-            if ($request->hasFile($key)) {
-                $imagenes[$key] = $request->file($key)->store('productos', 'public');
-            }
-        }
+        $imagenes = $this->storeUploadedImages($request);
 
         if ($request->hasFile('video')) {
             $imagenes['video'] = $request->file('video')->store('productos/videos', 'public');
@@ -376,11 +425,10 @@ class ProductoController extends Controller implements HasMiddleware
             'cantidad_medida' => 'nullable|numeric|min:0',
             'contenido_por_unidad' => 'nullable|numeric|min:0',
             'peso_base' => 'nullable|numeric|min:0',
-            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
-            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
-            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
-            'imagen4' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
-            'imagen5' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            ...$this->imageValidationRules(),
+            'manage_images' => 'nullable|boolean',
+            'imagenes_existentes' => 'nullable|array',
+            'imagenes_existentes.*' => 'nullable|string|max:2048',
             'video' => 'nullable|mimes:mp4,webm,ogv|max:10240',
             'mostrar_en_perfil' => 'nullable|boolean',
             'tiene_variantes' => 'nullable|boolean',
@@ -407,7 +455,7 @@ class ProductoController extends Controller implements HasMiddleware
             'variantes_legacy.*.codigo' => 'nullable|string',
             'variantes_legacy.*.stock' => 'nullable|numeric|min:0',
             'variantes_legacy.*.almacen_id' => 'nullable|exists:almacenes,id',
-        ]);
+        ], $this->imageValidationMessages());
 
         if (empty($request->envase_producto_id) || $request->envase_producto_id === 'none') {
             $request->merge(['envase_producto_id' => null]);

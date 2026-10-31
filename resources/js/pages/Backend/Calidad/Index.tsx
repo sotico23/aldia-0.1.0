@@ -1,5 +1,13 @@
 import { Head, useForm } from '@inertiajs/react';
-import { LayoutGrid, List, Pencil, Plus, Trash2, Search, X } from 'lucide-react';
+import {
+    LayoutGrid,
+    List,
+    Pencil,
+    Plus,
+    Trash2,
+    Search,
+    X,
+} from 'lucide-react';
 import { useState } from 'react';
 import { useMemo } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
@@ -45,7 +53,6 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const resultados = ['aprobado', 'rechazado', 'pendiente'];
-
 
 export default function Index({
     controles,
@@ -191,17 +198,21 @@ export default function Index({
                             </p>
                         </div>
                         <div className="flex items-center gap-2">
-                            <BulkActions 
-                                baseUrl="/calidad" 
+                            <BulkActions
+                                baseUrl="/calidad"
                                 modelName="Controles"
                                 filters={{
                                     search: filtros.busqueda,
-                                    resultado: filtros.resultado
+                                    resultado: filtros.resultado,
                                 }}
                             />
                             {canCreate && (
-                                <Button onClick={handleNew} className="w-full sm:w-auto">
-                                    <Plus className="mr-2 h-4 w-4" /> Nuevo Control
+                                <Button
+                                    onClick={handleNew}
+                                    className="w-full sm:w-auto"
+                                >
+                                    <Plus className="mr-2 h-4 w-4" /> Nuevo
+                                    Control
                                 </Button>
                             )}
                         </div>
@@ -210,14 +221,29 @@ export default function Index({
                         <CardHeader className="p-4 sm:p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle className="text-sm sm:text-base">Controles</CardTitle>
+                                    <CardTitle className="text-sm sm:text-base">
+                                        Controles
+                                    </CardTitle>
                                     <CardDescription className="text-xs sm:text-sm">
-                                        {controlesFiltrados.length} registros encontrados
+                                        {controlesFiltrados.length} registros
+                                        encontrados
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">
-                                    <button onClick={() => setViewMode('table')} className={`rounded-md p-1.5 transition-colors ${viewMode === 'table' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`} title="Vista tabla"><List className="h-4 w-4" /></button>
-                                    <button onClick={() => setViewMode('cards')} className={`rounded-md p-1.5 transition-colors ${viewMode === 'cards' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`} title="Vista tarjetas"><LayoutGrid className="h-4 w-4" /></button>
+                                    <button
+                                        onClick={() => setViewMode('table')}
+                                        className={`rounded-md p-1.5 transition-colors ${viewMode === 'table' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                        title="Vista tabla"
+                                    >
+                                        <List className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('cards')}
+                                        className={`rounded-md p-1.5 transition-colors ${viewMode === 'cards' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                        title="Vista tarjetas"
+                                    >
+                                        <LayoutGrid className="h-4 w-4" />
+                                    </button>
                                 </div>
                             </div>
                         </CardHeader>
@@ -235,7 +261,7 @@ export default function Index({
                                                     busqueda: e.target.value,
                                                 })
                                             }
-                                            className="h-9 pl-8 pr-8"
+                                            className="h-9 pr-8 pl-8"
                                         />
                                     </div>
                                 </div>
@@ -247,12 +273,15 @@ export default function Index({
                                             resultado: e.target.value,
                                         })
                                     }
-                                    className="flex h-9 rounded-md border bg-background px-3 py-1 min-w-[150px]"
+                                    className="flex h-9 min-w-[150px] rounded-md border bg-background px-3 py-1"
                                 >
-                                    <option value="">Todos los resultados</option>
+                                    <option value="">
+                                        Todos los resultados
+                                    </option>
                                     {resultados.map((r) => (
                                         <option key={r} value={r}>
-                                            {r.charAt(0).toUpperCase() + r.slice(1)}
+                                            {r.charAt(0).toUpperCase() +
+                                                r.slice(1)}
                                         </option>
                                     ))}
                                 </select>
@@ -266,95 +295,306 @@ export default function Index({
                                     Limpiar
                                 </Button>
                             </div>
-{viewMode === 'table' ? (
-                            <>
-                                <div className="hidden md:block">
-                                    <table className="w-full text-xs sm:text-sm">
-                                        <thead>
-                                            <tr className="border-b">
-                                                <th className="py-2 pr-2 text-left font-medium">Lote / Producto</th>
-                                                <th className="py-2 pr-2 text-center font-medium">Muestra / Def.</th>
-                                                <th className="py-2 pr-2 text-left font-medium">Tipo / Fecha</th>
-                                                <th className="py-2 pr-2 text-center font-medium">Resultado</th>
-                                                <th className="py-2 text-right font-medium">Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {controlesFiltrados.map((c) => (
-                                                <tr key={c.id} className="border-b transition-colors hover:bg-muted/30">
-                                                    <td className="py-2 pr-2">
-                                                        <div className="font-mono font-medium">{c.lote || '-'}</div>
-                                                        <div className="text-[10px] text-muted-foreground truncate max-w-[150px]">{c.producto || ''}</div>
-                                                    </td>
-                                                    <td className="py-2 pr-2 text-center">
-                                                        <div className="font-medium">{c.cantidad_muestra}</div>
-                                                        <div className="text-[10px] text-destructive">{c.cantidad_defectuosa} defectuosos</div>
-                                                    </td>
-                                                    <td className="py-2 pr-2">
-                                                        <div className="text-[10px] uppercase font-medium">{c.tipo || '-'}</div>
-                                                        <div className="text-[10px] text-muted-foreground">{formatDateCLP(c.fecha)}</div>
-                                                    </td>
-                                                    <td className="py-2 pr-2 text-center">{getResultadoBadge(c.resultado)}</td>
-                                                    <td className="py-2 text-right">
-                                                        <div className="flex justify-end gap-1">
-                                                            {canEdit && (
-                                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(c)}>
-                                                                    <Pencil className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
-                                                            {canDelete && (
-                                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(c.id)}>
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </td>
+                            {viewMode === 'table' ? (
+                                <>
+                                    <div className="hidden md:block">
+                                        <table className="w-full text-xs sm:text-sm">
+                                            <thead>
+                                                <tr className="border-b">
+                                                    <th className="py-2 pr-2 text-left font-medium">
+                                                        Lote / Producto
+                                                    </th>
+                                                    <th className="py-2 pr-2 text-center font-medium">
+                                                        Muestra / Def.
+                                                    </th>
+                                                    <th className="py-2 pr-2 text-left font-medium">
+                                                        Tipo / Fecha
+                                                    </th>
+                                                    <th className="py-2 pr-2 text-center font-medium">
+                                                        Resultado
+                                                    </th>
+                                                    <th className="py-2 text-right font-medium">
+                                                        Acciones
+                                                    </th>
                                                 </tr>
-                                            ))}
-                                            {controlesFiltrados.length === 0 && (
-                                                <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">No se encontraron registros con los filtros aplicados</td></tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                            </thead>
+                                            <tbody>
+                                                {controlesFiltrados.map((c) => (
+                                                    <tr
+                                                        key={c.id}
+                                                        className="border-b transition-colors hover:bg-muted/30"
+                                                    >
+                                                        <td className="py-2 pr-2">
+                                                            <div className="font-mono font-medium">
+                                                                {c.lote || '-'}
+                                                            </div>
+                                                            <div className="max-w-[150px] truncate text-[10px] text-muted-foreground">
+                                                                {c.producto ||
+                                                                    ''}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-2 pr-2 text-center">
+                                                            <div className="font-medium">
+                                                                {
+                                                                    c.cantidad_muestra
+                                                                }
+                                                            </div>
+                                                            <div className="text-[10px] text-destructive">
+                                                                {
+                                                                    c.cantidad_defectuosa
+                                                                }{' '}
+                                                                defectuosos
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-2 pr-2">
+                                                            <div className="text-[10px] font-medium uppercase">
+                                                                {c.tipo || '-'}
+                                                            </div>
+                                                            <div className="text-[10px] text-muted-foreground">
+                                                                {formatDateCLP(
+                                                                    c.fecha,
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-2 pr-2 text-center">
+                                                            {getResultadoBadge(
+                                                                c.resultado,
+                                                            )}
+                                                        </td>
+                                                        <td className="py-2 text-right">
+                                                            <div className="flex justify-end gap-1">
+                                                                {canEdit && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-8 w-8 p-0"
+                                                                        onClick={() =>
+                                                                            handleEdit(
+                                                                                c,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Pencil className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
+                                                                {canDelete && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                        onClick={() =>
+                                                                            handleDelete(
+                                                                                c.id,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {controlesFiltrados.length ===
+                                                    0 && (
+                                                    <tr>
+                                                        <td
+                                                            colSpan={5}
+                                                            className="py-8 text-center text-muted-foreground"
+                                                        >
+                                                            No se encontraron
+                                                            registros con los
+                                                            filtros aplicados
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
 
-                                <div className="flex flex-col gap-3 md:hidden">
+                                    <div className="flex flex-col gap-3 md:hidden">
+                                        {controlesFiltrados.length === 0 ? (
+                                            <p className="py-8 text-center text-xs text-muted-foreground">
+                                                No se encontraron registros con
+                                                los filtros aplicados
+                                            </p>
+                                        ) : (
+                                            controlesFiltrados.map((c) => (
+                                                <div
+                                                    key={c.id}
+                                                    className="rounded-lg border bg-card p-3 text-xs shadow-sm"
+                                                >
+                                                    <div className="mb-2 flex items-center justify-between">
+                                                        <span className="font-mono font-semibold">
+                                                            {c.lote || '-'}
+                                                        </span>
+                                                        {getResultadoBadge(
+                                                            c.resultado,
+                                                        )}
+                                                    </div>
+                                                    <div className="space-y-1 text-muted-foreground">
+                                                        <div className="flex justify-between">
+                                                            <span>
+                                                                Producto:
+                                                            </span>
+                                                            <span className="font-medium text-foreground">
+                                                                {c.producto ||
+                                                                    '-'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span>
+                                                                Muestra / Def.:
+                                                            </span>
+                                                            <span className="font-medium">
+                                                                {
+                                                                    c.cantidad_muestra
+                                                                }{' '}
+                                                                /{' '}
+                                                                {
+                                                                    c.cantidad_defectuosa
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span>Tipo:</span>
+                                                            <span className="uppercase">
+                                                                {c.tipo || '-'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span>Fecha:</span>
+                                                            <span>
+                                                                {formatDateCLP(
+                                                                    c.fecha,
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-2 flex justify-end gap-1 border-t pt-2">
+                                                        {canEdit && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-7 px-2 text-xs"
+                                                                onClick={() =>
+                                                                    handleEdit(
+                                                                        c,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Pencil className="mr-1 h-3 w-3" />{' '}
+                                                                Editar
+                                                            </Button>
+                                                        )}
+                                                        {canDelete && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        c.id,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Trash2 className="mr-1 h-3 w-3" />{' '}
+                                                                Eliminar
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                    <Pagination
+                                        links={controles.links}
+                                        meta={controles.meta}
+                                    />
+                                </>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                     {controlesFiltrados.length === 0 ? (
-                                        <p className="py-8 text-center text-xs text-muted-foreground">No se encontraron registros con los filtros aplicados</p>
+                                        <p className="col-span-full py-8 text-center text-xs text-muted-foreground">
+                                            No se encontraron registros con los
+                                            filtros aplicados
+                                        </p>
                                     ) : (
                                         controlesFiltrados.map((c) => (
-                                            <div key={c.id} className="rounded-lg border bg-card p-3 text-xs shadow-sm">
-                                                <div className="mb-2 flex items-center justify-between">
-                                                    <span className="font-mono font-semibold">{c.lote || '-'}</span>
-                                                    {getResultadoBadge(c.resultado)}
+                                            <div
+                                                key={c.id}
+                                                className="flex flex-col gap-3 rounded-lg border bg-card p-4 shadow-sm"
+                                            >
+                                                <div className="flex items-start justify-between">
+                                                    <div>
+                                                        <div className="font-mono font-semibold">
+                                                            {c.lote || '-'}
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {c.producto || '-'}
+                                                        </div>
+                                                    </div>
+                                                    {getResultadoBadge(
+                                                        c.resultado,
+                                                    )}
                                                 </div>
-                                                <div className="space-y-1 text-muted-foreground">
-                                                    <div className="flex justify-between">
-                                                        <span>Producto:</span>
-                                                        <span className="font-medium text-foreground">{c.producto || '-'}</span>
+                                                <div className="space-y-1.5 text-sm">
+                                                    <div className="flex justify-between text-xs">
+                                                        <span className="text-muted-foreground">
+                                                            Muestra / Def.:
+                                                        </span>
+                                                        <span className="font-medium">
+                                                            {c.cantidad_muestra}{' '}
+                                                            /{' '}
+                                                            {
+                                                                c.cantidad_defectuosa
+                                                            }
+                                                        </span>
                                                     </div>
-                                                    <div className="flex justify-between">
-                                                        <span>Muestra / Def.:</span>
-                                                        <span className="font-medium">{c.cantidad_muestra} / {c.cantidad_defectuosa}</span>
+                                                    <div className="flex justify-between text-xs">
+                                                        <span className="text-muted-foreground">
+                                                            Tipo:
+                                                        </span>
+                                                        <span className="font-medium uppercase">
+                                                            {c.tipo || '-'}
+                                                        </span>
                                                     </div>
-                                                    <div className="flex justify-between">
-                                                        <span>Tipo:</span>
-                                                        <span className="uppercase">{c.tipo || '-'}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span>Fecha:</span>
-                                                        <span>{formatDateCLP(c.fecha)}</span>
+                                                    <div className="flex justify-between text-xs">
+                                                        <span className="text-muted-foreground">
+                                                            Fecha:
+                                                        </span>
+                                                        <span>
+                                                            {formatDateCLP(
+                                                                c.fecha,
+                                                            )}
+                                                        </span>
                                                     </div>
                                                 </div>
-                                                <div className="mt-2 flex justify-end gap-1 border-t pt-2">
+                                                <div className="mt-auto flex justify-end gap-1 border-t pt-2">
                                                     {canEdit && (
-                                                        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => handleEdit(c)}>
-                                                            <Pencil className="mr-1 h-3 w-3" /> Editar
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0"
+                                                            onClick={() =>
+                                                                handleEdit(c)
+                                                            }
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
                                                         </Button>
                                                     )}
                                                     {canDelete && (
-                                                        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={() => handleDelete(c.id)}>
-                                                            <Trash2 className="mr-1 h-3 w-3" /> Eliminar
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    c.id,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
                                                         </Button>
                                                     )}
                                                 </div>
@@ -362,62 +602,16 @@ export default function Index({
                                         ))
                                     )}
                                 </div>
-                                <Pagination
-                                    links={controles.links}
-                                    meta={controles.meta}
-                                />
-                            </>
-                        ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {controlesFiltrados.length === 0 ? (
-                                    <p className="col-span-full py-8 text-center text-xs text-muted-foreground">No se encontraron registros con los filtros aplicados</p>
-                                ) : (
-                                    controlesFiltrados.map((c) => (
-                                        <div key={c.id} className="rounded-lg border bg-card p-4 shadow-sm flex flex-col gap-3">
-                                            <div className="flex items-start justify-between">
-                                                <div>
-                                                    <div className="font-mono font-semibold">{c.lote || '-'}</div>
-                                                    <div className="text-xs text-muted-foreground">{c.producto || '-'}</div>
-                                                </div>
-                                                {getResultadoBadge(c.resultado)}
-                                            </div>
-                                            <div className="space-y-1.5 text-sm">
-                                                <div className="flex justify-between text-xs">
-                                                    <span className="text-muted-foreground">Muestra / Def.:</span>
-                                                    <span className="font-medium">{c.cantidad_muestra} / {c.cantidad_defectuosa}</span>
-                                                </div>
-                                                <div className="flex justify-between text-xs">
-                                                    <span className="text-muted-foreground">Tipo:</span>
-                                                    <span className="uppercase font-medium">{c.tipo || '-'}</span>
-                                                </div>
-                                                <div className="flex justify-between text-xs">
-                                                    <span className="text-muted-foreground">Fecha:</span>
-                                                    <span>{formatDateCLP(c.fecha)}</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex justify-end gap-1 border-t pt-2 mt-auto">
-                                                {canEdit && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(c)}>
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(c.id)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        )}
+                            )}
                         </CardContent>
                     </Card>
                 </div>
             </AppLayout>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="w-[95vw] max-w-lg overflow-y-auto p-3 sm:p-6" style={{ maxHeight: '85vh' }}>
+                <DialogContent
+                    className="w-[95vw] max-w-lg overflow-y-auto p-3 sm:p-6"
+                    style={{ maxHeight: '85vh' }}
+                >
                     <DialogHeader className="mb-2 sm:mb-4">
                         <DialogTitle className="text-base sm:text-lg">
                             {editando ? 'Editar' : 'Nuevo'} Control
@@ -426,65 +620,96 @@ export default function Index({
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Lote</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Lote
+                                </Label>
                                 <Input
                                     value={data.lote}
-                                    onChange={(e) => setData('lote', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('lote', e.target.value)
+                                    }
                                     className="h-10 text-xs sm:text-sm"
                                 />
                             </div>
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Producto</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Producto
+                                </Label>
                                 <div className="flex gap-2">
                                     <Input
                                         value={data.producto}
-                                        onChange={(e) => setData('producto', e.target.value)}
-                                        className="flex-1 h-10 text-xs sm:text-sm"
+                                        onChange={(e) =>
+                                            setData('producto', e.target.value)
+                                        }
+                                        className="h-10 flex-1 text-xs sm:text-sm"
                                     />
-
                                 </div>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Tipo</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Tipo
+                                </Label>
                                 <Input
                                     value={data.tipo}
-                                    onChange={(e) => setData('tipo', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('tipo', e.target.value)
+                                    }
                                     className="h-10 text-xs sm:text-sm"
                                 />
                             </div>
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Resultado</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Resultado
+                                </Label>
                                 <select
                                     value={data.resultado}
-                                    onChange={(e) => setData('resultado', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('resultado', e.target.value)
+                                    }
                                     className="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-xs sm:text-sm"
                                 >
                                     {resultados.map((r) => (
-                                        <option key={r} value={r}>{r}</option>
+                                        <option key={r} value={r}>
+                                            {r}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Cantidad Muestra</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Cantidad Muestra
+                                </Label>
                                 <Input
                                     type="number"
                                     min="0"
                                     value={data.cantidad_muestra}
-                                    onChange={(e) => setData('cantidad_muestra', parseInt(e.target.value))}
+                                    onChange={(e) =>
+                                        setData(
+                                            'cantidad_muestra',
+                                            parseInt(e.target.value),
+                                        )
+                                    }
                                     className="h-10 text-xs sm:text-sm"
                                 />
                             </div>
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Defectuosos</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Defectuosos
+                                </Label>
                                 <Input
                                     type="number"
                                     min="0"
                                     value={data.cantidad_defectuosa}
-                                    onChange={(e) => setData('cantidad_defectuosa', parseInt(e.target.value))}
+                                    onChange={(e) =>
+                                        setData(
+                                            'cantidad_defectuosa',
+                                            parseInt(e.target.value),
+                                        )
+                                    }
                                     className="h-10 text-xs sm:text-sm"
                                 />
                             </div>
@@ -494,15 +719,24 @@ export default function Index({
                             <Input
                                 type="date"
                                 value={data.fecha}
-                                onChange={(e) => setData('fecha', e.target.value)}
+                                onChange={(e) =>
+                                    setData('fecha', e.target.value)
+                                }
                                 className="h-10 text-xs sm:text-sm"
                             />
                         </div>
                         <DialogFooter className="flex-col gap-2 sm:flex-row">
-                            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="w-full sm:w-auto">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsOpen(false)}
+                                className="w-full sm:w-auto"
+                            >
                                 Cancelar
                             </Button>
-                            <Button type="submit" className="w-full sm:w-auto">Guardar</Button>
+                            <Button type="submit" className="w-full sm:w-auto">
+                                Guardar
+                            </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>

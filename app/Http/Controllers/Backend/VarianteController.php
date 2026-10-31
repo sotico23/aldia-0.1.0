@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
+use App\Models\Categoria;
 use App\Models\Producto;
 use App\Models\SkuVariante;
 use App\Models\Variante;
@@ -26,11 +27,11 @@ class VarianteController extends Controller implements HasMiddleware
 
     public function index()
     {
-        $ownerId = Auth::user()->getOwnerId();
-        $variantes = Variante::with('valores')->where('owner_id', $ownerId)->get();
-
         return Inertia::render('Backend/Pos/Variantes', [
-            'variantes' => $variantes,
+            'variantes' => Variante::with('valores')->get(),
+            // Enviamos la lista de productos y categorías filtradas por el tenant activo
+            'productos' => Producto::select('id', 'nombre')->get(),
+            'categorias' => Categoria::select('id', 'nombre')->get(),
         ]);
     }
 

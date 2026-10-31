@@ -2,12 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { Check, Crown, Sparkles, Shield, CreditCard, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -74,7 +69,9 @@ export default function PlanesIndex({ planes }: { planes: Plan[] }) {
                 <div className="flex flex-col gap-6 p-4 md:p-6">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-2xl font-black">Planes y Precios</h1>
+                            <h1 className="text-2xl font-black">
+                                Planes y Precios
+                            </h1>
                         </div>
                     </div>
 
@@ -83,13 +80,16 @@ export default function PlanesIndex({ planes }: { planes: Plan[] }) {
                             <CardHeader className="pb-2">
                                 <div className="flex items-center gap-2">
                                     <Sparkles className="h-5 w-5 text-blue-600" />
-                                    <CardTitle className="text-sm font-bold text-blue-700">Prueba Activa</CardTitle>
+                                    <CardTitle className="text-sm font-bold text-blue-700">
+                                        Prueba Activa
+                                    </CardTitle>
                                 </div>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-sm text-blue-600/80">
-                                    Estás disfrutando acceso completo a todas las funcionalidades.
-                                    Cuando finalice tu prueba, elige un plan para continuar.
+                                    Estás disfrutando acceso completo a todas
+                                    las funcionalidades. Cuando finalice tu
+                                    prueba, elige un plan para continuar.
                                 </p>
                             </CardContent>
                         </Card>
@@ -98,13 +98,16 @@ export default function PlanesIndex({ planes }: { planes: Plan[] }) {
                             <CardHeader className="pb-2">
                                 <div className="flex items-center gap-2">
                                     <Shield className="h-5 w-5 text-emerald-600" />
-                                    <CardTitle className="text-sm font-bold text-emerald-700">Sin Compromiso</CardTitle>
+                                    <CardTitle className="text-sm font-bold text-emerald-700">
+                                        Sin Compromiso
+                                    </CardTitle>
                                 </div>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-sm text-emerald-600/80">
-                                    Puedes cambiar de plan en cualquier momento. Todos los planes incluyen
-                                    soporte técnico y actualizaciones gratuitas.
+                                    Puedes cambiar de plan en cualquier momento.
+                                    Todos los planes incluyen soporte técnico y
+                                    actualizaciones gratuitas.
                                 </p>
                             </CardContent>
                         </Card>
@@ -116,42 +119,55 @@ export default function PlanesIndex({ planes }: { planes: Plan[] }) {
                             return (
                                 <div
                                     key={index}
-                                    className={`relative w-full sm:max-w-[280px] rounded-2xl border-2 ${styles.borderColor} ${styles.cardBg} ${styles.shadow} p-6 transition-all`}
+                                    className={`relative w-full rounded-2xl border-2 sm:max-w-[280px] ${styles.borderColor} ${styles.cardBg} ${styles.shadow} p-6 transition-all`}
                                 >
                                     {plan.popular && (
                                         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                                            <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 px-4 py-1 text-xs font-bold">
-                                                <Crown className="h-3 w-3 mr-1" />
+                                            <Badge className="border-0 bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-1 text-xs font-bold text-white">
+                                                <Crown className="mr-1 h-3 w-3" />
                                                 Más popular
                                             </Badge>
                                         </div>
                                     )}
 
                                     <div className="mb-4 text-center">
-                                        <h3 className="text-lg font-bold text-foreground">{plan.nombre}</h3>
-                                        <p className="mt-1 text-sm text-muted-foreground">{plan.descripcion}</p>
+                                        <h3 className="text-lg font-bold text-foreground">
+                                            {plan.nombre}
+                                        </h3>
+                                        <p className="mt-1 text-sm text-muted-foreground">
+                                            {plan.descripcion}
+                                        </p>
                                     </div>
 
                                     <div className="mb-6 text-center">
-                                        <span className={`text-4xl font-extrabold ${styles.priceColor}`}>
+                                        <span
+                                            className={`text-4xl font-extrabold ${styles.priceColor}`}
+                                        >
                                             {plan.precio}
                                         </span>
-                                        <span className="text-muted-foreground text-sm ml-1">{plan.periodo}</span>
+                                        <span className="ml-1 text-sm text-muted-foreground">
+                                            {plan.periodo}
+                                        </span>
                                     </div>
 
                                     <ul className="mb-6 space-y-3">
-                                        {plan.caracteristicas.map((caract, i) => (
-                                            <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                                                <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" />
-                                                {caract}
-                                            </li>
-                                        ))}
+                                        {plan.caracteristicas.map(
+                                            (caract, i) => (
+                                                <li
+                                                    key={i}
+                                                    className="flex items-start gap-2 text-sm text-muted-foreground"
+                                                >
+                                                    <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" />
+                                                    {caract}
+                                                </li>
+                                            ),
+                                        )}
                                     </ul>
 
                                     {plan.nombre === 'Corporativo' ? (
                                         <Button className="w-full" asChild>
                                             <Link href="/mensajes">
-                                                <Info className="h-4 w-4 mr-1" />
+                                                <Info className="mr-1 h-4 w-4" />
                                                 Contactar ventas
                                             </Link>
                                         </Button>
@@ -160,8 +176,10 @@ export default function PlanesIndex({ planes }: { planes: Plan[] }) {
                                             Plan actual
                                         </p>
                                     ) : (
-                                        <Button className={`w-full ${styles.button}`}>
-                                            <CreditCard className="h-4 w-4 mr-1" />
+                                        <Button
+                                            className={`w-full ${styles.button}`}
+                                        >
+                                            <CreditCard className="mr-1 h-4 w-4" />
                                             Suscribirse
                                         </Button>
                                     )}
@@ -173,7 +191,10 @@ export default function PlanesIndex({ planes }: { planes: Plan[] }) {
                     <div className="text-center">
                         <p className="text-xs text-muted-foreground">
                             ¿Necesitas ayuda para elegir un plan?{' '}
-                            <Link href="/mensajes" className="text-primary hover:underline font-medium">
+                            <Link
+                                href="/mensajes"
+                                className="font-medium text-primary hover:underline"
+                            >
                                 Contáctanos
                             </Link>
                         </p>

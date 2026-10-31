@@ -1,4 +1,3 @@
-
 import { Head, useForm, router } from '@inertiajs/react';
 import {
     Check,
@@ -22,18 +21,13 @@ import { useState, useEffect } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
     DialogFooter,
     DialogHeader,
-    DialogTitle
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -135,10 +129,12 @@ export default function Index({
         const formattedNumbers = numbers.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
         // Return formatted RUT with verifier
-        return formattedNumbers ? `${formattedNumbers}-${verifier}` : `${verifier}`;
+        return formattedNumbers
+            ? `${formattedNumbers}-${verifier}`
+            : `${verifier}`;
     };
 
-const {
+    const {
         data,
         setData,
         delete: destroy,
@@ -446,8 +442,12 @@ const {
                                                             <div className="flex items-center gap-3">
                                                                 {c.imagen ? (
                                                                     <img
-                                                                        src={c.imagen}
-                                                                        alt={c.nombre}
+                                                                        src={
+                                                                            c.imagen
+                                                                        }
+                                                                        alt={
+                                                                            c.nombre
+                                                                        }
                                                                         className="h-10 w-10 rounded-full object-cover"
                                                                     />
                                                                 ) : (
@@ -457,7 +457,9 @@ const {
                                                                 )}
                                                                 <div>
                                                                     <div className="text-sm font-bold tracking-tight">
-                                                                        {c.nombre}
+                                                                        {
+                                                                            c.nombre
+                                                                        }
                                                                     </div>
                                                                     <div className="flex items-center gap-1.5 font-mono text-[10px] leading-none text-muted-foreground">
                                                                         <IdCard className="h-2.5 w-2.5" />
@@ -487,7 +489,8 @@ const {
                                                                 </div>
                                                                 <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                                                                     <Mail className="h-2.5 w-2.5" />
-                                                                    {c.email || 'N/A'}
+                                                                    {c.email ||
+                                                                        'N/A'}
                                                                 </div>
                                                             </div>
                                                         </td>
@@ -496,7 +499,8 @@ const {
                                                                 variant="outline"
                                                                 className="border-primary/20 bg-primary/5 text-[10px] font-bold text-primary"
                                                             >
-                                                                {c.categoria?.nombre ||
+                                                                {c.categoria
+                                                                    ?.nombre ||
                                                                     'General'}
                                                             </Badge>
                                                         </td>
@@ -530,7 +534,9 @@ const {
                                                                     size="icon"
                                                                     className="h-8 w-8 text-muted-foreground hover:bg-muted"
                                                                     onClick={() =>
-                                                                        handleView(c)
+                                                                        handleView(
+                                                                            c,
+                                                                        )
                                                                     }
                                                                 >
                                                                     <Eye className="h-4 w-4" />
@@ -541,7 +547,9 @@ const {
                                                                         size="icon"
                                                                         className="h-8 w-8 text-primary hover:bg-primary/10"
                                                                         onClick={() =>
-                                                                            handleEdit(c)
+                                                                            handleEdit(
+                                                                                c,
+                                                                            )
                                                                         }
                                                                     >
                                                                         <Pencil className="h-4 w-4" />
@@ -574,7 +582,8 @@ const {
                                                             <div className="flex flex-col items-center gap-2 text-muted-foreground">
                                                                 <Users className="h-10 w-10 opacity-20" />
                                                                 <p className="font-medium">
-                                                                    No se encontraron
+                                                                    No se
+                                                                    encontraron
                                                                     clientes
                                                                 </p>
                                                             </div>
@@ -630,7 +639,10 @@ const {
                                                         </div>
                                                         {c.tiene_acceso && (
                                                             <div className="absolute top-2 left-2">
-                                                                <Badge variant="secondary" className="flex items-center gap-1 px-2 py-0.5 text-[9px] font-black text-blue-600 uppercase">
+                                                                <Badge
+                                                                    variant="secondary"
+                                                                    className="flex items-center gap-1 px-2 py-0.5 text-[9px] font-black text-blue-600 uppercase"
+                                                                >
                                                                     <ShieldCheck className="h-2.5 w-2.5" />
                                                                     Acceso
                                                                 </Badge>
@@ -640,23 +652,42 @@ const {
                                                     <div className="space-y-2 p-4">
                                                         <div className="flex items-start justify-between gap-2">
                                                             <div>
-                                                                <h3 className="font-semibold leading-tight">{c.nombre}</h3>
-                                                                <p className="font-mono text-xs text-muted-foreground">{c.rut || c.nit || 'Sin RUT'}</p>
+                                                                <h3 className="leading-tight font-semibold">
+                                                                    {c.nombre}
+                                                                </h3>
+                                                                <p className="font-mono text-xs text-muted-foreground">
+                                                                    {c.rut ||
+                                                                        c.nit ||
+                                                                        'Sin RUT'}
+                                                                </p>
                                                             </div>
                                                         </div>
                                                         <div className="space-y-1 text-xs text-muted-foreground">
                                                             <div className="flex items-center gap-1.5">
                                                                 <Mail className="h-3.5 w-3.5 shrink-0" />
-                                                                <span className="truncate">{c.email || 'N/A'}</span>
+                                                                <span className="truncate">
+                                                                    {c.email ||
+                                                                        'N/A'}
+                                                                </span>
                                                             </div>
                                                             <div className="flex items-center gap-1.5">
                                                                 <Phone className="h-3.5 w-3.5 shrink-0" />
-                                                                <span>{c.telefono || 'N/A'}</span>
+                                                                <span>
+                                                                    {c.telefono ||
+                                                                        'N/A'}
+                                                                </span>
                                                             </div>
                                                             {c.categoria && (
                                                                 <div className="flex items-center gap-1.5">
-                                                                    <Badge variant="outline" className="border-primary/20 bg-primary/5 text-[10px] font-bold text-primary">
-                                                                        {c.categoria.nombre}
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="border-primary/20 bg-primary/5 text-[10px] font-bold text-primary"
+                                                                    >
+                                                                        {
+                                                                            c
+                                                                                .categoria
+                                                                                .nombre
+                                                                        }
                                                                     </Badge>
                                                                 </div>
                                                             )}
@@ -666,18 +697,28 @@ const {
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 className="h-8 px-2 text-xs"
-                                                                onClick={() => handleView(c)}
+                                                                onClick={() =>
+                                                                    handleView(
+                                                                        c,
+                                                                    )
+                                                                }
                                                             >
-                                                                <Eye className="mr-1 h-3.5 w-3.5" /> Ver
+                                                                <Eye className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                Ver
                                                             </Button>
                                                             {canEdit && (
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="sm"
                                                                     className="h-8 px-2 text-xs"
-                                                                    onClick={() => handleEdit(c)}
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            c,
+                                                                        )
+                                                                    }
                                                                 >
-                                                                    <Pencil className="mr-1 h-3.5 w-3.5" /> Editar
+                                                                    <Pencil className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                    Editar
                                                                 </Button>
                                                             )}
                                                             {canDelete && (
@@ -685,9 +726,14 @@ const {
                                                                     variant="ghost"
                                                                     size="sm"
                                                                     className="h-8 px-2 text-xs text-destructive hover:text-destructive"
-                                                                    onClick={() => handleDelete(c.id)}
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            c.id,
+                                                                        )
+                                                                    }
                                                                 >
-                                                                    <Trash2 className="mr-1 h-3.5 w-3.5" /> Eliminar
+                                                                    <Trash2 className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                    Eliminar
                                                                 </Button>
                                                             )}
                                                         </div>
@@ -761,7 +807,10 @@ const {
                                             setData('nit', e.target.value)
                                         }
                                         onBlur={(e) =>
-                                            setData('nit', formatRut(e.target.value))
+                                            setData(
+                                                'nit',
+                                                formatRut(e.target.value),
+                                            )
                                         }
                                         maxLength={12} // Limita la escritura al formato largo legal (XX.XXX.XXX-X)
                                         placeholder="12.345.678-9"
@@ -769,54 +818,57 @@ const {
                                     />
                                 </div>
 
-                                 <div className="space-y-2">
-                                     <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                                         RUT / Identificación Tributaria
-                                     </Label>
-                                     <Input
-                                         value={data.rut}
-                                         onChange={(e) =>
-                                             setData('rut', e.target.value)
-                                         }
-                                         onBlur={(e) =>
-                                             setData('rut', formatRut(e.target.value))
-                                         }
-                                         maxLength={12} // Limita la escritura al formato largo legal (XX.XXX.XXX-X)
-                                         placeholder="12.345.678-9"
-                                     />
-                                 </div>
-                             </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                                        RUT / Identificación Tributaria
+                                    </Label>
+                                    <Input
+                                        value={data.rut}
+                                        onChange={(e) =>
+                                            setData('rut', e.target.value)
+                                        }
+                                        onBlur={(e) =>
+                                            setData(
+                                                'rut',
+                                                formatRut(e.target.value),
+                                            )
+                                        }
+                                        maxLength={12} // Limita la escritura al formato largo legal (XX.XXX.XXX-X)
+                                        placeholder="12.345.678-9"
+                                    />
+                                </div>
+                            </div>
 
-                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                 <div className="space-y-2">
-                                     <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                                         Correo Electrónico
-                                     </Label>
-                                     <Input
-                                         value={data.email}
-                                         onChange={(e) =>
-                                             setData('email', e.target.value)
-                                         }
-                                         type="email"
-                                         className="h-11 border-none bg-muted/30"
-                                     />
-                                 </div>
-                                 <div className="space-y-2">
-                                     <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                                         Teléfono Principal
-                                     </Label>
-                                     <Input
-                                         value={data.telefono}
-                                         onChange={(e) =>
-                                             setData('telefono', e.target.value)
-                                         }
-                                         className="h-11 border-none bg-muted/30"
-                                     />
-                                 </div>
-                                 <div className="space-y-2">
-                                     <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                                         Categoría de Cliente
-                                     </Label>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                                        Correo Electrónico
+                                    </Label>
+                                    <Input
+                                        value={data.email}
+                                        onChange={(e) =>
+                                            setData('email', e.target.value)
+                                        }
+                                        type="email"
+                                        className="h-11 border-none bg-muted/30"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                                        Teléfono Principal
+                                    </Label>
+                                    <Input
+                                        value={data.telefono}
+                                        onChange={(e) =>
+                                            setData('telefono', e.target.value)
+                                        }
+                                        className="h-11 border-none bg-muted/30"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                                        Categoría de Cliente
+                                    </Label>
                                     <Select
                                         value={data.categoria_id}
                                         onValueChange={(v) =>
@@ -897,8 +949,6 @@ const {
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-
-
                                     <div className="space-y-4">
                                         <div className="mb-2 flex items-center gap-2">
                                             <ShieldCheck className="h-4 w-4 text-primary" />
@@ -913,8 +963,13 @@ const {
                                             <input
                                                 type="checkbox"
                                                 checked={data.crear_usuario}
-                                                onChange={(e) => setData('crear_usuario', e.target.checked)}
-                                                className="h-4 w-4 text-primary rounded border-gray-300 focus:ring-primary"
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'crear_usuario',
+                                                        e.target.checked,
+                                                    )
+                                                }
+                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                                             />
                                         </div>
                                     </div>
@@ -1028,12 +1083,15 @@ const {
                                         type="file"
                                         accept="image/*"
                                         className="hidden"
-                                         onChange={(e) => {
+                                        onChange={(e) => {
                                             const file = e.target.files?.[0];
                                             if (file) {
                                                 setData('imagen', file);
                                                 const reader = new FileReader();
-                                                reader.onloadend = () => setPreviewCliente(reader.result as string);
+                                                reader.onloadend = () =>
+                                                    setPreviewCliente(
+                                                        reader.result as string,
+                                                    );
                                                 reader.readAsDataURL(file);
                                             }
                                         }}

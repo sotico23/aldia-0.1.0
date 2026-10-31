@@ -1,5 +1,11 @@
 import { router } from '@inertiajs/react';
-import { Download, Upload, FileSpreadsheet, FileText, ChevronDown } from 'lucide-react';
+import {
+    Download,
+    Upload,
+    FileSpreadsheet,
+    FileText,
+    ChevronDown,
+} from 'lucide-react';
 import React, { useRef } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -31,31 +37,46 @@ export const BulkActions: React.FC<BulkActionsProps> = ({
     const excelInputRef = useRef<HTMLInputElement>(null);
 
     const handleExport = (type: 'csv' | 'excel') => {
-        const exportUrl = type === 'csv' ? `${baseUrl}/export` : `${baseUrl}/export-excel`;
-        
+        const exportUrl =
+            type === 'csv' ? `${baseUrl}/export` : `${baseUrl}/export-excel`;
+
         // Clean filters: remove empty or undefined values
-        const cleanFilters = Object.entries(filters).reduce((acc, [key, value]) => {
-            if (value !== undefined && value !== null && value !== '' && value !== 'all') {
-                acc[key] = value;
-            }
-            return acc;
-        }, {} as Record<string, any>);
+        const cleanFilters = Object.entries(filters).reduce(
+            (acc, [key, value]) => {
+                if (
+                    value !== undefined &&
+                    value !== null &&
+                    value !== '' &&
+                    value !== 'all'
+                ) {
+                    acc[key] = value;
+                }
+                return acc;
+            },
+            {} as Record<string, any>,
+        );
 
         const params = new URLSearchParams(cleanFilters as any);
-        const urlWithParams = params.toString() ? `${exportUrl}?${params.toString()}` : exportUrl;
-        
+        const urlWithParams = params.toString()
+            ? `${exportUrl}?${params.toString()}`
+            : exportUrl;
+
         window.location.href = urlWithParams;
         toast.success(`Iniciando exportación de ${modelName}...`);
     };
 
-    const handleImport = (e: React.ChangeEvent<HTMLInputElement>, type: 'csv' | 'excel') => {
+    const handleImport = (
+        e: React.ChangeEvent<HTMLInputElement>,
+        type: 'csv' | 'excel',
+    ) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         const formData = new FormData();
         formData.append('archivo', file);
 
-        const importUrl = type === 'csv' ? `${baseUrl}/import` : `${baseUrl}/import-excel`;
+        const importUrl =
+            type === 'csv' ? `${baseUrl}/import` : `${baseUrl}/import-excel`;
 
         toast.info(`Procesando archivo...`);
 
@@ -70,7 +91,7 @@ export const BulkActions: React.FC<BulkActionsProps> = ({
             onError: (errors) => {
                 const firstError = Object.values(errors)[0];
                 toast.error(`Error al importar: ${firstError}`);
-            }
+            },
         });
     };
 
@@ -94,37 +115,68 @@ export const BulkActions: React.FC<BulkActionsProps> = ({
 
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 px-3 gap-2 rounded-xl bg-background shadow-sm hover:bg-muted font-bold border-muted-foreground/10">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 gap-2 rounded-xl border-muted-foreground/10 bg-background px-3 font-bold shadow-sm hover:bg-muted"
+                    >
                         <Download className="h-4 w-4 text-primary" />
                         <span>Herramientas</span>
                         <ChevronDown className="h-3 w-3 text-muted-foreground" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl border-none shadow-2xl bg-white dark:bg-slate-900 ring-1 ring-black/5">
+                <DropdownMenuContent
+                    align="end"
+                    className="w-56 rounded-2xl border-none bg-white p-2 shadow-2xl ring-1 ring-black/5 dark:bg-slate-900"
+                >
                     {canExport && (
                         <>
-                            <div className="px-2 py-1.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Exportar</div>
-                            <DropdownMenuItem onClick={() => handleExport('csv')} className="rounded-lg py-2.5 cursor-pointer focus:bg-primary/5 focus:text-primary">
+                            <div className="px-2 py-1.5 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase">
+                                Exportar
+                            </div>
+                            <DropdownMenuItem
+                                onClick={() => handleExport('csv')}
+                                className="cursor-pointer rounded-lg py-2.5 focus:bg-primary/5 focus:text-primary"
+                            >
                                 <FileText className="mr-2 h-4 w-4 text-blue-500" />
-                                <span className="font-medium">Exportar a CSV</span>
+                                <span className="font-medium">
+                                    Exportar a CSV
+                                </span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleExport('excel')} className="rounded-lg py-2.5 cursor-pointer focus:bg-primary/5 focus:text-primary">
+                            <DropdownMenuItem
+                                onClick={() => handleExport('excel')}
+                                className="cursor-pointer rounded-lg py-2.5 focus:bg-primary/5 focus:text-primary"
+                            >
                                 <FileSpreadsheet className="mr-2 h-4 w-4 text-green-500" />
-                                <span className="font-medium">Exportar a Excel</span>
+                                <span className="font-medium">
+                                    Exportar a Excel
+                                </span>
                             </DropdownMenuItem>
                         </>
                     )}
-                    
+
                     {canImport && (
                         <>
-                            <div className="px-2 py-1.5 mt-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Importar</div>
-                            <DropdownMenuItem onClick={() => csvInputRef.current?.click()} className="rounded-lg py-2.5 cursor-pointer focus:bg-primary/5 focus:text-primary">
+                            <div className="mt-2 px-2 py-1.5 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase">
+                                Importar
+                            </div>
+                            <DropdownMenuItem
+                                onClick={() => csvInputRef.current?.click()}
+                                className="cursor-pointer rounded-lg py-2.5 focus:bg-primary/5 focus:text-primary"
+                            >
                                 <Upload className="mr-2 h-4 w-4 text-orange-500" />
-                                <span className="font-medium">Importar CSV</span>
+                                <span className="font-medium">
+                                    Importar CSV
+                                </span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => excelInputRef.current?.click()} className="rounded-lg py-2.5 cursor-pointer focus:bg-primary/5 focus:text-primary">
+                            <DropdownMenuItem
+                                onClick={() => excelInputRef.current?.click()}
+                                className="cursor-pointer rounded-lg py-2.5 focus:bg-primary/5 focus:text-primary"
+                            >
                                 <FileSpreadsheet className="mr-2 h-4 w-4 text-indigo-500" />
-                                <span className="font-medium">Importar Excel (XLSX)</span>
+                                <span className="font-medium">
+                                    Importar Excel (XLSX)
+                                </span>
                             </DropdownMenuItem>
                         </>
                     )}

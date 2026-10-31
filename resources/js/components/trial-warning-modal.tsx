@@ -2,7 +2,14 @@ import { Link, usePage } from '@inertiajs/react';
 import { AlertTriangle, Clock, ExternalLink } from 'lucide-react';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { index as planesIndex } from '@/routes/planes';
 
 export function TrialWarningModal() {
@@ -11,7 +18,8 @@ export function TrialWarningModal() {
     const [open, setOpen] = React.useState(false);
 
     const daysRemaining = user?.trial_days_remaining ?? 0;
-    const showWarning = user?.is_trial_active && daysRemaining > 0 && daysRemaining <= 3;
+    const showWarning =
+        user?.is_trial_active && daysRemaining > 0 && daysRemaining <= 3;
 
     React.useEffect(() => {
         if (!showWarning) return;
@@ -20,10 +28,14 @@ export function TrialWarningModal() {
         const lastShown = localStorage.getItem(storageKey);
         const today = new Date().toDateString();
 
-        if (lastShown !== today) {
+        if (lastShown === today) return;
+
+        const timer = window.setTimeout(() => {
             setOpen(true);
             localStorage.setItem(storageKey, today);
-        }
+        }, 0);
+
+        return () => window.clearTimeout(timer);
     }, [showWarning, user?.id, daysRemaining]);
 
     if (!showWarning) return null;
@@ -36,10 +48,13 @@ export function TrialWarningModal() {
                         <Clock className="h-6 w-6 text-amber-600" />
                     </div>
                     <DialogTitle className="text-center text-lg">
-                        Tu prueba termina en {daysRemaining} {daysRemaining === 1 ? 'día' : 'días'}
+                        Tu prueba termina en {daysRemaining}{' '}
+                        {daysRemaining === 1 ? 'día' : 'días'}
                     </DialogTitle>
                     <DialogDescription className="text-center">
-                        Para no perder acceso a todas las funciones, elige un plan de suscripción antes de que finalice tu período de prueba.
+                        Para no perder acceso a todas las funciones, elige un
+                        plan de suscripción antes de que finalice tu período de
+                        prueba.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -47,16 +62,25 @@ export function TrialWarningModal() {
                     <div className="flex items-start gap-2">
                         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                         <span>
-                            <strong>Mientras tanto:</strong> Todavía tienes acceso completo. Crea los registros que necesites antes de que expire tu prueba.
+                            <strong>Mientras tanto:</strong> Todavía tienes
+                            acceso completo. Crea los registros que necesites
+                            antes de que expire tu prueba.
                         </span>
                     </div>
                 </div>
 
                 <DialogFooter className="flex flex-col gap-2 sm:flex-row">
-                    <Button variant="outline" onClick={() => setOpen(false)} className="w-full sm:w-auto">
+                    <Button
+                        variant="outline"
+                        onClick={() => setOpen(false)}
+                        className="w-full sm:w-auto"
+                    >
                         Cerrar
                     </Button>
-                    <Button asChild className="w-full bg-amber-600 hover:bg-amber-700 sm:w-auto">
+                    <Button
+                        asChild
+                        className="w-full bg-amber-600 hover:bg-amber-700 sm:w-auto"
+                    >
                         <Link href={planesIndex().url}>
                             <ExternalLink className="mr-2 h-4 w-4" />
                             Ver planes

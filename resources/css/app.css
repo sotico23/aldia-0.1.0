@@ -141,7 +141,7 @@
         @apply bg-background text-foreground;
     }
 
-    .overflow-x-auto table th, 
+    .overflow-x-auto table th,
     .overflow-x-auto table td {
         @apply px-4 py-3 whitespace-nowrap;
     }
@@ -308,7 +308,8 @@
     body * {
         visibility: hidden;
     }
-    .ticket-print, .ticket-print * {
+    .ticket-print,
+    .ticket-print * {
         visibility: visible;
     }
     .ticket-print {
@@ -324,5 +325,7 @@
 }
 
 @keyframes shimmer {
-    100% { transform: translateX(100%); }
+    100% {
+        transform: translateX(100%);
+    }
 }

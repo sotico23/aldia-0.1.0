@@ -52,7 +52,6 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
-
 function ActiveDropdown({
     activo,
     onChange,
@@ -131,14 +130,17 @@ export default function Index({
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
     const [imagenPreview, setImagenPreview] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    
+
     // Auth permissions setup
     const { auth } = usePage().props as any;
     const userPermissions: string[] = auth?.user?.permissions || [];
     const hasAll = userPermissions.includes('*');
-    const canCreate = hasAll || userPermissions.includes('comercial.categorias.create');
-    const canEdit = hasAll || userPermissions.includes('comercial.categorias.edit');
-    const canDelete = hasAll || userPermissions.includes('comercial.categorias.delete');
+    const canCreate =
+        hasAll || userPermissions.includes('comercial.categorias.create');
+    const canEdit =
+        hasAll || userPermissions.includes('comercial.categorias.edit');
+    const canDelete =
+        hasAll || userPermissions.includes('comercial.categorias.delete');
 
     const [formData, setFormData] = useState({
         nombre: '',
@@ -439,179 +441,186 @@ export default function Index({
                                 Limpiar Filtros
                             </Button>
                         </div>
-                            {viewMode === 'table' ? (
-                                <>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full">
-                                            <thead>
-                                                <tr className="border-b">
-                                                    <th className="pb-3 text-left text-sm font-medium">
-                                                        Imagen
-                                                    </th>
-                                                    <th className="pb-3 text-left text-sm font-medium">
-                                                        Nombre
-                                                    </th>
-                                                    <th className="pb-3 text-left text-sm font-medium">
-                                                        Tipo
-                                                    </th>
-                                                    <th className="pb-3 text-left text-sm font-medium">
-                                                        Descripción
-                                                    </th>
-                                                    <th className="pb-3 text-sm font-medium">
-                                                        Estado
-                                                    </th>
-                                                    <th className="pb-3 text-right text-sm font-medium">
-                                                        Acciones
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {categorias.data.map(
-                                                    (categoria: Categoria) => (
-                                                        <tr
-                                                            key={categoria.id}
-                                                            className="border-b transition-colors hover:bg-muted/30"
-                                                        >
-                                                            <td className="px-4 py-2 text-center sm:text-left">
-                                                                {categoria.imagen ? (
-                                                                    <img
-                                                                        src={`/storage/${categoria.imagen}`}
-                                                                        alt={
-                                                                            categoria.nombre
-                                                                        }
-                                                                        className="mx-auto h-8 w-8 rounded object-cover sm:mx-0"
-                                                                    />
-                                                                ) : (
-                                                                    <div className="mx-auto flex h-8 w-8 items-center justify-center rounded bg-muted sm:mx-0">
-                                                                        <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                                                                    </div>
-                                                                )}
-                                                            </td>
-                                                            <td className="px-4 py-2 font-medium">
-                                                                {categoria.nombre}
-                                                            </td>
-                                                            <td className="px-4 py-2 text-sm capitalize">
-                                                                <Badge
-                                                                    variant="outline"
-                                                                    className="text-[10px] font-bold uppercase"
-                                                                >
-                                                                    {categoria.tipo}
-                                                                </Badge>
-                                                            </td>
-                                                            <td className="hidden px-4 py-2 text-sm md:table-cell">
-                                                                {categoria.descripcion ||
-                                                                    '-'}
-                                                            </td>
-                                                            <td className="px-4 py-2">
-                                                                <ActiveDropdown
-                                                                    activo={
-                                                                        categoria.activo
+                        {viewMode === 'table' ? (
+                            <>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="border-b">
+                                                <th className="pb-3 text-left text-sm font-medium">
+                                                    Imagen
+                                                </th>
+                                                <th className="pb-3 text-left text-sm font-medium">
+                                                    Nombre
+                                                </th>
+                                                <th className="pb-3 text-left text-sm font-medium">
+                                                    Tipo
+                                                </th>
+                                                <th className="pb-3 text-left text-sm font-medium">
+                                                    Descripción
+                                                </th>
+                                                <th className="pb-3 text-sm font-medium">
+                                                    Estado
+                                                </th>
+                                                <th className="pb-3 text-right text-sm font-medium">
+                                                    Acciones
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {categorias.data.map(
+                                                (categoria: Categoria) => (
+                                                    <tr
+                                                        key={categoria.id}
+                                                        className="border-b transition-colors hover:bg-muted/30"
+                                                    >
+                                                        <td className="px-4 py-2 text-center sm:text-left">
+                                                            {categoria.imagen ? (
+                                                                <img
+                                                                    src={`/storage/${categoria.imagen}`}
+                                                                    alt={
+                                                                        categoria.nombre
                                                                     }
-                                                                    onChange={(val) => {
-                                                                        if (
-                                                                            val !==
-                                                                            categoria.activo
-                                                                        ) {
-                                                                            toggleActivo(
-                                                                                categoria,
-                                                                            );
-                                                                        }
-                                                                    }}
+                                                                    className="mx-auto h-8 w-8 rounded object-cover sm:mx-0"
                                                                 />
-                                                            </td>
-                                                            <td className="px-4 py-2 text-right">
-                                                                <div className="flex justify-end gap-1">
-                                                                    {categoria.mostrar_en_perfil &&
-                                                                        tiendaSlug && (
-                                                                            <a
-                                                                                href={`/tienda/${tiendaSlug}/categoria/${categoria.id}`}
-                                                                                target="_blank"
-                                                                                rel="noopener noreferrer"
-                                                                                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none"
-                                                                                title="Ver catálogo público"
-                                                                            >
-                                                                                <ShoppingBag className="h-3.5 w-3.5" />
-                                                                                Ver Catálogo
-                                                                            </a>
-                                                                        )}
+                                                            ) : (
+                                                                <div className="mx-auto flex h-8 w-8 items-center justify-center rounded bg-muted sm:mx-0">
+                                                                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-2 font-medium">
+                                                            {categoria.nombre}
+                                                        </td>
+                                                        <td className="px-4 py-2 text-sm capitalize">
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="text-[10px] font-bold uppercase"
+                                                            >
+                                                                {categoria.tipo}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="hidden px-4 py-2 text-sm md:table-cell">
+                                                            {categoria.descripcion ||
+                                                                '-'}
+                                                        </td>
+                                                        <td className="px-4 py-2">
+                                                            <ActiveDropdown
+                                                                activo={
+                                                                    categoria.activo
+                                                                }
+                                                                onChange={(
+                                                                    val,
+                                                                ) => {
+                                                                    if (
+                                                                        val !==
+                                                                        categoria.activo
+                                                                    ) {
+                                                                        toggleActivo(
+                                                                            categoria,
+                                                                        );
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-2 text-right">
+                                                            <div className="flex justify-end gap-1">
+                                                                {categoria.mostrar_en_perfil &&
+                                                                    tiendaSlug && (
+                                                                        <a
+                                                                            href={`/tienda/${tiendaSlug}/categoria/${categoria.id}`}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none"
+                                                                            title="Ver catálogo público"
+                                                                        >
+                                                                            <ShoppingBag className="h-3.5 w-3.5" />
+                                                                            Ver
+                                                                            Catálogo
+                                                                        </a>
+                                                                    )}
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0"
+                                                                    onClick={() => {
+                                                                        setViendo(
+                                                                            categoria,
+                                                                        );
+                                                                        setIsViewOpen(
+                                                                            true,
+                                                                        );
+                                                                    }}
+                                                                    title="Ver detalles"
+                                                                >
+                                                                    <Eye className="h-4 w-4" />
+                                                                </Button>
+                                                                {canEdit && (
                                                                     <Button
                                                                         variant="ghost"
                                                                         size="sm"
                                                                         className="h-8 w-8 p-0"
-                                                                        onClick={() => {
-                                                                            setViendo(
+                                                                        onClick={() =>
+                                                                            handleEdit(
                                                                                 categoria,
-                                                                            );
-                                                                            setIsViewOpen(
-                                                                                true,
-                                                                            );
-                                                                        }}
-                                                                        title="Ver detalles"
+                                                                            )
+                                                                        }
                                                                     >
-                                                                        <Eye className="h-4 w-4" />
+                                                                        <Pencil className="h-4 w-4" />
                                                                     </Button>
-                                                                    {canEdit && (
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="sm"
-                                                                            className="h-8 w-8 p-0"
-                                                                            onClick={() =>
-                                                                                handleEdit(
-                                                                                    categoria,
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            <Pencil className="h-4 w-4" />
-                                                                        </Button>
-                                                                    )}
-                                                                    {canDelete && (
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="sm"
-                                                                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                                                            onClick={() =>
-                                                                                handleDelete(
-                                                                                    categoria.id,
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            <Trash2 className="h-4 w-4" />
-                                                                        </Button>
-                                                                    )}
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    ),
-                                                )}
-                                                {categorias.data.length === 0 && (
-                                                    <tr>
-                                                        <td
-                                                            colSpan={6}
-                                                            className="py-8 text-center text-muted-foreground"
-                                                        >
-                                                            No se encontraron categorías con
-                                                            los filtros aplicados
+                                                                )}
+                                                                {canDelete && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                        onClick={() =>
+                                                                            handleDelete(
+                                                                                categoria.id,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                     </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
+                                                ),
+                                            )}
+                                            {categorias.data.length === 0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan={6}
+                                                        className="py-8 text-center text-muted-foreground"
+                                                    >
+                                                        No se encontraron
+                                                        categorías con los
+                                                        filtros aplicados
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <Pagination
+                                    links={categorias.links}
+                                    meta={
+                                        categorias.meta || (categorias as any)
+                                    }
+                                />
+                            </>
+                        ) : (
+                            <>
+                                {categorias.data.length === 0 ? (
+                                    <div className="py-12 text-center text-muted-foreground">
+                                        <Tags className="mx-auto mb-3 h-12 w-12 opacity-30" />
+                                        <p>No se encontraron categorías.</p>
                                     </div>
-                                    <Pagination
-                                        links={categorias.links}
-                                        meta={categorias.meta || (categorias as any)}
-                                    />
-                                </>
-                            ) : (
-                                <>
-                                    {categorias.data.length === 0 ? (
-                                        <div className="py-12 text-center text-muted-foreground">
-                                            <Tags className="mx-auto mb-3 h-12 w-12 opacity-30" />
-                                            <p>No se encontraron categorías.</p>
-                                        </div>
-                                    ) : (
-                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                            {categorias.data.map((categoria: Categoria) => (
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                        {categorias.data.map(
+                                            (categoria: Categoria) => (
                                                 <div
                                                     key={categoria.id}
                                                     className="group relative overflow-hidden rounded-xl border bg-card transition-all hover:shadow-lg"
@@ -620,7 +629,9 @@ export default function Index({
                                                         {categoria.imagen ? (
                                                             <img
                                                                 src={`/storage/${categoria.imagen}`}
-                                                                alt={categoria.nombre}
+                                                                alt={
+                                                                    categoria.nombre
+                                                                }
                                                                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                                             />
                                                         ) : (
@@ -630,16 +641,28 @@ export default function Index({
                                                         )}
                                                         <div className="absolute top-2 right-2">
                                                             <ActiveDropdown
-                                                                activo={categoria.activo}
-                                                                onChange={(val) => {
-                                                                    if (val !== categoria.activo) {
-                                                                        toggleActivo(categoria);
+                                                                activo={
+                                                                    categoria.activo
+                                                                }
+                                                                onChange={(
+                                                                    val,
+                                                                ) => {
+                                                                    if (
+                                                                        val !==
+                                                                        categoria.activo
+                                                                    ) {
+                                                                        toggleActivo(
+                                                                            categoria,
+                                                                        );
                                                                     }
                                                                 }}
                                                             />
                                                         </div>
                                                         <div className="absolute top-2 left-2">
-                                                            <Badge variant="secondary" className="px-2 py-0.5 text-[10px] capitalize">
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="px-2 py-0.5 text-[10px] capitalize"
+                                                            >
                                                                 {categoria.tipo}
                                                             </Badge>
                                                         </div>
@@ -647,43 +670,59 @@ export default function Index({
                                                     <div className="space-y-2 p-4">
                                                         <div className="flex items-start justify-between gap-2">
                                                             <div>
-                                                                <h3 className="font-semibold leading-tight">{categoria.nombre}</h3>
-                                                                <p className="text-xs text-muted-foreground line-clamp-2">
-                                                                    {categoria.descripcion || 'Sin descripción'}
+                                                                <h3 className="leading-tight font-semibold">
+                                                                    {
+                                                                        categoria.nombre
+                                                                    }
+                                                                </h3>
+                                                                <p className="line-clamp-2 text-xs text-muted-foreground">
+                                                                    {categoria.descripcion ||
+                                                                        'Sin descripción'}
                                                                 </p>
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-1 pt-1">
-                                                            {categoria.mostrar_en_perfil && tiendaSlug && (
-                                                                <a
-                                                                    href={`/tienda/${tiendaSlug}/categoria/${categoria.id}`}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="inline-flex items-center gap-1 rounded-lg bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground"
-                                                                >
-                                                                    <ShoppingBag className="h-3 w-3" />
-                                                                    Catálogo
-                                                                </a>
-                                                            )}
+                                                            {categoria.mostrar_en_perfil &&
+                                                                tiendaSlug && (
+                                                                    <a
+                                                                        href={`/tienda/${tiendaSlug}/categoria/${categoria.id}`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="inline-flex items-center gap-1 rounded-lg bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground"
+                                                                    >
+                                                                        <ShoppingBag className="h-3 w-3" />
+                                                                        Catálogo
+                                                                    </a>
+                                                                )}
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 className="h-8 px-2 text-xs"
                                                                 onClick={() => {
-                                                                    setViendo(categoria);
-                                                                    setIsViewOpen(true);
+                                                                    setViendo(
+                                                                        categoria,
+                                                                    );
+                                                                    setIsViewOpen(
+                                                                        true,
+                                                                    );
                                                                 }}
                                                             >
-                                                                <Eye className="mr-1 h-3.5 w-3.5" /> Ver
+                                                                <Eye className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                Ver
                                                             </Button>
                                                             {canEdit && (
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="sm"
                                                                     className="h-8 px-2 text-xs"
-                                                                    onClick={() => handleEdit(categoria)}
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            categoria,
+                                                                        )
+                                                                    }
                                                                 >
-                                                                    <Pencil className="mr-1 h-3.5 w-3.5" /> Editar
+                                                                    <Pencil className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                    Editar
                                                                 </Button>
                                                             )}
                                                             {canDelete && (
@@ -691,23 +730,31 @@ export default function Index({
                                                                     variant="ghost"
                                                                     size="sm"
                                                                     className="h-8 px-2 text-xs text-destructive hover:text-destructive"
-                                                                    onClick={() => handleDelete(categoria.id)}
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            categoria.id,
+                                                                        )
+                                                                    }
                                                                 >
-                                                                    <Trash2 className="mr-1 h-3.5 w-3.5" /> Eliminar
+                                                                    <Trash2 className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                    Eliminar
                                                                 </Button>
                                                             )}
                                                         </div>
                                                     </div>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    <Pagination
-                                        links={categorias.links}
-                                        meta={categorias.meta || (categorias as any)}
-                                    />
-                                </>
-                            )}
+                                            ),
+                                        )}
+                                    </div>
+                                )}
+                                <Pagination
+                                    links={categorias.links}
+                                    meta={
+                                        categorias.meta || (categorias as any)
+                                    }
+                                />
+                            </>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -765,11 +812,11 @@ export default function Index({
                                             onValueChange={(v: string) =>
                                                 setFormData({
                                                     ...formData,
-            tipo: v as
-                | 'producto'
-                | 'cliente'
-                | 'proveedor'
-                | 'servicio',
+                                                    tipo: v as
+                                                        | 'producto'
+                                                        | 'cliente'
+                                                        | 'proveedor'
+                                                        | 'servicio',
                                                 })
                                             }
                                         >
@@ -777,21 +824,21 @@ export default function Index({
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                    <SelectItem value="producto">
-                                        Producto
-                                    </SelectItem>
-                                    <SelectItem value="cliente">
-                                        Cliente
-                                    </SelectItem>
-                                    <SelectItem value="proveedor">
-                                        Proveedor
-                                    </SelectItem>
-                                    <SelectItem value="servicio">
-                                        Servicio
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                                                <SelectItem value="producto">
+                                                    Producto
+                                                </SelectItem>
+                                                <SelectItem value="cliente">
+                                                    Cliente
+                                                </SelectItem>
+                                                <SelectItem value="proveedor">
+                                                    Proveedor
+                                                </SelectItem>
+                                                <SelectItem value="servicio">
+                                                    Servicio
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="checkbox"

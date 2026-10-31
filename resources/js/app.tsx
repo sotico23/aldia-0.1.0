@@ -8,7 +8,10 @@ import { initializeTheme } from './hooks/use-appearance';
 
 createInertiaApp({
     title: (title) => {
-        const dynamicAppName = (window as any).appName || import.meta.env.VITE_APP_NAME || 'Laravel';
+        const dynamicAppName =
+            (window as any).appName ||
+            import.meta.env.VITE_APP_NAME ||
+            'Laravel';
         return title ? `${title} - ${dynamicAppName}` : dynamicAppName;
     },
     resolve: (name) =>

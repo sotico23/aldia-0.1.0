@@ -82,7 +82,7 @@ export default function SiiIndex({
     ambiente: string;
 }) {
     const { hasPermission } = usePermissions();
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const canAccess = hasPermission('finanzas.sii.viewAny');
     const cafVigentes = cafs.filter((c) => !c.agotado);
     const cafAgotados = cafs.filter((c) => c.agotado);
@@ -97,7 +97,9 @@ export default function SiiIndex({
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );
@@ -114,7 +116,7 @@ export default function SiiIndex({
                             <h1 className="text-2xl font-bold tracking-tight">
                                 SII – Facturación Electrónica
                             </h1>
-                            <p className="text-muted-foreground text-sm">
+                            <p className="text-sm text-muted-foreground">
                                 Ambiente:{' '}
                                 <span
                                     className={
@@ -156,7 +158,9 @@ export default function SiiIndex({
                         <StatCard
                             label="CAFs Vigentes"
                             value={cafVigentes.length}
-                            icon={<FileCheck2 className="h-5 w-5 text-green-500" />}
+                            icon={
+                                <FileCheck2 className="h-5 w-5 text-green-500" />
+                            }
                             sub="con folios disponibles"
                         />
                         <StatCard
@@ -174,7 +178,9 @@ export default function SiiIndex({
                         <StatCard
                             label="Docs. Emitidos"
                             value={documentos.length}
-                            icon={<RefreshCw className="h-5 w-5 text-purple-500" />}
+                            icon={
+                                <RefreshCw className="h-5 w-5 text-purple-500" />
+                            }
                             sub="últimos registros"
                         />
                     </div>
@@ -184,7 +190,9 @@ export default function SiiIndex({
                         <CardHeader>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle>Códigos de Autorización de Folios (CAF)</CardTitle>
+                                    <CardTitle>
+                                        Códigos de Autorización de Folios (CAF)
+                                    </CardTitle>
                                     <CardDescription>
                                         {cafs.length === 0
                                             ? 'Aún no has subido ningún CAF.'
@@ -194,14 +202,22 @@ export default function SiiIndex({
                                 {cafs.length > 0 && (
                                     <div className="flex items-center gap-1 rounded-lg border p-1">
                                         <Button
-                                            variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                                            variant={
+                                                viewMode === 'table'
+                                                    ? 'secondary'
+                                                    : 'ghost'
+                                            }
                                             size="sm"
                                             onClick={() => setViewMode('table')}
                                         >
                                             <List className="h-4 w-4" />
                                         </Button>
                                         <Button
-                                            variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                                            variant={
+                                                viewMode === 'cards'
+                                                    ? 'secondary'
+                                                    : 'ghost'
+                                            }
                                             size="sm"
                                             onClick={() => setViewMode('cards')}
                                         >
@@ -216,8 +232,9 @@ export default function SiiIndex({
                                 <div className="flex flex-col items-center gap-3 py-12 text-center text-muted-foreground">
                                     <AlertTriangle className="h-10 w-10 text-amber-400" />
                                     <p className="text-sm">
-                                        Sin CAF no puedes emitir DTEs. Descarga el archivo XML
-                                        desde el portal del SII y súbelo aquí.
+                                        Sin CAF no puedes emitir DTEs. Descarga
+                                        el archivo XML desde el portal del SII y
+                                        súbelo aquí.
                                     </p>
                                     <Link href="/sii/caf/subir">
                                         <Button size="sm">
@@ -231,12 +248,24 @@ export default function SiiIndex({
                                     <table className="w-full text-sm">
                                         <thead>
                                             <tr className="border-b text-left text-muted-foreground">
-                                                <th className="px-3 py-2 font-medium">Tipo Doc.</th>
-                                                <th className="px-3 py-2 font-medium">Desde</th>
-                                                <th className="px-3 py-2 font-medium">Hasta</th>
-                                                <th className="px-3 py-2 font-medium">Siguiente</th>
-                                                <th className="px-3 py-2 font-medium">Vencimiento</th>
-                                                <th className="px-3 py-2 font-medium">Estado</th>
+                                                <th className="px-3 py-2 font-medium">
+                                                    Tipo Doc.
+                                                </th>
+                                                <th className="px-3 py-2 font-medium">
+                                                    Desde
+                                                </th>
+                                                <th className="px-3 py-2 font-medium">
+                                                    Hasta
+                                                </th>
+                                                <th className="px-3 py-2 font-medium">
+                                                    Siguiente
+                                                </th>
+                                                <th className="px-3 py-2 font-medium">
+                                                    Vencimiento
+                                                </th>
+                                                <th className="px-3 py-2 font-medium">
+                                                    Estado
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -246,7 +275,9 @@ export default function SiiIndex({
                                                     className="border-b transition-colors hover:bg-muted/30"
                                                 >
                                                     <td className="px-3 py-2 font-medium">
-                                                        {tipoDocLabel[caf.tipo_documento] ??
+                                                        {tipoDocLabel[
+                                                            caf.tipo_documento
+                                                        ] ??
                                                             `Tipo ${caf.tipo_documento}`}
                                                     </td>
                                                     <td className="px-3 py-2 font-mono">
@@ -259,7 +290,8 @@ export default function SiiIndex({
                                                         {caf.folio_siguiente}
                                                     </td>
                                                     <td className="px-3 py-2 text-muted-foreground">
-                                                        {caf.fecha_vencimiento ?? '—'}
+                                                        {caf.fecha_vencimiento ??
+                                                            '—'}
                                                     </td>
                                                     <td className="px-3 py-2">
                                                         {caf.agotado ? (
@@ -283,31 +315,57 @@ export default function SiiIndex({
                                         <Card key={caf.id}>
                                             <CardContent className="p-4">
                                                 <div className="mb-2 flex items-center justify-between">
-                                                    <h3 className="font-semibold text-sm">
-                                                        {tipoDocLabel[caf.tipo_documento] ?? `Tipo ${caf.tipo_documento}`}
+                                                    <h3 className="text-sm font-semibold">
+                                                        {tipoDocLabel[
+                                                            caf.tipo_documento
+                                                        ] ??
+                                                            `Tipo ${caf.tipo_documento}`}
                                                     </h3>
                                                     {caf.agotado ? (
-                                                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600">Agotado</span>
+                                                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600">
+                                                            Agotado
+                                                        </span>
                                                     ) : (
-                                                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-600">Vigente</span>
+                                                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-600">
+                                                            Vigente
+                                                        </span>
                                                     )}
                                                 </div>
                                                 <div className="space-y-1 text-sm">
                                                     <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Desde</span>
-                                                        <span className="font-mono">{caf.folio_desde}</span>
+                                                        <span className="text-muted-foreground">
+                                                            Desde
+                                                        </span>
+                                                        <span className="font-mono">
+                                                            {caf.folio_desde}
+                                                        </span>
                                                     </div>
                                                     <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Hasta</span>
-                                                        <span className="font-mono">{caf.folio_hasta}</span>
+                                                        <span className="text-muted-foreground">
+                                                            Hasta
+                                                        </span>
+                                                        <span className="font-mono">
+                                                            {caf.folio_hasta}
+                                                        </span>
                                                     </div>
                                                     <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Siguiente</span>
-                                                        <span className="font-mono font-semibold text-blue-600">{caf.folio_siguiente}</span>
+                                                        <span className="text-muted-foreground">
+                                                            Siguiente
+                                                        </span>
+                                                        <span className="font-mono font-semibold text-blue-600">
+                                                            {
+                                                                caf.folio_siguiente
+                                                            }
+                                                        </span>
                                                     </div>
                                                     <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Vencimiento</span>
-                                                        <span>{caf.fecha_vencimiento ?? '—'}</span>
+                                                        <span className="text-muted-foreground">
+                                                            Vencimiento
+                                                        </span>
+                                                        <span>
+                                                            {caf.fecha_vencimiento ??
+                                                                '—'}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </CardContent>
@@ -324,7 +382,9 @@ export default function SiiIndex({
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <div>
                                     <CardTitle>DTEs Recientes</CardTitle>
-                                    <CardDescription>Últimos 20 documentos emitidos</CardDescription>
+                                    <CardDescription>
+                                        Últimos 20 documentos emitidos
+                                    </CardDescription>
                                 </div>
                                 <Link href="/sii/documentos">
                                     <Button variant="ghost" size="sm">
@@ -338,13 +398,21 @@ export default function SiiIndex({
                                     <table className="w-full text-sm">
                                         <thead>
                                             <tr className="border-b text-left text-muted-foreground">
-                                                <th className="px-3 py-2 font-medium">Tipo</th>
-                                                <th className="px-3 py-2 font-medium">Folio</th>
-                                                <th className="px-3 py-2 font-medium">Receptor</th>
+                                                <th className="px-3 py-2 font-medium">
+                                                    Tipo
+                                                </th>
+                                                <th className="px-3 py-2 font-medium">
+                                                    Folio
+                                                </th>
+                                                <th className="px-3 py-2 font-medium">
+                                                    Receptor
+                                                </th>
                                                 <th className="px-3 py-2 text-right font-medium">
                                                     Total
                                                 </th>
-                                                <th className="px-3 py-2 font-medium">Estado</th>
+                                                <th className="px-3 py-2 font-medium">
+                                                    Estado
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -354,7 +422,9 @@ export default function SiiIndex({
                                                     className="border-b transition-colors hover:bg-muted/30"
                                                 >
                                                     <td className="px-3 py-2">
-                                                        {tipoDocLabel[doc.tipo_documento] ??
+                                                        {tipoDocLabel[
+                                                            doc.tipo_documento
+                                                        ] ??
                                                             `Tipo ${doc.tipo_documento}`}
                                                     </td>
                                                     <td className="px-3 py-2 font-mono">
@@ -362,14 +432,19 @@ export default function SiiIndex({
                                                     </td>
                                                     <td className="px-3 py-2">
                                                         <div className="font-medium">
-                                                            {doc.razon_social_receptor}
+                                                            {
+                                                                doc.razon_social_receptor
+                                                            }
                                                         </div>
                                                         <div className="text-xs text-muted-foreground">
                                                             {doc.rut_receptor}
                                                         </div>
                                                     </td>
                                                     <td className="px-3 py-2 text-right font-bold text-green-600">
-                                                        ${doc.monto_total.toLocaleString(currency.locale)}
+                                                        $
+                                                        {doc.monto_total.toLocaleString(
+                                                            currency.locale,
+                                                        )}
                                                     </td>
                                                     <td className="px-3 py-2">
                                                         <span
@@ -412,7 +487,9 @@ function StatCard({
                     <p className="text-sm text-muted-foreground">{label}</p>
                     {icon}
                 </div>
-                <p className="mt-2 text-3xl font-bold">{value.toLocaleString(currency.locale)}</p>
+                <p className="mt-2 text-3xl font-bold">
+                    {value.toLocaleString(currency.locale)}
+                </p>
                 <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
             </CardContent>
         </Card>

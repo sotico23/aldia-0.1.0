@@ -12,7 +12,7 @@ import {
     Eye,
     Pencil,
     X,
-    Upload
+    Upload,
 } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { toast } from 'sonner';
@@ -169,7 +169,7 @@ function ImageUploadButton({
 }
 
 export default function RafflesIndex({ raffles }: Props) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const { hasPermission } = usePermissions();
     const canCreate = hasPermission('rifas.rifas.create');
     const canEdit = hasPermission('rifas.rifas.edit');
@@ -197,7 +197,6 @@ export default function RafflesIndex({ raffles }: Props) {
     );
     const [prizesEdit, setPrizesEdit] = useState<any[]>([]);
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-
 
     const {
         data: createData,
@@ -448,11 +447,8 @@ export default function RafflesIndex({ raffles }: Props) {
                             Crea y gestiona tus rifas, sorteos y concursos
                         </p>
                     </div>
-                    <div className="flex flex-wrap gap-2 items-center">
-                        <BulkActions
-                            baseUrl="/raffles"
-                            modelName="Rifas"
-                        />
+                    <div className="flex flex-wrap items-center gap-2">
+                        <BulkActions baseUrl="/raffles" modelName="Rifas" />
                         {canCreate && (
                             <Button onClick={() => setIsCreateOpen(true)}>
                                 <Plus className="mr-2 h-4 w-4" />
@@ -540,14 +536,22 @@ export default function RafflesIndex({ raffles }: Props) {
                             </div>
                             <div className="flex items-center gap-1 rounded-lg border p-1">
                                 <Button
-                                    variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                                    variant={
+                                        viewMode === 'table'
+                                            ? 'secondary'
+                                            : 'ghost'
+                                    }
                                     size="sm"
                                     onClick={() => setViewMode('table')}
                                 >
                                     <List className="h-4 w-4" />
                                 </Button>
                                 <Button
-                                    variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                                    variant={
+                                        viewMode === 'cards'
+                                            ? 'secondary'
+                                            : 'ghost'
+                                    }
                                     size="sm"
                                     onClick={() => setViewMode('cards')}
                                 >
@@ -559,157 +563,173 @@ export default function RafflesIndex({ raffles }: Props) {
                     <CardContent>
                         {viewMode === 'table' ? (
                             <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[300px]">
-                                            Título
-                                        </TableHead>
-                                        <TableHead>Tipo</TableHead>
-                                        <TableHead>Estado</TableHead>
-                                        <TableHead>Participantes</TableHead>
-                                        <TableHead>Premios</TableHead>
-                                        <TableHead>Duración</TableHead>
-                                        <TableHead className="text-right">
-                                            Acciones
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {raffles.data.length === 0 ? (
+                                <Table>
+                                    <TableHeader>
                                         <TableRow>
-                                            <TableCell
-                                                colSpan={7}
-                                                className="py-10 text-center text-zinc-500"
-                                            >
-                                                No hay rifas creadas. ¡Crea tu
-                                                primera rifa!
-                                            </TableCell>
+                                            <TableHead className="w-[300px]">
+                                                Título
+                                            </TableHead>
+                                            <TableHead>Tipo</TableHead>
+                                            <TableHead>Estado</TableHead>
+                                            <TableHead>Participantes</TableHead>
+                                            <TableHead>Premios</TableHead>
+                                            <TableHead>Duración</TableHead>
+                                            <TableHead className="text-right">
+                                                Acciones
+                                            </TableHead>
                                         </TableRow>
-                                    ) : (
-                                        raffles.data.map((raffle) => (
-                                            <TableRow key={raffle.id}>
-                                                <TableCell className="font-medium">
-                                                    <div className="flex items-center gap-3">
-                                                        {raffle.cover_image ? (
-                                                            <img
-                                                                src={
-                                                                    raffle.cover_image
-                                                                }
-                                                                alt={raffle.title}
-                                                                className="h-10 w-10 rounded-lg object-cover"
-                                                            />
-                                                        ) : (
-                                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800">
-                                                                <Gift className="h-5 w-5 text-zinc-400" />
-                                                            </div>
-                                                        )}
-                                                        <div>
-                                                            <div className="font-medium">
-                                                                {raffle.title}
-                                                            </div>
-                                                            <div className="text-xs text-zinc-500">
-                                                                /{raffle.slug}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <span className="text-sm">
-                                                        {typeLabels[raffle.type]}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge
-                                                        className={
-                                                            statusColors[
-                                                                raffle.status
-                                                            ]
-                                                        }
-                                                    >
-                                                        {raffle.status}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    {raffle.participants_count}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {raffle.prizes_count}
-                                                </TableCell>
-                                                <TableCell className="text-sm text-zinc-500">
-                                                    {raffle.start_date &&
-                                                    raffle.end_date ? (
-                                                        <>
-                                                            {new Date(
-                                                                raffle.start_date,
-                                                            ).toLocaleDateString(
-                                                                currency.locale,
-                                                            )}{' '}
-                                                            -
-                                                            {new Date(
-                                                                raffle.end_date,
-                                                            ).toLocaleDateString(
-                                                                currency.locale,
-                                                            )}
-                                                        </>
-                                                    ) : (
-                                                        'Sin fecha'
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger
-                                                            asChild
-                                                        >
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                            >
-                                                                <MoreVertical className="h-4 w-4" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            {canEdit && (
-                                                                <DropdownMenuItem
-                                                                    onClick={() =>
-                                                                        openEditModal(
-                                                                            raffle,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Pencil className="mr-2 h-4 w-4" />
-                                                                    Editar
-                                                                </DropdownMenuItem>
-                                                            )}
-                                                            <DropdownMenuItem
-                                                                asChild
-                                                            >
-                                                                <Link
-                                                                    href={`/rifa/${raffle.slug}`}
-                                                                    target="_blank"
-                                                                >
-                                                                    <Eye className="mr-2 h-4 w-4" />
-                                                                    Ver Pública
-                                                                </Link>
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem
-                                                                asChild
-                                                            >
-                                                                <Link
-                                                                    href={`/rifa/${raffle.slug}/ganadores`}
-                                                                    target="_blank"
-                                                                >
-                                                                    <Trophy className="mr-2 h-4 w-4" />
-                                                                    Ver Ganadores
-                                                                </Link>
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {raffles.data.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell
+                                                    colSpan={7}
+                                                    className="py-10 text-center text-zinc-500"
+                                                >
+                                                    No hay rifas creadas. ¡Crea
+                                                    tu primera rifa!
                                                 </TableCell>
                                             </TableRow>
-                                        ))
-                                    )}
-                                </TableBody>
+                                        ) : (
+                                            raffles.data.map((raffle) => (
+                                                <TableRow key={raffle.id}>
+                                                    <TableCell className="font-medium">
+                                                        <div className="flex items-center gap-3">
+                                                            {raffle.cover_image ? (
+                                                                <img
+                                                                    src={
+                                                                        raffle.cover_image
+                                                                    }
+                                                                    alt={
+                                                                        raffle.title
+                                                                    }
+                                                                    className="h-10 w-10 rounded-lg object-cover"
+                                                                />
+                                                            ) : (
+                                                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                                                                    <Gift className="h-5 w-5 text-zinc-400" />
+                                                                </div>
+                                                            )}
+                                                            <div>
+                                                                <div className="font-medium">
+                                                                    {
+                                                                        raffle.title
+                                                                    }
+                                                                </div>
+                                                                <div className="text-xs text-zinc-500">
+                                                                    /
+                                                                    {
+                                                                        raffle.slug
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <span className="text-sm">
+                                                            {
+                                                                typeLabels[
+                                                                    raffle.type
+                                                                ]
+                                                            }
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge
+                                                            className={
+                                                                statusColors[
+                                                                    raffle
+                                                                        .status
+                                                                ]
+                                                            }
+                                                        >
+                                                            {raffle.status}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {
+                                                            raffle.participants_count
+                                                        }
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {raffle.prizes_count}
+                                                    </TableCell>
+                                                    <TableCell className="text-sm text-zinc-500">
+                                                        {raffle.start_date &&
+                                                        raffle.end_date ? (
+                                                            <>
+                                                                {new Date(
+                                                                    raffle.start_date,
+                                                                ).toLocaleDateString(
+                                                                    currency.locale,
+                                                                )}{' '}
+                                                                -
+                                                                {new Date(
+                                                                    raffle.end_date,
+                                                                ).toLocaleDateString(
+                                                                    currency.locale,
+                                                                )}
+                                                            </>
+                                                        ) : (
+                                                            'Sin fecha'
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger
+                                                                asChild
+                                                            >
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                >
+                                                                    <MoreVertical className="h-4 w-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                {canEdit && (
+                                                                    <DropdownMenuItem
+                                                                        onClick={() =>
+                                                                            openEditModal(
+                                                                                raffle,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                                        Editar
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                                <DropdownMenuItem
+                                                                    asChild
+                                                                >
+                                                                    <Link
+                                                                        href={`/rifa/${raffle.slug}`}
+                                                                        target="_blank"
+                                                                    >
+                                                                        <Eye className="mr-2 h-4 w-4" />
+                                                                        Ver
+                                                                        Pública
+                                                                    </Link>
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    asChild
+                                                                >
+                                                                    <Link
+                                                                        href={`/rifa/${raffle.slug}/ganadores`}
+                                                                        target="_blank"
+                                                                    >
+                                                                        <Trophy className="mr-2 h-4 w-4" />
+                                                                        Ver
+                                                                        Ganadores
+                                                                    </Link>
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
                                 </Table>
                             </div>
                         ) : (
@@ -717,15 +737,27 @@ export default function RafflesIndex({ raffles }: Props) {
                                 {raffles.data.length === 0 ? (
                                     <div className="col-span-full flex flex-col items-center justify-center py-12 text-center text-zinc-500">
                                         <Gift className="mb-2 h-12 w-12 text-zinc-300" />
-                                        <p>No hay rifas creadas. ¡Crea tu primera rifa!</p>
+                                        <p>
+                                            No hay rifas creadas. ¡Crea tu
+                                            primera rifa!
+                                        </p>
                                     </div>
                                 ) : (
                                     raffles.data.map((raffle) => (
-                                        <Card key={raffle.id} className="overflow-hidden">
+                                        <Card
+                                            key={raffle.id}
+                                            className="overflow-hidden"
+                                        >
                                             <CardContent className="p-0">
                                                 {raffle.cover_image ? (
                                                     <div className="aspect-video w-full overflow-hidden">
-                                                        <img src={raffle.cover_image} alt={raffle.title} className="h-full w-full object-cover" />
+                                                        <img
+                                                            src={
+                                                                raffle.cover_image
+                                                            }
+                                                            alt={raffle.title}
+                                                            className="h-full w-full object-cover"
+                                                        />
                                                     </div>
                                                 ) : (
                                                     <div className="flex aspect-video w-full items-center justify-center bg-zinc-100 dark:bg-zinc-800">
@@ -734,48 +766,99 @@ export default function RafflesIndex({ raffles }: Props) {
                                                 )}
                                                 <div className="space-y-3 p-4">
                                                     <div>
-                                                        <h3 className="font-semibold">{raffle.title}</h3>
-                                                        <p className="text-xs text-zinc-500">/{raffle.slug}</p>
+                                                        <h3 className="font-semibold">
+                                                            {raffle.title}
+                                                        </h3>
+                                                        <p className="text-xs text-zinc-500">
+                                                            /{raffle.slug}
+                                                        </p>
                                                     </div>
                                                     <div className="flex flex-wrap gap-2">
-                                                        <span className="text-sm">{typeLabels[raffle.type]}</span>
-                                                        <Badge className={statusColors[raffle.status]}>
+                                                        <span className="text-sm">
+                                                            {
+                                                                typeLabels[
+                                                                    raffle.type
+                                                                ]
+                                                            }
+                                                        </span>
+                                                        <Badge
+                                                            className={
+                                                                statusColors[
+                                                                    raffle
+                                                                        .status
+                                                                ]
+                                                            }
+                                                        >
                                                             {raffle.status}
                                                         </Badge>
                                                     </div>
                                                     <div className="flex items-center justify-between text-sm text-zinc-500">
-                                                        <span>{raffle.participants_count} participantes</span>
-                                                        <span>{raffle.prizes_count} premios</span>
+                                                        <span>
+                                                            {
+                                                                raffle.participants_count
+                                                            }{' '}
+                                                            participantes
+                                                        </span>
+                                                        <span>
+                                                            {
+                                                                raffle.prizes_count
+                                                            }{' '}
+                                                            premios
+                                                        </span>
                                                     </div>
                                                     <div className="text-xs text-zinc-400">
-                                                        {raffle.start_date && raffle.end_date
+                                                        {raffle.start_date &&
+                                                        raffle.end_date
                                                             ? `${new Date(raffle.start_date).toLocaleDateString(currency.locale)} - ${new Date(raffle.end_date).toLocaleDateString(currency.locale)}`
                                                             : 'Sin fecha'}
                                                     </div>
                                                     <div className="flex justify-end">
                                                         <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="sm">
+                                                            <DropdownMenuTrigger
+                                                                asChild
+                                                            >
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                >
                                                                     <MoreVertical className="h-4 w-4" />
                                                                 </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
                                                                 {canEdit && (
-                                                                    <DropdownMenuItem onClick={() => openEditModal(raffle)}>
+                                                                    <DropdownMenuItem
+                                                                        onClick={() =>
+                                                                            openEditModal(
+                                                                                raffle,
+                                                                            )
+                                                                        }
+                                                                    >
                                                                         <Pencil className="mr-2 h-4 w-4" />
                                                                         Editar
                                                                     </DropdownMenuItem>
                                                                 )}
-                                                                <DropdownMenuItem asChild>
-                                                                    <Link href={`/rifa/${raffle.slug}`} target="_blank">
+                                                                <DropdownMenuItem
+                                                                    asChild
+                                                                >
+                                                                    <Link
+                                                                        href={`/rifa/${raffle.slug}`}
+                                                                        target="_blank"
+                                                                    >
                                                                         <Eye className="mr-2 h-4 w-4" />
-                                                                        Ver Pública
+                                                                        Ver
+                                                                        Pública
                                                                     </Link>
                                                                 </DropdownMenuItem>
-                                                                <DropdownMenuItem asChild>
-                                                                    <Link href={`/rifa/${raffle.slug}/ganadores`} target="_blank">
+                                                                <DropdownMenuItem
+                                                                    asChild
+                                                                >
+                                                                    <Link
+                                                                        href={`/rifa/${raffle.slug}/ganadores`}
+                                                                        target="_blank"
+                                                                    >
                                                                         <Trophy className="mr-2 h-4 w-4" />
-                                                                        Ver Ganadores
+                                                                        Ver
+                                                                        Ganadores
                                                                     </Link>
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
@@ -794,7 +877,7 @@ export default function RafflesIndex({ raffles }: Props) {
 
             {/* Modal Crear Rifa */}
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                <DialogContent className="w-[95vw] max-w-3xl max-h-[95dvh] overflow-y-auto p-4 sm:p-6">
+                <DialogContent className="max-h-[95dvh] w-[95vw] max-w-3xl overflow-y-auto p-4 sm:p-6">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Gift className="h-5 w-5" />
@@ -816,7 +899,9 @@ export default function RafflesIndex({ raffles }: Props) {
                                         if (file) {
                                             const reader = new FileReader();
                                             reader.onloadend = () => {
-                                                setCoverImage(reader.result as string);
+                                                setCoverImage(
+                                                    reader.result as string,
+                                                );
                                             };
                                             reader.readAsDataURL(file);
                                             setCoverImageFile(file);
@@ -912,19 +997,27 @@ export default function RafflesIndex({ raffles }: Props) {
                                                 image={prize.image}
                                                 onChange={(file) => {
                                                     if (file) {
-                                                        const reader = new FileReader();
-                                                        reader.onloadend = () => {
-                                                            const newPrizes = [
-                                                                ...prizes,
-                                                            ];
-                                                            newPrizes[index].image =
-                                                                reader.result as string;
-                                                            newPrizes[
-                                                                index
-                                                            ].imageFile = file;
-                                                            setPrizes(newPrizes);
-                                                        };
-                                                        reader.readAsDataURL(file);
+                                                        const reader =
+                                                            new FileReader();
+                                                        reader.onloadend =
+                                                            () => {
+                                                                const newPrizes =
+                                                                    [...prizes];
+                                                                newPrizes[
+                                                                    index
+                                                                ].image =
+                                                                    reader.result as string;
+                                                                newPrizes[
+                                                                    index
+                                                                ].imageFile =
+                                                                    file;
+                                                                setPrizes(
+                                                                    newPrizes,
+                                                                );
+                                                            };
+                                                        reader.readAsDataURL(
+                                                            file,
+                                                        );
                                                     }
                                                 }}
                                                 label="Premio"
@@ -1181,7 +1274,7 @@ export default function RafflesIndex({ raffles }: Props) {
 
             {/* Modal Editar Rifa */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent className="w-[95vw] max-w-3xl max-h-[95dvh] overflow-y-auto p-4 sm:p-6">
+                <DialogContent className="max-h-[95dvh] w-[95vw] max-w-3xl overflow-y-auto p-4 sm:p-6">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Pencil className="h-5 w-5" />
@@ -1533,25 +1626,29 @@ export default function RafflesIndex({ raffles }: Props) {
                                                                 file,
                                                             ) => {
                                                                 if (file) {
-                                                                    const reader = new FileReader();
-                                                                    reader.onloadend = () => {
-                                                                        const newPrizes =
-                                                                            [
-                                                                                ...prizesEdit,
-                                                                            ];
-                                                                        newPrizes[
-                                                                            index
-                                                                        ].image =
-                                                                            reader.result as string;
-                                                                        newPrizes[
-                                                                            index
-                                                                        ].imageFile =
-                                                                            file;
-                                                                        setPrizesEdit(
-                                                                            newPrizes,
-                                                                        );
-                                                                    };
-                                                                    reader.readAsDataURL(file);
+                                                                    const reader =
+                                                                        new FileReader();
+                                                                    reader.onloadend =
+                                                                        () => {
+                                                                            const newPrizes =
+                                                                                [
+                                                                                    ...prizesEdit,
+                                                                                ];
+                                                                            newPrizes[
+                                                                                index
+                                                                            ].image =
+                                                                                reader.result as string;
+                                                                            newPrizes[
+                                                                                index
+                                                                            ].imageFile =
+                                                                                file;
+                                                                            setPrizesEdit(
+                                                                                newPrizes,
+                                                                            );
+                                                                        };
+                                                                    reader.readAsDataURL(
+                                                                        file,
+                                                                    );
                                                                 }
                                                             }}
                                                             label="Premio"

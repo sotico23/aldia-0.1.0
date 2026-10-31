@@ -19,27 +19,21 @@ import {
     Printer,
     DollarSign,
     ClipboardList,
-    MoreHorizontal
+    MoreHorizontal,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
     DialogFooter,
     DialogHeader,
-    DialogTitle
+    DialogTitle,
 } from '@/components/ui/dialog';
-import {
-} from '@/components/ui/dropdown-menu';
+import {} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Pagination from '@/components/ui/Pagination';
@@ -395,7 +389,8 @@ export default function Index({
                                 onClick={handleNew}
                                 className="h-9 rounded-full bg-primary px-5 font-bold shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
                             >
-                                <Plus className="mr-2 h-4 w-4" /> Nueva Cotización
+                                <Plus className="mr-2 h-4 w-4" /> Nueva
+                                Cotización
                             </Button>
                         )}
                     </div>
@@ -414,7 +409,11 @@ export default function Index({
                                 <div className="flex items-center gap-3">
                                     <div className="flex items-center gap-1 rounded-lg border p-0.5">
                                         <Button
-                                            variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                                            variant={
+                                                viewMode === 'table'
+                                                    ? 'secondary'
+                                                    : 'ghost'
+                                            }
                                             size="sm"
                                             onClick={() => setViewMode('table')}
                                             className="h-8 w-8 p-0"
@@ -422,7 +421,11 @@ export default function Index({
                                             <List className="h-4 w-4" />
                                         </Button>
                                         <Button
-                                            variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                                            variant={
+                                                viewMode === 'cards'
+                                                    ? 'secondary'
+                                                    : 'ghost'
+                                            }
                                             size="sm"
                                             onClick={() => setViewMode('cards')}
                                             className="h-8 w-8 p-0"
@@ -449,9 +452,8 @@ export default function Index({
                                         onChange={(e) =>
                                             setSearchTerm(e.target.value)
                                         }
-                                        className="h-10 border-none bg-background/50 pl-10 pr-10 focus-visible:ring-primary/20"
+                                        className="h-10 border-none bg-background/50 pr-10 pl-10 focus-visible:ring-primary/20"
                                     />
-
                                 </div>
                                 <div className="flex gap-2">
                                     <Select
@@ -565,7 +567,9 @@ export default function Index({
                                                             <div className="flex items-center gap-2">
                                                                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-[10px] font-black text-primary">
                                                                     {c.cliente?.nombre
-                                                                        .charAt(0)
+                                                                        .charAt(
+                                                                            0,
+                                                                        )
                                                                         .toUpperCase()}
                                                                 </div>
                                                                 <span className="text-xs font-bold text-foreground">
@@ -620,7 +624,9 @@ export default function Index({
                                                                     size="icon"
                                                                     className="h-8 w-8 text-muted-foreground hover:bg-muted"
                                                                     onClick={() =>
-                                                                        handleView(c)
+                                                                        handleView(
+                                                                            c,
+                                                                        )
                                                                     }
                                                                 >
                                                                     <Eye className="h-4 w-4" />
@@ -631,7 +637,9 @@ export default function Index({
                                                                         size="icon"
                                                                         className="h-8 w-8 text-primary hover:bg-primary/10"
                                                                         onClick={() =>
-                                                                            handleEdit(c)
+                                                                            handleEdit(
+                                                                                c,
+                                                                            )
                                                                         }
                                                                     >
                                                                         <Pencil className="h-4 w-4" />
@@ -671,53 +679,122 @@ export default function Index({
                                     {cotizaciones.data.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-12 text-center">
                                             <ShoppingCart className="mb-4 h-12 w-12 text-muted-foreground/50" />
-                                            <p className="text-muted-foreground">No hay cotizaciones</p>
+                                            <p className="text-muted-foreground">
+                                                No hay cotizaciones
+                                            </p>
                                         </div>
                                     ) : (
                                         <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3">
                                             {cotizaciones.data.map((c) => (
-                                                <div key={c.id} className="group rounded-xl border bg-card p-5 shadow-sm transition-all hover:shadow-md">
+                                                <div
+                                                    key={c.id}
+                                                    className="group rounded-xl border bg-card p-5 shadow-sm transition-all hover:shadow-md"
+                                                >
                                                     <div className="mb-3 flex items-start justify-between">
                                                         <div>
-                                                            <p className="text-sm font-black tracking-tight text-foreground">{c.numero}</p>
+                                                            <p className="text-sm font-black tracking-tight text-foreground">
+                                                                {c.numero}
+                                                            </p>
                                                             <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                                                                 <Calendar className="h-2.5 w-2.5" />
-                                                                {formatDateCLP(c.fecha)}
+                                                                {formatDateCLP(
+                                                                    c.fecha,
+                                                                )}
                                                                 {c.fecha_validez && (
-                                                                    <span className="ml-1 text-orange-500">Vence: {formatDateCLP(c.fecha_validez)}</span>
+                                                                    <span className="ml-1 text-orange-500">
+                                                                        Vence:{' '}
+                                                                        {formatDateCLP(
+                                                                            c.fecha_validez,
+                                                                        )}
+                                                                    </span>
                                                                 )}
                                                             </div>
                                                         </div>
-                                                        <Badge variant="outline" className={`${getEstadoConfig(c.estado).color} rounded-full border px-2 py-0.5 text-[9px] font-black uppercase`}>
-                                                            {getEstadoConfig(c.estado).label}
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={`${getEstadoConfig(c.estado).color} rounded-full border px-2 py-0.5 text-[9px] font-black uppercase`}
+                                                        >
+                                                            {
+                                                                getEstadoConfig(
+                                                                    c.estado,
+                                                                ).label
+                                                            }
                                                         </Badge>
                                                     </div>
                                                     <div className="mb-3 flex items-center gap-2">
                                                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-[10px] font-black text-primary">
-                                                            {c.cliente?.nombre.charAt(0).toUpperCase()}
+                                                            {c.cliente?.nombre
+                                                                .charAt(0)
+                                                                .toUpperCase()}
                                                         </div>
-                                                        <span className="text-xs font-bold text-foreground">{c.cliente?.nombre || 'General'}</span>
+                                                        <span className="text-xs font-bold text-foreground">
+                                                            {c.cliente
+                                                                ?.nombre ||
+                                                                'General'}
+                                                        </span>
                                                     </div>
                                                     <div className="mb-4">
-                                                        <p className="text-lg font-black text-primary">{formatCurrency(c.total)}</p>
-                                                        <p className="text-[10px] text-muted-foreground">Imp: {formatCurrency(c.impuesto)}</p>
+                                                        <p className="text-lg font-black text-primary">
+                                                            {formatCurrency(
+                                                                c.total,
+                                                            )}
+                                                        </p>
+                                                        <p className="text-[10px] text-muted-foreground">
+                                                            Imp:{' '}
+                                                            {formatCurrency(
+                                                                c.impuesto,
+                                                            )}
+                                                        </p>
                                                     </div>
                                                     <div className="flex justify-end gap-1 border-t pt-3">
-                                                        <a href={`/cotizaciones/${c.id}/pdf`} target="_blank" rel="noreferrer">
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50">
+                                                        <a
+                                                            href={`/cotizaciones/${c.id}/pdf`}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                        >
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                                                            >
                                                                 <Printer className="h-4 w-4" />
                                                             </Button>
                                                         </a>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted" onClick={() => handleView(c)}>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-muted-foreground hover:bg-muted"
+                                                            onClick={() =>
+                                                                handleView(c)
+                                                            }
+                                                        >
                                                             <Eye className="h-4 w-4" />
                                                         </Button>
                                                         {canEdit && (
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:bg-primary/10" onClick={() => handleEdit(c)}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-primary hover:bg-primary/10"
+                                                                onClick={() =>
+                                                                    handleEdit(
+                                                                        c,
+                                                                    )
+                                                                }
+                                                            >
                                                                 <Pencil className="h-4 w-4" />
                                                             </Button>
                                                         )}
                                                         {canDelete && (
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(c.id)}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        c.id,
+                                                                    )
+                                                                }
+                                                            >
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         )}
@@ -1231,9 +1308,7 @@ export default function Index({
                                                 Monto Total a Facturar
                                             </p>
                                             <p className="font-mono text-3xl font-black text-primary">
-                                                {formatCurrency(
-                                                    viendo.total,
-                                                )}
+                                                {formatCurrency(viendo.total)}
                                             </p>
                                         </div>
                                     </div>

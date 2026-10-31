@@ -378,11 +378,11 @@ class ResourceBotController extends BotBaseController
             'mensajes' => [
                 'model' => Mensaje::class,
                 'options' => [
-                    'exact_filters' => ['conversacion_id', 'leido'],
+                    'exact_filters' => ['sender_id', 'receiver_id', 'leido'],
                     'date_from' => 'created_at',
                     'date_to' => 'created_at',
                 ],
-                'fields' => ['id', 'conversacion_id', 'autor', 'texto', 'tipo_mensaje', 'leido', 'created_at'],
+                'fields' => ['id', 'sender_id', 'receiver_id', 'contenido', 'archivo_path', 'archivo_nombre', 'archivo_tipo', 'leido', 'created_at'],
             ],
             'conversaciones' => [
                 'model' => Conversacion::class,

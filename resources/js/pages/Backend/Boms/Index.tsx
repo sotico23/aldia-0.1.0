@@ -1,5 +1,13 @@
 import { Head, router } from '@inertiajs/react';
-import { LayoutGrid, List, Pencil, Plus, Trash2, Search, X } from 'lucide-react';
+import {
+    LayoutGrid,
+    List,
+    Pencil,
+    Plus,
+    Trash2,
+    Search,
+    X,
+} from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,7 +35,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { useCountry } from '@/hooks/use-country';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import { formatCurrency } from '@/lib/utils';
@@ -57,18 +64,54 @@ interface Bom {
 interface PaginatedData {
     data: Bom[];
     links: { url: string | null; label: string; active: boolean }[];
-    meta?: { current_page: number; from: number; last_page: number; path: string; per_page: number; to: number; total: number };
+    meta?: {
+        current_page: number;
+        from: number;
+        last_page: number;
+        path: string;
+        per_page: number;
+        to: number;
+        total: number;
+    };
     from?: number;
     to?: number;
     total?: number;
 }
 
-const typeConfig: Record<string, { label: string; title: string; parent: string; child: string }> = {
-    bom: { label: 'BOM', title: 'Listas de Materiales (BOM)', parent: 'Producto Final', child: 'Material' },
-    recipe: { label: 'Receta', title: 'Recetas', parent: 'Plato / Producto', child: 'Ingrediente' },
-    kit: { label: 'Kit', title: 'Kits y Paquetes', parent: 'Kit / Paquete', child: 'Componente' },
-    formula: { label: 'Fórmula', title: 'Fórmulas', parent: 'Producto Base', child: 'Insumo' },
-    custom: { label: 'Personalizado', title: 'Composiciones', parent: 'Producto', child: 'Componente' },
+const typeConfig: Record<
+    string,
+    { label: string; title: string; parent: string; child: string }
+> = {
+    bom: {
+        label: 'BOM',
+        title: 'Listas de Materiales (BOM)',
+        parent: 'Producto Final',
+        child: 'Material',
+    },
+    recipe: {
+        label: 'Receta',
+        title: 'Recetas',
+        parent: 'Plato / Producto',
+        child: 'Ingrediente',
+    },
+    kit: {
+        label: 'Kit',
+        title: 'Kits y Paquetes',
+        parent: 'Kit / Paquete',
+        child: 'Componente',
+    },
+    formula: {
+        label: 'Fórmula',
+        title: 'Fórmulas',
+        parent: 'Producto Base',
+        child: 'Insumo',
+    },
+    custom: {
+        label: 'Personalizado',
+        title: 'Composiciones',
+        parent: 'Producto',
+        child: 'Componente',
+    },
 };
 
 const tipoOptions = [
@@ -79,10 +122,27 @@ const tipoOptions = [
     { value: 'custom', label: 'Personalizado' },
 ];
 
-const UNIDADES = ['unid', 'kg', 'gr', 'litro', 'ml', 'm', 'm²', 'paq', 'caja', 'docena', 'porción', 'pieza'];
+const UNIDADES = [
+    'unid',
+    'kg',
+    'gr',
+    'litro',
+    'ml',
+    'm',
+    'm²',
+    'paq',
+    'caja',
+    'docena',
+    'porción',
+    'pieza',
+];
 
 const calcCostoTotal = (materiales: Material[]): number =>
-    materiales.reduce((sum, m) => sum + (Number(m.cantidad) || 0) * (Number(m.costo_unitario) || 0), 0);
+    materiales.reduce(
+        (sum, m) =>
+            sum + (Number(m.cantidad) || 0) * (Number(m.costo_unitario) || 0),
+        0,
+    );
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -90,7 +150,6 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Index({ boms }: { boms: PaginatedData }) {
-    const { code: countryCode, currency } = useCountry();
     const [isOpen, setIsOpen] = useState(false);
     const [editando, setEditando] = useState<Bom | null>(null);
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
@@ -158,30 +217,47 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                 ...m,
                 cantidad: Number(m.cantidad),
                 costo_unitario: Number(m.costo_unitario),
-                costo_total: (Number(m.cantidad) || 0) * (Number(m.costo_unitario) || 0),
+                costo_total:
+                    (Number(m.cantidad) || 0) * (Number(m.costo_unitario) || 0),
             })),
         };
 
         if (editando) {
             router.put(`/boms/${editando.id}`, payload, {
-                onSuccess: () => { setIsOpen(false); setEditando(null); },
+                onSuccess: () => {
+                    setIsOpen(false);
+                    setEditando(null);
+                },
             });
         } else {
             router.post('/boms', payload, {
-                onSuccess: () => { setIsOpen(false); },
+                onSuccess: () => {
+                    setIsOpen(false);
+                },
             });
         }
     };
 
-    const costoTotalMateriales = useMemo(() => calcCostoTotal(formData.materiales), [formData.materiales]);
-    const precioSugerido = costoTotalMateriales * (1 + (formData.margen || 0) / 100);
+    const costoTotalMateriales = useMemo(
+        () => calcCostoTotal(formData.materiales),
+        [formData.materiales],
+    );
+    const precioSugerido =
+        costoTotalMateriales * (1 + (formData.margen || 0) / 100);
 
     const addMaterial = () => {
         setFormData((prev) => ({
             ...prev,
             materiales: [
                 ...prev.materiales,
-                { id: crypto.randomUUID(), nombre: '', cantidad: 1, unidad: 'unid', costo_unitario: 0, costo_total: 0 },
+                {
+                    id: crypto.randomUUID(),
+                    nombre: '',
+                    cantidad: 1,
+                    unidad: 'unid',
+                    costo_unitario: 0,
+                    costo_total: 0,
+                },
             ],
         }));
     };
@@ -193,13 +269,18 @@ export default function Index({ boms }: { boms: PaginatedData }) {
         }));
     };
 
-    const updateMaterial = (index: number, field: keyof Material, value: string | number) => {
+    const updateMaterial = (
+        index: number,
+        field: keyof Material,
+        value: string | number,
+    ) => {
         setFormData((prev) => {
             const materiales = [...prev.materiales];
             materiales[index] = { ...materiales[index], [field]: value };
             if (field === 'cantidad' || field === 'costo_unitario') {
                 materiales[index].costo_total =
-                    (Number(materiales[index].cantidad) || 0) * (Number(materiales[index].costo_unitario) || 0);
+                    (Number(materiales[index].cantidad) || 0) *
+                    (Number(materiales[index].costo_unitario) || 0);
             }
             return { ...prev, materiales };
         });
@@ -240,8 +321,12 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                             </p>
                         </div>
                         {canCreate && (
-                            <Button onClick={handleNew} className="w-full sm:w-auto">
-                                <Plus className="mr-2 h-4 w-4" /> Nueva Composición
+                            <Button
+                                onClick={handleNew}
+                                className="w-full sm:w-auto"
+                            >
+                                <Plus className="mr-2 h-4 w-4" /> Nueva
+                                Composición
                             </Button>
                         )}
                     </div>
@@ -250,14 +335,29 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                         <CardHeader className="p-4 sm:p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle className="text-sm sm:text-base">Composiciones</CardTitle>
+                                    <CardTitle className="text-sm sm:text-base">
+                                        Composiciones
+                                    </CardTitle>
                                     <CardDescription className="text-xs sm:text-sm">
-                                        {bomsFiltrados.length} registros encontrados
+                                        {bomsFiltrados.length} registros
+                                        encontrados
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">
-                                    <button onClick={() => setViewMode('table')} className={`rounded-md p-1.5 transition-colors ${viewMode === 'table' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`} title="Vista tabla"><List className="h-4 w-4" /></button>
-                                    <button onClick={() => setViewMode('cards')} className={`rounded-md p-1.5 transition-colors ${viewMode === 'cards' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`} title="Vista tarjetas"><LayoutGrid className="h-4 w-4" /></button>
+                                    <button
+                                        onClick={() => setViewMode('table')}
+                                        className={`rounded-md p-1.5 transition-colors ${viewMode === 'table' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                        title="Vista tabla"
+                                    >
+                                        <List className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('cards')}
+                                        className={`rounded-md p-1.5 transition-colors ${viewMode === 'cards' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                        title="Vista tarjetas"
+                                    >
+                                        <LayoutGrid className="h-4 w-4" />
+                                    </button>
                                 </div>
                             </div>
                         </CardHeader>
@@ -270,16 +370,22 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                                             placeholder="Buscar por nombre o producto..."
                                             value={filtros.busqueda}
                                             onChange={(e) =>
-                                                setFiltros({ ...filtros, busqueda: e.target.value })
+                                                setFiltros({
+                                                    ...filtros,
+                                                    busqueda: e.target.value,
+                                                })
                                             }
-                                            className="h-9 pl-8 pr-8 text-xs sm:text-sm"
+                                            className="h-9 pr-8 pl-8 text-xs sm:text-sm"
                                         />
                                     </div>
                                 </div>
                                 <select
                                     value={filtros.activo}
                                     onChange={(e) =>
-                                        setFiltros({ ...filtros, activo: e.target.value })
+                                        setFiltros({
+                                            ...filtros,
+                                            activo: e.target.value,
+                                        })
                                     }
                                     className="flex h-9 rounded-md border bg-background px-3 py-1 text-xs sm:text-sm"
                                 >
@@ -287,7 +393,12 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                                     <option value="1">Activos</option>
                                     <option value="0">Inactivos</option>
                                 </select>
-                                <Button variant="outline" size="sm" className="h-9" onClick={limpiarFiltros}>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-9"
+                                    onClick={limpiarFiltros}
+                                >
                                     <X className="mr-1 h-4 w-4" />
                                     Limpiar
                                 </Button>
@@ -297,7 +408,8 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                                 <>
                                     {bomsFiltrados.length === 0 ? (
                                         <p className="py-8 text-center text-xs text-muted-foreground sm:text-sm">
-                                            No se encontraron composiciones con los filtros aplicados
+                                            No se encontraron composiciones con
+                                            los filtros aplicados
                                         </p>
                                     ) : (
                                         <>
@@ -305,110 +417,216 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                                                 <table className="w-full text-xs sm:text-sm">
                                                     <thead>
                                                         <tr className="border-b">
-                                                            <th className="py-2 pr-2 text-left font-medium">Nombre</th>
-                                                            <th className="py-2 pr-2 text-left font-medium">Tipo</th>
-                                                            <th className="py-2 pr-2 text-left font-medium">{currentType.parent}</th>
-                                                            <th className="py-2 pr-2 text-right font-medium">Cant</th>
-                                                            <th className="py-2 pr-2 text-right font-medium">Costo Mat.</th>
-                                                            <th className="py-2 pr-2 text-center font-medium">Estado</th>
-                                                            <th className="py-2 text-right font-medium">Acciones</th>
+                                                            <th className="py-2 pr-2 text-left font-medium">
+                                                                Nombre
+                                                            </th>
+                                                            <th className="py-2 pr-2 text-left font-medium">
+                                                                Tipo
+                                                            </th>
+                                                            <th className="py-2 pr-2 text-left font-medium">
+                                                                {
+                                                                    currentType.parent
+                                                                }
+                                                            </th>
+                                                            <th className="py-2 pr-2 text-right font-medium">
+                                                                Cant
+                                                            </th>
+                                                            <th className="py-2 pr-2 text-right font-medium">
+                                                                Costo Mat.
+                                                            </th>
+                                                            <th className="py-2 pr-2 text-center font-medium">
+                                                                Estado
+                                                            </th>
+                                                            <th className="py-2 text-right font-medium">
+                                                                Acciones
+                                                            </th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {bomsFiltrados.map((b) => {
-                                                            const cfg = typeConfig[b.tipo] || typeConfig.bom;
-                                                            const costo = calcCostoTotal(b.materiales || []);
-                                                            return (
-                                                                <tr key={b.id} className="border-b transition-colors hover:bg-muted/30">
-                                                                    <td className="py-2 pr-2 font-medium">{b.nombre}</td>
-                                                                    <td className="py-2 pr-2">
-                                                                        <Badge variant="outline" className="text-[10px]">
-                                                                            {cfg.label}
-                                                                        </Badge>
-                                                                    </td>
-                                                                    <td className="py-2 pr-2 text-muted-foreground">
-                                                                        {b.producto_final || '-'}
-                                                                    </td>
-                                                                    <td className="py-2 pr-2 text-right">{b.cantidad}</td>
-                                                                    <td className="py-2 pr-2 text-right font-medium">
-                                                                        {costo > 0 ? formatCurrency(costo) : '-'}
-                                                                    </td>
-                                                                    <td className="py-2 pr-2 text-center">
-                                                                        <Badge
-                                                                            variant={b.activo ? 'default' : 'destructive'}
-                                                                            className="text-[10px] px-1.5 py-0"
-                                                                        >
-                                                                            {b.activo ? 'Activo' : 'Inactivo'}
-                                                                        </Badge>
-                                                                    </td>
-                                                                    <td className="py-2 text-right">
-                                                                        <div className="flex justify-end gap-1">
-                                                                            {canEdit && (
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="sm"
-                                                                                    className="h-8 w-8 p-0"
-                                                                                    onClick={() => handleEdit(b)}
-                                                                                >
-                                                                                    <Pencil className="h-4 w-4" />
-                                                                                </Button>
-                                                                            )}
-                                                                            {canDelete && (
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="sm"
-                                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                                                                    onClick={() => handleDelete(b.id)}
-                                                                                >
-                                                                                    <Trash2 className="h-4 w-4" />
-                                                                                </Button>
-                                                                            )}
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                            );
-                                                        })}
+                                                        {bomsFiltrados.map(
+                                                            (b) => {
+                                                                const cfg =
+                                                                    typeConfig[
+                                                                        b.tipo
+                                                                    ] ||
+                                                                    typeConfig.bom;
+                                                                const costo =
+                                                                    calcCostoTotal(
+                                                                        b.materiales ||
+                                                                            [],
+                                                                    );
+                                                                return (
+                                                                    <tr
+                                                                        key={
+                                                                            b.id
+                                                                        }
+                                                                        className="border-b transition-colors hover:bg-muted/30"
+                                                                    >
+                                                                        <td className="py-2 pr-2 font-medium">
+                                                                            {
+                                                                                b.nombre
+                                                                            }
+                                                                        </td>
+                                                                        <td className="py-2 pr-2">
+                                                                            <Badge
+                                                                                variant="outline"
+                                                                                className="text-[10px]"
+                                                                            >
+                                                                                {
+                                                                                    cfg.label
+                                                                                }
+                                                                            </Badge>
+                                                                        </td>
+                                                                        <td className="py-2 pr-2 text-muted-foreground">
+                                                                            {b.producto_final ||
+                                                                                '-'}
+                                                                        </td>
+                                                                        <td className="py-2 pr-2 text-right">
+                                                                            {
+                                                                                b.cantidad
+                                                                            }
+                                                                        </td>
+                                                                        <td className="py-2 pr-2 text-right font-medium">
+                                                                            {costo >
+                                                                            0
+                                                                                ? formatCurrency(
+                                                                                      costo,
+                                                                                  )
+                                                                                : '-'}
+                                                                        </td>
+                                                                        <td className="py-2 pr-2 text-center">
+                                                                            <Badge
+                                                                                variant={
+                                                                                    b.activo
+                                                                                        ? 'default'
+                                                                                        : 'destructive'
+                                                                                }
+                                                                                className="px-1.5 py-0 text-[10px]"
+                                                                            >
+                                                                                {b.activo
+                                                                                    ? 'Activo'
+                                                                                    : 'Inactivo'}
+                                                                            </Badge>
+                                                                        </td>
+                                                                        <td className="py-2 text-right">
+                                                                            <div className="flex justify-end gap-1">
+                                                                                {canEdit && (
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="sm"
+                                                                                        className="h-8 w-8 p-0"
+                                                                                        onClick={() =>
+                                                                                            handleEdit(
+                                                                                                b,
+                                                                                            )
+                                                                                        }
+                                                                                    >
+                                                                                        <Pencil className="h-4 w-4" />
+                                                                                    </Button>
+                                                                                )}
+                                                                                {canDelete && (
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="sm"
+                                                                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                                        onClick={() =>
+                                                                                            handleDelete(
+                                                                                                b.id,
+                                                                                            )
+                                                                                        }
+                                                                                    >
+                                                                                        <Trash2 className="h-4 w-4" />
+                                                                                    </Button>
+                                                                                )}
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            },
+                                                        )}
                                                     </tbody>
                                                 </table>
                                             </div>
 
                                             <div className="flex flex-col gap-3 md:hidden">
                                                 {bomsFiltrados.map((b) => {
-                                                    const cfg = typeConfig[b.tipo] || typeConfig.bom;
-                                                    const costo = calcCostoTotal(b.materiales || []);
+                                                    const cfg =
+                                                        typeConfig[b.tipo] ||
+                                                        typeConfig.bom;
+                                                    const costo =
+                                                        calcCostoTotal(
+                                                            b.materiales || [],
+                                                        );
                                                     return (
                                                         <div
                                                             key={b.id}
                                                             className="rounded-lg border bg-card p-3 text-xs shadow-sm"
                                                         >
                                                             <div className="mb-2 flex items-center justify-between">
-                                                                <span className="font-semibold">{b.nombre}</span>
+                                                                <span className="font-semibold">
+                                                                    {b.nombre}
+                                                                </span>
                                                                 <Badge
-                                                                    variant={b.activo ? 'default' : 'destructive'}
-                                                                    className="text-[10px] px-1.5 py-0"
+                                                                    variant={
+                                                                        b.activo
+                                                                            ? 'default'
+                                                                            : 'destructive'
+                                                                    }
+                                                                    className="px-1.5 py-0 text-[10px]"
                                                                 >
-                                                                    {b.activo ? 'Activo' : 'Inactivo'}
+                                                                    {b.activo
+                                                                        ? 'Activo'
+                                                                        : 'Inactivo'}
                                                                 </Badge>
                                                             </div>
                                                             <div className="space-y-1 text-muted-foreground">
                                                                 <div className="flex justify-between">
-                                                                    <span>Tipo:</span>
-                                                                    <Badge variant="outline" className="text-[10px]">
-                                                                        {cfg.label}
+                                                                    <span>
+                                                                        Tipo:
+                                                                    </span>
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="text-[10px]"
+                                                                    >
+                                                                        {
+                                                                            cfg.label
+                                                                        }
                                                                     </Badge>
                                                                 </div>
                                                                 <div className="flex justify-between">
-                                                                    <span>{cfg.parent}:</span>
-                                                                    <span>{b.producto_final || '-'}</span>
+                                                                    <span>
+                                                                        {
+                                                                            cfg.parent
+                                                                        }
+                                                                        :
+                                                                    </span>
+                                                                    <span>
+                                                                        {b.producto_final ||
+                                                                            '-'}
+                                                                    </span>
                                                                 </div>
                                                                 <div className="flex justify-between">
-                                                                    <span>Cantidad:</span>
-                                                                    <span className="font-medium">{b.cantidad}</span>
-                                                                </div>
-                                                                <div className="flex justify-between">
-                                                                    <span>Costo materiales:</span>
+                                                                    <span>
+                                                                        Cantidad:
+                                                                    </span>
                                                                     <span className="font-medium">
-                                                                        {costo > 0 ? formatCurrency(costo) : '-'}
+                                                                        {
+                                                                            b.cantidad
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex justify-between">
+                                                                    <span>
+                                                                        Costo
+                                                                        materiales:
+                                                                    </span>
+                                                                    <span className="font-medium">
+                                                                        {costo >
+                                                                        0
+                                                                            ? formatCurrency(
+                                                                                  costo,
+                                                                              )
+                                                                            : '-'}
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -418,7 +636,11 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                                                                         variant="ghost"
                                                                         size="sm"
                                                                         className="h-7 px-2 text-xs"
-                                                                        onClick={() => handleEdit(b)}
+                                                                        onClick={() =>
+                                                                            handleEdit(
+                                                                                b,
+                                                                            )
+                                                                        }
                                                                     >
                                                                         <Pencil className="mr-1 h-3 w-3" />
                                                                         Editar
@@ -429,7 +651,11 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                                                                         variant="ghost"
                                                                         size="sm"
                                                                         className="h-7 px-2 text-xs text-destructive hover:text-destructive"
-                                                                        onClick={() => handleDelete(b.id)}
+                                                                        onClick={() =>
+                                                                            handleDelete(
+                                                                                b.id,
+                                                                            )
+                                                                        }
                                                                     >
                                                                         <Trash2 className="mr-1 h-3 w-3" />
                                                                         Eliminar
@@ -441,54 +667,118 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                                                 })}
                                             </div>
 
-                                            <Pagination links={boms.links} meta={boms.meta} />
+                                            <Pagination
+                                                links={boms.links}
+                                                meta={boms.meta}
+                                            />
                                         </>
                                     )}
                                 </>
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                     {bomsFiltrados.length === 0 ? (
                                         <p className="col-span-full py-8 text-center text-xs text-muted-foreground sm:text-sm">
-                                            No se encontraron composiciones con los filtros aplicados
+                                            No se encontraron composiciones con
+                                            los filtros aplicados
                                         </p>
                                     ) : (
                                         bomsFiltrados.map((b) => {
-                                            const cfg = typeConfig[b.tipo] || typeConfig.bom;
-                                            const costo = calcCostoTotal(b.materiales || []);
+                                            const cfg =
+                                                typeConfig[b.tipo] ||
+                                                typeConfig.bom;
+                                            const costo = calcCostoTotal(
+                                                b.materiales || [],
+                                            );
                                             return (
-                                                <div key={b.id} className="rounded-lg border bg-card p-4 shadow-sm flex flex-col gap-3">
+                                                <div
+                                                    key={b.id}
+                                                    className="flex flex-col gap-3 rounded-lg border bg-card p-4 shadow-sm"
+                                                >
                                                     <div className="flex items-start justify-between">
-                                                        <span className="font-semibold">{b.nombre}</span>
-                                                        <Badge variant={b.activo ? 'default' : 'destructive'} className="text-[10px] px-1.5 py-0">
-                                                            {b.activo ? 'Activo' : 'Inactivo'}
+                                                        <span className="font-semibold">
+                                                            {b.nombre}
+                                                        </span>
+                                                        <Badge
+                                                            variant={
+                                                                b.activo
+                                                                    ? 'default'
+                                                                    : 'destructive'
+                                                            }
+                                                            className="px-1.5 py-0 text-[10px]"
+                                                        >
+                                                            {b.activo
+                                                                ? 'Activo'
+                                                                : 'Inactivo'}
                                                         </Badge>
                                                     </div>
                                                     <div className="space-y-1.5 text-sm">
                                                         <div className="flex justify-between text-xs">
-                                                            <span className="text-muted-foreground">Tipo:</span>
-                                                            <Badge variant="outline" className="text-[10px]">{cfg.label}</Badge>
+                                                            <span className="text-muted-foreground">
+                                                                Tipo:
+                                                            </span>
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="text-[10px]"
+                                                            >
+                                                                {cfg.label}
+                                                            </Badge>
                                                         </div>
                                                         <div className="flex justify-between text-xs">
-                                                            <span className="text-muted-foreground">{cfg.parent}:</span>
-                                                            <span className="font-medium">{b.producto_final || '-'}</span>
+                                                            <span className="text-muted-foreground">
+                                                                {cfg.parent}:
+                                                            </span>
+                                                            <span className="font-medium">
+                                                                {b.producto_final ||
+                                                                    '-'}
+                                                            </span>
                                                         </div>
                                                         <div className="flex justify-between text-xs">
-                                                            <span className="text-muted-foreground">Cantidad:</span>
-                                                            <span className="font-medium">{b.cantidad}</span>
+                                                            <span className="text-muted-foreground">
+                                                                Cantidad:
+                                                            </span>
+                                                            <span className="font-medium">
+                                                                {b.cantidad}
+                                                            </span>
                                                         </div>
                                                         <div className="flex justify-between text-xs">
-                                                            <span className="text-muted-foreground">Costo Mat.:</span>
-                                                            <span className="font-medium">{costo > 0 ? formatCurrency(costo) : '-'}</span>
+                                                            <span className="text-muted-foreground">
+                                                                Costo Mat.:
+                                                            </span>
+                                                            <span className="font-medium">
+                                                                {costo > 0
+                                                                    ? formatCurrency(
+                                                                          costo,
+                                                                      )
+                                                                    : '-'}
+                                                            </span>
                                                         </div>
                                                     </div>
-                                                    <div className="flex justify-end gap-1 border-t pt-2 mt-auto">
+                                                    <div className="mt-auto flex justify-end gap-1 border-t pt-2">
                                                         {canEdit && (
-                                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(b)}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-8 w-8 p-0"
+                                                                onClick={() =>
+                                                                    handleEdit(
+                                                                        b,
+                                                                    )
+                                                                }
+                                                            >
                                                                 <Pencil className="h-4 w-4" />
                                                             </Button>
                                                         )}
                                                         {canDelete && (
-                                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(b.id)}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        b.id,
+                                                                    )
+                                                                }
+                                                            >
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         )}
@@ -502,11 +792,13 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                         </CardContent>
                     </Card>
                 </div>
-
             </AppLayout>
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="w-[95vw] max-w-2xl overflow-y-auto p-3 sm:p-6" style={{ maxHeight: '90vh' }}>
+                <DialogContent
+                    className="w-[95vw] max-w-2xl overflow-y-auto p-3 sm:p-6"
+                    style={{ maxHeight: '90vh' }}
+                >
                     <DialogHeader className="mb-2 sm:mb-4">
                         <DialogTitle className="text-base sm:text-lg">
                             {editando ? 'Editar' : 'Nueva'} Composición
@@ -515,27 +807,42 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Nombre *</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Nombre *
+                                </Label>
                                 <Input
                                     value={formData.nombre}
-                                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            nombre: e.target.value,
+                                        })
+                                    }
                                     required
                                     className="h-10 text-xs sm:text-sm"
                                     placeholder="Ej: Pizza Margherita"
                                 />
                             </div>
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Tipo</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Tipo
+                                </Label>
                                 <Select
                                     value={formData.tipo}
-                                    onValueChange={(v) => setFormData({ ...formData, tipo: v })}
+                                    onValueChange={(v) =>
+                                        setFormData({ ...formData, tipo: v })
+                                    }
                                 >
                                     <SelectTrigger className="h-10 text-xs sm:text-sm">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {tipoOptions.map((o) => (
-                                            <SelectItem key={o.value} value={o.value} className="text-xs sm:text-sm">
+                                            <SelectItem
+                                                key={o.value}
+                                                value={o.value}
+                                                className="text-xs sm:text-sm"
+                                            >
                                                 {o.label}
                                             </SelectItem>
                                         ))}
@@ -545,10 +852,17 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                         </div>
 
                         <div className="space-y-1.5 sm:space-y-2">
-                            <Label className="text-xs sm:text-sm">{currentType.parent}</Label>
+                            <Label className="text-xs sm:text-sm">
+                                {currentType.parent}
+                            </Label>
                             <Input
                                 value={formData.producto_final}
-                                onChange={(e) => setFormData({ ...formData, producto_final: e.target.value })}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        producto_final: e.target.value,
+                                    })
+                                }
                                 className="h-10 text-xs sm:text-sm"
                                 placeholder="Nombre del producto final"
                             />
@@ -556,24 +870,39 @@ export default function Index({ boms }: { boms: PaginatedData }) {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5 sm:space-y-2">
-                                <Label className="text-xs sm:text-sm">Cantidad</Label>
+                                <Label className="text-xs sm:text-sm">
+                                    Cantidad
+                                </Label>
                                 <Input
                                     type="number"
                                     min="1"
                                     value={formData.cantidad}
-                                    onChange={(e) => setFormData({ ...formData, cantidad: parseInt(e.target.value) || 1 })}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            cantidad:
+                                                parseInt(e.target.value) || 1,
+                                        })
+                                    }
                                     className="h-10 text-xs sm:text-sm"
                                 />
                             </div>
                             <div className="flex items-end pb-1 sm:pb-2">
-                                <label className="flex items-center gap-2 cursor-pointer">
+                                <label className="flex cursor-pointer items-center gap-2">
                                     <input
                                         type="checkbox"
                                         checked={formData.activo}
-                                        onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                activo: e.target.checked,
+                                            })
+                                        }
                                         className="h-4 w-4"
                                     />
-                                    <span className="text-xs sm:text-sm">Activo</span>
+                                    <span className="text-xs sm:text-sm">
+                                        Activo
+                                    </span>
                                 </label>
                             </div>
                         </div>
@@ -583,14 +912,24 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                                 <Label className="text-xs font-bold sm:text-sm">
                                     {currentType.child}es / Componentes
                                 </Label>
-                                <Button type="button" variant="outline" size="sm" onClick={addMaterial} className="h-8 text-xs">
-                                    <Plus className="mr-1 h-3 w-3" /> Agregar {currentType.child.toLowerCase()}
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={addMaterial}
+                                    className="h-8 text-xs"
+                                >
+                                    <Plus className="mr-1 h-3 w-3" /> Agregar{' '}
+                                    {currentType.child.toLowerCase()}
                                 </Button>
                             </div>
 
                             {formData.materiales.length === 0 && (
                                 <p className="py-4 text-center text-xs text-muted-foreground">
-                                    No hay {currentType.child.toLowerCase()}es agregados. Haz clic en "Agregar {currentType.child.toLowerCase()}" para comenzar.
+                                    No hay {currentType.child.toLowerCase()}es
+                                    agregados. Haz clic en "Agregar{' '}
+                                    {currentType.child.toLowerCase()}" para
+                                    comenzar.
                                 </p>
                             )}
 
@@ -600,41 +939,73 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                                         key={mat.id || i}
                                         className="flex flex-wrap items-end gap-2 rounded-lg border bg-background p-2 sm:flex-nowrap sm:p-3"
                                     >
-                                        <div className="flex-1 space-y-1" style={{ minWidth: '120px' }}>
-                                            <Label className="text-[10px] text-muted-foreground">Nombre</Label>
+                                        <div
+                                            className="flex-1 space-y-1"
+                                            style={{ minWidth: '120px' }}
+                                        >
+                                            <Label className="text-[10px] text-muted-foreground">
+                                                Nombre
+                                            </Label>
                                             <div className="flex gap-1">
                                                 <Input
                                                     value={mat.nombre}
-                                                    onChange={(e) => updateMaterial(i, 'nombre', e.target.value)}
+                                                    onChange={(e) =>
+                                                        updateMaterial(
+                                                            i,
+                                                            'nombre',
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     placeholder="Nombre del componente"
                                                     className="h-8 text-xs"
                                                 />
-
                                             </div>
                                         </div>
                                         <div className="w-16 space-y-1 sm:w-20">
-                                            <Label className="text-[10px] text-muted-foreground">Cant</Label>
+                                            <Label className="text-[10px] text-muted-foreground">
+                                                Cant
+                                            </Label>
                                             <Input
                                                 type="number"
                                                 min="0"
                                                 step="0.01"
                                                 value={mat.cantidad}
-                                                onChange={(e) => updateMaterial(i, 'cantidad', parseFloat(e.target.value) || 0)}
-                                                className="h-8 text-xs text-center"
+                                                onChange={(e) =>
+                                                    updateMaterial(
+                                                        i,
+                                                        'cantidad',
+                                                        parseFloat(
+                                                            e.target.value,
+                                                        ) || 0,
+                                                    )
+                                                }
+                                                className="h-8 text-center text-xs"
                                             />
                                         </div>
                                         <div className="w-20 space-y-1 sm:w-24">
-                                            <Label className="text-[10px] text-muted-foreground">Unidad</Label>
+                                            <Label className="text-[10px] text-muted-foreground">
+                                                Unidad
+                                            </Label>
                                             <Select
                                                 value={mat.unidad}
-                                                onValueChange={(v) => updateMaterial(i, 'unidad', v)}
+                                                onValueChange={(v) =>
+                                                    updateMaterial(
+                                                        i,
+                                                        'unidad',
+                                                        v,
+                                                    )
+                                                }
                                             >
                                                 <SelectTrigger className="h-8 text-xs">
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {UNIDADES.map((u) => (
-                                                        <SelectItem key={u} value={u} className="text-xs">
+                                                        <SelectItem
+                                                            key={u}
+                                                            value={u}
+                                                            className="text-xs"
+                                                        >
                                                             {u}
                                                         </SelectItem>
                                                     ))}
@@ -642,19 +1013,33 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                                             </Select>
                                         </div>
                                         <div className="w-24 space-y-1 sm:w-28">
-                                            <Label className="text-[10px] text-muted-foreground">Costo U.</Label>
+                                            <Label className="text-[10px] text-muted-foreground">
+                                                Costo U.
+                                            </Label>
                                             <Input
                                                 type="number"
                                                 min="0"
                                                 value={mat.costo_unitario}
-                                                onChange={(e) => updateMaterial(i, 'costo_unitario', parseFloat(e.target.value) || 0)}
-                                                className="h-8 text-xs text-right"
+                                                onChange={(e) =>
+                                                    updateMaterial(
+                                                        i,
+                                                        'costo_unitario',
+                                                        parseFloat(
+                                                            e.target.value,
+                                                        ) || 0,
+                                                    )
+                                                }
+                                                className="h-8 text-right text-xs"
                                             />
                                         </div>
                                         <div className="w-24 space-y-1 sm:w-28">
-                                            <Label className="text-[10px] text-muted-foreground">Costo T.</Label>
+                                            <Label className="text-[10px] text-muted-foreground">
+                                                Costo T.
+                                            </Label>
                                             <div className="flex h-8 items-center justify-end rounded-md border bg-muted/30 px-2 text-xs font-medium">
-                                                {formatCurrency(mat.costo_total)}
+                                                {formatCurrency(
+                                                    mat.costo_total,
+                                                )}
                                             </div>
                                         </div>
                                         <Button
@@ -674,8 +1059,16 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                                 <div className="border-t pt-3">
                                     <div className="space-y-1 text-xs sm:text-sm">
                                         <div className="flex justify-between font-medium">
-                                            <span>Total {currentType.child.toLowerCase()}es:</span>
-                                            <span>{formatCurrency(costoTotalMateriales)}</span>
+                                            <span>
+                                                Total{' '}
+                                                {currentType.child.toLowerCase()}
+                                                es:
+                                            </span>
+                                            <span>
+                                                {formatCurrency(
+                                                    costoTotalMateriales,
+                                                )}
+                                            </span>
                                         </div>
                                         <div className="flex items-center justify-between gap-4">
                                             <span>Margen (%):</span>
@@ -685,14 +1078,22 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                                                 max="1000"
                                                 value={formData.margen}
                                                 onChange={(e) =>
-                                                    setFormData({ ...formData, margen: parseInt(e.target.value) || 0 })
+                                                    setFormData({
+                                                        ...formData,
+                                                        margen:
+                                                            parseInt(
+                                                                e.target.value,
+                                                            ) || 0,
+                                                    })
                                                 }
-                                                className="h-8 w-20 text-xs text-right"
+                                                className="h-8 w-20 text-right text-xs"
                                             />
                                         </div>
                                         <div className="flex justify-between text-sm font-bold sm:text-base">
                                             <span>Precio sugerido:</span>
-                                            <span className="text-primary">{formatCurrency(precioSugerido)}</span>
+                                            <span className="text-primary">
+                                                {formatCurrency(precioSugerido)}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -703,14 +1104,24 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                             <Label className="text-xs sm:text-sm">Notas</Label>
                             <textarea
                                 value={formData.notas}
-                                onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
-                                className="flex min-h-[60px] w-full rounded-md border bg-background px-3 py-2 text-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring sm:text-sm"
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        notas: e.target.value,
+                                    })
+                                }
+                                className="flex min-h-[60px] w-full rounded-md border bg-background px-3 py-2 text-xs placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none sm:text-sm"
                                 placeholder="Notas adicionales..."
                             />
                         </div>
 
                         <DialogFooter className="flex-col gap-2 sm:flex-row">
-                            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="w-full sm:w-auto">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsOpen(false)}
+                                className="w-full sm:w-auto"
+                            >
                                 Cancelar
                             </Button>
                             <Button type="submit" className="w-full sm:w-auto">

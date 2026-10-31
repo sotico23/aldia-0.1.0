@@ -6,7 +6,7 @@ import {
     Plus,
     Trash2,
     Search,
-    X
+    X,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
@@ -215,7 +215,7 @@ export default function Index({
         <>
             <Head title="Timesheets" />
             <AppLayout breadcrumbs={breadcrumbs}>
-                <div className="flex flex-col gap-4 px-4 sm:px-6 lg:px-8 py-6">
+                <div className="flex flex-col gap-4 px-4 py-6 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-2xl font-bold">Timesheets</h1>
@@ -247,17 +247,33 @@ export default function Index({
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('table')}>
+                                    <Button
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'default'
+                                                : 'outline'
+                                        }
+                                        size="icon"
+                                        onClick={() => setViewMode('table')}
+                                    >
                                         <List className="h-4 w-4" />
                                     </Button>
-                                    <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('cards')}>
+                                    <Button
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'default'
+                                                : 'outline'
+                                        }
+                                        size="icon"
+                                        onClick={() => setViewMode('cards')}
+                                    >
                                         <LayoutGrid className="h-4 w-4" />
                                     </Button>
                                 </div>
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 rounded-lg bg-muted/30 p-3 text-xs sm:text-sm">
+                            <div className="mb-4 grid grid-cols-1 gap-4 rounded-lg bg-muted/30 p-3 text-xs sm:grid-cols-2 sm:text-sm md:grid-cols-4">
                                 <div className="relative">
                                     <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
                                     <Input
@@ -300,65 +316,174 @@ export default function Index({
                                 </Button>
                             </div>
                             {viewMode === 'table' ? (
-                            <div className="w-full overflow-x-auto rounded-lg border border-gray-100">
-                                <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
-                                    <thead>
-                                        <tr className="border-b">
-                                            <th className="py-2 text-left font-medium">
-                                                Fecha / Tipo
-                                            </th>
-                                            <th className="py-2 text-right font-medium">
-                                                Horas
-                                            </th>
-                                            <th className="py-2 text-left font-medium">
-                                                Descripción
-                                            </th>
-                                            <th className="py-2 text-center font-medium">
-                                                Estado
-                                            </th>
-                                            <th className="py-2 text-right font-medium">
-                                                Acciones
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {timesheetsFiltrados.map((t) => (
-                                            <tr
+                                <div className="w-full overflow-x-auto rounded-lg border border-gray-100">
+                                    <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
+                                        <thead>
+                                            <tr className="border-b">
+                                                <th className="py-2 text-left font-medium">
+                                                    Fecha / Tipo
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Horas
+                                                </th>
+                                                <th className="py-2 text-left font-medium">
+                                                    Descripción
+                                                </th>
+                                                <th className="py-2 text-center font-medium">
+                                                    Estado
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Acciones
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {timesheetsFiltrados.map((t) => (
+                                                <tr
+                                                    key={t.id}
+                                                    className="border-b transition-colors hover:bg-muted/30"
+                                                >
+                                                    <td className="py-2">
+                                                        <div className="font-medium">
+                                                            {t.fecha
+                                                                ? new Date(
+                                                                      t.fecha,
+                                                                  ).toLocaleDateString()
+                                                                : '-'}
+                                                        </div>
+                                                        <div className="text-[10px] text-muted-foreground uppercase">
+                                                            {t.tipo || '-'}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-2 text-right font-bold text-primary">
+                                                        {t.horas}h
+                                                    </td>
+                                                    <td className="py-2">
+                                                        <div className="max-w-[200px] truncate text-[10px]">
+                                                            {t.descripcion ||
+                                                                '-'}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-2 text-center">
+                                                        {getEstadoBadge(
+                                                            t.estado,
+                                                        )}
+                                                    </td>
+                                                    <td className="py-2 text-right">
+                                                        <div className="flex justify-end gap-1">
+                                                            {canEdit && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0"
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            t,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {canDelete && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            t.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {timesheetsFiltrados.length ===
+                                                0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan={5}
+                                                        className="py-8 text-center text-muted-foreground"
+                                                    >
+                                                        No se encontraron
+                                                        registros con los
+                                                        filtros aplicados
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                    <Pagination
+                                        links={timesheets.links}
+                                        meta={timesheets.meta || timesheets}
+                                    />
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    {timesheetsFiltrados.length === 0 ? (
+                                        <div className="col-span-full flex flex-col items-center py-12 text-center text-muted-foreground">
+                                            <Search className="mb-4 h-12 w-12 opacity-20" />
+                                            <p className="font-medium">
+                                                No se encontraron registros
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        timesheetsFiltrados.map((t) => (
+                                            <Card
                                                 key={t.id}
-                                                className="border-b transition-colors hover:bg-muted/30"
+                                                className="overflow-hidden"
                                             >
-                                                <td className="py-2">
-                                                    <div className="font-medium">
-                                                        {t.fecha
-                                                            ? new Date(
-                                                                  t.fecha,
-                                                              ).toLocaleDateString()
-                                                            : '-'}
+                                                <CardHeader className="pb-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="text-xs uppercase"
+                                                        >
+                                                            {t.tipo || '-'}
+                                                        </Badge>
+                                                        {getEstadoBadge(
+                                                            t.estado,
+                                                        )}
                                                     </div>
-                                                    <div className="text-[10px] text-muted-foreground uppercase">
-                                                        {t.tipo || '-'}
+                                                    <CardTitle className="text-xl font-bold text-primary">
+                                                        {t.horas}h
+                                                    </CardTitle>
+                                                </CardHeader>
+                                                <CardContent className="space-y-2 pt-0">
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="text-muted-foreground">
+                                                            Fecha
+                                                        </span>
+                                                        <span className="font-medium">
+                                                            {t.fecha
+                                                                ? new Date(
+                                                                      t.fecha,
+                                                                  ).toLocaleDateString()
+                                                                : '-'}
+                                                        </span>
                                                     </div>
-                                                </td>
-                                                <td className="py-2 text-right font-bold text-primary">
-                                                    {t.horas}h
-                                                </td>
-                                                <td className="py-2">
-                                                    <div className="max-w-[200px] truncate text-[10px]">
-                                                        {t.descripcion || '-'}
-                                                    </div>
-                                                </td>
-                                                <td className="py-2 text-center">
-                                                    {getEstadoBadge(t.estado)}
-                                                </td>
-                                                <td className="py-2 text-right">
-                                                    <div className="flex justify-end gap-1">
+                                                    {t.descripcion && (
+                                                        <div className="text-sm text-muted-foreground">
+                                                            <p className="line-clamp-2">
+                                                                {t.descripcion}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex justify-end gap-1 border-t pt-2">
                                                         {canEdit && (
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 className="h-8 w-8 p-0"
                                                                 onClick={() =>
-                                                                    handleEdit(t)
+                                                                    handleEdit(
+                                                                        t,
+                                                                    )
                                                                 }
                                                             >
                                                                 <Pencil className="h-4 w-4" />
@@ -379,84 +504,27 @@ export default function Index({
                                                             </Button>
                                                         )}
                                                     </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {timesheetsFiltrados.length === 0 && (
-                                            <tr>
-                                                <td
-                                                    colSpan={5}
-                                                    className="py-8 text-center text-muted-foreground"
-                                                >
-                                                    No se encontraron registros
-                                                    con los filtros aplicados
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                                <Pagination
-                                    links={timesheets.links}
-                                    meta={timesheets.meta || timesheets}
-                                />
-                            </div>
-                            ) : (
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {timesheetsFiltrados.length === 0 ? (
-                                    <div className="col-span-full flex flex-col items-center py-12 text-center text-muted-foreground">
-                                        <Search className="mb-4 h-12 w-12 opacity-20" />
-                                        <p className="font-medium">No se encontraron registros</p>
-                                    </div>
-                                ) : timesheetsFiltrados.map((t) => (
-                                    <Card key={t.id} className="overflow-hidden">
-                                        <CardHeader className="pb-3">
-                                            <div className="flex items-center justify-between">
-                                                <Badge variant="outline" className="uppercase text-xs">{t.tipo || '-'}</Badge>
-                                                {getEstadoBadge(t.estado)}
-                                            </div>
-                                            <CardTitle className="text-xl font-bold text-primary">
-                                                {t.horas}h
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="space-y-2 pt-0">
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="text-muted-foreground">Fecha</span>
-                                                <span className="font-medium">{t.fecha ? new Date(t.fecha).toLocaleDateString() : '-'}</span>
-                                            </div>
-                                            {t.descripcion && (
-                                                <div className="text-sm text-muted-foreground">
-                                                    <p className="line-clamp-2">{t.descripcion}</p>
-                                                </div>
-                                            )}
-                                            <div className="flex justify-end gap-1 border-t pt-2">
-                                                {canEdit && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(t)}>
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(t.id)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
+                                                </CardContent>
+                                            </Card>
+                                        ))
+                                    )}
+                                </div>
                             )}
                         </CardContent>
                     </Card>
                 </div>
             </AppLayout>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="mx-4 sm:mx-auto w-full max-w-full sm:max-w-lg md:max-w-2xl p-4 sm:p-6">
+                <DialogContent className="mx-4 w-full max-w-full p-4 sm:mx-auto sm:max-w-lg sm:p-6 md:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>
                             {editando ? 'Editar' : 'Nuevo'} Timesheet
                         </DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="max-h-[85vh] overflow-y-auto">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="max-h-[85vh] overflow-y-auto"
+                    >
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">

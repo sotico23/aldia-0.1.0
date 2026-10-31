@@ -156,7 +156,11 @@ export default function Index({
                                 </div>
                                 <div className="flex items-center gap-1 rounded-lg border p-0.5">
                                     <Button
-                                        variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'secondary'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('table')}
                                         className="h-8 w-8 p-0"
@@ -164,7 +168,11 @@ export default function Index({
                                         <List className="h-4 w-4" />
                                     </Button>
                                     <Button
-                                        variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'secondary'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('cards')}
                                         className="h-8 w-8 p-0"
@@ -236,7 +244,9 @@ export default function Index({
                                                                     variant="ghost"
                                                                     size="icon"
                                                                     onClick={() =>
-                                                                        handleEdit(c)
+                                                                        handleEdit(
+                                                                            c,
+                                                                        )
                                                                     }
                                                                 >
                                                                     <Pencil className="h-4 w-4" />
@@ -262,41 +272,66 @@ export default function Index({
                                         </table>
                                     </div>
                                 )
+                            ) : configuraciones.length === 0 ? (
+                                <p className="py-8 text-center text-muted-foreground">
+                                    No hay configuraciones
+                                </p>
                             ) : (
-                                configuraciones.length === 0 ? (
-                                    <p className="py-8 text-center text-muted-foreground">
-                                        No hay configuraciones
-                                    </p>
-                                ) : (
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                        {configuraciones.map((c) => (
-                                            <div key={c.id} className="rounded-lg border p-4">
-                                                <div className="mb-2 flex items-start justify-between">
-                                                    <div>
-                                                        <p className="font-mono text-sm font-bold">{c.clave}</p>
-                                                        <p className="text-xs text-muted-foreground">{c.categoria || '-'}</p>
-                                                    </div>
-                                                    <Badge className={c.editable ? 'bg-green-500' : 'bg-gray-500'}>
-                                                        {c.editable ? 'Sí' : 'No'}
-                                                    </Badge>
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    {configuraciones.map((c) => (
+                                        <div
+                                            key={c.id}
+                                            className="rounded-lg border p-4"
+                                        >
+                                            <div className="mb-2 flex items-start justify-between">
+                                                <div>
+                                                    <p className="font-mono text-sm font-bold">
+                                                        {c.clave}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {c.categoria || '-'}
+                                                    </p>
                                                 </div>
-                                                <p className="mb-3 text-sm">{c.valor || '-'}</p>
-                                                <div className="flex justify-end gap-1">
-                                                    {canEdit && (
-                                                        <Button variant="ghost" size="icon" onClick={() => handleEdit(c)}>
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-                                                    {canDelete && (
-                                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}>
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-                                                </div>
+                                                <Badge
+                                                    className={
+                                                        c.editable
+                                                            ? 'bg-green-500'
+                                                            : 'bg-gray-500'
+                                                    }
+                                                >
+                                                    {c.editable ? 'Sí' : 'No'}
+                                                </Badge>
                                             </div>
-                                        ))}
-                                    </div>
-                                )
+                                            <p className="mb-3 text-sm">
+                                                {c.valor || '-'}
+                                            </p>
+                                            <div className="flex justify-end gap-1">
+                                                {canEdit && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() =>
+                                                            handleEdit(c)
+                                                        }
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                                {canDelete && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() =>
+                                                            handleDelete(c.id)
+                                                        }
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </CardContent>
                     </Card>
@@ -311,7 +346,7 @@ export default function Index({
                     </DialogHeader>
                     <form onSubmit={handleSubmit}>
                         <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label>Clave *</Label>
                                     <Input
@@ -348,7 +383,7 @@ export default function Index({
                                     }
                                 />
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label>Categoría</Label>
                                     <select

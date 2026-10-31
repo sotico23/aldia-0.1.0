@@ -1,5 +1,13 @@
 import { Head, useForm } from '@inertiajs/react';
-import { LayoutGrid, List, Pencil, Plus, Trash2, Search, X } from 'lucide-react';
+import {
+    LayoutGrid,
+    List,
+    Pencil,
+    Plus,
+    Trash2,
+    Search,
+    X,
+} from 'lucide-react';
 import { useState } from 'react';
 import { useMemo } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
@@ -55,7 +63,14 @@ const resultados = ['aprobado', 'rechazado', 'en_espera', 'no_aplico'];
 export default function Index({
     reclutamientos,
 }: {
-    reclutamientos: { data: Reclutamiento[]; links: any[]; from?: number; to?: number; total?: number; meta?: any };
+    reclutamientos: {
+        data: Reclutamiento[];
+        links: any[];
+        from?: number;
+        to?: number;
+        total?: number;
+        meta?: any;
+    };
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [editando, setEditando] = useState<Reclutamiento | null>(null);
@@ -188,7 +203,7 @@ export default function Index({
                                 Gestión de reclutamiento
                             </p>
                         </div>
-                        <div className="flex gap-2 items-center">
+                        <div className="flex items-center gap-2">
                             <BulkActions
                                 baseUrl="/reclutamiento"
                                 modelName="Reclutamiento"
@@ -206,19 +221,28 @@ export default function Index({
                                 <div>
                                     <CardTitle>Postulaciones</CardTitle>
                                     <CardDescription>
-                                        {reclutamientosFiltrados.length} registros encontrados
+                                        {reclutamientosFiltrados.length}{' '}
+                                        registros encontrados
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-1 rounded-lg border p-1">
                                     <Button
-                                        variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'secondary'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('table')}
                                     >
                                         <List className="h-4 w-4" />
                                     </Button>
                                     <Button
-                                        variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'secondary'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('cards')}
                                     >
@@ -253,12 +277,16 @@ export default function Index({
                                             estado: e.target.value,
                                         })
                                     }
-                                    className="flex h-9 rounded-md border bg-background px-3 py-1 min-w-[150px]"
+                                    className="flex h-9 min-w-[150px] rounded-md border bg-background px-3 py-1"
                                 >
                                     <option value="">Todos los estados</option>
                                     {estados.map((est) => (
                                         <option key={est} value={est}>
-                                            {est.replace('_', ' ').charAt(0).toUpperCase() + est.replace('_', ' ').slice(1)}
+                                            {est
+                                                .replace('_', ' ')
+                                                .charAt(0)
+                                                .toUpperCase() +
+                                                est.replace('_', ' ').slice(1)}
                                         </option>
                                     ))}
                                 </select>
@@ -295,122 +323,181 @@ export default function Index({
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {reclutamientosFiltrados.map((r) => (
-                                                <tr
-                                                    key={r.id}
-                                                    className="border-b transition-colors hover:bg-muted/30"
-                                                >
-                                                    <td className="py-2">
-                                                        <div className="font-medium">
-                                                            {r.puesto}
-                                                        </div>
-                                                        <div className="text-[10px] text-muted-foreground truncate max-w-[150px]">
-                                                            {r.notas || ''}
-                                                        </div>
-                                                    </td>
-                                                    <td className="py-2 text-muted-foreground">
-                                                        {r.fecha_postulacion
-                                                            ? new Date(
-                                                                r.fecha_postulacion,
-                                                            ).toLocaleDateString()
-                                                            : '-'}
-                                                    </td>
-                                                    <td className="py-2 text-muted-foreground">
-                                                        {r.fecha_entrevista
-                                                            ? new Date(
-                                                                r.fecha_entrevista,
-                                                            ).toLocaleDateString()
-                                                            : '-'}
-                                                    </td>
-                                                    <td className="py-2 text-center">
-                                                        {getEstadoBadge(
-                                                            r.estado,
-                                                        )}
-                                                    </td>
-                                                    <td className="py-2 text-right">
-                                                        <div className="flex justify-end gap-1">
-                                                            {canEdit && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-8 w-8 p-0"
-                                                                    onClick={() =>
-                                                                        handleEdit(r)
-                                                                    }
-                                                                >
-                                                                    <Pencil className="h-4 w-4" />
-                                                                </Button>
+                                            {reclutamientosFiltrados.map(
+                                                (r) => (
+                                                    <tr
+                                                        key={r.id}
+                                                        className="border-b transition-colors hover:bg-muted/30"
+                                                    >
+                                                        <td className="py-2">
+                                                            <div className="font-medium">
+                                                                {r.puesto}
+                                                            </div>
+                                                            <div className="max-w-[150px] truncate text-[10px] text-muted-foreground">
+                                                                {r.notas || ''}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-2 text-muted-foreground">
+                                                            {r.fecha_postulacion
+                                                                ? new Date(
+                                                                      r.fecha_postulacion,
+                                                                  ).toLocaleDateString()
+                                                                : '-'}
+                                                        </td>
+                                                        <td className="py-2 text-muted-foreground">
+                                                            {r.fecha_entrevista
+                                                                ? new Date(
+                                                                      r.fecha_entrevista,
+                                                                  ).toLocaleDateString()
+                                                                : '-'}
+                                                        </td>
+                                                        <td className="py-2 text-center">
+                                                            {getEstadoBadge(
+                                                                r.estado,
                                                             )}
-                                                            {canDelete && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                                                    onClick={() =>
-                                                                        handleDelete(
-                                                                            r.id,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            {reclutamientosFiltrados.length === 0 && (
+                                                        </td>
+                                                        <td className="py-2 text-right">
+                                                            <div className="flex justify-end gap-1">
+                                                                {canEdit && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-8 w-8 p-0"
+                                                                        onClick={() =>
+                                                                            handleEdit(
+                                                                                r,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Pencil className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
+                                                                {canDelete && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                        onClick={() =>
+                                                                            handleDelete(
+                                                                                r.id,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ),
+                                            )}
+                                            {reclutamientosFiltrados.length ===
+                                                0 && (
                                                 <tr>
                                                     <td
                                                         colSpan={5}
                                                         className="py-8 text-center text-muted-foreground"
                                                     >
-                                                        No se encontraron postulaciones con los filtros aplicados
+                                                        No se encontraron
+                                                        postulaciones con los
+                                                        filtros aplicados
                                                     </td>
                                                 </tr>
                                             )}
                                         </tbody>
                                     </table>
-                                    <Pagination links={reclutamientos.links} meta={reclutamientos.meta || reclutamientos} />
+                                    <Pagination
+                                        links={reclutamientos.links}
+                                        meta={
+                                            reclutamientos.meta ||
+                                            reclutamientos
+                                        }
+                                    />
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                                     {reclutamientosFiltrados.length === 0 ? (
                                         <div className="col-span-full flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
                                             <Search className="mb-2 h-12 w-12 text-muted-foreground/50" />
-                                            <p>No se encontraron postulaciones con los filtros aplicados</p>
+                                            <p>
+                                                No se encontraron postulaciones
+                                                con los filtros aplicados
+                                            </p>
                                         </div>
                                     ) : (
                                         reclutamientosFiltrados.map((r) => (
-                                            <Card key={r.id} className="overflow-hidden">
+                                            <Card
+                                                key={r.id}
+                                                className="overflow-hidden"
+                                            >
                                                 <CardContent className="p-4">
                                                     <div className="mb-3 flex items-start justify-between">
-                                                        <div className="flex-1 min-w-0">
-                                                            <h3 className="font-semibold truncate">{r.puesto}</h3>
+                                                        <div className="min-w-0 flex-1">
+                                                            <h3 className="truncate font-semibold">
+                                                                {r.puesto}
+                                                            </h3>
                                                             {r.notas && (
-                                                                <p className="mt-1 text-xs text-muted-foreground truncate">{r.notas}</p>
+                                                                <p className="mt-1 truncate text-xs text-muted-foreground">
+                                                                    {r.notas}
+                                                                </p>
                                                             )}
                                                         </div>
-                                                        {getEstadoBadge(r.estado)}
+                                                        {getEstadoBadge(
+                                                            r.estado,
+                                                        )}
                                                     </div>
                                                     <div className="space-y-1 text-sm text-muted-foreground">
                                                         <div className="flex justify-between">
-                                                            <span>Postulación</span>
-                                                            <span>{r.fecha_postulacion ? new Date(r.fecha_postulacion).toLocaleDateString() : '-'}</span>
+                                                            <span>
+                                                                Postulación
+                                                            </span>
+                                                            <span>
+                                                                {r.fecha_postulacion
+                                                                    ? new Date(
+                                                                          r.fecha_postulacion,
+                                                                      ).toLocaleDateString()
+                                                                    : '-'}
+                                                            </span>
                                                         </div>
                                                         <div className="flex justify-between">
-                                                            <span>Entrevista</span>
-                                                            <span>{r.fecha_entrevista ? new Date(r.fecha_entrevista).toLocaleDateString() : '-'}</span>
+                                                            <span>
+                                                                Entrevista
+                                                            </span>
+                                                            <span>
+                                                                {r.fecha_entrevista
+                                                                    ? new Date(
+                                                                          r.fecha_entrevista,
+                                                                      ).toLocaleDateString()
+                                                                    : '-'}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                     <div className="mt-4 flex justify-end gap-1">
                                                         {canEdit && (
-                                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(r)}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-8 w-8 p-0"
+                                                                onClick={() =>
+                                                                    handleEdit(
+                                                                        r,
+                                                                    )
+                                                                }
+                                                            >
                                                                 <Pencil className="h-4 w-4" />
                                                             </Button>
                                                         )}
                                                         {canDelete && (
-                                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(r.id)}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        r.id,
+                                                                    )
+                                                                }
+                                                            >
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         )}
@@ -421,7 +508,10 @@ export default function Index({
                                     )}
                                 </div>
                             )}
-                            <Pagination links={reclutamientos.links} meta={reclutamientos.meta || reclutamientos} />
+                            <Pagination
+                                links={reclutamientos.links}
+                                meta={reclutamientos.meta || reclutamientos}
+                            />
                         </CardContent>
                     </Card>
                 </div>
@@ -445,7 +535,7 @@ export default function Index({
                                     required
                                 />
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label>Fecha Postulación</Label>
                                     <Input
@@ -473,7 +563,7 @@ export default function Index({
                                     />
                                 </div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label>Estado</Label>
                                     <select

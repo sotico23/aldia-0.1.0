@@ -23,9 +23,10 @@ export function AppSidebar() {
         auth: { user: { permissions?: string[]; is_trial_active?: boolean } };
     };
 
-    const canViewWebConfig = auth.user.permissions?.includes('admin.web-settings.viewAny')
-        || auth.user.permissions?.includes('admin.configuracion.viewAny')
-        || auth.user.permissions?.some(p => p === '*');
+    const canViewWebConfig =
+        auth.user.permissions?.includes('admin.web-settings.viewAny') ||
+        auth.user.permissions?.includes('admin.configuracion.viewAny') ||
+        auth.user.permissions?.some((p) => p === '*');
 
     const rawAllItems = [...mainNavItems, ...adminNavItems()];
 

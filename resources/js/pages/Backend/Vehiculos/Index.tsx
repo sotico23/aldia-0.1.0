@@ -87,7 +87,7 @@ export default function Index({
         estado?: string;
     };
 }) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const { hasPermission } = usePermissions();
     const canCreate = hasPermission('flota.vehiculos.create');
     const canEdit = hasPermission('flota.vehiculos.edit');
@@ -398,7 +398,8 @@ export default function Index({
                                     onClick={handleNew}
                                     className="rounded-full bg-primary px-6 font-bold shadow-lg shadow-primary/20 hover:bg-primary/90"
                                 >
-                                    <Plus className="mr-2 h-4 w-4" /> Nuevo Vehículo
+                                    <Plus className="mr-2 h-4 w-4" /> Nuevo
+                                    Vehículo
                                 </Button>
                             )}
                         </div>
@@ -426,8 +427,8 @@ export default function Index({
                                             Flota Vehicular
                                         </CardTitle>
                                         <CardDescription>
-                                            {vehiculos.total} vehículos en el radar de
-                                            operaciones
+                                            {vehiculos.total} vehículos en el
+                                            radar de operaciones
                                         </CardDescription>
                                     </div>
                                     <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">
@@ -520,7 +521,8 @@ export default function Index({
                                                 <thead>
                                                     <tr className="border-b">
                                                         <th className="py-2 text-left font-medium">
-                                                            Placa / Marca / Modelo
+                                                            Placa / Marca /
+                                                            Modelo
                                                         </th>
                                                         <th className="py-2 text-left font-medium">
                                                             Tipo
@@ -545,10 +547,13 @@ export default function Index({
                                                             >
                                                                 <td className="py-2 font-mono">
                                                                     <div className="font-bold">
-                                                                        {v.placa}
+                                                                        {
+                                                                            v.placa
+                                                                        }
                                                                     </div>
                                                                     <div className="text-[10px] text-muted-foreground">
-                                                                        {v.marca || '-'}{' '}
+                                                                        {v.marca ||
+                                                                            '-'}{' '}
                                                                         /{' '}
                                                                         {v.modelo ||
                                                                             '-'}
@@ -556,13 +561,16 @@ export default function Index({
                                                                 </td>
                                                                 <td className="py-2">
                                                                     <div className="text-[10px]">
-                                                                        {v.tipo || '-'}
+                                                                        {v.tipo ||
+                                                                            '-'}
                                                                     </div>
                                                                 </td>
                                                                 <td className="py-2 text-right font-medium">
                                                                     {Number(
                                                                         v.kilometraje,
-                                                                    ).toFixed(0)}{' '}
+                                                                    ).toFixed(
+                                                                        0,
+                                                                    )}{' '}
                                                                     km
                                                                 </td>
                                                                 <td className="py-2 text-center">
@@ -621,15 +629,18 @@ export default function Index({
                                                             </tr>
                                                         ),
                                                     )}
-                                                    {vehiculos.data.length === 0 && (
+                                                    {vehiculos.data.length ===
+                                                        0 && (
                                                         <tr>
                                                             <td
                                                                 colSpan={5}
                                                                 className="py-8 text-center text-muted-foreground"
                                                             >
-                                                                No se encontraron
-                                                                vehículos con los
-                                                                filtros aplicados
+                                                                No se
+                                                                encontraron
+                                                                vehículos con
+                                                                los filtros
+                                                                aplicados
                                                             </td>
                                                         </tr>
                                                     )}
@@ -640,7 +651,8 @@ export default function Index({
                                             links={vehiculos.links}
                                             meta={
                                                 vehiculos.meta || {
-                                                    from: (vehiculos as any).from,
+                                                    from: (vehiculos as any)
+                                                        .from,
                                                     to: (vehiculos as any).to,
                                                     total: vehiculos.total,
                                                 }
@@ -652,111 +664,182 @@ export default function Index({
                                         {vehiculos.data.length === 0 ? (
                                             <div className="py-12 text-center text-muted-foreground">
                                                 <Truck className="mx-auto mb-3 h-12 w-12 opacity-30" />
-                                                <p>No se encontraron vehículos.</p>
+                                                <p>
+                                                    No se encontraron vehículos.
+                                                </p>
                                             </div>
                                         ) : (
                                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                                {vehiculos.data.map((v: Vehiculo) => (
-                                                    <div
-                                                        key={v.id}
-                                                        className="group relative overflow-hidden rounded-xl border bg-card transition-all hover:shadow-lg"
-                                                    >
-                                                        <div className="relative h-36 overflow-hidden bg-muted">
-                                                            {(v as any).fotos && (v as any).fotos.length > 0 ? (
-                                                                <img
-                                                                    src={(v as any).fotos[0]}
-                                                                    alt={v.placa}
-                                                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                                                />
-                                                            ) : (
-                                                                <div className="flex h-full items-center justify-center">
-                                                                    <Truck className="h-12 w-12 text-muted-foreground/30" />
-                                                                </div>
-                                                            )}
-                                                            <div className="absolute top-2 right-2">
-                                                                {getEstadoBadge(v.estado)}
-                                                            </div>
-                                                            {v.tipo && (
-                                                                <div className="absolute top-2 left-2">
-                                                                    <Badge variant="secondary" className="px-2 py-0.5 text-[10px] capitalize">
-                                                                        {v.tipo}
-                                                                    </Badge>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div className="space-y-2 p-4">
-                                                            <div className="flex items-start justify-between gap-2">
-                                                                <div>
-                                                                    <h3 className="font-mono font-bold leading-tight">{v.placa}</h3>
-                                                                    <p className="text-xs text-muted-foreground">
-                                                                        {v.marca || '-'} / {v.modelo || '-'}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                            <div className="space-y-1 text-xs text-muted-foreground">
-                                                                {v.año && (
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <span className="font-medium">Año:</span>
-                                                                        <span>{v.año}</span>
+                                                {vehiculos.data.map(
+                                                    (v: Vehiculo) => (
+                                                        <div
+                                                            key={v.id}
+                                                            className="group relative overflow-hidden rounded-xl border bg-card transition-all hover:shadow-lg"
+                                                        >
+                                                            <div className="relative h-36 overflow-hidden bg-muted">
+                                                                {(v as any)
+                                                                    .fotos &&
+                                                                (v as any).fotos
+                                                                    .length >
+                                                                    0 ? (
+                                                                    <img
+                                                                        src={
+                                                                            (
+                                                                                v as any
+                                                                            )
+                                                                                .fotos[0]
+                                                                        }
+                                                                        alt={
+                                                                            v.placa
+                                                                        }
+                                                                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="flex h-full items-center justify-center">
+                                                                        <Truck className="h-12 w-12 text-muted-foreground/30" />
                                                                     </div>
                                                                 )}
-                                                                {v.color && (
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <span className="font-medium">Color:</span>
-                                                                        <span>{v.color}</span>
-                                                                    </div>
-                                                                )}
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <Gauge className="h-3.5 w-3.5 shrink-0" />
-                                                                    <span>{Number(v.kilometraje).toFixed(0)} km</span>
+                                                                <div className="absolute top-2 right-2">
+                                                                    {getEstadoBadge(
+                                                                        v.estado,
+                                                                    )}
                                                                 </div>
-                                                                {v.velocidad > 0 && (
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <Navigation className="h-3.5 w-3.5 shrink-0" />
-                                                                        <span>{v.velocidad} km/h</span>
+                                                                {v.tipo && (
+                                                                    <div className="absolute top-2 left-2">
+                                                                        <Badge
+                                                                            variant="secondary"
+                                                                            className="px-2 py-0.5 text-[10px] capitalize"
+                                                                        >
+                                                                            {
+                                                                                v.tipo
+                                                                            }
+                                                                        </Badge>
                                                                     </div>
                                                                 )}
                                                             </div>
-                                                            <div className="flex items-center gap-1 pt-1">
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-8 px-2 text-xs"
-                                                                    onClick={() => handleVer(v)}
-                                                                >
-                                                                    <Eye className="mr-1 h-3.5 w-3.5" /> Ver
-                                                                </Button>
-                                                                {canEdit && (
+                                                            <div className="space-y-2 p-4">
+                                                                <div className="flex items-start justify-between gap-2">
+                                                                    <div>
+                                                                        <h3 className="font-mono leading-tight font-bold">
+                                                                            {
+                                                                                v.placa
+                                                                            }
+                                                                        </h3>
+                                                                        <p className="text-xs text-muted-foreground">
+                                                                            {v.marca ||
+                                                                                '-'}{' '}
+                                                                            /{' '}
+                                                                            {v.modelo ||
+                                                                                '-'}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="space-y-1 text-xs text-muted-foreground">
+                                                                    {v.año && (
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span className="font-medium">
+                                                                                Año:
+                                                                            </span>
+                                                                            <span>
+                                                                                {
+                                                                                    v.año
+                                                                                }
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                    {v.color && (
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span className="font-medium">
+                                                                                Color:
+                                                                            </span>
+                                                                            <span>
+                                                                                {
+                                                                                    v.color
+                                                                                }
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <Gauge className="h-3.5 w-3.5 shrink-0" />
+                                                                        <span>
+                                                                            {Number(
+                                                                                v.kilometraje,
+                                                                            ).toFixed(
+                                                                                0,
+                                                                            )}{' '}
+                                                                            km
+                                                                        </span>
+                                                                    </div>
+                                                                    {v.velocidad >
+                                                                        0 && (
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <Navigation className="h-3.5 w-3.5 shrink-0" />
+                                                                            <span>
+                                                                                {
+                                                                                    v.velocidad
+                                                                                }{' '}
+                                                                                km/h
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex items-center gap-1 pt-1">
                                                                     <Button
                                                                         variant="ghost"
                                                                         size="sm"
                                                                         className="h-8 px-2 text-xs"
-                                                                        onClick={() => handleEdit(v)}
+                                                                        onClick={() =>
+                                                                            handleVer(
+                                                                                v,
+                                                                            )
+                                                                        }
                                                                     >
-                                                                        <Pencil className="mr-1 h-3.5 w-3.5" /> Editar
+                                                                        <Eye className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                        Ver
                                                                     </Button>
-                                                                )}
-                                                                {canDelete && (
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="sm"
-                                                                        className="h-8 px-2 text-xs text-destructive hover:text-destructive"
-                                                                        onClick={() => handleDelete(v.id)}
-                                                                    >
-                                                                        <Trash2 className="mr-1 h-3.5 w-3.5" /> Eliminar
-                                                                    </Button>
-                                                                )}
+                                                                    {canEdit && (
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            className="h-8 px-2 text-xs"
+                                                                            onClick={() =>
+                                                                                handleEdit(
+                                                                                    v,
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <Pencil className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                            Editar
+                                                                        </Button>
+                                                                    )}
+                                                                    {canDelete && (
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            className="h-8 px-2 text-xs text-destructive hover:text-destructive"
+                                                                            onClick={() =>
+                                                                                handleDelete(
+                                                                                    v.id,
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <Trash2 className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                            Eliminar
+                                                                        </Button>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    ),
+                                                )}
                                             </div>
                                         )}
                                         <Pagination
                                             links={vehiculos.links}
                                             meta={
                                                 vehiculos.meta || {
-                                                    from: (vehiculos as any).from,
+                                                    from: (vehiculos as any)
+                                                        .from,
                                                     to: (vehiculos as any).to,
                                                     total: vehiculos.total,
                                                 }
@@ -1157,7 +1240,7 @@ export default function Index({
                                                     Última Ubicación
                                                 </p>
                                                 <p
-                                                    className={`break-all rounded-lg border bg-white p-2 text-xs font-medium shadow-sm ${!vehiculoSeleccionado.lat || !vehiculoSeleccionado.lng ? 'text-red-500 italic' : 'font-mono'}`}
+                                                    className={`rounded-lg border bg-white p-2 text-xs font-medium break-all shadow-sm ${!vehiculoSeleccionado.lat || !vehiculoSeleccionado.lng ? 'text-red-500 italic' : 'font-mono'}`}
                                                 >
                                                     {vehiculoSeleccionado.lat &&
                                                     vehiculoSeleccionado.lng
@@ -1170,7 +1253,7 @@ export default function Index({
                                                     Último Reporte
                                                 </p>
                                                 <p
-                                                    className={`break-words text-xs font-medium ${!vehiculoSeleccionado.ultima_actualizacion ? 'text-red-500 italic' : ''}`}
+                                                    className={`text-xs font-medium break-words ${!vehiculoSeleccionado.ultima_actualizacion ? 'text-red-500 italic' : ''}`}
                                                 >
                                                     {vehiculoSeleccionado.ultima_actualizacion
                                                         ? new Date(
@@ -1224,7 +1307,7 @@ export default function Index({
                                         Observaciones y Notas
                                     </h3>
                                     <div className="min-h-[80px] rounded-xl border border-dashed border-muted-foreground/30 bg-muted/20 p-4">
-                                        <p className="break-words text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground italic">
+                                        <p className="text-sm leading-relaxed break-words whitespace-pre-wrap text-muted-foreground italic">
                                             {vehiculoSeleccionado.notas ||
                                                 'Sin observaciones registradas para este vehículo.'}
                                         </p>

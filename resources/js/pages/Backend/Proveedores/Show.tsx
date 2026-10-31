@@ -1,8 +1,25 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Building2, Globe, CreditCard, ShieldCheck, Phone, Mail, MapPin, FileText, ShoppingCart } from 'lucide-react';
+import {
+    ArrowLeft,
+    Building2,
+    Globe,
+    CreditCard,
+    ShieldCheck,
+    Phone,
+    Mail,
+    MapPin,
+    FileText,
+    ShoppingCart,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+} from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -43,7 +60,11 @@ export default function Show({ proveedor }: { proveedor: Proveedor }) {
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                         <Link href="/proveedors">
-                            <Button variant="ghost" size="sm" className="rounded-xl">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="rounded-xl"
+                            >
                                 <ArrowLeft className="mr-2 h-4 w-4" />
                                 Volver
                             </Button>
@@ -135,10 +156,17 @@ export default function Show({ proveedor }: { proveedor: Proveedor }) {
                                     </p>
                                     <p className="rounded-xl bg-muted/30 px-4 py-2.5 font-bold">
                                         {proveedor.sitio_web ? (
-                                            <a href={proveedor.sitio_web} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+                                            <a
+                                                href={proveedor.sitio_web}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-primary underline underline-offset-2"
+                                            >
                                                 {proveedor.sitio_web}
                                             </a>
-                                        ) : 'No registrado'}
+                                        ) : (
+                                            'No registrado'
+                                        )}
                                     </p>
                                 </div>
                                 <div className="space-y-1.5 md:col-span-2">
@@ -167,7 +195,8 @@ export default function Show({ proveedor }: { proveedor: Proveedor }) {
                                     Contacto Principal
                                 </p>
                                 <p className="rounded-xl bg-muted/30 px-4 py-2.5 font-bold">
-                                    {proveedor.contacto_principal || 'No registrado'}
+                                    {proveedor.contacto_principal ||
+                                        'No registrado'}
                                 </p>
                             </div>
                             <div className="space-y-1.5">
@@ -175,7 +204,8 @@ export default function Show({ proveedor }: { proveedor: Proveedor }) {
                                     Términos de Pago
                                 </p>
                                 <p className="rounded-xl bg-muted/30 px-4 py-2.5 font-bold">
-                                    {proveedor.terminos_pago || 'No especificados'}
+                                    {proveedor.terminos_pago ||
+                                        'No especificados'}
                                 </p>
                             </div>
                             <div className="space-y-1.5">
@@ -191,7 +221,9 @@ export default function Show({ proveedor }: { proveedor: Proveedor }) {
                                             : 'bg-gray-500/10 text-gray-500'
                                     }`}
                                 >
-                                    {proveedor.tiene_acceso ? 'Habilitado' : 'Deshabilitado'}
+                                    {proveedor.tiene_acceso
+                                        ? 'Habilitado'
+                                        : 'Deshabilitado'}
                                 </Badge>
                             </div>
                         </CardContent>
@@ -206,7 +238,7 @@ export default function Show({ proveedor }: { proveedor: Proveedor }) {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <p className="whitespace-pre-wrap rounded-xl bg-muted/30 px-4 py-3 font-medium leading-relaxed">
+                                <p className="rounded-xl bg-muted/30 px-4 py-3 leading-relaxed font-medium whitespace-pre-wrap">
                                     {proveedor.notas}
                                 </p>
                             </CardContent>
@@ -224,7 +256,8 @@ export default function Show({ proveedor }: { proveedor: Proveedor }) {
                                         Historial de Compras y Movimientos
                                     </CardTitle>
                                     <CardDescription className="font-medium">
-                                        Registro de órdenes de compra, recibos y transacciones
+                                        Registro de órdenes de compra, recibos y
+                                        transacciones
                                     </CardDescription>
                                 </div>
                             </div>
@@ -236,7 +269,8 @@ export default function Show({ proveedor }: { proveedor: Proveedor }) {
                                     Próximamente
                                 </p>
                                 <p className="text-sm font-medium text-muted-foreground/40">
-                                    El historial de compras estará disponible en una próxima actualización.
+                                    El historial de compras estará disponible en
+                                    una próxima actualización.
                                 </p>
                             </div>
                         </CardContent>

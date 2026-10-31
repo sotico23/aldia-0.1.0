@@ -1,8 +1,20 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
-    Users, Truck, Wrench, FileText, CreditCard, UsersRound,
-    ClipboardList, ShoppingCart, Calendar, GraduationCap,
-    Megaphone, Activity, Gift, Lock, Building2,
+    Users,
+    Truck,
+    Wrench,
+    FileText,
+    CreditCard,
+    UsersRound,
+    ClipboardList,
+    ShoppingCart,
+    Calendar,
+    GraduationCap,
+    Megaphone,
+    Activity,
+    Gift,
+    Lock,
+    Building2,
 } from 'lucide-react';
 import { useMemo } from 'react';
 import {
@@ -13,12 +25,27 @@ import {
 } from '@/config/navigation';
 
 const iconMap: Record<string, React.ElementType> = {
-    Users, Truck, Wrench, FileText, CreditCard, UsersRound,
-    ClipboardList, ShoppingCart, Calendar, GraduationCap,
-    Megaphone, Activity, Gift, Lock, Building2,
+    Users,
+    Truck,
+    Wrench,
+    FileText,
+    CreditCard,
+    UsersRound,
+    ClipboardList,
+    ShoppingCart,
+    Calendar,
+    GraduationCap,
+    Megaphone,
+    Activity,
+    Gift,
+    Lock,
+    Building2,
 };
 
-const moduleStyles: Record<string, { gradient: string; border: string; icon: string; shadow: string }> = {
+const moduleStyles: Record<
+    string,
+    { gradient: string; border: string; icon: string; shadow: string }
+> = {
     'Gestión Comercial': {
         gradient: 'from-blue-500/10 via-blue-500/5 to-transparent',
         border: 'border-blue-500/20 hover:border-blue-500/40',
@@ -125,7 +152,10 @@ export default function AccesoRapidoWidget() {
 
     const modules = useMemo(() => {
         const rawAllItems = [...mainNavItems, ...adminNavItems()];
-        const filteredItems = filterNavItems(rawAllItems, auth.user.permissions);
+        const filteredItems = filterNavItems(
+            rawAllItems,
+            auth.user.permissions,
+        );
         return extractTopModules(filteredItems);
     }, [auth.user.permissions]);
 
@@ -134,7 +164,7 @@ export default function AccesoRapidoWidget() {
     return (
         <div className="p-4">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
-                {modules.map(mod => {
+                {modules.map((mod) => {
                     const Icon = mod.icon ?? iconMap[mod.title] ?? null;
                     const s = moduleStyles[mod.title] || defaultStyle;
 
@@ -144,18 +174,26 @@ export default function AccesoRapidoWidget() {
                             href={mod.href}
                             className={`group relative flex flex-col items-center gap-3 overflow-hidden rounded-xl border p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg active:scale-[0.98] ${s.border} ${s.shadow}`}
                         >
-                            <div className={`pointer-events-none absolute inset-0 bg-gradient-to-b ${s.gradient} opacity-0 transition-opacity duration-300 group-hover:opacity-100`} />
-                            <div className={`relative z-10 flex flex-col items-center gap-3`}>
+                            <div
+                                className={`pointer-events-none absolute inset-0 bg-gradient-to-b ${s.gradient} opacity-0 transition-opacity duration-300 group-hover:opacity-100`}
+                            />
+                            <div
+                                className={`relative z-10 flex flex-col items-center gap-3`}
+                            >
                                 {Icon && (
-                                    <div className={`rounded-xl p-3 transition-all duration-300 ${s.icon}`}>
+                                    <div
+                                        className={`rounded-xl p-3 transition-all duration-300 ${s.icon}`}
+                                    >
                                         <Icon className="h-7 w-7" />
                                     </div>
                                 )}
-                                <span className="text-center text-[11px] font-semibold leading-tight text-muted-foreground group-hover:text-foreground transition-colors duration-300">
+                                <span className="text-center text-[11px] leading-tight font-semibold text-muted-foreground transition-colors duration-300 group-hover:text-foreground">
                                     {mod.title}
                                 </span>
                             </div>
-                            <div className={`absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 ${s.icon.replace('text-', 'bg-').replace(' group-hover:', '')}`} />
+                            <div
+                                className={`absolute right-0 bottom-0 left-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 ${s.icon.replace('text-', 'bg-').replace('group-hover:', '')}`}
+                            />
                         </Link>
                     );
                 })}

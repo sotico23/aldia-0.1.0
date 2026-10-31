@@ -54,7 +54,11 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import '@/components/whatsapp-button';
 import { useCountry } from '@/hooks/use-country';
 import AppLayout from '@/layouts/app-layout';
@@ -200,7 +204,9 @@ export default function MarketplaceShow({
             return next;
         });
     };
-    const [tabActivo, setTabActivo] = useState<'productos' | 'informacion' | 'opiniones'>('productos');
+    const [tabActivo, setTabActivo] = useState<
+        'productos' | 'informacion' | 'opiniones'
+    >('productos');
     const [opinionTexto, setOpinionTexto] = useState('');
     const [enviandoOpinion, setEnviandoOpinion] = useState(false);
     const [datosCheckout, setDatosCheckout] = useState({
@@ -266,9 +272,10 @@ export default function MarketplaceShow({
     const agregarAlCarrito = (productoId: number) => {
         const producto = store.productos.find((p) => p.id === productoId);
         const cantidadRaw = cantidadesAgregar[productoId] || 1;
-        const cantidad = producto && modoGramosProducto[productoId]
-            ? cantidadRaw / 1000
-            : cantidadRaw;
+        const cantidad =
+            producto && modoGramosProducto[productoId]
+                ? cantidadRaw / 1000
+                : cantidadRaw;
         setCarrito((prev) => ({
             ...prev,
             [productoId]: (prev[productoId] || 0) + cantidad,
@@ -279,7 +286,10 @@ export default function MarketplaceShow({
         toast.success('Añadido al pedido');
     };
 
-    const precioProporcional = (producto: Producto, cantidad: number): number | null => {
+    const precioProporcional = (
+        producto: Producto,
+        cantidad: number,
+    ): number | null => {
         if (!['kg', 'lt'].includes(producto.unidad_medida)) return null;
         return producto.precio_venta * (cantidad / 1000);
     };
@@ -338,12 +348,16 @@ export default function MarketplaceShow({
             toast.error('Debes iniciar sesión para dar me gusta');
             return;
         }
-        router.post(`/tienda/${store.slug}/react`, { like: localLike ? 0 : 1 }, {
-            preserveScroll: true,
-            onSuccess: () => {
-                setLocalLike(localLike ? 0 : 1);
-            }
-        });
+        router.post(
+            `/tienda/${store.slug}/react`,
+            { like: localLike ? 0 : 1 },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setLocalLike(localLike ? 0 : 1);
+                },
+            },
+        );
     };
 
     const handleSocialShare = (platform: string) => {
@@ -352,10 +366,16 @@ export default function MarketplaceShow({
 
         switch (platform) {
             case 'whatsapp':
-                window.open(`https://api.whatsapp.com/send?text=${text}%20${shareUrl}`, '_blank');
+                window.open(
+                    `https://api.whatsapp.com/send?text=${text}%20${shareUrl}`,
+                    '_blank',
+                );
                 break;
             case 'facebook':
-                window.open(`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`, '_blank');
+                window.open(
+                    `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`,
+                    '_blank',
+                );
                 break;
             case 'copy':
                 navigator.clipboard.writeText(window.location.href);
@@ -365,8 +385,8 @@ export default function MarketplaceShow({
     };
 
     const ProductCard = ({ producto }: { producto: Producto }) => (
-        <div className="group relative flex flex-col rounded-xl border border-slate-200 bg-white p-3 shadow-sm hover:shadow-md transition-shadow">
-            <div className="relative aspect-square overflow-hidden rounded-lg bg-slate-100 border border-slate-100">
+        <div className="group relative flex flex-col rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md">
+            <div className="relative aspect-square overflow-hidden rounded-lg border border-slate-100 bg-slate-100">
                 {producto.imagen ? (
                     <img
                         src={`/storage/${producto.imagen}`}
@@ -388,28 +408,30 @@ export default function MarketplaceShow({
                 )}
             </div>
             <div className="mt-3 flex-1">
-                <h4 className="text-sm font-semibold text-slate-900 line-clamp-2 leading-tight">
+                <h4 className="line-clamp-2 text-sm leading-tight font-semibold text-slate-900">
                     {producto.nombre}
                 </h4>
                 <p className="mt-1 text-lg font-bold text-slate-900">
                     ${Number(producto.precio_venta).toLocaleString()}
                 </p>
-                {['kg', 'lt'].includes(producto.unidad_medida) && modoGramosProducto[producto.id] && (
-                    <p className="text-xs text-emerald-600 font-semibold">
-                        = ${Math.round(
-                            precioProporcional(
-                                producto,
-                                cantidadesAgregar[producto.id] || 0,
-                            ) ?? 0,
-                        ).toLocaleString()}
-                    </p>
-                )}
+                {['kg', 'lt'].includes(producto.unidad_medida) &&
+                    modoGramosProducto[producto.id] && (
+                        <p className="text-xs font-semibold text-emerald-600">
+                            = $
+                            {Math.round(
+                                precioProporcional(
+                                    producto,
+                                    cantidadesAgregar[producto.id] || 0,
+                                ) ?? 0,
+                            ).toLocaleString()}
+                        </p>
+                    )}
             </div>
-            <div className="mt-3 pt-3 border-t border-slate-100 space-y-2">
+            <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
                 {producto.is_service && producto.requires_appointment ? (
                     <Link
                         href={`/booking/${store.slug}?service_id=${producto.id}`}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg h-9 text-sm font-semibold transition-all bg-primary text-primary-foreground hover:bg-primary/90"
+                        className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90"
                     >
                         <Calendar className="h-4 w-4" />
                         Agendar Cita
@@ -420,12 +442,18 @@ export default function MarketplaceShow({
                             <div className="flex items-center justify-end">
                                 <button
                                     type="button"
-                                    onClick={() => toggleModoGramos(producto.id)}
-                                    className={`text-[10px] font-bold uppercase tracking-wider rounded-md px-2 py-0.5 transition-colors ${modoGramosProducto[producto.id] ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}
+                                    onClick={() =>
+                                        toggleModoGramos(producto.id)
+                                    }
+                                    className={`rounded-md px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase transition-colors ${modoGramosProducto[producto.id] ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}
                                 >
                                     {modoGramosProducto[producto.id]
-                                        ? producto.unidad_medida === 'lt' ? 'ml' : 'g'
-                                        : producto.unidad_medida === 'lt' ? 'L' : 'kg'}
+                                        ? producto.unidad_medida === 'lt'
+                                            ? 'ml'
+                                            : 'g'
+                                        : producto.unidad_medida === 'lt'
+                                          ? 'L'
+                                          : 'kg'}
                                 </button>
                             </div>
                         )}
@@ -437,7 +465,15 @@ export default function MarketplaceShow({
                                 onClick={() =>
                                     setCantidadesAgregar((prev) => ({
                                         ...prev,
-                                        [producto.id]: Math.max(modoGramosProducto[producto.id] ? 1 : 1, (prev[producto.id] || 1) - (modoGramosProducto[producto.id] ? 10 : 1)),
+                                        [producto.id]: Math.max(
+                                            modoGramosProducto[producto.id]
+                                                ? 1
+                                                : 1,
+                                            (prev[producto.id] || 1) -
+                                                (modoGramosProducto[producto.id]
+                                                    ? 10
+                                                    : 1),
+                                        ),
                                     }))
                                 }
                             >
@@ -447,20 +483,27 @@ export default function MarketplaceShow({
                                 <Input
                                     type="number"
                                     min="1"
-                                    step={modoGramosProducto[producto.id] ? "10" : "1"}
+                                    step={
+                                        modoGramosProducto[producto.id]
+                                            ? '10'
+                                            : '1'
+                                    }
                                     value={cantidadesAgregar[producto.id] || 1}
                                     onChange={(e) => {
-                                        const val = parseInt(e.target.value) || 1;
+                                        const val =
+                                            parseInt(e.target.value) || 1;
                                         setCantidadesAgregar((prev) => ({
                                             ...prev,
                                             [producto.id]: Math.max(1, val),
                                         }));
                                     }}
-                                    className="h-7 w-14 border-0 bg-transparent text-center text-sm font-semibold [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    className="h-7 w-14 [appearance:textfield] border-0 bg-transparent text-center text-sm font-semibold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 />
                                 {modoGramosProducto[producto.id] && (
-                                    <span className="text-[10px] font-bold text-slate-400 ml-0.5">
-                                        {producto.unidad_medida === 'lt' ? 'ml' : 'g'}
+                                    <span className="ml-0.5 text-[10px] font-bold text-slate-400">
+                                        {producto.unidad_medida === 'lt'
+                                            ? 'ml'
+                                            : 'g'}
                                     </span>
                                 )}
                             </div>
@@ -471,7 +514,11 @@ export default function MarketplaceShow({
                                 onClick={() =>
                                     setCantidadesAgregar((prev) => ({
                                         ...prev,
-                                        [producto.id]: (prev[producto.id] || 1) + (modoGramosProducto[producto.id] ? 10 : 1),
+                                        [producto.id]:
+                                            (prev[producto.id] || 1) +
+                                            (modoGramosProducto[producto.id]
+                                                ? 10
+                                                : 1),
                                     }))
                                 }
                             >
@@ -479,7 +526,7 @@ export default function MarketplaceShow({
                             </Button>
                         </div>
                         <Button
-                            className={`h-9 w-full rounded-lg text-sm font-semibold transition-colors ${productoAgregado === producto.id ? 'bg-green-500 hover:bg-green-600 text-white' : 'bg-primary hover:bg-primary/90 text-white'}`}
+                            className={`h-9 w-full rounded-lg text-sm font-semibold transition-colors ${productoAgregado === producto.id ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-primary text-white hover:bg-primary/90'}`}
                             onClick={() => agregarAlCarrito(producto.id)}
                             disabled={productoAgregado === producto.id}
                         >
@@ -489,7 +536,8 @@ export default function MarketplaceShow({
                                 </>
                             ) : (
                                 <>
-                                    <ShoppingCart className="mr-1.5 h-4 w-4" /> Agregar
+                                    <ShoppingCart className="mr-1.5 h-4 w-4" />{' '}
+                                    Agregar
                                 </>
                             )}
                         </Button>
@@ -509,10 +557,10 @@ export default function MarketplaceShow({
             <Head title={store.title} />
 
             {/* Facebook-style Header Area */}
-            <div className="bg-white shadow-sm border-b border-slate-200">
+            <div className="border-b border-slate-200 bg-white shadow-sm">
                 <div className="mx-auto max-w-6xl">
                     {/* Cover Photo */}
-                    <div className="relative h-64 w-full bg-gradient-to-r from-slate-200 to-slate-300 sm:h-80 md:h-96 rounded-b-xl overflow-hidden group">
+                    <div className="group relative h-64 w-full overflow-hidden rounded-b-xl bg-gradient-to-r from-slate-200 to-slate-300 sm:h-80 md:h-96">
                         {store.user.cover_photo_url && (
                             <img
                                 src={store.user.cover_photo_url}
@@ -523,8 +571,8 @@ export default function MarketplaceShow({
                     </div>
 
                     {/* Profile Info Bar */}
-                    <div className="relative px-4 sm:px-8 pb-4 flex flex-col sm:flex-row items-center sm:items-end sm:justify-between -mt-12 sm:-mt-16 mb-4">
-                        <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6 z-10 w-full">
+                    <div className="relative -mt-12 mb-4 flex flex-col items-center px-4 pb-4 sm:-mt-16 sm:flex-row sm:items-end sm:justify-between sm:px-8">
+                        <div className="z-10 flex w-full flex-col items-center gap-4 sm:flex-row sm:items-end sm:gap-6">
                             {/* Avatar */}
                             <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-full border-4 border-white bg-white shadow-md sm:h-40 sm:w-40">
                                 {store.user.profile_photo_url ? (
@@ -537,23 +585,30 @@ export default function MarketplaceShow({
                                         {store.title.charAt(0)}
                                     </div>
                                 )}
-                                <div className="absolute bottom-2 right-2 h-4 w-4 rounded-full border-2 border-white bg-green-500"></div>
+                                <div className="absolute right-2 bottom-2 h-4 w-4 rounded-full border-2 border-white bg-green-500"></div>
                             </div>
 
                             {/* Text Info */}
-                            <div className="flex-1 text-center sm:text-left pb-2 sm:pb-4">
-                                <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center justify-center sm:justify-start gap-2">
+                            <div className="flex-1 pb-2 text-center sm:pb-4 sm:text-left">
+                                <h1 className="flex items-center justify-center gap-2 text-3xl font-bold tracking-tight text-slate-900 sm:justify-start">
                                     {store.title}
                                     {store.is_verified && (
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <span className="flex items-center gap-1 cursor-help" aria-label="Tienda verificada">
-                                                    <CheckCircle2 className="h-5 w-5 text-blue-500 fill-blue-500" />
+                                                <span
+                                                    className="flex cursor-help items-center gap-1"
+                                                    aria-label="Tienda verificada"
+                                                >
+                                                    <CheckCircle2 className="h-5 w-5 fill-blue-500 text-blue-500" />
                                                 </span>
                                             </TooltipTrigger>
-                                            <TooltipContent side="top" align="center" className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1.5 text-xs">
+                                            <TooltipContent
+                                                side="top"
+                                                align="center"
+                                                className="border-blue-200 bg-blue-50 px-3 py-1.5 text-xs text-blue-700"
+                                            >
                                                 <div className="flex items-center gap-1.5">
-                                                    <CheckCircle2 className="h-3 w-3 text-blue-500 fill-blue-500" />
+                                                    <CheckCircle2 className="h-3 w-3 fill-blue-500 text-blue-500" />
                                                     Tienda verificada
                                                 </div>
                                             </TooltipContent>
@@ -562,23 +617,31 @@ export default function MarketplaceShow({
                                     {store.is_official && (
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <span className="flex items-center gap-1 cursor-help" aria-label="Tienda Oficial">
-                                                    <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
+                                                <span
+                                                    className="flex cursor-help items-center gap-1"
+                                                    aria-label="Tienda Oficial"
+                                                >
+                                                    <Star className="h-5 w-5 fill-amber-500 text-amber-500" />
                                                 </span>
                                             </TooltipTrigger>
-                                            <TooltipContent side="top" align="center" className="bg-amber-50 text-amber-700 border-amber-200 px-3 py-1.5 text-xs">
+                                            <TooltipContent
+                                                side="top"
+                                                align="center"
+                                                className="border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-700"
+                                            >
                                                 <div className="flex items-center gap-1.5">
-                                                    <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                                                    <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
                                                     Tienda Oficial
                                                 </div>
                                             </TooltipContent>
                                         </Tooltip>
                                     )}
                                 </h1>
-                                <p className="text-sm font-medium text-slate-500 mt-1 flex items-center justify-center sm:justify-start gap-4">
+                                <p className="mt-1 flex items-center justify-center gap-4 text-sm font-medium text-slate-500 sm:justify-start">
                                     <span className="flex items-center gap-1">
-                                        <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
-                                        {averageRating} ({store.rating_count} opiniones)
+                                        <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                                        {averageRating} ({store.rating_count}{' '}
+                                        opiniones)
                                     </span>
                                     <span>•</span>
                                     <span>{store.likes_count} me gusta</span>
@@ -586,18 +649,25 @@ export default function MarketplaceShow({
                             </div>
 
                             {/* Actions */}
-                            <div className="flex gap-2 pb-2 sm:pb-4 w-full sm:w-auto justify-center shrink-0">
+                            <div className="flex w-full shrink-0 justify-center gap-2 pb-2 sm:w-auto sm:pb-4">
                                 <Button
-                                    variant={localLike ? "default" : "secondary"}
+                                    variant={
+                                        localLike ? 'default' : 'secondary'
+                                    }
                                     className={`h-10 rounded-lg px-4 font-semibold ${localLike ? 'bg-primary text-white hover:bg-primary/90' : 'bg-slate-200 text-slate-900 hover:bg-slate-300'}`}
                                     onClick={handleLike}
                                 >
-                                    <Heart className={cn("mr-2 h-4 w-4", localLike ? "fill-white" : "")} />
+                                    <Heart
+                                        className={cn(
+                                            'mr-2 h-4 w-4',
+                                            localLike ? 'fill-white' : '',
+                                        )}
+                                    />
                                     {localLike ? 'Te gusta' : 'Me gusta'}
                                 </Button>
                                 <Link
                                     href={chat.start(store.slug).url}
-                                    className="inline-flex h-10 items-center justify-center rounded-lg px-4 font-semibold bg-slate-200 text-slate-900 hover:bg-slate-300"
+                                    className="inline-flex h-10 items-center justify-center rounded-lg bg-slate-200 px-4 font-semibold text-slate-900 hover:bg-slate-300"
                                 >
                                     <MessageSquare className="mr-2 h-4 w-4" />
                                     Mensaje
@@ -606,22 +676,37 @@ export default function MarketplaceShow({
                                     <DropdownMenuTrigger asChild>
                                         <Button
                                             variant="secondary"
-                                            className="h-10 rounded-lg px-4 font-semibold bg-slate-200 text-slate-900 hover:bg-slate-300"
+                                            className="h-10 rounded-lg bg-slate-200 px-4 font-semibold text-slate-900 hover:bg-slate-300"
                                         >
                                             <Share2 className="mr-2 h-4 w-4" />
                                             Compartir
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-52">
-                                        <DropdownMenuItem onClick={() => handleSocialShare('whatsapp')}>
+                                    <DropdownMenuContent
+                                        align="end"
+                                        className="w-52"
+                                    >
+                                        <DropdownMenuItem
+                                            onClick={() =>
+                                                handleSocialShare('whatsapp')
+                                            }
+                                        >
                                             <MessageCircle className="mr-2 h-4 w-4 text-green-500" />
                                             WhatsApp
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleSocialShare('facebook')}>
+                                        <DropdownMenuItem
+                                            onClick={() =>
+                                                handleSocialShare('facebook')
+                                            }
+                                        >
                                             <Facebook className="mr-2 h-4 w-4 text-blue-600" />
                                             Facebook
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleSocialShare('copy')}>
+                                        <DropdownMenuItem
+                                            onClick={() =>
+                                                handleSocialShare('copy')
+                                            }
+                                        >
                                             <Copy className="mr-2 h-4 w-4" />
                                             Copiar enlace
                                         </DropdownMenuItem>
@@ -630,24 +715,24 @@ export default function MarketplaceShow({
                             </div>
                         </div>
                     </div>
-                    
+
                     {/* Navigation Tabs */}
-                    <div className="flex px-4 sm:px-8 border-t border-slate-200 pt-1">
+                    <div className="flex border-t border-slate-200 px-4 pt-1 sm:px-8">
                         <button
                             onClick={() => setTabActivo('productos')}
-                            className={`px-4 py-3 text-sm font-bold transition-colors rounded-t-lg ${tabActivo === 'productos' ? 'text-primary border-b-4 border-primary' : 'text-slate-500 hover:bg-slate-50'}`}
+                            className={`rounded-t-lg px-4 py-3 text-sm font-bold transition-colors ${tabActivo === 'productos' ? 'border-b-4 border-primary text-primary' : 'text-slate-500 hover:bg-slate-50'}`}
                         >
                             Productos
                         </button>
                         <button
                             onClick={() => setTabActivo('informacion')}
-                            className={`px-4 py-3 text-sm font-bold transition-colors rounded-t-lg ${tabActivo === 'informacion' ? 'text-primary border-b-4 border-primary' : 'text-slate-500 hover:bg-slate-50'}`}
+                            className={`rounded-t-lg px-4 py-3 text-sm font-bold transition-colors ${tabActivo === 'informacion' ? 'border-b-4 border-primary text-primary' : 'text-slate-500 hover:bg-slate-50'}`}
                         >
                             Información
                         </button>
                         <button
                             onClick={() => setTabActivo('opiniones')}
-                            className={`px-4 py-3 text-sm font-bold transition-colors rounded-t-lg ${tabActivo === 'opiniones' ? 'text-primary border-b-4 border-primary' : 'text-slate-500 hover:bg-slate-50'}`}
+                            className={`rounded-t-lg px-4 py-3 text-sm font-bold transition-colors ${tabActivo === 'opiniones' ? 'border-b-4 border-primary text-primary' : 'text-slate-500 hover:bg-slate-50'}`}
                         >
                             Opiniones
                             {reviews.length > 0 && (
@@ -661,56 +746,78 @@ export default function MarketplaceShow({
             </div>
 
             {/* Main Content Area - Gray Background like Facebook */}
-            <div className="bg-[#f0f2f5] min-h-screen pt-6 pb-12">
-                <div className="mx-auto max-w-6xl px-4 flex flex-col lg:flex-row gap-6">
-                    
+            <div className="min-h-screen bg-[#f0f2f5] pt-6 pb-12">
+                <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 lg:flex-row">
                     {/* Left Column (Intro & Categories) */}
-                    <div className="w-full lg:w-[360px] flex-shrink-0 space-y-4">
+                    <div className="w-full flex-shrink-0 space-y-4 lg:w-[360px]">
                         {/* Intro Card */}
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                            <h2 className="text-lg font-bold text-slate-900 mb-4">Detalles</h2>
+                        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <h2 className="mb-4 text-lg font-bold text-slate-900">
+                                Detalles
+                            </h2>
                             <div className="space-y-4">
                                 {store.description && (
-                                    <div className="text-sm text-slate-800 text-center pb-4 border-b border-slate-100">
+                                    <div className="border-b border-slate-100 pb-4 text-center text-sm text-slate-800">
                                         "{store.description}"
                                     </div>
                                 )}
-                                
+
                                 {store.user.region && (
                                     <div className="flex items-center gap-3 text-sm text-slate-800">
                                         <MapPin className="h-5 w-5 text-slate-400" />
-                                        <span>Vive en <span className="font-semibold">{store.user.comuna || store.user.region}</span></span>
+                                        <span>
+                                            Vive en{' '}
+                                            <span className="font-semibold">
+                                                {store.user.comuna ||
+                                                    store.user.region}
+                                            </span>
+                                        </span>
                                     </div>
                                 )}
-                                
+
                                 {/* Store Badges */}
-                                <div className="flex items-center gap-2 flex-wrap mt-2">
+                                <div className="mt-2 flex flex-wrap items-center gap-2">
                                     {store.is_verified && (
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <span className="flex items-center gap-1 cursor-help" aria-label="Tienda verificada">
-                                                    <CheckCircle2 className="h-4 w-4 text-blue-500 fill-blue-500" />
+                                                <span
+                                                    className="flex cursor-help items-center gap-1"
+                                                    aria-label="Tienda verificada"
+                                                >
+                                                    <CheckCircle2 className="h-4 w-4 fill-blue-500 text-blue-500" />
                                                 </span>
                                             </TooltipTrigger>
-                                            <TooltipContent side="top" align="center" className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1.5 text-xs">
-                                                Tienda verificada por la plataforma
+                                            <TooltipContent
+                                                side="top"
+                                                align="center"
+                                                className="border-blue-200 bg-blue-50 px-3 py-1.5 text-xs text-blue-700"
+                                            >
+                                                Tienda verificada por la
+                                                plataforma
                                             </TooltipContent>
                                         </Tooltip>
                                     )}
                                     {store.is_official && (
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <span className="flex items-center gap-1 cursor-help" aria-label="Tienda Oficial">
-                                                    <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                                                <span
+                                                    className="flex cursor-help items-center gap-1"
+                                                    aria-label="Tienda Oficial"
+                                                >
+                                                    <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
                                                 </span>
                                             </TooltipTrigger>
-                                            <TooltipContent side="top" align="center" className="bg-amber-50 text-amber-700 border-amber-200 px-3 py-1.5 text-xs">
+                                            <TooltipContent
+                                                side="top"
+                                                align="center"
+                                                className="border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-700"
+                                            >
                                                 Tienda Oficial verificada
                                             </TooltipContent>
                                         </Tooltip>
                                     )}
                                 </div>
-                                
+
                                 {store.email && (
                                     <div className="flex items-center gap-3 text-sm text-slate-800">
                                         <Mail className="h-5 w-5 text-slate-400" />
@@ -721,24 +828,30 @@ export default function MarketplaceShow({
                         </div>
 
                         {/* Categories Card */}
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                            <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center justify-between">
+                        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <h2 className="mb-4 flex items-center justify-between text-lg font-bold text-slate-900">
                                 Categorías
-                                <span className="text-sm font-normal text-primary hover:underline cursor-pointer">Ver todas</span>
+                                <span className="cursor-pointer text-sm font-normal text-primary hover:underline">
+                                    Ver todas
+                                </span>
                             </h2>
                             <div className="grid grid-cols-2 gap-2">
                                 {store.categorias.map((cat) => (
                                     <Link
                                         key={cat.id}
                                         href={`/tienda/${store.slug}/categoria/${cat.id}`}
-                                        className="relative group rounded-lg overflow-hidden border border-slate-100 aspect-square"
+                                        className="group relative aspect-square overflow-hidden rounded-lg border border-slate-100"
                                     >
                                         <img
-                                            src={cat.imagen ? `/storage/${cat.imagen}` : '/placeholder.png'}
-                                            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                            src={
+                                                cat.imagen
+                                                    ? `/storage/${cat.imagen}`
+                                                    : '/placeholder.png'
+                                            }
+                                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                                        <span className="absolute bottom-2 left-2 right-2 text-xs font-bold text-white truncate">
+                                        <span className="absolute right-2 bottom-2 left-2 truncate text-xs font-bold text-white">
                                             {cat.nombre}
                                         </span>
                                     </Link>
@@ -750,9 +863,11 @@ export default function MarketplaceShow({
                     {/* Middle Column */}
                     <div className="flex-1 space-y-4">
                         {tabActivo === 'productos' && (
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                                <h2 className="text-lg font-bold text-slate-900 mb-4">Catálogo de Productos</h2>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                                <h2 className="mb-4 text-lg font-bold text-slate-900">
+                                    Catálogo de Productos
+                                </h2>
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     {store.productos.map((p) => (
                                         <ProductCard key={p.id} producto={p} />
                                     ))}
@@ -761,31 +876,53 @@ export default function MarketplaceShow({
                         )}
 
                         {tabActivo === 'informacion' && (
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                                <h2 className="text-lg font-bold text-slate-900 mb-4">Información de la Tienda</h2>
+                            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                                <h2 className="mb-4 text-lg font-bold text-slate-900">
+                                    Información de la Tienda
+                                </h2>
                                 <div className="space-y-4">
                                     {store.description && (
                                         <div className="text-sm text-slate-800">
-                                            <span className="font-semibold">Descripción:</span>
-                                            <p className="mt-1 text-slate-600">{store.description}</p>
+                                            <span className="font-semibold">
+                                                Descripción:
+                                            </span>
+                                            <p className="mt-1 text-slate-600">
+                                                {store.description}
+                                            </p>
                                         </div>
                                     )}
                                     {store.user.region && (
                                         <div className="flex items-center gap-3 text-sm">
                                             <MapPin className="h-5 w-5 text-slate-400" />
-                                            <span><span className="font-semibold">Ubicación:</span> {store.user.comuna || store.user.region}</span>
+                                            <span>
+                                                <span className="font-semibold">
+                                                    Ubicación:
+                                                </span>{' '}
+                                                {store.user.comuna ||
+                                                    store.user.region}
+                                            </span>
                                         </div>
                                     )}
                                     {store.email && (
                                         <div className="flex items-center gap-3 text-sm">
                                             <Mail className="h-5 w-5 text-slate-400" />
-                                            <span><span className="font-semibold">Email:</span> {store.email}</span>
+                                            <span>
+                                                <span className="font-semibold">
+                                                    Email:
+                                                </span>{' '}
+                                                {store.email}
+                                            </span>
                                         </div>
                                     )}
                                     {store.phone && (
                                         <div className="flex items-center gap-3 text-sm">
                                             <Phone className="h-5 w-5 text-slate-400" />
-                                            <span><span className="font-semibold">Teléfono:</span> {store.phone}</span>
+                                            <span>
+                                                <span className="font-semibold">
+                                                    Teléfono:
+                                                </span>{' '}
+                                                {store.phone}
+                                            </span>
                                         </div>
                                     )}
                                 </div>
@@ -793,40 +930,74 @@ export default function MarketplaceShow({
                         )}
 
                         {tabActivo === 'opiniones' && (
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                                <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center justify-between">
+                            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                                <h2 className="mb-4 flex items-center justify-between text-lg font-bold text-slate-900">
                                     Opiniones de Clientes
-                                    <span className="text-sm font-normal text-slate-500">{reviews.length} {reviews.length === 1 ? 'opinión' : 'opiniones'}</span>
+                                    <span className="text-sm font-normal text-slate-500">
+                                        {reviews.length}{' '}
+                                        {reviews.length === 1
+                                            ? 'opinión'
+                                            : 'opiniones'}
+                                    </span>
                                 </h2>
 
                                 {reviews.length === 0 && (
-                                    <div className="text-center py-8 text-slate-400">
-                                        <MessageSquare className="h-10 w-10 mx-auto mb-3" />
-                                        <p className="font-medium">No hay opiniones aún</p>
-                                        <p className="text-sm mt-1">Sé el primero en opinar</p>
+                                    <div className="py-8 text-center text-slate-400">
+                                        <MessageSquare className="mx-auto mb-3 h-10 w-10" />
+                                        <p className="font-medium">
+                                            No hay opiniones aún
+                                        </p>
+                                        <p className="mt-1 text-sm">
+                                            Sé el primero en opinar
+                                        </p>
                                     </div>
                                 )}
 
                                 <div className="space-y-4">
                                     {reviews.map((review) => (
-                                        <div key={review.id} className="flex gap-3 border-b border-slate-100 pb-4 last:border-0">
-                                            <div className="h-10 w-10 rounded-full bg-slate-200 overflow-hidden shrink-0">
-                                                {review.user.profile_photo_url ? (
-                                                    <img src={review.user.profile_photo_url} className="h-full w-full object-cover" />
+                                        <div
+                                            key={review.id}
+                                            className="flex gap-3 border-b border-slate-100 pb-4 last:border-0"
+                                        >
+                                            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-slate-200">
+                                                {review.user
+                                                    .profile_photo_url ? (
+                                                    <img
+                                                        src={
+                                                            review.user
+                                                                .profile_photo_url
+                                                        }
+                                                        className="h-full w-full object-cover"
+                                                    />
                                                 ) : (
-                                                    <div className="h-full w-full flex items-center justify-center text-sm font-bold text-slate-500">
-                                                        {review.user.name.charAt(0)}
+                                                    <div className="flex h-full w-full items-center justify-center text-sm font-bold text-slate-500">
+                                                        {review.user.name.charAt(
+                                                            0,
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="flex-1 min-w-0">
+                                            <div className="min-w-0 flex-1">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-bold text-sm text-slate-900">{review.user.name}</span>
+                                                    <span className="text-sm font-bold text-slate-900">
+                                                        {review.user.name}
+                                                    </span>
                                                     <span className="text-[10px] text-slate-400">
-                                                        {new Date(review.created_at).toLocaleDateString(currency.locale, { year: 'numeric', month: 'short', day: 'numeric' })}
+                                                        {new Date(
+                                                            review.created_at,
+                                                        ).toLocaleDateString(
+                                                            currency.locale,
+                                                            {
+                                                                year: 'numeric',
+                                                                month: 'short',
+                                                                day: 'numeric',
+                                                            },
+                                                        )}
                                                     </span>
                                                 </div>
-                                                <p className="text-sm text-slate-700 mt-1">{review.comentario}</p>
+                                                <p className="mt-1 text-sm text-slate-700">
+                                                    {review.comentario}
+                                                </p>
                                             </div>
                                         </div>
                                     ))}
@@ -838,50 +1009,76 @@ export default function MarketplaceShow({
                                             e.preventDefault();
                                             if (!opinionTexto.trim()) return;
                                             setEnviandoOpinion(true);
-                                            router.post(`/tienda/${store.slug}/opinion`, { comentario: opinionTexto }, {
-                                                onSuccess: () => {
-                                                    setOpinionTexto('');
-                                                    setEnviandoOpinion(false);
+                                            router.post(
+                                                `/tienda/${store.slug}/opinion`,
+                                                { comentario: opinionTexto },
+                                                {
+                                                    onSuccess: () => {
+                                                        setOpinionTexto('');
+                                                        setEnviandoOpinion(
+                                                            false,
+                                                        );
+                                                    },
+                                                    onError: () => {
+                                                        setEnviandoOpinion(
+                                                            false,
+                                                        );
+                                                    },
                                                 },
-                                                onError: () => {
-                                                    setEnviandoOpinion(false);
-                                                },
-                                            });
+                                            );
                                         }}
                                         className="mt-6 border-t border-slate-100 pt-4"
                                     >
-                                        <h3 className="font-bold text-sm text-slate-900 mb-3">Deja tu opinión</h3>
+                                        <h3 className="mb-3 text-sm font-bold text-slate-900">
+                                            Deja tu opinión
+                                        </h3>
                                         <textarea
                                             value={opinionTexto}
-                                            onChange={(e) => setOpinionTexto(e.target.value)}
+                                            onChange={(e) =>
+                                                setOpinionTexto(e.target.value)
+                                            }
                                             placeholder="Escribe tu opinión sobre esta tienda..."
-                                            className="w-full rounded-lg border border-slate-200 p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                            className="w-full resize-none rounded-lg border border-slate-200 p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                                             rows={3}
                                             maxLength={1000}
                                         />
-                                        <div className="flex items-center justify-between mt-2">
-                                            <span className="text-[10px] text-slate-400">{opinionTexto.length}/1000</span>
+                                        <div className="mt-2 flex items-center justify-between">
+                                            <span className="text-[10px] text-slate-400">
+                                                {opinionTexto.length}/1000
+                                            </span>
                                             <Button
                                                 type="submit"
-                                                disabled={!opinionTexto.trim() || enviandoOpinion}
+                                                disabled={
+                                                    !opinionTexto.trim() ||
+                                                    enviandoOpinion
+                                                }
                                                 className="h-9 rounded-lg text-sm font-semibold"
                                             >
-                                                {enviandoOpinion ? 'Publicando...' : 'Publicar Opinión'}
+                                                {enviandoOpinion
+                                                    ? 'Publicando...'
+                                                    : 'Publicar Opinión'}
                                             </Button>
                                         </div>
                                     </form>
                                 )}
 
                                 {auth.user && hasPurchased && userReview && (
-                                    <div className="mt-6 border-t border-slate-100 pt-4 bg-primary/5 rounded-xl p-4">
-                                        <p className="text-sm font-semibold text-primary">Ya publicaste tu opinión</p>
-                                        <p className="text-sm text-slate-600 mt-1">"{userReview.comentario}"</p>
+                                    <div className="mt-6 rounded-xl border-t border-slate-100 bg-primary/5 p-4 pt-4">
+                                        <p className="text-sm font-semibold text-primary">
+                                            Ya publicaste tu opinión
+                                        </p>
+                                        <p className="mt-1 text-sm text-slate-600">
+                                            "{userReview.comentario}"
+                                        </p>
                                     </div>
                                 )}
 
                                 {!auth.user && (
                                     <div className="mt-6 border-t border-slate-100 pt-4 text-center">
-                                        <Link href="/login" className="text-sm font-semibold text-primary hover:underline">
+                                        <Link
+                                            href="/login"
+                                            className="text-sm font-semibold text-primary hover:underline"
+                                        >
                                             Inicia sesión para dejar una opinión
                                         </Link>
                                     </div>
@@ -889,8 +1086,10 @@ export default function MarketplaceShow({
 
                                 {auth.user && !hasPurchased && (
                                     <div className="mt-6 border-t border-slate-100 pt-4">
-                                        <p className="text-sm text-slate-500 text-center">
-                                            Solo los clientes que han comprado en esta tienda pueden dejar una opinión.
+                                        <p className="text-center text-sm text-slate-500">
+                                            Solo los clientes que han comprado
+                                            en esta tienda pueden dejar una
+                                            opinión.
                                         </p>
                                     </div>
                                 )}
@@ -899,103 +1098,172 @@ export default function MarketplaceShow({
                     </div>
 
                     {/* Right Column (Cart Widget) */}
-                    <div className="w-full lg:w-[320px] flex-shrink-0">
-                        <div className="sticky top-20 bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                            <h2 className="text-lg font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Tu Pedido</h2>
-                            <div className="space-y-4 max-h-[40vh] overflow-y-auto mb-4 custom-scrollbar">
+                    <div className="w-full flex-shrink-0 lg:w-[320px]">
+                        <div className="sticky top-20 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <h2 className="mb-4 border-b border-slate-100 pb-2 text-lg font-bold text-slate-900">
+                                Tu Pedido
+                            </h2>
+                            <div className="custom-scrollbar mb-4 max-h-[40vh] space-y-4 overflow-y-auto">
                                 {productosEnCarrito.map((p) => (
-                                    <div key={p.id} className="flex items-center gap-3">
-                                        <div className="h-12 w-12 rounded-lg bg-slate-100 p-1 flex-shrink-0 border border-slate-200">
-                                            <img src={`/storage/${p.imagen}`} className="h-full w-full object-contain" />
+                                    <div
+                                        key={p.id}
+                                        className="flex items-center gap-3"
+                                    >
+                                        <div className="h-12 w-12 flex-shrink-0 rounded-lg border border-slate-200 bg-slate-100 p-1">
+                                            <img
+                                                src={`/storage/${p.imagen}`}
+                                                className="h-full w-full object-contain"
+                                            />
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-slate-900 truncate">{p.nombre}</p>
-                                            <p className="text-xs text-slate-500">
-                                                {['kg', 'lt'].includes(p.unidad_medida) && modoGramosProducto[p.id]
-                                                    ? `${(carrito[p.id] * 1000).toLocaleString()} ${p.unidad_medida === 'lt' ? 'ml' : 'g'}`
-                                                    : carrito[p.id]} x ${p.precio_venta.toLocaleString()}
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-semibold text-slate-900">
+                                                {p.nombre}
                                             </p>
-                                            {['kg', 'lt'].includes(p.unidad_medida) && modoGramosProducto[p.id] && (
-                                                <p className="text-[10px] text-emerald-600 font-bold">
-                                                    ≈ ${Math.round(
-                                                        precioProporcional(p, carrito[p.id] * 1000) ?? 0,
-                                                    ).toLocaleString()}
-                                                </p>
-                                            )}
+                                            <p className="text-xs text-slate-500">
+                                                {['kg', 'lt'].includes(
+                                                    p.unidad_medida,
+                                                ) && modoGramosProducto[p.id]
+                                                    ? `${(carrito[p.id] * 1000).toLocaleString()} ${p.unidad_medida === 'lt' ? 'ml' : 'g'}`
+                                                    : carrito[p.id]}{' '}
+                                                x $
+                                                {p.precio_venta.toLocaleString()}
+                                            </p>
+                                            {['kg', 'lt'].includes(
+                                                p.unidad_medida,
+                                            ) &&
+                                                modoGramosProducto[p.id] && (
+                                                    <p className="text-[10px] font-bold text-emerald-600">
+                                                        ≈ $
+                                                        {Math.round(
+                                                            precioProporcional(
+                                                                p,
+                                                                carrito[p.id] *
+                                                                    1000,
+                                                            ) ?? 0,
+                                                        ).toLocaleString()}
+                                                    </p>
+                                                )}
                                         </div>
                                     </div>
                                 ))}
                                 {totalItems === 0 && (
-                                    <div className="text-center py-6">
-                                        <ShoppingCart className="h-10 w-10 text-slate-300 mx-auto mb-2" />
-                                        <p className="text-sm font-medium text-slate-500">Tu carrito está vacío</p>
+                                    <div className="py-6 text-center">
+                                        <ShoppingCart className="mx-auto mb-2 h-10 w-10 text-slate-300" />
+                                        <p className="text-sm font-medium text-slate-500">
+                                            Tu carrito está vacío
+                                        </p>
                                     </div>
                                 )}
                             </div>
-                            
+
                             {totalItems > 0 && (
                                 <div className="border-t border-slate-100 pt-4">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <span className="font-bold text-slate-700">Total</span>
-                                        <span className="text-lg font-black text-primary">${totalCarrito.toLocaleString()}</span>
+                                    <div className="mb-4 flex items-center justify-between">
+                                        <span className="font-bold text-slate-700">
+                                            Total
+                                        </span>
+                                        <span className="text-lg font-black text-primary">
+                                            ${totalCarrito.toLocaleString()}
+                                        </span>
                                     </div>
-                                    
-                                    <Sheet open={carritoAbierto} onOpenChange={setCarritoAbierto}>
+
+                                    <Sheet
+                                        open={carritoAbierto}
+                                        onOpenChange={setCarritoAbierto}
+                                    >
                                         <SheetTrigger asChild>
-                                            <Button className="w-full h-10 rounded-lg font-bold text-sm bg-primary hover:bg-primary/90 text-white shadow-sm">
+                                            <Button className="h-10 w-full rounded-lg bg-primary text-sm font-bold text-white shadow-sm hover:bg-primary/90">
                                                 Revisar y Pagar
                                             </Button>
                                         </SheetTrigger>
                                         <SheetContent className="rounded-l-[3rem] border-l-0 bg-white sm:max-w-md">
-                                        <SheetHeader className="border-b pb-8">
-                                            <SheetTitle className="text-3xl font-black tracking-tighter uppercase">
-                                                Mi Compra
-                                            </SheetTitle>
-                                        </SheetHeader>
-                                        <div className="flex-1 overflow-y-auto py-8">
-                                            {productosEnCarrito.map((p) => (
-                                                <div
-                                                    key={p.id}
-                                                    className="mb-6 flex gap-6 rounded-3xl border border-slate-100 bg-slate-50 p-4 dark:bg-slate-900"
-                                                >
-                                                    <div className="h-24 w-24 overflow-hidden rounded-2xl bg-white p-3">
-                                                        <img
-                                                            src={`/storage/${p.imagen}`}
-                                                            className="h-full w-full object-contain"
-                                                        />
-                                                    </div>
-                                                    <div className="flex flex-1 flex-col justify-center">
-                                                        <p className="mb-2 text-xs font-black uppercase">
-                                                            {p.nombre}
-                                                        </p>
-                                                        {['kg', 'lt'].includes(p.unidad_medida) && modoGramosProducto[p.id] && (
-                                                            <p className="text-[10px] text-emerald-600 font-bold mb-1">
-                                                                ≈ ${Math.round(
-                                                                    p.precio_venta * carrito[p.id],
-                                                                ).toLocaleString()}
-                                                                &nbsp;({(carrito[p.id] * 1000).toLocaleString()}&nbsp;{p.unidad_medida === 'lt' ? 'ml' : 'g'})
+                                            <SheetHeader className="border-b pb-8">
+                                                <SheetTitle className="text-3xl font-black tracking-tighter uppercase">
+                                                    Mi Compra
+                                                </SheetTitle>
+                                            </SheetHeader>
+                                            <div className="flex-1 overflow-y-auto py-8">
+                                                {productosEnCarrito.map((p) => (
+                                                    <div
+                                                        key={p.id}
+                                                        className="mb-6 flex gap-6 rounded-3xl border border-slate-100 bg-slate-50 p-4 dark:bg-slate-900"
+                                                    >
+                                                        <div className="h-24 w-24 overflow-hidden rounded-2xl bg-white p-3">
+                                                            <img
+                                                                src={`/storage/${p.imagen}`}
+                                                                className="h-full w-full object-contain"
+                                                            />
+                                                        </div>
+                                                        <div className="flex flex-1 flex-col justify-center">
+                                                            <p className="mb-2 text-xs font-black uppercase">
+                                                                {p.nombre}
                                                             </p>
-                                                        )}
-                                                        <div className="flex items-center gap-3">
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                className="h-8 w-8 rounded-xl"
+                                                            {[
+                                                                'kg',
+                                                                'lt',
+                                                            ].includes(
+                                                                p.unidad_medida,
+                                                            ) &&
+                                                                modoGramosProducto[
+                                                                    p.id
+                                                                ] && (
+                                                                    <p className="mb-1 text-[10px] font-bold text-emerald-600">
+                                                                        ≈ $
+                                                                        {Math.round(
+                                                                            p.precio_venta *
+                                                                                carrito[
+                                                                                    p
+                                                                                        .id
+                                                                                ],
+                                                                        ).toLocaleString()}
+                                                                        &nbsp;(
+                                                                        {(
+                                                                            carrito[
+                                                                                p
+                                                                                    .id
+                                                                            ] *
+                                                                            1000
+                                                                        ).toLocaleString()}
+                                                                        &nbsp;
+                                                                        {p.unidad_medida ===
+                                                                        'lt'
+                                                                            ? 'ml'
+                                                                            : 'g'}
+                                                                        )
+                                                                    </p>
+                                                                )}
+                                                            <div className="flex items-center gap-3">
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 rounded-xl"
                                                                     onClick={() =>
                                                                         setCarrito(
                                                                             (
                                                                                 prev,
                                                                             ) => ({
                                                                                 ...prev,
-                                                                                [p.id]: Math.max(
-                                                                                    0,
-                                                                                    (prev[
-                                                                                        p
-                                                                                            .id
-                                                                                    ] ||
-                                                                                        0) -
-                                                                                        (['kg', 'lt'].includes(p.unidad_medida) && modoGramosProducto[p.id] ? 0.1 : 1),
-                                                                                ),
+                                                                                [p.id]:
+                                                                                    Math.max(
+                                                                                        0,
+                                                                                        (prev[
+                                                                                            p
+                                                                                                .id
+                                                                                        ] ||
+                                                                                            0) -
+                                                                                            ([
+                                                                                                'kg',
+                                                                                                'lt',
+                                                                                            ].includes(
+                                                                                                p.unidad_medida,
+                                                                                            ) &&
+                                                                                            modoGramosProducto[
+                                                                                                p
+                                                                                                    .id
+                                                                                            ]
+                                                                                                ? 0.1
+                                                                                                : 1),
+                                                                                    ),
                                                                             }),
                                                                         )
                                                                     }
@@ -1003,25 +1271,87 @@ export default function MarketplaceShow({
                                                                     <Minus className="h-3 w-3" />
                                                                 </Button>
                                                                 <Input
-                                                                type="number"
-                                                                min="0"
-                                                                step={['kg', 'lt'].includes(p.unidad_medida) && modoGramosProducto[p.id] ? "0.001" : "1"}
-                                                                value={['kg', 'lt'].includes(p.unidad_medida) && modoGramosProducto[p.id] ? (carrito[p.id] * 1000) : carrito[p.id]}
-                                                                onChange={(e) => {
-                                                                    const val = ['kg', 'lt'].includes(p.unidad_medida) && modoGramosProducto[p.id]
-                                                                        ? (parseFloat(e.target.value) || 0) / 1000
-                                                                        : parseInt(e.target.value) || 0;
-                                                                    setCarrito((prev) => ({
-                                                                        ...prev,
-                                                                        [p.id]: Math.max(0, val),
-                                                                    }));
-                                                                }}
-                                                                className="h-8 w-16 border-0 bg-transparent text-center font-black [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                                            />
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                className="h-8 w-8 rounded-xl"
+                                                                    type="number"
+                                                                    min="0"
+                                                                    step={
+                                                                        [
+                                                                            'kg',
+                                                                            'lt',
+                                                                        ].includes(
+                                                                            p.unidad_medida,
+                                                                        ) &&
+                                                                        modoGramosProducto[
+                                                                            p.id
+                                                                        ]
+                                                                            ? '0.001'
+                                                                            : '1'
+                                                                    }
+                                                                    value={
+                                                                        [
+                                                                            'kg',
+                                                                            'lt',
+                                                                        ].includes(
+                                                                            p.unidad_medida,
+                                                                        ) &&
+                                                                        modoGramosProducto[
+                                                                            p.id
+                                                                        ]
+                                                                            ? carrito[
+                                                                                  p
+                                                                                      .id
+                                                                              ] *
+                                                                              1000
+                                                                            : carrito[
+                                                                                  p
+                                                                                      .id
+                                                                              ]
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) => {
+                                                                        const val =
+                                                                            [
+                                                                                'kg',
+                                                                                'lt',
+                                                                            ].includes(
+                                                                                p.unidad_medida,
+                                                                            ) &&
+                                                                            modoGramosProducto[
+                                                                                p
+                                                                                    .id
+                                                                            ]
+                                                                                ? (parseFloat(
+                                                                                      e
+                                                                                          .target
+                                                                                          .value,
+                                                                                  ) ||
+                                                                                      0) /
+                                                                                  1000
+                                                                                : parseInt(
+                                                                                      e
+                                                                                          .target
+                                                                                          .value,
+                                                                                  ) ||
+                                                                                  0;
+                                                                        setCarrito(
+                                                                            (
+                                                                                prev,
+                                                                            ) => ({
+                                                                                ...prev,
+                                                                                [p.id]:
+                                                                                    Math.max(
+                                                                                        0,
+                                                                                        val,
+                                                                                    ),
+                                                                            }),
+                                                                        );
+                                                                    }}
+                                                                    className="h-8 w-16 [appearance:textfield] border-0 bg-transparent text-center font-black [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                                />
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 rounded-xl"
                                                                     onClick={() =>
                                                                         setCarrito(
                                                                             (
@@ -1034,472 +1364,499 @@ export default function MarketplaceShow({
                                                                                             .id
                                                                                     ] ||
                                                                                         0) +
-                                                                                    (['kg', 'lt'].includes(p.unidad_medida) && modoGramosProducto[p.id] ? 0.1 : 1),
+                                                                                    ([
+                                                                                        'kg',
+                                                                                        'lt',
+                                                                                    ].includes(
+                                                                                        p.unidad_medida,
+                                                                                    ) &&
+                                                                                    modoGramosProducto[
+                                                                                        p
+                                                                                            .id
+                                                                                    ]
+                                                                                        ? 0.1
+                                                                                        : 1),
                                                                             }),
                                                                         )
                                                                     }
                                                                 >
                                                                     <Plus className="h-3 w-3" />
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="space-y-6 border-t p-8">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-black text-slate-400 uppercase">
+                                                        Total a pagar
+                                                    </span>
+                                                    <span className="text-3xl font-black">
+                                                        $
+                                                        {totalCarrito.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                <Dialog
+                                                    open={checkoutAbierto}
+                                                    onOpenChange={
+                                                        setCheckoutAbierto
+                                                    }
+                                                >
+                                                    <DialogTrigger asChild>
+                                                        <Button className="h-16 w-full rounded-[2rem] text-lg font-black tracking-widest uppercase shadow-2xl shadow-primary/30">
+                                                            Pedir Ahora
+                                                        </Button>
+                                                    </DialogTrigger>
+                                                    <DialogContent className="max-h-[90vh] overflow-y-auto rounded-[3rem] p-6">
+                                                        <DialogHeader>
+                                                            <DialogTitle className="text-2xl font-black tracking-tighter uppercase">
+                                                                Datos de Envío
+                                                            </DialogTitle>
+                                                        </DialogHeader>
+                                                        <div className="mt-4 space-y-5">
+                                                            {/* DatosPersonales */}
+                                                            <div className="space-y-3">
+                                                                <Label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                                                    Datos
+                                                                    Personales
+                                                                </Label>
+                                                                <FormInput
+                                                                    id="nombre_checkout"
+                                                                    label="NOMBRE COMPLETO"
+                                                                    value={
+                                                                        datosCheckout.nombre_cliente
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        setDatosCheckout(
+                                                                            {
+                                                                                ...datosCheckout,
+                                                                                nombre_cliente:
+                                                                                    e
+                                                                                        .target
+                                                                                        .value,
+                                                                            },
+                                                                        )
+                                                                    }
+                                                                    placeholder="Ej: Juan Perez"
+                                                                />
+                                                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                                    <FormInput
+                                                                        id="rut_checkout"
+                                                                        label="RUT (Opcional)"
+                                                                        value={
+                                                                            datosCheckout.rut_cliente
+                                                                        }
+                                                                        onChange={(
+                                                                            e,
+                                                                        ) =>
+                                                                            setDatosCheckout(
+                                                                                {
+                                                                                    ...datosCheckout,
+                                                                                    rut_cliente:
+                                                                                        e
+                                                                                            .target
+                                                                                            .value,
+                                                                                },
+                                                                            )
+                                                                        }
+                                                                        onBlur={(
+                                                                            e,
+                                                                        ) =>
+                                                                            setDatosCheckout(
+                                                                                {
+                                                                                    ...datosCheckout,
+                                                                                    rut_cliente:
+                                                                                        formatRut(
+                                                                                            e
+                                                                                                .target
+                                                                                                .value,
+                                                                                        ),
+                                                                                },
+                                                                            )
+                                                                        }
+                                                                        placeholder="Ej: 12345678-9"
+                                                                    />
+                                                                    <FormInput
+                                                                        id="email_checkout"
+                                                                        label="CORREO ELECTRÓNICO"
+                                                                        value={
+                                                                            datosCheckout.email_cliente
+                                                                        }
+                                                                        onChange={(
+                                                                            e,
+                                                                        ) =>
+                                                                            setDatosCheckout(
+                                                                                {
+                                                                                    ...datosCheckout,
+                                                                                    email_cliente:
+                                                                                        e
+                                                                                            .target
+                                                                                            .value,
+                                                                                },
+                                                                            )
+                                                                        }
+                                                                        placeholder="correo@ejemplo.cl"
+                                                                    />
+                                                                </div>
+                                                                <FormInput
+                                                                    id="telefono_checkout"
+                                                                    label="TELÉFONO DE CONTACTO"
+                                                                    value={
+                                                                        datosCheckout.telefono_cliente
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        setDatosCheckout(
+                                                                            {
+                                                                                ...datosCheckout,
+                                                                                telefono_cliente:
+                                                                                    e
+                                                                                        .target
+                                                                                        .value,
+                                                                            },
+                                                                        )
+                                                                    }
+                                                                    placeholder="Ej: +56 9 1234 5678"
+                                                                />
+                                                            </div>
+
+                                                            {/* Dirección Chile */}
+                                                            <div className="space-y-3 pt-2">
+                                                                <Label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                                                    Dirección de
+                                                                    Entrega
+                                                                </Label>
+                                                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                                    <div className="space-y-2">
+                                                                        <Label className="text-xs font-bold text-slate-600">
+                                                                            REGIÓN
+                                                                            *
+                                                                        </Label>
+                                                                        <Select
+                                                                            value={
+                                                                                datosCheckout.region
+                                                                            }
+                                                                            onValueChange={(
+                                                                                v,
+                                                                            ) =>
+                                                                                setDatosCheckout(
+                                                                                    {
+                                                                                        ...datosCheckout,
+                                                                                        region: v,
+                                                                                    },
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <SelectTrigger className="h-11 rounded-xl">
+                                                                                <SelectValue placeholder="Seleccionar región" />
+                                                                            </SelectTrigger>
+                                                                            <SelectContent>
+                                                                                <SelectItem value="arica">
+                                                                                    Arica
+                                                                                    y
+                                                                                    Parinacota
+                                                                                </SelectItem>
+                                                                                <SelectItem value="tarapaca">
+                                                                                    Tarapacá
+                                                                                </SelectItem>
+                                                                                <SelectItem value="antofagasta">
+                                                                                    Antofagasta
+                                                                                </SelectItem>
+                                                                                <SelectItem value="atacama">
+                                                                                    Atacama
+                                                                                </SelectItem>
+                                                                                <SelectItem value="coquimbo">
+                                                                                    Coquimbo
+                                                                                </SelectItem>
+                                                                                <SelectItem value="valparaiso">
+                                                                                    Valparaíso
+                                                                                </SelectItem>
+                                                                                <SelectItem value="metropolitana">
+                                                                                    Metropolitana
+                                                                                </SelectItem>
+                                                                                <SelectItem value="ohiggins">
+                                                                                    O'Higgins
+                                                                                </SelectItem>
+                                                                                <SelectItem value="maule">
+                                                                                    Maule
+                                                                                </SelectItem>
+                                                                                <SelectItem value="biobio">
+                                                                                    Biobío
+                                                                                </SelectItem>
+                                                                                <SelectItem value="araucania">
+                                                                                    La
+                                                                                    Araucanía
+                                                                                </SelectItem>
+                                                                                <SelectItem value="losrios">
+                                                                                    Los
+                                                                                    Ríos
+                                                                                </SelectItem>
+                                                                                <SelectItem value="loslagos">
+                                                                                    Los
+                                                                                    Lagos
+                                                                                </SelectItem>
+                                                                                <SelectItem value="aysen">
+                                                                                    Aysén
+                                                                                </SelectItem>
+                                                                                <SelectItem value="magallanes">
+                                                                                    Magallanes
+                                                                                </SelectItem>
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                    </div>
+                                                                    <div className="space-y-2">
+                                                                        <Label className="text-xs font-bold text-slate-600">
+                                                                            COMUNA
+                                                                            *
+                                                                        </Label>
+                                                                        <Select
+                                                                            value={
+                                                                                datosCheckout.comuna
+                                                                            }
+                                                                            onValueChange={(
+                                                                                v,
+                                                                            ) =>
+                                                                                setDatosCheckout(
+                                                                                    {
+                                                                                        ...datosCheckout,
+                                                                                        comuna: v,
+                                                                                    },
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <SelectTrigger className="h-11 rounded-xl">
+                                                                                <SelectValue placeholder="Seleccionar comuna" />
+                                                                            </SelectTrigger>
+                                                                            <SelectContent>
+                                                                                <SelectItem value="santiago">
+                                                                                    Santiago
+                                                                                </SelectItem>
+                                                                                <SelectItem value="providencia">
+                                                                                    Providencia
+                                                                                </SelectItem>
+                                                                                <SelectItem value="las_condes">
+                                                                                    Las
+                                                                                    Condes
+                                                                                </SelectItem>
+                                                                                <SelectItem value="nuñoa">
+                                                                                    Ñuñoa
+                                                                                </SelectItem>
+                                                                                <SelectItem value="vitacura">
+                                                                                    Vitacura
+                                                                                </SelectItem>
+                                                                                <SelectItem value="maipu">
+                                                                                    Maipú
+                                                                                </SelectItem>
+                                                                                <SelectItem value="la_florida">
+                                                                                    La
+                                                                                    Florida
+                                                                                </SelectItem>
+                                                                                <SelectItem value="san_bernardo">
+                                                                                    San
+                                                                                    Bernardo
+                                                                                </SelectItem>
+                                                                                <SelectItem value="puente_alto">
+                                                                                    Puente
+                                                                                    Alto
+                                                                                </SelectItem>
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                    </div>
+                                                                </div>
+                                                                <FormInput
+                                                                    id="direccion_checkout"
+                                                                    label="DIRECCIÓN (Calle)"
+                                                                    value={
+                                                                        datosCheckout.direccion_cliente
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        setDatosCheckout(
+                                                                            {
+                                                                                ...datosCheckout,
+                                                                                direccion_cliente:
+                                                                                    e
+                                                                                        .target
+                                                                                        .value,
+                                                                            },
+                                                                        )
+                                                                    }
+                                                                    placeholder="Ej: Av. Libertador Bernardo O'Higgins"
+                                                                />
+                                                                <div className="grid grid-cols-2 gap-4">
+                                                                    <FormInput
+                                                                        id="numero_checkout"
+                                                                        label="NÚMERO"
+                                                                        value={
+                                                                            datosCheckout.numero_direccion
+                                                                        }
+                                                                        onChange={(
+                                                                            e,
+                                                                        ) =>
+                                                                            setDatosCheckout(
+                                                                                {
+                                                                                    ...datosCheckout,
+                                                                                    numero_direccion:
+                                                                                        e
+                                                                                            .target
+                                                                                            .value,
+                                                                                },
+                                                                            )
+                                                                        }
+                                                                        placeholder="Ej: 1234"
+                                                                    />
+                                                                    <FormInput
+                                                                        id="depto_checkout"
+                                                                        label="Depto/Casa (Opcional)"
+                                                                        value={
+                                                                            datosCheckout.depto_casa
+                                                                        }
+                                                                        onChange={(
+                                                                            e,
+                                                                        ) =>
+                                                                            setDatosCheckout(
+                                                                                {
+                                                                                    ...datosCheckout,
+                                                                                    depto_casa:
+                                                                                        e
+                                                                                            .target
+                                                                                            .value,
+                                                                                },
+                                                                            )
+                                                                        }
+                                                                        placeholder="Ej: Depto 501"
+                                                                    />
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="space-y-3 pt-2">
+                                                                <Label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                                                    Método de
+                                                                    Pago
+                                                                </Label>
+                                                                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            setDatosCheckout(
+                                                                                {
+                                                                                    ...datosCheckout,
+                                                                                    metodo_pago:
+                                                                                        'efectivo',
+                                                                                },
+                                                                            )
+                                                                        }
+                                                                        className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all ${datosCheckout.metodo_pago === 'efectivo' ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
+                                                                    >
+                                                                        <Wallet className="mb-2 h-5 w-5" />
+                                                                        <span className="text-[10px] font-black tracking-tight uppercase">
+                                                                            Local
+                                                                        </span>
+                                                                    </button>
+
+                                                                    {paymentConfig?.is_active && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                setDatosCheckout(
+                                                                                    {
+                                                                                        ...datosCheckout,
+                                                                                        metodo_pago:
+                                                                                            'webpay',
+                                                                                    },
+                                                                                )
+                                                                            }
+                                                                            className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all ${datosCheckout.metodo_pago === 'webpay' ? 'border-indigo-500 bg-indigo-50 text-indigo-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
+                                                                        >
+                                                                            <CreditCard className="mb-2 h-5 w-5" />
+                                                                            <span className="text-[10px] font-black tracking-tight uppercase">
+                                                                                Webpay
+                                                                            </span>
+                                                                        </button>
+                                                                    )}
+
+                                                                    {paymentConfig?.paypal_active && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                setDatosCheckout(
+                                                                                    {
+                                                                                        ...datosCheckout,
+                                                                                        metodo_pago:
+                                                                                            'paypal',
+                                                                                    },
+                                                                                )
+                                                                            }
+                                                                            className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all ${datosCheckout.metodo_pago === 'paypal' ? 'border-blue-500 bg-blue-50 text-blue-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
+                                                                        >
+                                                                            <CreditCard className="mb-2 h-5 w-5" />
+                                                                            <span className="text-[10px] font-black tracking-tight uppercase">
+                                                                                PayPal
+                                                                            </span>
+                                                                        </button>
+                                                                    )}
+
+                                                                    {paymentConfig?.mercadopago_active && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                setDatosCheckout(
+                                                                                    {
+                                                                                        ...datosCheckout,
+                                                                                        metodo_pago:
+                                                                                            'mercadopago',
+                                                                                    },
+                                                                                )
+                                                                            }
+                                                                            className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all ${datosCheckout.metodo_pago === 'mercadopago' ? 'border-sky-500 bg-sky-50 text-sky-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
+                                                                        >
+                                                                            <CreditCard className="mb-2 h-5 w-5" />
+                                                                            <span className="text-[10px] font-black tracking-tight uppercase">
+                                                                                M.
+                                                                                Pago
+                                                                            </span>
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            <Button
+                                                                onClick={
+                                                                    enviarCheckout
+                                                                }
+                                                                disabled={
+                                                                    procesando
+                                                                }
+                                                                className={cn(
+                                                                    'h-16 w-full rounded-2xl font-black tracking-[0.2em] uppercase transition-all hover:scale-[1.02]',
+                                                                    datosCheckout.metodo_pago ===
+                                                                        'webpay' &&
+                                                                        'bg-indigo-600 shadow-indigo-500/25 hover:bg-indigo-700',
+                                                                    datosCheckout.metodo_pago ===
+                                                                        'paypal' &&
+                                                                        'bg-blue-600 shadow-blue-500/25 hover:bg-blue-700',
+                                                                    datosCheckout.metodo_pago ===
+                                                                        'mercadopago' &&
+                                                                        'bg-sky-600 shadow-sky-500/25 hover:bg-sky-700',
+                                                                )}
+                                                            >
+                                                                {procesando
+                                                                    ? 'Enviando...'
+                                                                    : datosCheckout.metodo_pago ===
+                                                                        'efectivo'
+                                                                      ? 'Confirmar Pedido'
+                                                                      : `Pagar con ${datosCheckout.metodo_pago.charAt(0).toUpperCase() + datosCheckout.metodo_pago.slice(1)}`}
                                                             </Button>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="space-y-6 border-t p-8">
-                                            <div className="flex items-center justify-between">
-                                                <span className="font-black text-slate-400 uppercase">
-                                                    Total a pagar
-                                                </span>
-                                                <span className="text-3xl font-black">
-                                                    $
-                                                    {totalCarrito.toLocaleString()}
-                                                </span>
+                                                    </DialogContent>
+                                                </Dialog>
                                             </div>
-                                            <Dialog
-                                                open={checkoutAbierto}
-                                                onOpenChange={
-                                                    setCheckoutAbierto
-                                                }
-                                            >
-                                                <DialogTrigger asChild>
-                                                    <Button className="h-16 w-full rounded-[2rem] text-lg font-black tracking-widest uppercase shadow-2xl shadow-primary/30">
-                                                        Pedir Ahora
-                                                    </Button>
-                                                </DialogTrigger>
-                                                <DialogContent className="max-h-[90vh] overflow-y-auto rounded-[3rem] p-6">
-                                                    <DialogHeader>
-                                                        <DialogTitle className="text-2xl font-black tracking-tighter uppercase">
-                                                            Datos de Envío
-                                                        </DialogTitle>
-                                                    </DialogHeader>
-                                                    <div className="mt-4 space-y-5">
-                                                        {/* DatosPersonales */}
-                                                        <div className="space-y-3">
-                                                            <Label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                                                                Datos Personales
-                                                            </Label>
-                                                            <FormInput
-                                                                id="nombre_checkout"
-                                                                label="NOMBRE COMPLETO"
-                                                                value={
-                                                                    datosCheckout.nombre_cliente
-                                                                }
-                                                                onChange={(e) =>
-                                                                    setDatosCheckout(
-                                                                        {
-                                                                            ...datosCheckout,
-                                                                            nombre_cliente:
-                                                                                e
-                                                                                    .target
-                                                                                    .value,
-                                                                        },
-                                                                    )
-                                                                }
-                                                                placeholder="Ej: Juan Perez"
-                                                            />
-                                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                                                 <FormInput
-                                                                     id="rut_checkout"
-                                                                     label="RUT (Opcional)"
-                                                                     value={
-                                                                         datosCheckout.rut_cliente
-                                                                     }
-                                                                     onChange={(
-                                                                         e,
-                                                                     ) =>
-                                                                         setDatosCheckout(
-                                                                             {
-                                                                                 ...datosCheckout,
-                                                                                 rut_cliente:
-                                                                                     e
-                                                                                         .target
-                                                                                         .value,
-                                                                             },
-                                                                         )
-                                                                     }
-                                                                     onBlur={(e) =>
-                                                                         setDatosCheckout(
-                                                                             {
-                                                                                 ...datosCheckout,
-                                                                                 rut_cliente:
-                                                                                     formatRut(e.target.value),
-                                                                             },
-                                                                         )
-                                                                     }
-                                                                     placeholder="Ej: 12345678-9"
-                                                                 />
-                                                                <FormInput
-                                                                    id="email_checkout"
-                                                                    label="CORREO ELECTRÓNICO"
-                                                                    value={
-                                                                        datosCheckout.email_cliente
-                                                                    }
-                                                                    onChange={(
-                                                                        e,
-                                                                    ) =>
-                                                                        setDatosCheckout(
-                                                                            {
-                                                                                ...datosCheckout,
-                                                                                email_cliente:
-                                                                                    e
-                                                                                        .target
-                                                                                        .value,
-                                                                            },
-                                                                        )
-                                                                    }
-                                                                    placeholder="correo@ejemplo.cl"
-                                                                />
-                                                            </div>
-                                                            <FormInput
-                                                                id="telefono_checkout"
-                                                                label="TELÉFONO DE CONTACTO"
-                                                                value={
-                                                                    datosCheckout.telefono_cliente
-                                                                }
-                                                                onChange={(e) =>
-                                                                    setDatosCheckout(
-                                                                        {
-                                                                            ...datosCheckout,
-                                                                            telefono_cliente:
-                                                                                e
-                                                                                    .target
-                                                                                    .value,
-                                                                        },
-                                                                    )
-                                                                }
-                                                                placeholder="Ej: +56 9 1234 5678"
-                                                            />
-                                                        </div>
-
-                                                        {/* Dirección Chile */}
-                                                        <div className="space-y-3 pt-2">
-                                                            <Label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                                                                Dirección de
-                                                                Entrega
-                                                            </Label>
-                                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                                                <div className="space-y-2">
-                                                                    <Label className="text-xs font-bold text-slate-600">
-                                                                        REGIÓN *
-                                                                    </Label>
-                                                                    <Select
-                                                                        value={
-                                                                            datosCheckout.region
-                                                                        }
-                                                                        onValueChange={(
-                                                                            v,
-                                                                        ) =>
-                                                                            setDatosCheckout(
-                                                                                {
-                                                                                    ...datosCheckout,
-                                                                                    region: v,
-                                                                                },
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <SelectTrigger className="h-11 rounded-xl">
-                                                                            <SelectValue placeholder="Seleccionar región" />
-                                                                        </SelectTrigger>
-                                                                        <SelectContent>
-                                                                            <SelectItem value="arica">
-                                                                                Arica
-                                                                                y
-                                                                                Parinacota
-                                                                            </SelectItem>
-                                                                            <SelectItem value="tarapaca">
-                                                                                Tarapacá
-                                                                            </SelectItem>
-                                                                            <SelectItem value="antofagasta">
-                                                                                Antofagasta
-                                                                            </SelectItem>
-                                                                            <SelectItem value="atacama">
-                                                                                Atacama
-                                                                            </SelectItem>
-                                                                            <SelectItem value="coquimbo">
-                                                                                Coquimbo
-                                                                            </SelectItem>
-                                                                            <SelectItem value="valparaiso">
-                                                                                Valparaíso
-                                                                            </SelectItem>
-                                                                            <SelectItem value="metropolitana">
-                                                                                Metropolitana
-                                                                            </SelectItem>
-                                                                            <SelectItem value="ohiggins">
-                                                                                O'Higgins
-                                                                            </SelectItem>
-                                                                            <SelectItem value="maule">
-                                                                                Maule
-                                                                            </SelectItem>
-                                                                            <SelectItem value="biobio">
-                                                                                Biobío
-                                                                            </SelectItem>
-                                                                            <SelectItem value="araucania">
-                                                                                La
-                                                                                Araucanía
-                                                                            </SelectItem>
-                                                                            <SelectItem value="losrios">
-                                                                                Los
-                                                                                Ríos
-                                                                            </SelectItem>
-                                                                            <SelectItem value="loslagos">
-                                                                                Los
-                                                                                Lagos
-                                                                            </SelectItem>
-                                                                            <SelectItem value="aysen">
-                                                                                Aysén
-                                                                            </SelectItem>
-                                                                            <SelectItem value="magallanes">
-                                                                                Magallanes
-                                                                            </SelectItem>
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                </div>
-                                                                <div className="space-y-2">
-                                                                    <Label className="text-xs font-bold text-slate-600">
-                                                                        COMUNA *
-                                                                    </Label>
-                                                                    <Select
-                                                                        value={
-                                                                            datosCheckout.comuna
-                                                                        }
-                                                                        onValueChange={(
-                                                                            v,
-                                                                        ) =>
-                                                                            setDatosCheckout(
-                                                                                {
-                                                                                    ...datosCheckout,
-                                                                                    comuna: v,
-                                                                                },
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <SelectTrigger className="h-11 rounded-xl">
-                                                                            <SelectValue placeholder="Seleccionar comuna" />
-                                                                        </SelectTrigger>
-                                                                        <SelectContent>
-                                                                            <SelectItem value="santiago">
-                                                                                Santiago
-                                                                            </SelectItem>
-                                                                            <SelectItem value="providencia">
-                                                                                Providencia
-                                                                            </SelectItem>
-                                                                            <SelectItem value="las_condes">
-                                                                                Las
-                                                                                Condes
-                                                                            </SelectItem>
-                                                                            <SelectItem value="nuñoa">
-                                                                                Ñuñoa
-                                                                            </SelectItem>
-                                                                            <SelectItem value="vitacura">
-                                                                                Vitacura
-                                                                            </SelectItem>
-                                                                            <SelectItem value="maipu">
-                                                                                Maipú
-                                                                            </SelectItem>
-                                                                            <SelectItem value="la_florida">
-                                                                                La
-                                                                                Florida
-                                                                            </SelectItem>
-                                                                            <SelectItem value="san_bernardo">
-                                                                                San
-                                                                                Bernardo
-                                                                            </SelectItem>
-                                                                            <SelectItem value="puente_alto">
-                                                                                Puente
-                                                                                Alto
-                                                                            </SelectItem>
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                </div>
-                                                            </div>
-                                                            <FormInput
-                                                                id="direccion_checkout"
-                                                                label="DIRECCIÓN (Calle)"
-                                                                value={
-                                                                    datosCheckout.direccion_cliente
-                                                                }
-                                                                onChange={(e) =>
-                                                                    setDatosCheckout(
-                                                                        {
-                                                                            ...datosCheckout,
-                                                                            direccion_cliente:
-                                                                                e
-                                                                                    .target
-                                                                                    .value,
-                                                                        },
-                                                                    )
-                                                                }
-                                                                placeholder="Ej: Av. Libertador Bernardo O'Higgins"
-                                                            />
-                                                            <div className="grid grid-cols-2 gap-4">
-                                                                <FormInput
-                                                                    id="numero_checkout"
-                                                                    label="NÚMERO"
-                                                                    value={
-                                                                        datosCheckout.numero_direccion
-                                                                    }
-                                                                    onChange={(
-                                                                        e,
-                                                                    ) =>
-                                                                        setDatosCheckout(
-                                                                            {
-                                                                                ...datosCheckout,
-                                                                                numero_direccion:
-                                                                                    e
-                                                                                        .target
-                                                                                        .value,
-                                                                            },
-                                                                        )
-                                                                    }
-                                                                    placeholder="Ej: 1234"
-                                                                />
-                                                                <FormInput
-                                                                    id="depto_checkout"
-                                                                    label="Depto/Casa (Opcional)"
-                                                                    value={
-                                                                        datosCheckout.depto_casa
-                                                                    }
-                                                                    onChange={(
-                                                                        e,
-                                                                    ) =>
-                                                                        setDatosCheckout(
-                                                                            {
-                                                                                ...datosCheckout,
-                                                                                depto_casa:
-                                                                                    e
-                                                                                        .target
-                                                                                        .value,
-                                                                            },
-                                                                        )
-                                                                    }
-                                                                    placeholder="Ej: Depto 501"
-                                                                />
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="space-y-3 pt-2">
-                                                            <Label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                                                                Método de Pago
-                                                            </Label>
-                                                            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() =>
-                                                                        setDatosCheckout(
-                                                                            {
-                                                                                ...datosCheckout,
-                                                                                metodo_pago:
-                                                                                    'efectivo',
-                                                                            },
-                                                                        )
-                                                                    }
-                                                                    className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all ${datosCheckout.metodo_pago === 'efectivo' ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
-                                                                >
-                                                                    <Wallet className="mb-2 h-5 w-5" />
-                                                                    <span className="text-[10px] font-black tracking-tight uppercase">
-                                                                        Local
-                                                                    </span>
-                                                                </button>
-
-                                                                {paymentConfig?.is_active && (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() =>
-                                                                            setDatosCheckout(
-                                                                                {
-                                                                                    ...datosCheckout,
-                                                                                    metodo_pago:
-                                                                                        'webpay',
-                                                                                },
-                                                                            )
-                                                                        }
-                                                                        className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all ${datosCheckout.metodo_pago === 'webpay' ? 'border-indigo-500 bg-indigo-50 text-indigo-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
-                                                                    >
-                                                                        <CreditCard className="mb-2 h-5 w-5" />
-                                                                        <span className="text-[10px] font-black tracking-tight uppercase">
-                                                                            Webpay
-                                                                        </span>
-                                                                    </button>
-                                                                )}
-
-                                                                {paymentConfig?.paypal_active && (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() =>
-                                                                            setDatosCheckout(
-                                                                                {
-                                                                                    ...datosCheckout,
-                                                                                    metodo_pago:
-                                                                                        'paypal',
-                                                                                },
-                                                                            )
-                                                                        }
-                                                                        className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all ${datosCheckout.metodo_pago === 'paypal' ? 'border-blue-500 bg-blue-50 text-blue-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
-                                                                    >
-                                                                        <CreditCard className="mb-2 h-5 w-5" />
-                                                                        <span className="text-[10px] font-black tracking-tight uppercase">
-                                                                            PayPal
-                                                                        </span>
-                                                                    </button>
-                                                                )}
-
-                                                                {paymentConfig?.mercadopago_active && (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() =>
-                                                                            setDatosCheckout(
-                                                                                {
-                                                                                    ...datosCheckout,
-                                                                                    metodo_pago:
-                                                                                        'mercadopago',
-                                                                                },
-                                                                            )
-                                                                        }
-                                                                        className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all ${datosCheckout.metodo_pago === 'mercadopago' ? 'border-sky-500 bg-sky-50 text-sky-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
-                                                                    >
-                                                                        <CreditCard className="mb-2 h-5 w-5" />
-                                                                        <span className="text-[10px] font-black tracking-tight uppercase">
-                                                                            M.
-                                                                            Pago
-                                                                        </span>
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        </div>
-
-                                                        <Button
-                                                            onClick={
-                                                                enviarCheckout
-                                                            }
-                                                            disabled={
-                                                                procesando
-                                                            }
-                                                            className={cn(
-                                                                'h-16 w-full rounded-2xl font-black tracking-[0.2em] uppercase transition-all hover:scale-[1.02]',
-                                                                datosCheckout.metodo_pago ===
-                                                                    'webpay' &&
-                                                                    'bg-indigo-600 shadow-indigo-500/25 hover:bg-indigo-700',
-                                                                datosCheckout.metodo_pago ===
-                                                                    'paypal' &&
-                                                                    'bg-blue-600 shadow-blue-500/25 hover:bg-blue-700',
-                                                                datosCheckout.metodo_pago ===
-                                                                    'mercadopago' &&
-                                                                    'bg-sky-600 shadow-sky-500/25 hover:bg-sky-700',
-                                                            )}
-                                                        >
-                                                            {procesando
-                                                                ? 'Enviando...'
-                                                                : datosCheckout.metodo_pago ===
-                                                                    'efectivo'
-                                                                  ? 'Confirmar Pedido'
-                                                                  : `Pagar con ${datosCheckout.metodo_pago.charAt(0).toUpperCase() + datosCheckout.metodo_pago.slice(1)}`}
-                                                        </Button>
-                                                    </div>
-                                                </DialogContent>
-                                            </Dialog>
-                                        </div>
-                                    </SheetContent>
+                                        </SheetContent>
                                     </Sheet>
                                 </div>
                             )}

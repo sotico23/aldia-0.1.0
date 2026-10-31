@@ -5,10 +5,8 @@ use App\Models\Almacen;
 use App\Models\Inventario;
 use App\Models\Producto;
 use App\Models\User;
-use App\Notifications\LowStockNotification;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
-use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
     Notification::fake();

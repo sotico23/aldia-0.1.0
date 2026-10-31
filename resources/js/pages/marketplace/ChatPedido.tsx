@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import 'date-fns/locale';
 import {
@@ -19,7 +19,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { router } from '@inertiajs/react';
 import echo from '@/echo';
 import AppLayout from '@/layouts/app-layout';
 
@@ -102,9 +101,7 @@ export default function ChatPedido({
         const addMensaje = (e: any) => {
             setMensajes((prev) => {
                 if (prev.some((m) => m.id === e.id)) return prev;
-                const withoutTemp = prev.filter(
-                    (m) => !(m as Message)._temp,
-                );
+                const withoutTemp = prev.filter((m) => !(m as Message)._temp);
                 return [...withoutTemp, e];
             });
         };
@@ -119,9 +116,15 @@ export default function ChatPedido({
                 contenido: e.message.content,
                 created_at: e.message.created_at,
                 sender: e.message.sender,
-                file_url: e.message.file_url ?? (e.message.file_path ? `/storage/${e.message.file_path}` : undefined),
+                file_url:
+                    e.message.file_url ??
+                    (e.message.file_path
+                        ? `/storage/${e.message.file_path}`
+                        : undefined),
                 file_name: e.message.file_name,
-                is_image: e.message.is_image ?? (e.message.file_type?.startsWith?.('image/') || false),
+                is_image:
+                    e.message.is_image ??
+                    (e.message.file_type?.startsWith?.('image/') || false),
                 leido: false,
             });
         });
@@ -139,7 +142,8 @@ export default function ChatPedido({
             if (e.user_id === auth.user.id) return;
             setTypingUser(e.name);
             setIsTyping(true);
-            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            if (typingTimeoutRef.current)
+                clearTimeout(typingTimeoutRef.current);
             typingTimeoutRef.current = setTimeout(() => {
                 setIsTyping(false);
                 setTypingUser(null);
@@ -160,7 +164,8 @@ export default function ChatPedido({
             clearTimeout(timer);
             clearInterval(pollingInterval);
             echo.leave(channelName);
-            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            if (typingTimeoutRef.current)
+                clearTimeout(typingTimeoutRef.current);
         };
     }, [conversacion.id, auth.user.id]);
 
@@ -179,7 +184,8 @@ export default function ChatPedido({
             setSelectedFile(file);
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
-                reader.onloadend = () => setPreviewImage(reader.result as string);
+                reader.onloadend = () =>
+                    setPreviewImage(reader.result as string);
                 reader.readAsDataURL(file);
             }
         }
@@ -225,7 +231,8 @@ export default function ChatPedido({
             if (resp.ok) {
                 const result = await resp.json();
                 setMensajes((prev) => {
-                    if (prev.some((m) => m.id === result.mensaje.id)) return prev;
+                    if (prev.some((m) => m.id === result.mensaje.id))
+                        return prev;
                     const withoutTemp = prev.filter(
                         (m) => !(m as Message)._temp,
                     );
@@ -298,13 +305,20 @@ export default function ChatPedido({
 
     const estadoColor = (estado: string) => {
         switch (estado) {
-            case 'pendiente': return 'bg-yellow-100 text-yellow-800';
-            case 'confirmado': return 'bg-blue-100 text-blue-800';
-            case 'preparando': return 'bg-orange-100 text-orange-800';
-            case 'enviado': return 'bg-purple-100 text-purple-800';
-            case 'entregado': return 'bg-green-100 text-green-800';
-            case 'cancelado': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
+            case 'pendiente':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'confirmado':
+                return 'bg-blue-100 text-blue-800';
+            case 'preparando':
+                return 'bg-orange-100 text-orange-800';
+            case 'enviado':
+                return 'bg-purple-100 text-purple-800';
+            case 'entregado':
+                return 'bg-green-100 text-green-800';
+            case 'cancelado':
+                return 'bg-red-100 text-red-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
         }
     };
 
@@ -329,8 +343,16 @@ export default function ChatPedido({
                     <CardHeader className="z-10 shrink-0 border-b border-slate-100 bg-white py-4 dark:border-slate-800 dark:bg-slate-900">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <Button variant="ghost" size="icon" asChild className="rounded-full">
-                                    <Link href="/mis-pedidos" className="h-5 w-5">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    asChild
+                                    className="rounded-full"
+                                >
+                                    <Link
+                                        href="/mis-pedidos"
+                                        className="h-5 w-5"
+                                    >
                                         <ArrowLeft className="h-5 w-5" />
                                     </Link>
                                 </Button>
@@ -347,19 +369,26 @@ export default function ChatPedido({
                                     </h2>
                                     <div className="flex items-center gap-2 text-xs text-slate-500">
                                         <Package className="h-3 w-3" />
-                                        <span>{conversacion.pedido.numero_pedido}</span>
-                                        <span className={`rounded px-1.5 py-0.5 ${estadoColor(conversacion.pedido.estado)}`}>
+                                        <span>
+                                            {conversacion.pedido.numero_pedido}
+                                        </span>
+                                        <span
+                                            className={`rounded px-1.5 py-0.5 ${estadoColor(conversacion.pedido.estado)}`}
+                                        >
                                             {conversacion.pedido.estado}
                                         </span>
                                     </div>
                                 </div>
                             </div>
-                            <span className={`inline-block h-2 w-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} title={connected ? 'Conectado' : 'Desconectado'} />
+                            <span
+                                className={`inline-block h-2 w-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`}
+                                title={connected ? 'Conectado' : 'Desconectado'}
+                            />
                         </div>
                     </CardHeader>
 
                     <CardContent
-                        className="flex-1 space-y-4 overflow-y-auto overflow-x-hidden bg-slate-50/50 p-4 dark:bg-slate-950/20"
+                        className="flex-1 space-y-4 overflow-x-hidden overflow-y-auto bg-slate-50/50 p-4 dark:bg-slate-950/20"
                         ref={scrollRef}
                     >
                         {mensajes.length > 0 ? (
@@ -367,8 +396,13 @@ export default function ChatPedido({
                                 const isMe = msg.sender_id === auth.user.id;
 
                                 return (
-                                    <div key={msg.id || (msg as Message)._tempId} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${isMe ? 'rounded-tr-none bg-primary text-primary-foreground' : 'rounded-tl-none border border-slate-100 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white'} ${(msg as Message)._sending ? 'animate-pulse opacity-70' : ''} ${(msg as Message)._error ? 'ring-2 ring-red-400' : ''}`}>
+                                    <div
+                                        key={msg.id || (msg as Message)._tempId}
+                                        className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}
+                                    >
+                                        <div
+                                            className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${isMe ? 'rounded-tr-none bg-primary text-primary-foreground' : 'rounded-tl-none border border-slate-100 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white'} ${(msg as Message)._sending ? 'animate-pulse opacity-70' : ''} ${(msg as Message)._error ? 'ring-2 ring-red-400' : ''}`}
+                                        >
                                             {msg.file_url && (
                                                 <div className="mb-2">
                                                     {msg.is_image ? (
@@ -376,43 +410,84 @@ export default function ChatPedido({
                                                             src={msg.file_url}
                                                             alt={msg.file_name}
                                                             className="max-h-48 cursor-pointer rounded-lg object-cover transition-opacity hover:opacity-80"
-                                                            onClick={() => !(msg as Message)._temp && setLightboxUrl(msg.file_url!)}
+                                                            onClick={() =>
+                                                                !(
+                                                                    msg as Message
+                                                                )._temp &&
+                                                                setLightboxUrl(
+                                                                    msg.file_url!,
+                                                                )
+                                                            }
                                                         />
                                                     ) : (
-                                                        <a href={msg.file_url} download={msg.file_name} className="flex items-center gap-2 text-xs text-blue-600 hover:underline">
+                                                        <a
+                                                            href={msg.file_url}
+                                                            download={
+                                                                msg.file_name
+                                                            }
+                                                            className="flex items-center gap-2 text-xs text-blue-600 hover:underline"
+                                                        >
                                                             <FileIcon className="h-4 w-4" />
                                                             {msg.file_name}
                                                         </a>
                                                     )}
                                                 </div>
                                             )}
-                                            <p className="prose dark:prose-invert text-sm break-words">{msg.contenido}</p>
-                                            <div className={`mt-1 flex items-center justify-end gap-1 ${isMe ? 'text-blue-100' : 'text-slate-400'}`}>
-                                                <span className="text-[10px]">{format(new Date(msg.created_at), 'HH:mm')}</span>
-                                                {isMe && !(msg as Message)._temp && !(msg as Message)._error && (
-                                                    <CheckCheck className={`h-3 w-3 ${msg.leido ? 'text-blue-300' : 'opacity-50'}`} />
-                                                )}
-                                                {isMe && (msg as Message)._sending && (
-                                                    <Clock className="h-3 w-3 animate-spin text-yellow-300" />
-                                                )}
-                                                {isMe && (msg as Message)._error && (
-                                                    <AlertCircle className="h-3 w-3 text-red-300" />
-                                                )}
+                                            <p className="prose dark:prose-invert text-sm break-words">
+                                                {msg.contenido}
+                                            </p>
+                                            <div
+                                                className={`mt-1 flex items-center justify-end gap-1 ${isMe ? 'text-blue-100' : 'text-slate-400'}`}
+                                            >
+                                                <span className="text-[10px]">
+                                                    {format(
+                                                        new Date(
+                                                            msg.created_at,
+                                                        ),
+                                                        'HH:mm',
+                                                    )}
+                                                </span>
+                                                {isMe &&
+                                                    !(msg as Message)._temp &&
+                                                    !(msg as Message)
+                                                        ._error && (
+                                                        <CheckCheck
+                                                            className={`h-3 w-3 ${msg.leido ? 'text-blue-300' : 'opacity-50'}`}
+                                                        />
+                                                    )}
+                                                {isMe &&
+                                                    (msg as Message)
+                                                        ._sending && (
+                                                        <Clock className="h-3 w-3 animate-spin text-yellow-300" />
+                                                    )}
+                                                {isMe &&
+                                                    (msg as Message)._error && (
+                                                        <AlertCircle className="h-3 w-3 text-red-300" />
+                                                    )}
                                             </div>
                                             {(msg as Message)._error && (
                                                 <button
                                                     type="button"
                                                     onClick={() => {
-                                                        const tempId = (msg as Message)._tempId;
+                                                        const tempId = (
+                                                            msg as Message
+                                                        )._tempId;
                                                         if (!tempId) return;
                                                         setMensajes((prev) =>
                                                             prev.map((m) =>
-                                                                (m as Message)._tempId === tempId
-                                                                    ? { ...m, _sending: true, _error: false }
+                                                                (m as Message)
+                                                                    ._tempId ===
+                                                                tempId
+                                                                    ? {
+                                                                          ...m,
+                                                                          _sending: true,
+                                                                          _error: false,
+                                                                      }
                                                                     : m,
                                                             ),
                                                         );
-                                                        const content = msg.contenido;
+                                                        const content =
+                                                            msg.contenido;
                                                         submitMessage(
                                                             content,
                                                             null,
@@ -434,8 +509,13 @@ export default function ChatPedido({
                                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
                                     <Send className="h-8 w-8 -rotate-45 text-slate-300" />
                                 </div>
-                                <h3 className="font-semibold text-slate-700 dark:text-slate-300">Comienza la conversación</h3>
-                                <p className="max-w-[200px] text-sm text-slate-500">Envía un mensaje para coordinar con {chatTitle}.</p>
+                                <h3 className="font-semibold text-slate-700 dark:text-slate-300">
+                                    Comienza la conversación
+                                </h3>
+                                <p className="max-w-[200px] text-sm text-slate-500">
+                                    Envía un mensaje para coordinar con{' '}
+                                    {chatTitle}.
+                                </p>
                             </div>
                         )}
 
@@ -447,33 +527,62 @@ export default function ChatPedido({
                                         <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:150ms]" />
                                         <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:300ms]" />
                                     </span>
-                                    <span>{typingUser} está escribiendo...</span>
+                                    <span>
+                                        {typingUser} está escribiendo...
+                                    </span>
                                 </div>
                             </div>
                         )}
                     </CardContent>
 
                     <div className="shrink-0 border-t border-slate-100 bg-white p-4 sm:p-6 dark:border-slate-800 dark:bg-slate-900">
-                        <form onSubmit={handleSubmit} encType="multipart/form-data" className="flex flex-col gap-2">
+                        <form
+                            onSubmit={handleSubmit}
+                            encType="multipart/form-data"
+                            className="flex flex-col gap-2"
+                        >
                             {selectedFile && (
                                 <div className="flex items-center justify-between rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2">
                                     <div className="flex items-center gap-2 truncate">
                                         {previewImage && (
-                                            <img src={previewImage} alt="Preview" className="h-10 w-10 rounded object-cover" />
+                                            <img
+                                                src={previewImage}
+                                                alt="Preview"
+                                                className="h-10 w-10 rounded object-cover"
+                                            />
                                         )}
                                         {!previewImage && (
                                             <Paperclip className="h-4 w-4 text-indigo-500" />
                                         )}
-                                        <span className="truncate text-sm text-indigo-700">{selectedFile.name}</span>
+                                        <span className="truncate text-sm text-indigo-700">
+                                            {selectedFile.name}
+                                        </span>
                                     </div>
-                                    <button type="button" onClick={clearFile} className="text-indigo-400 hover:text-indigo-600">
+                                    <button
+                                        type="button"
+                                        onClick={clearFile}
+                                        className="text-indigo-400 hover:text-indigo-600"
+                                    >
                                         <X className="h-4 w-4" />
                                     </button>
                                 </div>
                             )}
-                            <div className="flex flex-col sm:flex-row items-center gap-2">
-                                <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
-                                <Button type="button" variant="ghost" size="icon" className="shrink-0 rounded-full" onClick={() => fileInputRef.current?.click()}>
+                            <div className="flex flex-col items-center gap-2 sm:flex-row">
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    ref={fileInputRef}
+                                    onChange={handleFileSelect}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="shrink-0 rounded-full"
+                                    onClick={() =>
+                                        fileInputRef.current?.click()
+                                    }
+                                >
                                     <Paperclip className="h-5 w-5" />
                                 </Button>
                                 <Input
@@ -490,7 +599,10 @@ export default function ChatPedido({
                                     type="submit"
                                     size="icon"
                                     className="h-12 w-12 rounded-full shadow-lg transition-transform active:scale-95"
-                                    disabled={isSending || (!contenido.trim() && !selectedFile)}
+                                    disabled={
+                                        isSending ||
+                                        (!contenido.trim() && !selectedFile)
+                                    }
                                 >
                                     <Send className="h-5 w-5" />
                                 </Button>

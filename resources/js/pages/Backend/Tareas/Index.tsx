@@ -200,24 +200,24 @@ export default function TareasIndex({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Tareas" />
             <div className="space-y-6">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <h1 className="text-2xl font-bold">
-                                Tareas {isEmpleado ? 'Asignadas' : 'de Empleados'}
-                            </h1>
-                            <p className="text-muted-foreground">
-                                {isEmpleado
-                                    ? 'Tareas asignadas a ti'
-                                    : 'Asigna tareas a tus empleados'}
-                            </p>
-                        </div>
-                        {!isEmpleado && canCreate && (
-                            <Button onClick={() => setIsOpen(!isOpen)}>
-                                <Plus className="mr-2 h-4 w-4" />
-                                Nueva Tarea
-                            </Button>
-                        )}
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold">
+                            Tareas {isEmpleado ? 'Asignadas' : 'de Empleados'}
+                        </h1>
+                        <p className="text-muted-foreground">
+                            {isEmpleado
+                                ? 'Tareas asignadas a ti'
+                                : 'Asigna tareas a tus empleados'}
+                        </p>
                     </div>
+                    {!isEmpleado && canCreate && (
+                        <Button onClick={() => setIsOpen(!isOpen)}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Nueva Tarea
+                        </Button>
+                    )}
+                </div>
 
                 {isOpen && !isEmpleado && (
                     <Card>
@@ -413,120 +413,95 @@ export default function TareasIndex({
                 )}
 
                 <div className="flex items-center justify-end gap-2">
-                    <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('table')}>
+                    <Button
+                        variant={viewMode === 'table' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setViewMode('table')}
+                    >
                         <List className="mr-1 h-4 w-4" /> Tabla
                     </Button>
-                    <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('cards')}>
+                    <Button
+                        variant={viewMode === 'cards' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setViewMode('cards')}
+                    >
                         <LayoutGrid className="mr-1 h-4 w-4" /> Tarjetas
                     </Button>
                 </div>
 
                 {viewMode === 'cards' ? (
-                <div className="space-y-4">
-                    {tareas.length === 0 ? (
-                        <Card>
-                            <CardContent className="py-8 text-center text-muted-foreground">
-                                No hay tareas{' '}
-                                {isEmpleado ? 'asignadas a ti' : ''}
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        tareas.map((tarea) => {
-                            const EstadoIcon =
-                                estadoIcons[tarea.estado] || Clock;
-                            return (
-                                <Card
-                                    key={tarea.id}
-                                    className="overflow-hidden"
-                                >
-                                    <CardContent className="p-4 sm:p-6">
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div className="flex-1">
-                                                <div className="mb-1 flex items-center gap-2">
-                                                    <span
-                                                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${prioridadColors[tarea.prioridad]}`}
-                                                    >
-                                                        {getPrioridadLabel(
-                                                            tarea.prioridad,
-                                                        )}
-                                                    </span>
-                                                    <EstadoIcon
-                                                        className={`h-4 w-4 ${estadoColors[tarea.estado]}`}
-                                                    />
-                                                    <span className="text-sm text-muted-foreground">
-                                                        {getEstadoLabel(
-                                                            tarea.estado,
-                                                        )}
-                                                    </span>
-                                                </div>
-                                                <h3 className="font-semibold">
-                                                    {tarea.titulo}
-                                                </h3>
-                                                {tarea.descripcion && (
-                                                    <p className="mt-1 text-sm text-muted-foreground">
-                                                        {tarea.descripcion}
-                                                    </p>
-                                                )}
-                                                <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-                                                    <span>
-                                                        Para:{' '}
-                                                        {tarea.empleado?.name}
-                                                    </span>
-                                                    {tarea.fecha_limite && (
-                                                        <span>
-                                                            Límite:{' '}
-                                                            {new Date(
-                                                                tarea.fecha_limite,
-                                                            ).toLocaleDateString()}
+                    <div className="space-y-4">
+                        {tareas.length === 0 ? (
+                            <Card>
+                                <CardContent className="py-8 text-center text-muted-foreground">
+                                    No hay tareas{' '}
+                                    {isEmpleado ? 'asignadas a ti' : ''}
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            tareas.map((tarea) => {
+                                const EstadoIcon =
+                                    estadoIcons[tarea.estado] || Clock;
+                                return (
+                                    <Card
+                                        key={tarea.id}
+                                        className="overflow-hidden"
+                                    >
+                                        <CardContent className="p-4 sm:p-6">
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="flex-1">
+                                                    <div className="mb-1 flex items-center gap-2">
+                                                        <span
+                                                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${prioridadColors[tarea.prioridad]}`}
+                                                        >
+                                                            {getPrioridadLabel(
+                                                                tarea.prioridad,
+                                                            )}
                                                         </span>
+                                                        <EstadoIcon
+                                                            className={`h-4 w-4 ${estadoColors[tarea.estado]}`}
+                                                        />
+                                                        <span className="text-sm text-muted-foreground">
+                                                            {getEstadoLabel(
+                                                                tarea.estado,
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                    <h3 className="font-semibold">
+                                                        {tarea.titulo}
+                                                    </h3>
+                                                    {tarea.descripcion && (
+                                                        <p className="mt-1 text-sm text-muted-foreground">
+                                                            {tarea.descripcion}
+                                                        </p>
                                                     )}
-                                                </div>
+                                                    <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                                                        <span>
+                                                            Para:{' '}
+                                                            {
+                                                                tarea.empleado
+                                                                    ?.name
+                                                            }
+                                                        </span>
+                                                        {tarea.fecha_limite && (
+                                                            <span>
+                                                                Límite:{' '}
+                                                                {new Date(
+                                                                    tarea.fecha_limite,
+                                                                ).toLocaleDateString()}
+                                                            </span>
+                                                        )}
+                                                    </div>
 
-                                                {tarea.productos_json &&
-                                                    tarea.productos_json
-                                                        .length > 0 && (
-                                                        <div className="mt-3 space-y-2">
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {tarea.productos_json.map(
-                                                                    (
-                                                                        item: any,
-                                                                        idx: number,
-                                                                    ) => {
-                                                                        const prod =
-                                                                            productos.find(
-                                                                                (
-                                                                                    p,
-                                                                                ) =>
-                                                                                    p.id ===
-                                                                                    item.producto_id,
-                                                                            );
-                                                                        return (
-                                                                            <span
-                                                                                key={
-                                                                                    idx
-                                                                                }
-                                                                                className="inline-flex items-center gap-1 rounded bg-muted px-2 py-1 text-xs"
-                                                                            >
-                                                                                <Package className="h-3 w-3" />
-                                                                                {
-                                                                                    prod?.nombre
-                                                                                }{' '}
-                                                                                x{' '}
-                                                                                {
-                                                                                    item.cantidad
-                                                                                }
-                                                                            </span>
-                                                                        );
-                                                                    },
-                                                                )}
-                                                            </div>
-                                                            <div className="flex flex-wrap gap-4 border-t pt-2 text-xs font-bold text-primary">
-                                                                {(() => {
-                                                                    let totalKilos = 0;
-                                                                    let totalLitros = 0;
-                                                                    tarea.productos_json.forEach(
+                                                    {tarea.productos_json &&
+                                                        tarea.productos_json
+                                                            .length > 0 && (
+                                                            <div className="mt-3 space-y-2">
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {tarea.productos_json.map(
                                                                         (
                                                                             item: any,
+                                                                            idx: number,
                                                                         ) => {
                                                                             const prod =
                                                                                 productos.find(
@@ -536,181 +511,295 @@ export default function TareasIndex({
                                                                                         p.id ===
                                                                                         item.producto_id,
                                                                                 );
-                                                                            if (
-                                                                                prod
-                                                                            ) {
-                                                                                const valor =
-                                                                                    (prod.medida_pesable
-                                                                                        ? prod.cantidad_medida ||
-                                                                                          0
-                                                                                        : 0) *
-                                                                                    item.cantidad;
-                                                                                if (
-                                                                                    prod.tipo_medida ===
-                                                                                    'kilo'
-                                                                                ) {
-                                                                                    totalKilos +=
-                                                                                        valor;
-                                                                                } else if (
-                                                                                    prod.tipo_medida ===
-                                                                                    'litro'
-                                                                                ) {
-                                                                                    totalLitros +=
-                                                                                        valor;
-                                                                                }
-                                                                            }
+                                                                            return (
+                                                                                <span
+                                                                                    key={
+                                                                                        idx
+                                                                                    }
+                                                                                    className="inline-flex items-center gap-1 rounded bg-muted px-2 py-1 text-xs"
+                                                                                >
+                                                                                    <Package className="h-3 w-3" />
+                                                                                    {
+                                                                                        prod?.nombre
+                                                                                    }{' '}
+                                                                                    x{' '}
+                                                                                    {
+                                                                                        item.cantidad
+                                                                                    }
+                                                                                </span>
+                                                                            );
                                                                         },
-                                                                    );
-                                                                    return (
-                                                                        <>
-                                                                            {totalKilos >
-                                                                                0 && (
-                                                                                <span className="flex items-center gap-1">
-                                                                                    <Scale className="h-3 w-3" />
-                                                                                    Total:{' '}
-                                                                                    {totalKilos.toFixed(
-                                                                                        2,
-                                                                                    )}{' '}
-                                                                                    kg
-                                                                                </span>
-                                                                            )}
-                                                                            {totalLitros >
-                                                                                0 && (
-                                                                                <span className="flex items-center gap-1">
-                                                                                    <Droplets className="h-3 w-3" />
-                                                                                    Total:{' '}
-                                                                                    {totalLitros.toFixed(
-                                                                                        2,
-                                                                                    )}{' '}
-                                                                                    L
-                                                                                </span>
-                                                                            )}
-                                                                        </>
-                                                                    );
-                                                                })()}
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex flex-wrap gap-4 border-t pt-2 text-xs font-bold text-primary">
+                                                                    {(() => {
+                                                                        let totalKilos = 0;
+                                                                        let totalLitros = 0;
+                                                                        tarea.productos_json.forEach(
+                                                                            (
+                                                                                item: any,
+                                                                            ) => {
+                                                                                const prod =
+                                                                                    productos.find(
+                                                                                        (
+                                                                                            p,
+                                                                                        ) =>
+                                                                                            p.id ===
+                                                                                            item.producto_id,
+                                                                                    );
+                                                                                if (
+                                                                                    prod
+                                                                                ) {
+                                                                                    const valor =
+                                                                                        (prod.medida_pesable
+                                                                                            ? prod.cantidad_medida ||
+                                                                                              0
+                                                                                            : 0) *
+                                                                                        item.cantidad;
+                                                                                    if (
+                                                                                        prod.tipo_medida ===
+                                                                                        'kilo'
+                                                                                    ) {
+                                                                                        totalKilos +=
+                                                                                            valor;
+                                                                                    } else if (
+                                                                                        prod.tipo_medida ===
+                                                                                        'litro'
+                                                                                    ) {
+                                                                                        totalLitros +=
+                                                                                            valor;
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                        );
+                                                                        return (
+                                                                            <>
+                                                                                {totalKilos >
+                                                                                    0 && (
+                                                                                    <span className="flex items-center gap-1">
+                                                                                        <Scale className="h-3 w-3" />
+                                                                                        Total:{' '}
+                                                                                        {totalKilos.toFixed(
+                                                                                            2,
+                                                                                        )}{' '}
+                                                                                        kg
+                                                                                    </span>
+                                                                                )}
+                                                                                {totalLitros >
+                                                                                    0 && (
+                                                                                    <span className="flex items-center gap-1">
+                                                                                        <Droplets className="h-3 w-3" />
+                                                                                        Total:{' '}
+                                                                                        {totalLitros.toFixed(
+                                                                                            2,
+                                                                                        )}{' '}
+                                                                                        L
+                                                                                    </span>
+                                                                                )}
+                                                                            </>
+                                                                        );
+                                                                    })()}
+                                                                </div>
                                                             </div>
+                                                        )}
+                                                </div>
+                                                {isEmpleado &&
+                                                    tarea.estado !==
+                                                        'completada' &&
+                                                    tarea.estado !==
+                                                        'cancelada' && (
+                                                        <div className="flex gap-1">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() =>
+                                                                    cambiarEstado(
+                                                                        tarea,
+                                                                        'en_progreso',
+                                                                    )
+                                                                }
+                                                                title="Iniciar"
+                                                            >
+                                                                <AlertCircle className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() =>
+                                                                    cambiarEstado(
+                                                                        tarea,
+                                                                        'completada',
+                                                                    )
+                                                                }
+                                                                title="Completar"
+                                                            >
+                                                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                                            </Button>
                                                         </div>
                                                     )}
-                                            </div>
-                                            {isEmpleado &&
-                                                tarea.estado !== 'completada' &&
-                                                tarea.estado !==
-                                                    'cancelada' && (
-                                                    <div className="flex gap-1">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() =>
-                                                                cambiarEstado(
-                                                                    tarea,
-                                                                    'en_progreso',
-                                                                )
-                                                            }
-                                                            title="Iniciar"
-                                                        >
-                                                            <AlertCircle className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() =>
-                                                                cambiarEstado(
-                                                                    tarea,
-                                                                    'completada',
-                                                                )
-                                                            }
-                                                            title="Completar"
-                                                        >
-                                                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            {!isEmpleado && canDelete && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    onClick={() =>
-                                                        eliminarTarea(tarea)
-                                                    }
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            );
-                        })
-                    )}
-                </div>
-                ) : (
-                <div className="overflow-x-auto rounded-lg border">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b bg-muted/50">
-                                <th className="px-4 py-3 text-left font-medium">Título</th>
-                                <th className="px-4 py-3 text-left font-medium">Prioridad</th>
-                                <th className="px-4 py-3 text-left font-medium">Estado</th>
-                                <th className="px-4 py-3 text-left font-medium">Asignado</th>
-                                <th className="px-4 py-3 text-left font-medium">Límite</th>
-                                <th className="px-4 py-3 text-right font-medium">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {tareas.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                                        No hay tareas {isEmpleado ? 'asignadas a ti' : ''}
-                                    </td>
-                                </tr>
-                            ) : tareas.map((tarea) => {
-                                const EstadoIcon = estadoIcons[tarea.estado] || Clock;
-                                return (
-                                    <tr key={tarea.id} className="border-b hover:bg-muted/30">
-                                        <td className="px-4 py-3">
-                                            <div className="font-medium">{tarea.titulo}</div>
-                                            {tarea.descripcion && (
-                                                <div className="text-xs text-muted-foreground line-clamp-1">{tarea.descripcion}</div>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${prioridadColors[tarea.prioridad]}`}>
-                                                {getPrioridadLabel(tarea.prioridad)}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-1.5">
-                                                <EstadoIcon className={`h-4 w-4 ${estadoColors[tarea.estado]}`} />
-                                                <span className="text-sm text-muted-foreground">{getEstadoLabel(tarea.estado)}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3 text-sm">{tarea.empleado?.name}</td>
-                                        <td className="px-4 py-3 text-sm">{tarea.fecha_limite ? new Date(tarea.fecha_limite).toLocaleDateString() : '-'}</td>
-                                        <td className="px-4 py-3 text-right">
-                                            <div className="flex justify-end gap-1">
-                                                {isEmpleado && tarea.estado !== 'completada' && tarea.estado !== 'cancelada' && (
-                                                    <>
-                                                        <Button size="sm" variant="ghost" onClick={() => cambiarEstado(tarea, 'en_progreso')} title="Iniciar">
-                                                            <AlertCircle className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button size="sm" variant="ghost" onClick={() => cambiarEstado(tarea, 'completada')} title="Completar">
-                                                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                                        </Button>
-                                                    </>
-                                                )}
                                                 {!isEmpleado && canDelete && (
-                                                    <Button size="sm" variant="ghost" onClick={() => eliminarTarea(tarea)}>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() =>
+                                                            eliminarTarea(tarea)
+                                                        }
+                                                    >
                                                         <Trash2 className="h-4 w-4 text-red-500" />
                                                     </Button>
                                                 )}
                                             </div>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })
+                        )}
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto rounded-lg border">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b bg-muted/50">
+                                    <th className="px-4 py-3 text-left font-medium">
+                                        Título
+                                    </th>
+                                    <th className="px-4 py-3 text-left font-medium">
+                                        Prioridad
+                                    </th>
+                                    <th className="px-4 py-3 text-left font-medium">
+                                        Estado
+                                    </th>
+                                    <th className="px-4 py-3 text-left font-medium">
+                                        Asignado
+                                    </th>
+                                    <th className="px-4 py-3 text-left font-medium">
+                                        Límite
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        Acciones
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {tareas.length === 0 ? (
+                                    <tr>
+                                        <td
+                                            colSpan={6}
+                                            className="px-4 py-8 text-center text-muted-foreground"
+                                        >
+                                            No hay tareas{' '}
+                                            {isEmpleado ? 'asignadas a ti' : ''}
                                         </td>
                                     </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
+                                ) : (
+                                    tareas.map((tarea) => {
+                                        const EstadoIcon =
+                                            estadoIcons[tarea.estado] || Clock;
+                                        return (
+                                            <tr
+                                                key={tarea.id}
+                                                className="border-b hover:bg-muted/30"
+                                            >
+                                                <td className="px-4 py-3">
+                                                    <div className="font-medium">
+                                                        {tarea.titulo}
+                                                    </div>
+                                                    {tarea.descripcion && (
+                                                        <div className="line-clamp-1 text-xs text-muted-foreground">
+                                                            {tarea.descripcion}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <span
+                                                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${prioridadColors[tarea.prioridad]}`}
+                                                    >
+                                                        {getPrioridadLabel(
+                                                            tarea.prioridad,
+                                                        )}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <EstadoIcon
+                                                            className={`h-4 w-4 ${estadoColors[tarea.estado]}`}
+                                                        />
+                                                        <span className="text-sm text-muted-foreground">
+                                                            {getEstadoLabel(
+                                                                tarea.estado,
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-sm">
+                                                    {tarea.empleado?.name}
+                                                </td>
+                                                <td className="px-4 py-3 text-sm">
+                                                    {tarea.fecha_limite
+                                                        ? new Date(
+                                                              tarea.fecha_limite,
+                                                          ).toLocaleDateString()
+                                                        : '-'}
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <div className="flex justify-end gap-1">
+                                                        {isEmpleado &&
+                                                            tarea.estado !==
+                                                                'completada' &&
+                                                            tarea.estado !==
+                                                                'cancelada' && (
+                                                                <>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="ghost"
+                                                                        onClick={() =>
+                                                                            cambiarEstado(
+                                                                                tarea,
+                                                                                'en_progreso',
+                                                                            )
+                                                                        }
+                                                                        title="Iniciar"
+                                                                    >
+                                                                        <AlertCircle className="h-4 w-4" />
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="ghost"
+                                                                        onClick={() =>
+                                                                            cambiarEstado(
+                                                                                tarea,
+                                                                                'completada',
+                                                                            )
+                                                                        }
+                                                                        title="Completar"
+                                                                    >
+                                                                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                                                    </Button>
+                                                                </>
+                                                            )}
+                                                        {!isEmpleado &&
+                                                            canDelete && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    onClick={() =>
+                                                                        eliminarTarea(
+                                                                            tarea,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                                                </Button>
+                                                            )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
         </AppLayout>

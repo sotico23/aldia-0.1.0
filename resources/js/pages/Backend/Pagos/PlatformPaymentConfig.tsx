@@ -44,7 +44,9 @@ export default function PlatformPaymentConfig({ config }: { config: any }) {
             icon: Landmark,
             href: '/webpay/config',
             active: config?.is_active ?? false,
-            configured: !!(config?.commerce_code && config?.commerce_code !== 'PRESET'),
+            configured: !!(
+                config?.commerce_code && config?.commerce_code !== 'PRESET'
+            ),
         },
         {
             key: 'paypal',
@@ -60,7 +62,10 @@ export default function PlatformPaymentConfig({ config }: { config: any }) {
             icon: CreditCard,
             href: '/mercadopago/config',
             active: config?.mercadopago_active ?? false,
-            configured: !!(config?.mercadopago_public_key && config?.mercadopago_public_key !== 'PRESET'),
+            configured: !!(
+                config?.mercadopago_public_key &&
+                config?.mercadopago_public_key !== 'PRESET'
+            ),
         },
     ];
 
@@ -83,34 +88,44 @@ export default function PlatformPaymentConfig({ config }: { config: any }) {
             ]}
         >
             <Head title="Pago Plataforma" />
-            <div className="p-6 max-w-2xl mx-auto space-y-6">
+            <div className="mx-auto max-w-2xl space-y-6 p-6">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Plataforma de Pago Principal</h1>
-                    <p className="text-muted-foreground mt-1 text-sm">
-                        Administra si tu tienda usa la plataforma de pago principal del sistema.
+                    <h1 className="text-2xl font-bold tracking-tight">
+                        Plataforma de Pago Principal
+                    </h1>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Administra si tu tienda usa la plataforma de pago
+                        principal del sistema.
                     </p>
                 </div>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-base flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-base">
                             <ShieldAlert className="h-5 w-5 text-primary" />
                             Usar plataforma de pago principal
                         </CardTitle>
                         <CardDescription>
-                            Al activar, tus clientes pagarán usando la plataforma de pago del sistema
-                            (administrada por el usuario Master). Debes configurar tus datos de pago
-                            (commerce_code, api_key, etc.) para que la plataforma funcione correctamente.
+                            Al activar, tus clientes pagarán usando la
+                            plataforma de pago del sistema (administrada por el
+                            usuario Master). Debes configurar tus datos de pago
+                            (commerce_code, api_key, etc.) para que la
+                            plataforma funcione correctamente.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center justify-between rounded-lg border p-4">
                             <div>
-                                <Label htmlFor="platform-toggle" className="font-semibold text-sm cursor-pointer">
+                                <Label
+                                    htmlFor="platform-toggle"
+                                    className="cursor-pointer text-sm font-semibold"
+                                >
                                     Plataforma de pago principal
                                 </Label>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                    {data.use_platform_config ? 'Activada' : 'Desactivada'}
+                                <p className="mt-0.5 text-xs text-muted-foreground">
+                                    {data.use_platform_config
+                                        ? 'Activada'
+                                        : 'Desactivada'}
                                 </p>
                             </div>
                             <Switch
@@ -127,14 +142,14 @@ export default function PlatformPaymentConfig({ config }: { config: any }) {
                     <Card className="border-primary/20 bg-primary/5">
                         <CardContent className="pt-6">
                             <div className="flex items-start gap-3">
-                                <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                                 <div>
                                     <p className="text-sm font-semibold">
                                         {data.use_platform_config
                                             ? 'Usando plataforma de pago principal'
                                             : 'Usando plataforma de pago principal (fallback)'}
                                     </p>
-                                    <p className="text-xs text-muted-foreground mt-1">
+                                    <p className="mt-1 text-xs text-muted-foreground">
                                         {data.use_platform_config
                                             ? 'Los pagos se procesarán con las credenciales globales del sistema.'
                                             : 'No tienes métodos de pago activos. Los pagos se procesarán con las credenciales globales del sistema.'}
@@ -147,9 +162,12 @@ export default function PlatformPaymentConfig({ config }: { config: any }) {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-base">Tus métodos de pago</CardTitle>
+                        <CardTitle className="text-base">
+                            Tus métodos de pago
+                        </CardTitle>
                         <CardDescription>
-                            Configura tus propias credenciales para usar tus propias cuentas de pago.
+                            Configura tus propias credenciales para usar tus
+                            propias cuentas de pago.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
@@ -159,16 +177,20 @@ export default function PlatformPaymentConfig({ config }: { config: any }) {
                                 className="flex items-center justify-between rounded-lg border p-4"
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-                                        gw.configured
-                                            ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                            : 'bg-muted text-muted-foreground'
-                                    }`}>
+                                    <div
+                                        className={`flex h-9 w-9 items-center justify-center rounded-lg ${
+                                            gw.configured
+                                                ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                                : 'bg-muted text-muted-foreground'
+                                        }`}
+                                    >
                                         <gw.icon className="h-4 w-4" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-semibold">{gw.label}</p>
-                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                        <p className="text-sm font-semibold">
+                                            {gw.label}
+                                        </p>
+                                        <div className="mt-0.5 flex items-center gap-1.5">
                                             {gw.configured ? (
                                                 <>
                                                     <CheckCircle2 className="h-3 w-3 text-emerald-500" />
@@ -176,7 +198,7 @@ export default function PlatformPaymentConfig({ config }: { config: any }) {
                                                         Configurado
                                                     </span>
                                                     {gw.active && (
-                                                        <span className="text-[10px] uppercase font-bold text-emerald-500 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">
+                                                        <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-500 uppercase dark:bg-emerald-900/30">
                                                             Activo
                                                         </span>
                                                     )}

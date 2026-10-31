@@ -8,17 +8,12 @@ import {
     AlertTriangle,
     CheckCircle2,
     Ban,
-    ListOrdered
+    ListOrdered,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import '@/components/ui/input';
 import Pagination from '@/components/ui/Pagination';
 import {
@@ -98,7 +93,7 @@ interface Props {
 
 export default function Documentos({ documentos, filtros }: Props) {
     const { hasPermission } = usePermissions();
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const canAccess = hasPermission('finanzas.sii.viewAny');
     const [estadoFilter, setEstadoFilter] = useState(filtros.estado || '');
     const [tipoFilter, setTipoFilter] = useState(filtros.tipo || '');
@@ -106,7 +101,8 @@ export default function Documentos({ documentos, filtros }: Props) {
     useEffect(() => {
         const timer = setTimeout(() => {
             const query: Record<string, string> = {};
-            if (estadoFilter && estadoFilter !== 'all') query.estado = estadoFilter;
+            if (estadoFilter && estadoFilter !== 'all')
+                query.estado = estadoFilter;
             if (tipoFilter && tipoFilter !== 'all') query.tipo = tipoFilter;
 
             router.get('/sii/documentos', query, {
@@ -138,7 +134,9 @@ export default function Documentos({ documentos, filtros }: Props) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );
@@ -169,7 +167,7 @@ export default function Documentos({ documentos, filtros }: Props) {
                 <Card className="border-none shadow-xl">
                     <CardHeader className="border-b pb-4">
                         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                            <CardTitle className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-muted-foreground">
+                            <CardTitle className="flex items-center gap-2 text-sm font-black tracking-widest text-muted-foreground uppercase">
                                 <ListOrdered className="h-4 w-4" />
                                 Documentos
                             </CardTitle>
@@ -255,13 +253,11 @@ export default function Documentos({ documentos, filtros }: Props) {
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
-                                        <tr className="border-b border-muted/50 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                                        <tr className="border-b border-muted/50 text-left text-[10px] font-black tracking-widest text-muted-foreground uppercase">
                                             <th className="px-6 py-4">
                                                 Tipo Doc.
                                             </th>
-                                            <th className="px-6 py-4">
-                                                Folio
-                                            </th>
+                                            <th className="px-6 py-4">Folio</th>
                                             <th className="px-6 py-4">
                                                 Receptor
                                             </th>
@@ -274,9 +270,7 @@ export default function Documentos({ documentos, filtros }: Props) {
                                             <th className="px-6 py-4 text-center">
                                                 SII
                                             </th>
-                                            <th className="px-6 py-4">
-                                                Fecha
-                                            </th>
+                                            <th className="px-6 py-4">Fecha</th>
                                             <th className="px-6 py-4 text-center">
                                                 Acciones
                                             </th>

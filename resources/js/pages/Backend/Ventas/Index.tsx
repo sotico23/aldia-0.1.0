@@ -18,7 +18,6 @@ import {
     TrendingUp,
     Clock,
     Shuffle,
-    Warehouse,
     ChevronUp,
     ChevronDown,
     ArrowUpDown,
@@ -26,8 +25,16 @@ import {
 } from 'lucide-react';
 import { useState, useMemo, useRef } from 'react';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell,
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell,
 } from 'recharts';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -67,8 +74,12 @@ import { WhatsAppButton } from '@/components/whatsapp-button';
 import { useCountry } from '@/hooks/use-country';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
-import { CURRENCY_OPTIONS } from '@/lib/currencies';
-import { formatCurrency, formatDateCLP, formatRut, getLocalDateString } from '@/lib/utils';
+import {
+    formatCurrency,
+    formatDateCLP,
+    formatRut,
+    getLocalDateString,
+} from '@/lib/utils';
 import type { BreadcrumbItem } from '@/types';
 
 interface Cliente {
@@ -122,7 +133,11 @@ interface Venta {
     almacen_nombre?: string;
     cliente?: Cliente;
     detalle_ventas?: DetalleVenta[];
-    almacenes_data?: { id: number; nombre: string; pivot: { cantidad_descontada: number } }[];
+    almacenes_data?: {
+        id: number;
+        nombre: string;
+        pivot: { cantidad_descontada: number };
+    }[];
     currency?: string;
 }
 
@@ -169,7 +184,7 @@ export default function Index({
     ventasPorSemana: { mes: string; total: number }[];
     ventasPorDia: { mes: string; total: number }[];
 }) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
 
     const [isOpen, setIsOpen] = useState(false);
     const [clienteSearch, setClienteSearch] = useState('');
@@ -179,7 +194,9 @@ export default function Index({
         null,
     );
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-    const [chartMode, setChartMode] = useState<'monthly' | 'weekly' | 'daily'>('monthly');
+    const [chartMode, setChartMode] = useState<'monthly' | 'weekly' | 'daily'>(
+        'monthly',
+    );
     const [filtros, setFiltros] = useState({
         busqueda: '',
         cliente_id: '',
@@ -226,7 +243,8 @@ export default function Index({
                 v.estado !== filtros.estado
             )
                 return false;
-            const fechaStr = (f: string) => f?.includes('T') ? f.split('T')[0] : f;
+            const fechaStr = (f: string) =>
+                f?.includes('T') ? f.split('T')[0] : f;
             if (filtros.fechaDesde && fechaStr(v.fecha) < filtros.fechaDesde)
                 return false;
             if (filtros.fechaHasta && fechaStr(v.fecha) > filtros.fechaHasta)
@@ -258,13 +276,24 @@ export default function Index({
     const weeklyData = ventasPorSemana;
     const dailyData = ventasPorDia;
 
-    const chartData = chartMode === 'monthly' ? monthlyData : chartMode === 'weekly' ? weeklyData : dailyData;
+    const chartData =
+        chartMode === 'monthly'
+            ? monthlyData
+            : chartMode === 'weekly'
+              ? weeklyData
+              : dailyData;
 
     const estadoData = useMemo(() => {
-        const canceladas = ventas.data.filter((v) => v.estado === 'cancelada').length;
+        const canceladas = ventas.data.filter(
+            (v) => v.estado === 'cancelada',
+        ).length;
         return [
             { name: 'Pagadas', value: resumenVentas.pagadas, color: '#22c55e' },
-            { name: 'Pendientes', value: resumenVentas.pendientes, color: '#f59e0b' },
+            {
+                name: 'Pendientes',
+                value: resumenVentas.pendientes,
+                color: '#f59e0b',
+            },
             { name: 'Canceladas', value: canceladas, color: '#ef4444' },
         ].filter((d) => d.value > 0);
     }, [ventas, resumenVentas]);
@@ -289,27 +318,36 @@ export default function Index({
         window.location.href = `/ventas/export-excel?${params.toString()}`;
     };
 
-    const handleImportCsv = (e: React.ChangeEvent<HTMLInputElement>, isExcel = false) => {
+    const handleImportCsv = (
+        e: React.ChangeEvent<HTMLInputElement>,
+        isExcel = false,
+    ) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        router.post(isExcel ? '/ventas/import-excel' : '/ventas/import', {
-            archivo: file,
-        }, {
-            forceFormData: true,
-            onSuccess: (page) => {
-                const flash = (page.props.flash as { success?: string } | undefined)?.success;
-                if (flash) {
-                    toast.success(flash);
-                } else {
-                    toast.success('Importación completada');
-                }
+        router.post(
+            isExcel ? '/ventas/import-excel' : '/ventas/import',
+            {
+                archivo: file,
             },
-            onError: (err) => {
-                console.error(err);
-                toast.error('Error al importar: ' + Object.values(err)[0]);
+            {
+                forceFormData: true,
+                onSuccess: (page) => {
+                    const flash = (
+                        page.props.flash as { success?: string } | undefined
+                    )?.success;
+                    if (flash) {
+                        toast.success(flash);
+                    } else {
+                        toast.success('Importación completada');
+                    }
+                },
+                onError: (err) => {
+                    console.error(err);
+                    toast.error('Error al importar: ' + Object.values(err)[0]);
+                },
             },
-        });
+        );
     };
 
     const { hasPermission, user } = usePermissions();
@@ -364,14 +402,25 @@ export default function Index({
             const precio = p.precio_unitario || 0;
             subtotal += Math.round(p.cantidad * precio);
 
-            const producto = productos.find(prod => prod.id === Number(p.producto_id));
-            if (producto && (producto as any).envase_retornable && (producto as any).envase_producto_id) {
+            const producto = productos.find(
+                (prod) => prod.id === Number(p.producto_id),
+            );
+            if (
+                producto &&
+                (producto as any).envase_retornable &&
+                (producto as any).envase_producto_id
+            ) {
                 const cantidadRetornada = p.cantidad_retornada ?? 0;
                 const envasesPendientes = p.cantidad - cantidadRetornada;
                 if (envasesPendientes > 0) {
-                    const envaseProducto = productos.find(prod => prod.id === (producto as any).envase_producto_id);
+                    const envaseProducto = productos.find(
+                        (prod) =>
+                            prod.id === (producto as any).envase_producto_id,
+                    );
                     if (envaseProducto) {
-                        subtotal += Math.round(envasesPendientes * envaseProducto.precio_venta);
+                        subtotal += Math.round(
+                            envasesPendientes * envaseProducto.precio_venta,
+                        );
                     }
                 }
             }
@@ -404,17 +453,26 @@ export default function Index({
             return [];
         }
         return productos.filter((p) =>
-            p.inventarios?.some(
-                (inv) => data.almacen_ids.includes(inv.almacen_id),
+            p.inventarios?.some((inv) =>
+                data.almacen_ids.includes(inv.almacen_id),
             ),
         );
     }, [productos, data.almacen_ids]);
 
     const addProducto = () => {
-        setData('productos' as any, [
-            ...data.productos,
-            { producto_id: '', cantidad: 1, precio_unitario: 0, cantidad_retornada: 1, modoGramos: false },
-        ] as any);
+        setData(
+            'productos' as any,
+            [
+                ...data.productos,
+                {
+                    producto_id: '',
+                    cantidad: 1,
+                    precio_unitario: 0,
+                    cantidad_retornada: 1,
+                    modoGramos: false,
+                },
+            ] as any,
+        );
     };
 
     const updateProducto = (
@@ -470,7 +528,9 @@ export default function Index({
         }
 
         if (data.productos.length === 0) {
-            toast.warning('Por favor, agregue al menos un producto a la venta.');
+            toast.warning(
+                'Por favor, agregue al menos un producto a la venta.',
+            );
             return;
         }
 
@@ -497,8 +557,12 @@ export default function Index({
                 producto.inventarios?.forEach((inv: any) => {
                     if (selectedAlmacenIds.includes(inv.almacen_id)) {
                         stockDisponible += inv.cantidad || 0;
-                        const almacen = almacenes.find(a => a.id === inv.almacen_id);
-                        stockPorAlmacen.push(`${almacen?.nombre || '?'}: ${Math.round(inv.cantidad || 0)}`);
+                        const almacen = almacenes.find(
+                            (a) => a.id === inv.almacen_id,
+                        );
+                        stockPorAlmacen.push(
+                            `${almacen?.nombre || '?'}: ${Math.round(inv.cantidad || 0)}`,
+                        );
                     }
                 });
 
@@ -552,9 +616,10 @@ export default function Index({
                     reset();
                 },
                 onError: (errors) => {
-                    const msg = typeof errors === 'object'
-                        ? Object.values(errors).flat().join('\n')
-                        : 'Error al actualizar la venta';
+                    const msg =
+                        typeof errors === 'object'
+                            ? Object.values(errors).flat().join('\n')
+                            : 'Error al actualizar la venta';
                     toast.error(msg);
                 },
             });
@@ -565,9 +630,10 @@ export default function Index({
                     reset();
                 },
                 onError: (errors) => {
-                    const msg = typeof errors === 'object'
-                        ? Object.values(errors).flat().join('\n')
-                        : 'Error al crear la venta';
+                    const msg =
+                        typeof errors === 'object'
+                            ? Object.values(errors).flat().join('\n')
+                            : 'Error al crear la venta';
                     toast.error(msg);
                 },
             });
@@ -590,9 +656,12 @@ export default function Index({
                     producto_id: d.producto_id.toString(),
                     cantidad: d.cantidad,
                     precio_unitario: d.precio_unitario,
-                    cantidad_retornada: (d as any).cantidad_retornada ?? d.cantidad,
+                    cantidad_retornada:
+                        (d as any).cantidad_retornada ?? d.cantidad,
                 })) || [],
-            almacen_ids: (venta as any).almacen_ids || (venta.almacen_id ? [venta.almacen_id] : []),
+            almacen_ids:
+                (venta as any).almacen_ids ||
+                (venta.almacen_id ? [venta.almacen_id] : []),
             currency: (venta as any).currency || currency.code,
         });
         setIsOpen(true);
@@ -675,14 +744,16 @@ export default function Index({
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                     onClick={() => csvInputRef.current?.click()}
-                                    className="gap-2 cursor-pointer"
+                                    className="cursor-pointer gap-2"
                                 >
                                     <Upload className="h-4 w-4 text-orange-500" />
                                     Importar CSV
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                    onClick={() => excelInputRef.current?.click()}
-                                    className="gap-2 cursor-pointer"
+                                    onClick={() =>
+                                        excelInputRef.current?.click()
+                                    }
+                                    className="cursor-pointer gap-2"
                                 >
                                     <Upload className="h-4 w-4 text-purple-500" />
                                     Importar Excel
@@ -726,7 +797,11 @@ export default function Index({
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-sm font-medium">
-                                    {chartMode === 'monthly' ? 'Ventas por Mes' : chartMode === 'weekly' ? 'Ventas por Semana' : 'Ventas por Día'}
+                                    {chartMode === 'monthly'
+                                        ? 'Ventas por Mes'
+                                        : chartMode === 'weekly'
+                                          ? 'Ventas por Semana'
+                                          : 'Ventas por Día'}
                                 </CardTitle>
                                 <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">
                                     <button
@@ -754,14 +829,41 @@ export default function Index({
                             <div className="h-48">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={chartData}>
-                                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                                        <XAxis dataKey="mes" tick={{ fontSize: 10 }} interval={0} angle={chartMode === 'weekly' ? -30 : -45} textAnchor="end" height={chartMode === 'monthly' ? 30 : 50} />
+                                        <CartesianGrid
+                                            strokeDasharray="3 3"
+                                            className="stroke-muted"
+                                        />
+                                        <XAxis
+                                            dataKey="mes"
+                                            tick={{ fontSize: 10 }}
+                                            interval={0}
+                                            angle={
+                                                chartMode === 'weekly'
+                                                    ? -30
+                                                    : -45
+                                            }
+                                            textAnchor="end"
+                                            height={
+                                                chartMode === 'monthly'
+                                                    ? 30
+                                                    : 50
+                                            }
+                                        />
                                         <YAxis tick={{ fontSize: 11 }} />
                                         <Tooltip
-                                            formatter={((value: any) => formatCurrency(value)) as any}
+                                            formatter={
+                                                ((value: any) =>
+                                                    formatCurrency(
+                                                        value,
+                                                    )) as any
+                                            }
                                             contentStyle={{ fontSize: 12 }}
                                         />
-                                        <Bar dataKey="total" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                                        <Bar
+                                            dataKey="total"
+                                            fill="#6366f1"
+                                            radius={[4, 4, 0, 0]}
+                                        />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
@@ -769,7 +871,9 @@ export default function Index({
                     </Card>
                     <Card>
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium">Estado de Ventas</CardTitle>
+                            <CardTitle className="text-sm font-medium">
+                                Estado de Ventas
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="flex h-48 items-center justify-center">
@@ -793,9 +897,19 @@ export default function Index({
                                 </ResponsiveContainer>
                                 <div className="ml-2 space-y-1 text-xs">
                                     {estadoData.map((e) => (
-                                        <div key={e.name} className="flex items-center gap-2">
-                                            <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: e.color }} />
-                                            <span>{e.name}: {e.value}</span>
+                                        <div
+                                            key={e.name}
+                                            className="flex items-center gap-2"
+                                        >
+                                            <span
+                                                className="inline-block h-2.5 w-2.5 rounded-full"
+                                                style={{
+                                                    backgroundColor: e.color,
+                                                }}
+                                            />
+                                            <span>
+                                                {e.name}: {e.value}
+                                            </span>
                                         </div>
                                     ))}
                                 </div>
@@ -813,7 +927,9 @@ export default function Index({
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-xl font-bold sm:text-2xl">{resumenVentas.total_ventas}</div>
+                            <div className="text-xl font-bold sm:text-2xl">
+                                {resumenVentas.total_ventas}
+                            </div>
                         </CardContent>
                     </Card>
                     <Card className="border-l-4 border-l-emerald-500">
@@ -863,14 +979,31 @@ export default function Index({
                             <div>
                                 <CardTitle>Listado de Ventas</CardTitle>
                                 <CardDescription>
-                                    {ventasFiltradas.length} registros encontrados
+                                    {ventasFiltradas.length} registros
+                                    encontrados
                                 </CardDescription>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('table')}>
+                                <Button
+                                    variant={
+                                        viewMode === 'table'
+                                            ? 'default'
+                                            : 'outline'
+                                    }
+                                    size="icon"
+                                    onClick={() => setViewMode('table')}
+                                >
                                     <List className="h-4 w-4" />
                                 </Button>
-                                <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('cards')}>
+                                <Button
+                                    variant={
+                                        viewMode === 'cards'
+                                            ? 'default'
+                                            : 'outline'
+                                    }
+                                    size="icon"
+                                    onClick={() => setViewMode('cards')}
+                                >
                                     <LayoutGrid className="h-4 w-4" />
                                 </Button>
                             </div>
@@ -890,7 +1023,7 @@ export default function Index({
                                                 busqueda: e.target.value,
                                             })
                                         }
-                                        className="h-10 border-muted-foreground/20 pl-9 pr-9 transition-all focus:border-primary"
+                                        className="h-10 border-muted-foreground/20 pr-9 pl-9 transition-all focus:border-primary"
                                     />
                                 </div>
                             </div>
@@ -989,20 +1122,107 @@ export default function Index({
                                 <table className="w-full">
                                     <thead>
                                         <tr className="border-b">
-                                            <th className="pb-3 text-left text-sm font-medium whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('numero_factura')}>
-                                                <div className="flex items-center gap-1">Factura {sortColumn === 'numero_factura' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                            <th
+                                                className="group cursor-pointer pb-3 text-left text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground"
+                                                onClick={() =>
+                                                    handleSort('numero_factura')
+                                                }
+                                            >
+                                                <div className="flex items-center gap-1">
+                                                    Factura{' '}
+                                                    {sortColumn ===
+                                                    'numero_factura' ? (
+                                                        sortDirection ===
+                                                        'asc' ? (
+                                                            <ChevronUp className="h-4 w-4" />
+                                                        ) : (
+                                                            <ChevronDown className="h-4 w-4" />
+                                                        )
+                                                    ) : (
+                                                        <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                    )}
+                                                </div>
                                             </th>
-                                            <th className="pb-3 text-left text-sm font-medium whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('cliente')}>
-                                                <div className="flex items-center gap-1">Cliente {sortColumn === 'cliente' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                            <th
+                                                className="group cursor-pointer pb-3 text-left text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground"
+                                                onClick={() =>
+                                                    handleSort('cliente')
+                                                }
+                                            >
+                                                <div className="flex items-center gap-1">
+                                                    Cliente{' '}
+                                                    {sortColumn ===
+                                                    'cliente' ? (
+                                                        sortDirection ===
+                                                        'asc' ? (
+                                                            <ChevronUp className="h-4 w-4" />
+                                                        ) : (
+                                                            <ChevronDown className="h-4 w-4" />
+                                                        )
+                                                    ) : (
+                                                        <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                    )}
+                                                </div>
                                             </th>
-                                            <th className="pb-3 text-left text-sm font-medium whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('fecha')}>
-                                                <div className="flex items-center gap-1">Fecha {sortColumn === 'fecha' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                            <th
+                                                className="group cursor-pointer pb-3 text-left text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground"
+                                                onClick={() =>
+                                                    handleSort('fecha')
+                                                }
+                                            >
+                                                <div className="flex items-center gap-1">
+                                                    Fecha{' '}
+                                                    {sortColumn === 'fecha' ? (
+                                                        sortDirection ===
+                                                        'asc' ? (
+                                                            <ChevronUp className="h-4 w-4" />
+                                                        ) : (
+                                                            <ChevronDown className="h-4 w-4" />
+                                                        )
+                                                    ) : (
+                                                        <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                    )}
+                                                </div>
                                             </th>
-                                            <th className="pb-3 text-left text-sm font-medium whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('total')}>
-                                                <div className="flex items-center gap-1">Total {sortColumn === 'total' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                            <th
+                                                className="group cursor-pointer pb-3 text-left text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground"
+                                                onClick={() =>
+                                                    handleSort('total')
+                                                }
+                                            >
+                                                <div className="flex items-center gap-1">
+                                                    Total{' '}
+                                                    {sortColumn === 'total' ? (
+                                                        sortDirection ===
+                                                        'asc' ? (
+                                                            <ChevronUp className="h-4 w-4" />
+                                                        ) : (
+                                                            <ChevronDown className="h-4 w-4" />
+                                                        )
+                                                    ) : (
+                                                        <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                    )}
+                                                </div>
                                             </th>
-                                            <th className="pb-3 text-left text-sm font-medium whitespace-nowrap cursor-pointer hover:text-foreground transition-colors group" onClick={() => handleSort('estado')}>
-                                                <div className="flex items-center gap-1">Estado {sortColumn === 'estado' ? (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />) : <ArrowUpDown className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />}</div>
+                                            <th
+                                                className="group cursor-pointer pb-3 text-left text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground"
+                                                onClick={() =>
+                                                    handleSort('estado')
+                                                }
+                                            >
+                                                <div className="flex items-center gap-1">
+                                                    Estado{' '}
+                                                    {sortColumn === 'estado' ? (
+                                                        sortDirection ===
+                                                        'asc' ? (
+                                                            <ChevronUp className="h-4 w-4" />
+                                                        ) : (
+                                                            <ChevronDown className="h-4 w-4" />
+                                                        )
+                                                    ) : (
+                                                        <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                    )}
+                                                </div>
                                             </th>
                                             <th className="pb-3 text-left text-sm font-medium whitespace-nowrap">
                                                 Acciones
@@ -1011,7 +1231,10 @@ export default function Index({
                                     </thead>
                                     <tbody>
                                         {ventasFiltradas.map((venta) => (
-                                            <tr key={venta.id} className="border-b">
+                                            <tr
+                                                key={venta.id}
+                                                className="border-b"
+                                            >
                                                 <td className="py-3 font-medium">
                                                     {venta.numero_factura}
                                                 </td>
@@ -1024,24 +1247,31 @@ export default function Index({
                                                                     ?.nombre
                                                             }
                                                         >
-                                                            {venta.cliente?.nombre}
+                                                            {
+                                                                venta.cliente
+                                                                    ?.nombre
+                                                            }
                                                         </span>
                                                         {venta.cliente
                                                             ?.telefono && (
-                                                                <WhatsAppButton
-                                                                    phone={
-                                                                        venta.cliente
-                                                                            .telefono
-                                                                    }
-                                                                />
-                                                            )}
+                                                            <WhatsAppButton
+                                                                phone={
+                                                                    venta
+                                                                        .cliente
+                                                                        .telefono
+                                                                }
+                                                            />
+                                                        )}
                                                     </div>
                                                 </td>
                                                 <td className="py-3">
                                                     {formatDateCLP(venta.fecha)}
                                                 </td>
                                                 <td className="py-3 font-medium">
-                                                    {formatCurrency(venta.total, venta.currency)}
+                                                    {formatCurrency(
+                                                        venta.total,
+                                                        venta.currency,
+                                                    )}
                                                 </td>
                                                 <td className="py-3">
                                                     <Select
@@ -1086,7 +1316,9 @@ export default function Index({
                                                             <Eye className="h-4 w-4" />
                                                         </Button>
                                                         <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
+                                                            <DropdownMenuTrigger
+                                                                asChild
+                                                            >
                                                                 <Button
                                                                     variant="outline"
                                                                     size="icon"
@@ -1096,7 +1328,10 @@ export default function Index({
                                                                     <FileText className="h-4 w-4" />
                                                                 </Button>
                                                             </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end" className="w-56">
+                                                            <DropdownMenuContent
+                                                                align="end"
+                                                                className="w-56"
+                                                            >
                                                                 <DropdownMenuItem
                                                                     onClick={() =>
                                                                         window.open(
@@ -1106,7 +1341,8 @@ export default function Index({
                                                                     }
                                                                 >
                                                                     <FileText className="mr-2 h-4 w-4" />
-                                                                    Formato SII (Formal)
+                                                                    Formato SII
+                                                                    (Formal)
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem
                                                                     onClick={() =>
@@ -1117,22 +1353,30 @@ export default function Index({
                                                                     }
                                                                 >
                                                                     <FileText className="mr-2 h-4 w-4" />
-                                                                    Formato Simple (Informal)
+                                                                    Formato
+                                                                    Simple
+                                                                    (Informal)
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
-                                                        {canEditVenta(venta) && (
+                                                        {canEditVenta(
+                                                            venta,
+                                                        ) && (
                                                             <Button
                                                                 variant="outline"
                                                                 size="icon"
                                                                 onClick={() =>
-                                                                    handleEdit(venta)
+                                                                    handleEdit(
+                                                                        venta,
+                                                                    )
                                                                 }
                                                             >
                                                                 <Pencil className="h-4 w-4" />
                                                             </Button>
                                                         )}
-                                                        {canDeleteVenta(venta) && (
+                                                        {canDeleteVenta(
+                                                            venta,
+                                                        ) && (
                                                             <Button
                                                                 variant="outline"
                                                                 size="icon"
@@ -1169,65 +1413,149 @@ export default function Index({
                                 {ventasFiltradas.length === 0 ? (
                                     <div className="col-span-full flex flex-col items-center py-12 text-center text-muted-foreground">
                                         <Wallet className="mb-4 h-12 w-12 opacity-20" />
-                                        <p className="font-medium">No hay ventas que coincidan con los filtros</p>
+                                        <p className="font-medium">
+                                            No hay ventas que coincidan con los
+                                            filtros
+                                        </p>
                                     </div>
-                                ) : ventasFiltradas.map((venta) => (
-                                    <Card key={venta.id} className="overflow-hidden">
-                                        <CardHeader className="pb-3">
-                                            <div className="flex items-center justify-between">
-                                                <Badge variant="outline" className="font-mono text-xs">{venta.numero_factura}</Badge>
-                                                {getEstadoBadge(venta.estado)}
-                                            </div>
-                                            <CardTitle className="text-sm font-bold">{venta.cliente?.nombre}</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="space-y-2 pt-0">
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="text-muted-foreground">Fecha</span>
-                                                <span>{formatDateCLP(venta.fecha)}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="text-muted-foreground">Total</span>
-                                                <span className="font-bold">{formatCurrency(venta.total, venta.currency)}</span>
-                                            </div>
-                                            {venta.almacen_nombre && (
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <span className="text-muted-foreground">Almacén</span>
-                                                    <span>{venta.almacen_nombre}</span>
+                                ) : (
+                                    ventasFiltradas.map((venta) => (
+                                        <Card
+                                            key={venta.id}
+                                            className="overflow-hidden"
+                                        >
+                                            <CardHeader className="pb-3">
+                                                <div className="flex items-center justify-between">
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="font-mono text-xs"
+                                                    >
+                                                        {venta.numero_factura}
+                                                    </Badge>
+                                                    {getEstadoBadge(
+                                                        venta.estado,
+                                                    )}
                                                 </div>
-                                            )}
-                                            <div className="flex justify-end gap-1 border-t pt-2">
-                                                <Button variant="outline" size="icon" onClick={() => handleVer(venta)} title="Ver detalles">
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="outline" size="icon" className="text-red-600 hover:bg-red-50 hover:text-red-700">
-                                                            <FileText className="h-4 w-4" />
+                                                <CardTitle className="text-sm font-bold">
+                                                    {venta.cliente?.nombre}
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="space-y-2 pt-0">
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-muted-foreground">
+                                                        Fecha
+                                                    </span>
+                                                    <span>
+                                                        {formatDateCLP(
+                                                            venta.fecha,
+                                                        )}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-muted-foreground">
+                                                        Total
+                                                    </span>
+                                                    <span className="font-bold">
+                                                        {formatCurrency(
+                                                            venta.total,
+                                                            venta.currency,
+                                                        )}
+                                                    </span>
+                                                </div>
+                                                {venta.almacen_nombre && (
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="text-muted-foreground">
+                                                            Almacén
+                                                        </span>
+                                                        <span>
+                                                            {
+                                                                venta.almacen_nombre
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                <div className="flex justify-end gap-1 border-t pt-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="icon"
+                                                        onClick={() =>
+                                                            handleVer(venta)
+                                                        }
+                                                        title="Ver detalles"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger
+                                                            asChild
+                                                        >
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                            >
+                                                                <FileText className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent
+                                                            align="end"
+                                                            className="w-56"
+                                                        >
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    window.open(
+                                                                        `/ventas/${venta.id}/download`,
+                                                                        '_blank',
+                                                                    )
+                                                                }
+                                                            >
+                                                                <FileText className="mr-2 h-4 w-4" />{' '}
+                                                                Formato SII
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    window.open(
+                                                                        `/ventas/${venta.id}/download-informal`,
+                                                                        '_blank',
+                                                                    )
+                                                                }
+                                                            >
+                                                                <FileText className="mr-2 h-4 w-4" />{' '}
+                                                                Formato Simple
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                    {canEditVenta(venta) && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="icon"
+                                                            onClick={() =>
+                                                                handleEdit(
+                                                                    venta,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
                                                         </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-56">
-                                                        <DropdownMenuItem onClick={() => window.open(`/ventas/${venta.id}/download`, '_blank')}>
-                                                            <FileText className="mr-2 h-4 w-4" /> Formato SII
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => window.open(`/ventas/${venta.id}/download-informal`, '_blank')}>
-                                                            <FileText className="mr-2 h-4 w-4" /> Formato Simple
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                                {canEditVenta(venta) && (
-                                                    <Button variant="outline" size="icon" onClick={() => handleEdit(venta)}>
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                                {canDeleteVenta(venta) && (
-                                                    <Button variant="outline" size="icon" onClick={() => handleDelete(venta.id)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
+                                                    )}
+                                                    {canDeleteVenta(venta) && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="icon"
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    venta.id,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))
+                                )}
                             </div>
                         )}
                         <Pagination
@@ -1349,11 +1677,12 @@ export default function Index({
                                                             '',
                                                         );
                                                     }}
-                                                    className={`flex-1 rounded-md px-3 py-2 text-center font-medium transition-colors ${data.cliente_tipo ===
+                                                    className={`flex-1 rounded-md px-3 py-2 text-center font-medium transition-colors ${
+                                                        data.cliente_tipo ===
                                                         'existente'
-                                                        ? 'bg-primary text-primary-foreground'
-                                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                                        }`}
+                                                            ? 'bg-primary text-primary-foreground'
+                                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                                    }`}
                                                 >
                                                     Cliente Existente
                                                 </button>
@@ -1369,11 +1698,12 @@ export default function Index({
                                                             '',
                                                         );
                                                     }}
-                                                    className={`flex-1 rounded-md px-3 py-2 text-center font-medium transition-colors ${data.cliente_tipo ===
+                                                    className={`flex-1 rounded-md px-3 py-2 text-center font-medium transition-colors ${
+                                                        data.cliente_tipo ===
                                                         'generico'
-                                                        ? 'bg-primary text-primary-foreground'
-                                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                                        }`}
+                                                            ? 'bg-primary text-primary-foreground'
+                                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                                    }`}
                                                 >
                                                     Cliente Genérico
                                                 </button>
@@ -1392,7 +1722,7 @@ export default function Index({
                                                         className={
                                                             data.cliente_tipo ===
                                                                 'existente' &&
-                                                                !data.cliente_id
+                                                            !data.cliente_id
                                                                 ? 'border-red-500'
                                                                 : ''
                                                         }
@@ -1403,14 +1733,18 @@ export default function Index({
                                                         <div className="sticky top-0 z-10 border-b bg-popover p-2">
                                                             <Input
                                                                 autoFocus
-                                                                value={clienteSearch}
+                                                                value={
+                                                                    clienteSearch
+                                                                }
                                                                 onChange={(e) =>
                                                                     setClienteSearch(
                                                                         e.target
                                                                             .value,
                                                                     )
                                                                 }
-                                                                onKeyDown={(e) =>
+                                                                onKeyDown={(
+                                                                    e,
+                                                                ) =>
                                                                     e.stopPropagation()
                                                                 }
                                                                 placeholder="Buscar cliente..."
@@ -1428,10 +1762,14 @@ export default function Index({
                                                                 )
                                                                 .map((c) => (
                                                                     <SelectItem
-                                                                        key={c.id}
+                                                                        key={
+                                                                            c.id
+                                                                        }
                                                                         value={c.id.toString()}
                                                                     >
-                                                                        {c.nombre}
+                                                                        {
+                                                                            c.nombre
+                                                                        }
                                                                     </SelectItem>
                                                                 ))}
                                                             {clientes.filter(
@@ -1442,11 +1780,11 @@ export default function Index({
                                                                             clienteSearch.toLowerCase(),
                                                                         ),
                                                             ).length === 0 && (
-                                                                    <p className="px-2 py-3 text-center text-xs text-muted-foreground">
-                                                                        Sin
-                                                                        resultados
-                                                                    </p>
-                                                                )}
+                                                                <p className="px-2 py-3 text-center text-xs text-muted-foreground">
+                                                                    Sin
+                                                                    resultados
+                                                                </p>
+                                                            )}
                                                         </div>
                                                     </SelectContent>
                                                 </Select>
@@ -1511,7 +1849,10 @@ export default function Index({
                                                             onBlur={(e) =>
                                                                 setData(
                                                                     'cliente_rut',
-                                                                    formatRut(e.target.value)
+                                                                    formatRut(
+                                                                        e.target
+                                                                            .value,
+                                                                    ),
                                                                 )
                                                             }
                                                             placeholder="12.345.678-9"
@@ -1599,9 +1940,9 @@ export default function Index({
                                                 setData(
                                                     'estado',
                                                     v as
-                                                    | 'pendiente'
-                                                    | 'pagada'
-                                                    | 'cancelada',
+                                                        | 'pendiente'
+                                                        | 'pagada'
+                                                        | 'cancelada',
                                                 )
                                             }
                                         >
@@ -1649,31 +1990,53 @@ export default function Index({
                                                 *
                                             </span>
                                         </Label>
-                                        <div className={`rounded-lg border p-3 space-y-2 ${data.almacen_ids.length === 0 ? 'border-red-500' : ''}`}>
+                                        <div
+                                            className={`space-y-2 rounded-lg border p-3 ${data.almacen_ids.length === 0 ? 'border-red-500' : ''}`}
+                                        >
                                             {almacenes.map((a) => {
-                                                const selected = data.almacen_ids.includes(a.id);
+                                                const selected =
+                                                    data.almacen_ids.includes(
+                                                        a.id,
+                                                    );
                                                 return (
                                                     <label
                                                         key={a.id}
-                                                        className={`flex items-center gap-3 rounded-md px-3 py-2 cursor-pointer transition-colors ${selected ? 'bg-primary/10 ring-1 ring-primary/30' : 'hover:bg-muted/50'}`}
+                                                        className={`flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 transition-colors ${selected ? 'bg-primary/10 ring-1 ring-primary/30' : 'hover:bg-muted/50'}`}
                                                     >
                                                         <input
                                                             type="checkbox"
                                                             checked={selected}
                                                             onChange={() => {
-                                                                const next = selected
-                                                                    ? data.almacen_ids.filter((id) => id !== a.id)
-                                                                    : [...data.almacen_ids, a.id];
-                                                                setData('almacen_ids', next);
+                                                                const next =
+                                                                    selected
+                                                                        ? data.almacen_ids.filter(
+                                                                              (
+                                                                                  id,
+                                                                              ) =>
+                                                                                  id !==
+                                                                                  a.id,
+                                                                          )
+                                                                        : [
+                                                                              ...data.almacen_ids,
+                                                                              a.id,
+                                                                          ];
+                                                                setData(
+                                                                    'almacen_ids',
+                                                                    next,
+                                                                );
                                                             }}
                                                             className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/30"
                                                         />
-                                                        <span className="text-sm font-medium">{a.nombre}</span>
+                                                        <span className="text-sm font-medium">
+                                                            {a.nombre}
+                                                        </span>
                                                     </label>
                                                 );
                                             })}
                                             {almacenes.length === 0 && (
-                                                <p className="text-sm text-muted-foreground">No hay almacenes activos</p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    No hay almacenes activos
+                                                </p>
                                             )}
                                         </div>
                                         {data.almacen_ids.length === 0 && (
@@ -1708,14 +2071,14 @@ export default function Index({
                                             <div className="space-y-3">
                                                 {data.productos.length ===
                                                     0 && (
-                                                        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-center">
-                                                            <p className="text-sm text-red-600">
-                                                                Agregue al menos un
-                                                                producto para
-                                                                continuar
-                                                            </p>
-                                                        </div>
-                                                    )}
+                                                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-center">
+                                                        <p className="text-sm text-red-600">
+                                                            Agregue al menos un
+                                                            producto para
+                                                            continuar
+                                                        </p>
+                                                    </div>
+                                                )}
                                                 {data.productos.map(
                                                     (producto, index) => {
                                                         const prod =
@@ -1730,17 +2093,17 @@ export default function Index({
                                                             !producto.producto_id ||
                                                             !producto.cantidad ||
                                                             producto.cantidad <=
-                                                            0;
+                                                                0;
                                                         const precio =
                                                             Math.round(
                                                                 producto.precio_unitario ||
-                                                                prod?.precio_venta ||
-                                                                0,
+                                                                    prod?.precio_venta ||
+                                                                    0,
                                                             );
                                                         const subtotalItem =
                                                             Math.round(
                                                                 producto.cantidad *
-                                                                precio,
+                                                                    precio,
                                                             );
 
                                                         return (
@@ -1766,24 +2129,30 @@ export default function Index({
                                                                             )
                                                                         }
                                                                         disabled={
-                                                                            data.almacen_ids.length === 0
+                                                                            data
+                                                                                .almacen_ids
+                                                                                .length ===
+                                                                            0
                                                                         }
                                                                     >
                                                                         <SelectTrigger>
                                                                             <SelectValue>
-                                                                                {data.almacen_ids.length === 0
+                                                                                {data
+                                                                                    .almacen_ids
+                                                                                    .length ===
+                                                                                0
                                                                                     ? 'Seleccione almacén(es) primero'
-                                                                                    : (productos.find(
-                                                                                        (
-                                                                                            p,
-                                                                                        ) =>
-                                                                                            p.id ===
-                                                                                            Number(
-                                                                                                producto.producto_id,
-                                                                                            ),
-                                                                                    )
-                                                                                        ?.nombre ||
-                                                                                        'Seleccionar')}
+                                                                                    : productos.find(
+                                                                                          (
+                                                                                              p,
+                                                                                          ) =>
+                                                                                              p.id ===
+                                                                                              Number(
+                                                                                                  producto.producto_id,
+                                                                                              ),
+                                                                                      )
+                                                                                          ?.nombre ||
+                                                                                      'Seleccionar'}
                                                                             </SelectValue>
                                                                         </SelectTrigger>
                                                                         <SelectContent>
@@ -1791,15 +2160,47 @@ export default function Index({
                                                                                 (
                                                                                     p,
                                                                                 ) => {
-                                                                                    const stockItems = p.inventarios
-                                                                                        ?.filter((inv) => data.almacen_ids.includes(inv.almacen_id)) || [];
-                                                                                    const totalStock = stockItems.reduce((sum, inv) => sum + (inv.cantidad || 0), 0);
-                                                                                    const stockStr = stockItems
-                                                                                        .map((inv) => {
-                                                                                            const alm = almacenes.find((a) => a.id === inv.almacen_id);
-                                                                                            return `${alm?.nombre || '?'}: ${Math.round(inv.cantidad || 0)}`;
-                                                                                        })
-                                                                                        .join(' | ');
+                                                                                    const stockItems =
+                                                                                        p.inventarios?.filter(
+                                                                                            (
+                                                                                                inv,
+                                                                                            ) =>
+                                                                                                data.almacen_ids.includes(
+                                                                                                    inv.almacen_id,
+                                                                                                ),
+                                                                                        ) ||
+                                                                                        [];
+                                                                                    const totalStock =
+                                                                                        stockItems.reduce(
+                                                                                            (
+                                                                                                sum,
+                                                                                                inv,
+                                                                                            ) =>
+                                                                                                sum +
+                                                                                                (inv.cantidad ||
+                                                                                                    0),
+                                                                                            0,
+                                                                                        );
+                                                                                    const stockStr =
+                                                                                        stockItems
+                                                                                            .map(
+                                                                                                (
+                                                                                                    inv,
+                                                                                                ) => {
+                                                                                                    const alm =
+                                                                                                        almacenes.find(
+                                                                                                            (
+                                                                                                                a,
+                                                                                                            ) =>
+                                                                                                                a.id ===
+                                                                                                                inv.almacen_id,
+                                                                                                        );
+                                                                                                    return `${alm?.nombre || '?'}: ${Math.round(inv.cantidad || 0)}`;
+                                                                                                },
+                                                                                            )
+                                                                                            .join(
+                                                                                                ' | ',
+                                                                                            );
                                                                                     return (
                                                                                         <SelectItem
                                                                                             key={
@@ -1809,19 +2210,34 @@ export default function Index({
                                                                                         >
                                                                                             <span className="flex flex-col gap-0.5">
                                                                                                 <span>
-                                                                                                    {p.nombre}{' '}
+                                                                                                    {
+                                                                                                        p.nombre
+                                                                                                    }{' '}
                                                                                                     <span className="text-muted-foreground">
-                                                                                                        ({p.codigo})
+                                                                                                        (
+                                                                                                        {
+                                                                                                            p.codigo
+                                                                                                        }
+
+                                                                                                        )
                                                                                                     </span>
-                                                                                                    {totalStock <= 0 && (
+                                                                                                    {totalStock <=
+                                                                                                        0 && (
                                                                                                         <span className="ml-1 text-[10px] font-bold text-red-500">
-                                                                                                            {totalStock < 0 ? 'SIN STOCK' : 'SIN STOCK'}
+                                                                                                            {totalStock <
+                                                                                                            0
+                                                                                                                ? 'SIN STOCK'
+                                                                                                                : 'SIN STOCK'}
                                                                                                         </span>
                                                                                                     )}
                                                                                                 </span>
                                                                                                 {stockStr && (
-                                                                                                    <span className={`text-[10px] font-mono ${totalStock < 0 ? 'text-red-500' : totalStock === 0 ? 'text-orange-500' : 'text-muted-foreground'}`}>
-                                                                                                        {stockStr}
+                                                                                                    <span
+                                                                                                        className={`font-mono text-[10px] ${totalStock < 0 ? 'text-red-500' : totalStock === 0 ? 'text-orange-500' : 'text-muted-foreground'}`}
+                                                                                                    >
+                                                                                                        {
+                                                                                                            stockStr
+                                                                                                        }
                                                                                                     </span>
                                                                                                 )}
                                                                                             </span>
@@ -1829,11 +2245,22 @@ export default function Index({
                                                                                     );
                                                                                 },
                                                                             )}
-                                                                            {productosFiltrados.length === 0 && data.almacen_ids.length > 0 && (
-                                                                                <div className="px-3 py-4 text-center text-sm text-muted-foreground">
-                                                                                    No hay productos en los almacenes seleccionados
-                                                                                </div>
-                                                                            )}
+                                                                            {productosFiltrados.length ===
+                                                                                0 &&
+                                                                                data
+                                                                                    .almacen_ids
+                                                                                    .length >
+                                                                                    0 && (
+                                                                                    <div className="px-3 py-4 text-center text-sm text-muted-foreground">
+                                                                                        No
+                                                                                        hay
+                                                                                        productos
+                                                                                        en
+                                                                                        los
+                                                                                        almacenes
+                                                                                        seleccionados
+                                                                                    </div>
+                                                                                )}
                                                                         </SelectContent>
                                                                     </Select>
                                                                 </div>
@@ -1849,16 +2276,32 @@ export default function Index({
                                                                                 step="1"
                                                                                 value={
                                                                                     producto.modoGramos
-                                                                                        ? Math.round((producto.cantidad || 0) * 1000)
-                                                                                        : (producto.cantidad || '')
+                                                                                        ? Math.round(
+                                                                                              (producto.cantidad ||
+                                                                                                  0) *
+                                                                                                  1000,
+                                                                                          )
+                                                                                        : producto.cantidad ||
+                                                                                          ''
                                                                                 }
                                                                                 onChange={(
                                                                                     e,
                                                                                 ) => {
-                                                                                    const raw = parseInt(e.target.value, 10) || 0;
-                                                                                    const val = producto.modoGramos
-                                                                                        ? Math.round(raw) / 1000
-                                                                                        : raw;
+                                                                                    const raw =
+                                                                                        parseInt(
+                                                                                            e
+                                                                                                .target
+                                                                                                .value,
+                                                                                            10,
+                                                                                        ) ||
+                                                                                        0;
+                                                                                    const val =
+                                                                                        producto.modoGramos
+                                                                                            ? Math.round(
+                                                                                                  raw,
+                                                                                              ) /
+                                                                                              1000
+                                                                                            : raw;
                                                                                     updateProducto(
                                                                                         index,
                                                                                         'cantidad',
@@ -1866,38 +2309,123 @@ export default function Index({
                                                                                     );
                                                                                 }}
                                                                             />
-                                                                            <span className="text-[9px] font-bold text-muted-foreground whitespace-nowrap">
+                                                                            <span className="text-[9px] font-bold whitespace-nowrap text-muted-foreground">
                                                                                 {producto.modoGramos
-                                                                                    ? ((prod as any)?.unidad_medida === 'lt' ? 'ml' : 'g')
-                                                                                    : ((prod as any)?.unidad_medida === 'kg' ? 'kg' : (prod as any)?.unidad_medida === 'lt' ? 'L' : 'u')}
+                                                                                    ? (
+                                                                                          prod as any
+                                                                                      )
+                                                                                          ?.unidad_medida ===
+                                                                                      'lt'
+                                                                                        ? 'ml'
+                                                                                        : 'g'
+                                                                                    : (
+                                                                                            prod as any
+                                                                                        )
+                                                                                            ?.unidad_medida ===
+                                                                                        'kg'
+                                                                                      ? 'kg'
+                                                                                      : (
+                                                                                              prod as any
+                                                                                          )
+                                                                                              ?.unidad_medida ===
+                                                                                          'lt'
+                                                                                        ? 'L'
+                                                                                        : 'u'}
                                                                             </span>
-                                                                            {prod && ((prod as any)?.unidad_medida === 'kg' || (prod as any)?.unidad_medida === 'lt') && (
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() => updateProducto(index, 'modoGramos', !producto.modoGramos)}
-                                                                                    className="h-6 px-1.5 rounded bg-muted text-[9px] font-bold hover:bg-muted/80 transition-colors"
-                                                                                    title={producto.modoGramos ? 'Cambiar a unidad completa' : 'Cambiar a gramos/ml'}
-                                                                                >
-                                                                                    {producto.modoGramos
-                                                                                        ? ((prod as any)?.unidad_medida === 'lt' ? 'L' : 'kg')
-                                                                                        : ((prod as any)?.unidad_medida === 'lt' ? 'ml' : 'g')}
-                                                                                </button>
-                                                                            )}
+                                                                            {prod &&
+                                                                                ((
+                                                                                    prod as any
+                                                                                )
+                                                                                    ?.unidad_medida ===
+                                                                                    'kg' ||
+                                                                                    (
+                                                                                        prod as any
+                                                                                    )
+                                                                                        ?.unidad_medida ===
+                                                                                        'lt') && (
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() =>
+                                                                                            updateProducto(
+                                                                                                index,
+                                                                                                'modoGramos',
+                                                                                                !producto.modoGramos,
+                                                                                            )
+                                                                                        }
+                                                                                        className="h-6 rounded bg-muted px-1.5 text-[9px] font-bold transition-colors hover:bg-muted/80"
+                                                                                        title={
+                                                                                            producto.modoGramos
+                                                                                                ? 'Cambiar a unidad completa'
+                                                                                                : 'Cambiar a gramos/ml'
+                                                                                        }
+                                                                                    >
+                                                                                        {producto.modoGramos
+                                                                                            ? (
+                                                                                                  prod as any
+                                                                                              )
+                                                                                                  ?.unidad_medida ===
+                                                                                              'lt'
+                                                                                                ? 'L'
+                                                                                                : 'kg'
+                                                                                            : (
+                                                                                                    prod as any
+                                                                                                )
+                                                                                                    ?.unidad_medida ===
+                                                                                                'lt'
+                                                                                              ? 'ml'
+                                                                                              : 'g'}
+                                                                                    </button>
+                                                                                )}
                                                                         </div>
-                                                                        {prod && (() => {
-                                                                            const stockTotal = prod.inventarios
-                                                                                ?.filter((inv) => data.almacen_ids.includes(inv.almacen_id))
-                                                                                .reduce((sum, inv) => sum + (inv.cantidad || 0), 0) ?? 0;
-                                                                            const solicitado = producto.cantidad || 0;
-                                                                            const sinStock = stockTotal <= 0;
-                                                                            const insuficiente = solicitado > stockTotal && stockTotal > 0;
-                                                                            if (!sinStock && !insuficiente) return null;
-                                                                            return (
-                                                                                <span className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${sinStock ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'}`}>
-                                                                                    {sinStock ? 'Sin stock' : `Stock: ${Math.round(stockTotal)} (necesita ${solicitado})`}
-                                                                                </span>
-                                                                            );
-                                                                        })()}
+                                                                        {prod &&
+                                                                            (() => {
+                                                                                const stockTotal =
+                                                                                    prod.inventarios
+                                                                                        ?.filter(
+                                                                                            (
+                                                                                                inv,
+                                                                                            ) =>
+                                                                                                data.almacen_ids.includes(
+                                                                                                    inv.almacen_id,
+                                                                                                ),
+                                                                                        )
+                                                                                        .reduce(
+                                                                                            (
+                                                                                                sum,
+                                                                                                inv,
+                                                                                            ) =>
+                                                                                                sum +
+                                                                                                (inv.cantidad ||
+                                                                                                    0),
+                                                                                            0,
+                                                                                        ) ??
+                                                                                    0;
+                                                                                const solicitado =
+                                                                                    producto.cantidad ||
+                                                                                    0;
+                                                                                const sinStock =
+                                                                                    stockTotal <=
+                                                                                    0;
+                                                                                const insuficiente =
+                                                                                    solicitado >
+                                                                                        stockTotal &&
+                                                                                    stockTotal >
+                                                                                        0;
+                                                                                if (
+                                                                                    !sinStock &&
+                                                                                    !insuficiente
+                                                                                )
+                                                                                    return null;
+                                                                                return (
+                                                                                    <span
+                                                                                        className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${sinStock ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'}`}
+                                                                                    >
+                                                                                        {sinStock
+                                                                                            ? 'Sin stock'
+                                                                                            : `Stock: ${Math.round(stockTotal)} (necesita ${solicitado})`}
+                                                                                    </span>
+                                                                                );
+                                                                            })()}
                                                                     </div>
                                                                     <div className="md:col-span-4">
                                                                         <Label className="md:text-xs">
@@ -1921,7 +2449,7 @@ export default function Index({
                                                                                             .target
                                                                                             .value,
                                                                                     ) ||
-                                                                                    0,
+                                                                                        0,
                                                                                 )
                                                                             }
                                                                         />
@@ -1946,12 +2474,12 @@ export default function Index({
                                                                                     prod as any
                                                                                 )
                                                                                     .unidad_medida !==
-                                                                                'unidad' ||
+                                                                                    'unidad' ||
                                                                                 (
                                                                                     prod as any
                                                                                 )
                                                                                     .peso_base >
-                                                                                0) && (
+                                                                                    0) && (
                                                                                 <div className="mt-1 flex justify-between px-1 text-[10px] font-bold text-blue-600">
                                                                                     <span>
                                                                                         Total{' '}
@@ -1959,7 +2487,7 @@ export default function Index({
                                                                                             prod as any
                                                                                         )
                                                                                             .unidad_medida ===
-                                                                                            'lt'
+                                                                                        'lt'
                                                                                             ? 'Litros'
                                                                                             : 'Kg'}
 
@@ -1985,9 +2513,9 @@ export default function Index({
                                                                                                 0;
                                                                                             const total =
                                                                                                 producto.cantidad *
-                                                                                                contenido +
+                                                                                                    contenido +
                                                                                                 producto.cantidad *
-                                                                                                tara;
+                                                                                                    tara;
                                                                                             return total.toFixed(
                                                                                                 2,
                                                                                             );
@@ -1996,36 +2524,67 @@ export default function Index({
                                                                                             prod as any
                                                                                         )
                                                                                             .unidad_medida ===
-                                                                                            'lt'
+                                                                                        'lt'
                                                                                             ? 'L'
                                                                                             : 'Kg'}
                                                                                     </span>
                                                                                 </div>
                                                                             )}
                                                                     </div>
-                                                                    {(prod as any)?.envase_retornable == true && (
+                                                                    {(
+                                                                        prod as any
+                                                                    )
+                                                                        ?.envase_retornable ==
+                                                                        true && (
                                                                         <div className="mt-2 flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50 p-2 md:col-span-12">
-                                                                            <Label className="text-xs font-bold text-amber-800 whitespace-nowrap">
-                                                                                Envases retornados
+                                                                            <Label className="text-xs font-bold whitespace-nowrap text-amber-800">
+                                                                                Envases
+                                                                                retornados
                                                                             </Label>
                                                                             <div className="flex items-center gap-2">
                                                                                 <input
                                                                                     type="number"
-                                                                                    min={0}
-                                                                                    max={producto.cantidad ?? 0}
+                                                                                    min={
+                                                                                        0
+                                                                                    }
+                                                                                    max={
+                                                                                        producto.cantidad ??
+                                                                                        0
+                                                                                    }
                                                                                     className="h-8 w-20 rounded-md border border-amber-300 bg-white px-2 text-sm text-amber-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                                                                     placeholder="0"
-                                                                                    value={(producto as any).cantidad_retornada ?? ''}
-                                                                                    onChange={(e) =>
+                                                                                    value={
+                                                                                        (
+                                                                                            producto as any
+                                                                                        )
+                                                                                            .cantidad_retornada ??
+                                                                                        ''
+                                                                                    }
+                                                                                    onChange={(
+                                                                                        e,
+                                                                                    ) =>
                                                                                         updateProducto(
                                                                                             index,
                                                                                             'cantidad_retornada',
-                                                                                            (e.target.value === '' ? null as any : Number(e.target.value)) as any
+                                                                                            (e
+                                                                                                .target
+                                                                                                .value ===
+                                                                                            ''
+                                                                                                ? (null as any)
+                                                                                                : Number(
+                                                                                                      e
+                                                                                                          .target
+                                                                                                          .value,
+                                                                                                  )) as any,
                                                                                         )
                                                                                     }
                                                                                 />
                                                                                 <span className="text-xs text-amber-700">
-                                                                                    de {producto.cantidad} vendidos
+                                                                                    de{' '}
+                                                                                    {
+                                                                                        producto.cantidad
+                                                                                    }{' '}
+                                                                                    vendidos
                                                                                 </span>
                                                                             </div>
                                                                         </div>
@@ -2096,8 +2655,8 @@ export default function Index({
                                                         setData(
                                                             'tipo_descuento',
                                                             v as
-                                                            | 'monto'
-                                                            | 'porcentaje',
+                                                                | 'monto'
+                                                                | 'porcentaje',
                                                         )
                                                     }
                                                 >
@@ -2128,7 +2687,7 @@ export default function Index({
                                                     className="flex-1"
                                                     placeholder={
                                                         data.tipo_descuento ===
-                                                            'monto'
+                                                        'monto'
                                                             ? 'Ej: 5000'
                                                             : 'Ej: 10'
                                                     }
@@ -2151,7 +2710,7 @@ export default function Index({
                                                 <span>
                                                     Descuento (
                                                     {data.tipo_descuento ===
-                                                        'porcentaje'
+                                                    'porcentaje'
                                                         ? `${data.valor_descuento}%`
                                                         : 'Monto'}
                                                     ):
@@ -2292,12 +2851,12 @@ export default function Index({
                                                 val: ventaSeleccionada.estado.toUpperCase(),
                                                 color:
                                                     ventaSeleccionada.estado ===
-                                                        'pagada'
+                                                    'pagada'
                                                         ? 'border-green-200 bg-green-50 text-green-800'
                                                         : ventaSeleccionada.estado ===
                                                             'cancelada'
-                                                            ? 'border-red-200 bg-red-50 text-red-800'
-                                                            : 'border-amber-200 bg-amber-50 text-amber-800',
+                                                          ? 'border-red-200 bg-red-50 text-red-800'
+                                                          : 'border-amber-200 bg-amber-50 text-amber-800',
                                             },
                                             {
                                                 label: 'Total',
@@ -2440,18 +2999,18 @@ export default function Index({
                                                     </div>
                                                     {ventaSeleccionada.monto_descuento >
                                                         0 && (
-                                                            <div className="flex items-center justify-between border-b border-white/10 pb-2 text-xs md:pb-3 md:text-sm">
-                                                                <span className="font-medium text-red-300">
-                                                                    Descuento
-                                                                </span>
-                                                                <span className="font-mono text-red-100">
-                                                                    -
-                                                                    {formatCurrency(
-                                                                        ventaSeleccionada.monto_descuento,
-                                                                    )}
-                                                                </span>
-                                                            </div>
-                                                        )}
+                                                        <div className="flex items-center justify-between border-b border-white/10 pb-2 text-xs md:pb-3 md:text-sm">
+                                                            <span className="font-medium text-red-300">
+                                                                Descuento
+                                                            </span>
+                                                            <span className="font-mono text-red-100">
+                                                                -
+                                                                {formatCurrency(
+                                                                    ventaSeleccionada.monto_descuento,
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                     <div className="py-2 text-center md:py-4">
                                                         <span className="text-[9px] font-black tracking-tighter text-white/40 uppercase md:text-[10px]">
                                                             Monto Total
@@ -2544,22 +3103,36 @@ export default function Index({
                                                                 Nombre
                                                             </p>
                                                             <p className="truncate text-xs font-bold text-gray-700 md:text-sm">
-                                                                {ventaSeleccionada.cliente?.nombre}
+                                                                {
+                                                                    ventaSeleccionada
+                                                                        .cliente
+                                                                        ?.nombre
+                                                                }
                                                             </p>
                                                         </div>
 
                                                         {/* Botón directo de WhatsApp con icono garantizado */}
-                                                        {ventaSeleccionada.cliente?.telefono && (
+                                                        {ventaSeleccionada
+                                                            .cliente
+                                                            ?.telefono && (
                                                             <Button
                                                                 type="button"
                                                                 size="icon"
-                                                                className="h-10 w-10 shrink-0 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                                                                className="h-10 w-10 shrink-0 rounded-lg bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
                                                                 onClick={() => {
-                                                                    const phone = ventaSeleccionada.cliente?.telefono?.replace(/\D/g, "");
-                                                                    const mensaje = encodeURIComponent(
-                                                                        `Hola ${ventaSeleccionada.cliente?.nombre || ""}, te contactamos respecto a tu pedido.`
+                                                                    const phone =
+                                                                        ventaSeleccionada.cliente?.telefono?.replace(
+                                                                            /\D/g,
+                                                                            '',
+                                                                        );
+                                                                    const mensaje =
+                                                                        encodeURIComponent(
+                                                                            `Hola ${ventaSeleccionada.cliente?.nombre || ''}, te contactamos respecto a tu pedido.`,
+                                                                        );
+                                                                    window.open(
+                                                                        `https://wa.me/${phone}?text=${mensaje}`,
+                                                                        '_blank',
                                                                     );
-                                                                    window.open(`https://wa.me/${phone}?text=${mensaje}`, "_blank");
                                                                 }}
                                                                 title="Enviar mensaje por WhatsApp"
                                                             >
@@ -2584,7 +3157,10 @@ export default function Index({
                                                 Descargar PDF
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-56">
+                                        <DropdownMenuContent
+                                            align="end"
+                                            className="w-56"
+                                        >
                                             <DropdownMenuItem
                                                 onClick={() =>
                                                     ventaSeleccionada &&

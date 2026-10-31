@@ -1,5 +1,16 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { CheckCircle2, PlayCircle, Star, Users, Clock, Globe, Award, Sparkles, ChevronRight, BookOpen } from 'lucide-react';
+import {
+    CheckCircle2,
+    PlayCircle,
+    Star,
+    Users,
+    Clock,
+    Globe,
+    Award,
+    Sparkles,
+    ChevronRight,
+    BookOpen,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 
@@ -29,7 +40,13 @@ interface Course {
     modules: Module[];
 }
 
-export default function Show({ course, isEnrolled }: { course: Course, isEnrolled: boolean }) {
+export default function Show({
+    course,
+    isEnrolled,
+}: {
+    course: Course;
+    isEnrolled: boolean;
+}) {
     const { post, processing } = useForm();
 
     const handleEnroll = () => {
@@ -37,105 +54,139 @@ export default function Show({ course, isEnrolled }: { course: Course, isEnrolle
     };
 
     return (
-        <AppLayout breadcrumbs={[
-            { title: 'Catálogo', href: '/cursos' },
-            { title: course.title, href: '#' }
-        ]}>
+        <AppLayout
+            breadcrumbs={[
+                { title: 'Catálogo', href: '/cursos' },
+                { title: course.title, href: '#' },
+            ]}
+        >
             <Head title={`${course.title} | LMS`} />
 
             {/* Hero Section */}
-            <div className="bg-slate-900 border-b border-slate-800 py-12 lg:py-20 relative overflow-hidden">
-                <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:32px_32px]" />
-                <div className="absolute -top-24 -left-20 w-96 h-96 bg-blue-600/20 rounded-full blur-[120px]" />
-                <div className="absolute -bottom-24 -right-20 w-96 h-96 bg-indigo-600/20 rounded-full blur-[120px]" />
-                
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="relative overflow-hidden border-b border-slate-800 bg-slate-900 py-12 lg:py-20">
+                <div className="bg-grid-white/[0.02] absolute inset-0 bg-[size:32px_32px]" />
+                <div className="absolute -top-24 -left-20 h-96 w-96 rounded-full bg-blue-600/20 blur-[120px]" />
+                <div className="absolute -right-20 -bottom-24 h-96 w-96 rounded-full bg-indigo-600/20 blur-[120px]" />
+
+                <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
                         <div className="space-y-6">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs font-bold tracking-wider text-blue-400 uppercase">
                                 <Sparkles className="h-3 w-3" />
                                 Curso Destacado
                             </div>
-                            <h1 className="text-4xl lg:text-5xl font-extrabold text-white leading-tight">
+                            <h1 className="text-4xl leading-tight font-extrabold text-white lg:text-5xl">
                                 {course.title}
                             </h1>
-                            <p className="text-xl text-slate-400 leading-relaxed max-w-xl">
+                            <p className="max-w-xl text-xl leading-relaxed text-slate-400">
                                 {course.description}
                             </p>
-                            
+
                             <div className="flex flex-wrap items-center gap-6 text-slate-300">
                                 <div className="flex items-center gap-2">
-                                    <div className="h-10 w-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-blue-400">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 bg-slate-800 font-bold text-blue-400">
                                         {course.instructor.name[0]}
                                     </div>
                                     <div>
-                                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Instructor</p>
-                                        <p className="text-sm font-medium">{course.instructor.name}</p>
+                                        <p className="text-[10px] font-bold tracking-tighter text-slate-500 uppercase">
+                                            Instructor
+                                        </p>
+                                        <p className="text-sm font-medium">
+                                            {course.instructor.name}
+                                        </p>
                                     </div>
                                 </div>
-                                <div className="h-8 w-px bg-slate-800 hidden sm:block" />
+                                <div className="hidden h-8 w-px bg-slate-800 sm:block" />
                                 <div className="flex items-center gap-4 text-sm">
-                                    <span className="flex items-center gap-1"><Star className="h-4 w-4 text-yellow-500 fill-yellow-500" /> 4.9 (2k+)</span>
-                                    <span className="flex items-center gap-1"><Users className="h-4 w-4 text-slate-500" /> 15k alumnos</span>
+                                    <span className="flex items-center gap-1">
+                                        <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />{' '}
+                                        4.9 (2k+)
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                        <Users className="h-4 w-4 text-slate-500" />{' '}
+                                        15k alumnos
+                                    </span>
                                 </div>
                             </div>
 
-                            <div className="pt-4 flex flex-col sm:flex-row gap-4">
+                            <div className="flex flex-col gap-4 pt-4 sm:flex-row">
                                 {isEnrolled ? (
-                                    <Button size="lg" className="h-14 px-8 text-lg font-bold shadow-xl shadow-blue-500/20" asChild>
+                                    <Button
+                                        size="lg"
+                                        className="h-14 px-8 text-lg font-bold shadow-xl shadow-blue-500/20"
+                                        asChild
+                                    >
                                         <Link href={`/mis-cursos`}>
                                             Ir al Curso
                                             <ChevronRight className="ml-2 h-5 w-5" />
                                         </Link>
                                     </Button>
                                 ) : (
-                                    <Button 
-                                        size="lg" 
+                                    <Button
+                                        size="lg"
                                         className="h-14 px-8 text-lg font-bold shadow-xl shadow-blue-500/20"
                                         onClick={handleEnroll}
                                         disabled={processing}
                                     >
-                                        {course.price === '0.00' ? 'Inscribirse Gratis' : `Comprar por $${course.price}`}
+                                        {course.price === '0.00'
+                                            ? 'Inscribirse Gratis'
+                                            : `Comprar por $${course.price}`}
                                         <ChevronRight className="ml-2 h-5 w-5" />
                                     </Button>
                                 )}
-                                <Button variant="outline" size="lg" className="h-14 bg-transparent text-white border-slate-700 hover:bg-slate-800 transition-colors">
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    className="h-14 border-slate-700 bg-transparent text-white transition-colors hover:bg-slate-800"
+                                >
                                     Ver Temario
                                 </Button>
                             </div>
                         </div>
 
-                        <div className="hidden lg:block relative">
-                            <div className="aspect-video rounded-3xl overflow-hidden border border-slate-700 shadow-2xl relative group bg-slate-900">
+                        <div className="relative hidden lg:block">
+                            <div className="group relative aspect-video overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl">
                                 {course.promo_video_url ? (
-                                    <iframe 
-                                        src={course.promo_video_url.replace('watch?v=', 'embed/').split('&')[0]} 
-                                        className="w-full h-full"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    <iframe
+                                        src={
+                                            course.promo_video_url
+                                                .replace('watch?v=', 'embed/')
+                                                .split('&')[0]
+                                        }
+                                        className="h-full w-full"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         allowFullScreen
                                     ></iframe>
                                 ) : course.cover_image ? (
-                                    <img src={`/storage/${course.cover_image}`} alt={course.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                    <img
+                                        src={`/storage/${course.cover_image}`}
+                                        alt={course.title}
+                                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                    />
                                 ) : (
-                                    <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                                    <div className="flex h-full w-full items-center justify-center bg-slate-800">
                                         <PlayCircle className="h-20 w-20 text-slate-700" />
                                     </div>
                                 )}
                                 {!course.promo_video_url && (
-                                    <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center shadow-xl">
+                                    <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40 opacity-0 transition-opacity group-hover:opacity-100">
+                                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-xl">
                                             <PlayCircle className="h-8 w-8 text-blue-600" />
                                         </div>
                                     </div>
                                 )}
                             </div>
-                            
+
                             {/* Floating Stats */}
-                            <div className="absolute -bottom-6 -left-6 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
+                            <div className="absolute -bottom-6 -left-6 flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-xl dark:border-slate-800 dark:bg-slate-900">
                                 <Award className="h-8 w-8 text-yellow-500" />
                                 <div>
-                                    <p className="text-xs font-bold text-slate-900 dark:text-white uppercase">Certificado</p>
-                                    <p className="text-[10px] text-slate-500">Al completar el curso</p>
+                                    <p className="text-xs font-bold text-slate-900 uppercase dark:text-white">
+                                        Certificado
+                                    </p>
+                                    <p className="text-[10px] text-slate-500">
+                                        Al completar el curso
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -145,25 +196,40 @@ export default function Show({ course, isEnrolled }: { course: Course, isEnrolle
 
             {/* Content Section */}
             <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                    <div className="lg:col-span-2 space-y-12">
+                <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
+                    <div className="space-y-12 lg:col-span-2">
                         {/* What you'll learn */}
-                        <section className="bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-3xl p-8">
-                            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                        <section className="rounded-3xl border border-slate-100 bg-white p-8 dark:border-slate-800 dark:bg-slate-900/50">
+                            <h2 className="mb-6 flex items-center gap-2 text-2xl font-bold">
                                 <CheckCircle2 className="h-6 w-6 text-green-500" />
                                 Lo que aprenderás
                             </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {Array.isArray(course.features) && course.features.some(f => f && String(f).trim() !== '') ? (
-                                    course.features.filter(f => f && String(f).trim() !== '').map((feature, i) => (
-                                        <div key={i} className="flex items-start gap-3">
-                                            <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
-                                            <span className="text-slate-600 dark:text-slate-400 text-sm italic line-clamp-2">{String(feature)}</span>
-                                        </div>
-                                    ))
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                {Array.isArray(course.features) &&
+                                course.features.some(
+                                    (f) => f && String(f).trim() !== '',
+                                ) ? (
+                                    course.features
+                                        .filter(
+                                            (f) => f && String(f).trim() !== '',
+                                        )
+                                        .map((feature, i) => (
+                                            <div
+                                                key={i}
+                                                className="flex items-start gap-3"
+                                            >
+                                                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-500" />
+                                                <span className="line-clamp-2 text-sm text-slate-600 italic dark:text-slate-400">
+                                                    {String(feature)}
+                                                </span>
+                                            </div>
+                                        ))
                                 ) : (
                                     <div className="col-span-full">
-                                        <p className="text-slate-500 text-sm italic">El instructor aún no ha definido los puntos clave de este curso.</p>
+                                        <p className="text-sm text-slate-500 italic">
+                                            El instructor aún no ha definido los
+                                            puntos clave de este curso.
+                                        </p>
                                     </div>
                                 )}
                             </div>
@@ -171,46 +237,65 @@ export default function Show({ course, isEnrolled }: { course: Course, isEnrolle
 
                         {/* Curriculum */}
                         <section>
-                            <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
+                            <h2 className="mb-8 flex items-center gap-3 text-3xl font-bold">
                                 <BookOpen className="h-8 w-8 text-blue-500" />
                                 Temario del Curso
                             </h2>
                             <div className="space-y-4">
                                 {course.modules.length > 0 ? (
                                     course.modules.map((module, mIdx) => (
-                                        <div key={module.id} className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900/50">
-                                            <div className="p-5 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
+                                        <div
+                                            key={module.id}
+                                            className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/50"
+                                        >
+                                            <div className="flex items-center justify-between bg-slate-50 p-5 dark:bg-slate-800/50">
                                                 <div className="flex items-center gap-4">
-                                                    <span className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm">
+                                                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-sm font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
                                                         {mIdx + 1}
                                                     </span>
                                                     <div>
-                                                        <h3 className="font-bold text-slate-900 dark:text-white">{module.title}</h3>
-                                                        <p className="text-xs text-slate-500 line-clamp-1">{module.description || 'Sin descripción'}</p>
+                                                        <h3 className="font-bold text-slate-900 dark:text-white">
+                                                            {module.title}
+                                                        </h3>
+                                                        <p className="line-clamp-1 text-xs text-slate-500">
+                                                            {module.description ||
+                                                                'Sin descripción'}
+                                                        </p>
                                                     </div>
                                                 </div>
                                                 <span className="text-xs font-medium text-slate-500">
-                                                    {module.lessons.length} lecciones
+                                                    {module.lessons.length}{' '}
+                                                    lecciones
                                                 </span>
                                             </div>
                                             <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                                                {module.lessons.map((lesson) => (
-                                                    <div key={lesson.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group">
-                                                        <div className="flex items-center gap-3 pl-12">
-                                                            <PlayCircle className="h-4 w-4 text-slate-300 group-hover:text-blue-500 transition-colors" />
-                                                            <span className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
-                                                                {lesson.title}
-                                                            </span>
+                                                {module.lessons.map(
+                                                    (lesson) => (
+                                                        <div
+                                                            key={lesson.id}
+                                                            className="group flex items-center justify-between p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
+                                                        >
+                                                            <div className="flex items-center gap-3 pl-12">
+                                                                <PlayCircle className="h-4 w-4 text-slate-300 transition-colors group-hover:text-blue-500" />
+                                                                <span className="text-sm font-medium text-slate-600 transition-colors group-hover:text-slate-900 dark:text-slate-400 dark:group-hover:text-white">
+                                                                    {
+                                                                        lesson.title
+                                                                    }
+                                                                </span>
+                                                            </div>
+                                                            <Clock className="h-4 w-4 text-slate-300" />
                                                         </div>
-                                                        <Clock className="h-4 w-4 text-slate-300" />
-                                                    </div>
-                                                ))}
+                                                    ),
+                                                )}
                                             </div>
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="text-center py-12 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
-                                        <p className="text-slate-500">El instructor aún no ha publicado el temario detallado.</p>
+                                    <div className="rounded-3xl border-2 border-dashed border-slate-200 py-12 text-center dark:border-slate-800">
+                                        <p className="text-slate-500">
+                                            El instructor aún no ha publicado el
+                                            temario detallado.
+                                        </p>
                                     </div>
                                 )}
                             </div>
@@ -219,8 +304,10 @@ export default function Show({ course, isEnrolled }: { course: Course, isEnrolle
 
                     <div className="space-y-8">
                         {/* Course Stats Card */}
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm sticky top-8">
-                            <h4 className="font-bold text-slate-900 dark:text-white mb-6 uppercase text-xs tracking-widest text-center">Este curso incluye</h4>
+                        <div className="sticky top-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                            <h4 className="mb-6 text-center text-xs font-bold tracking-widest text-slate-900 uppercase dark:text-white">
+                                Este curso incluye
+                            </h4>
                             <div className="space-y-5">
                                 <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
                                     <Clock className="h-5 w-5 text-blue-500" />
@@ -228,10 +315,12 @@ export default function Show({ course, isEnrolled }: { course: Course, isEnrolle
                                 </div>
                                 <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
                                     <Globe className="h-5 w-5 text-blue-500" />
-                                    <span>Acceso en dispositivos móviles y TV</span>
+                                    <span>
+                                        Acceso en dispositivos móviles y TV
+                                    </span>
                                 </div>
                                 <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
-                                    < Award className="h-5 w-5 text-blue-500" />
+                                    <Award className="h-5 w-5 text-blue-500" />
                                     <span>Certificado de finalización</span>
                                 </div>
                                 <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
@@ -239,13 +328,21 @@ export default function Show({ course, isEnrolled }: { course: Course, isEnrolle
                                     <span>Acceso de por vida</span>
                                 </div>
                             </div>
-                            <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800">
-                                <div className="text-center mb-6">
-                                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Inversión única</p>
-                                    <p className="text-4xl font-extrabold text-slate-900 dark:text-white">${course.price}</p>
+                            <div className="mt-8 border-t border-slate-100 pt-8 dark:border-slate-800">
+                                <div className="mb-6 text-center">
+                                    <p className="mb-1 text-[10px] font-bold tracking-widest text-slate-500 uppercase">
+                                        Inversión única
+                                    </p>
+                                    <p className="text-4xl font-extrabold text-slate-900 dark:text-white">
+                                        ${course.price}
+                                    </p>
                                 </div>
                                 {!isEnrolled && (
-                                    <Button className="w-full h-12 font-bold" onClick={handleEnroll} disabled={processing}>
+                                    <Button
+                                        className="h-12 w-full font-bold"
+                                        onClick={handleEnroll}
+                                        disabled={processing}
+                                    >
                                         Inscribirme ahora
                                     </Button>
                                 )}

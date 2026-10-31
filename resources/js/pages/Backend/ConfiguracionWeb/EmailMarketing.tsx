@@ -1,13 +1,5 @@
 import { useForm, router, usePage } from '@inertiajs/react';
-import {
-    Send,
-    Plus,
-    Pencil,
-    Eye,
-    X,
-    Check,
-    Mail
-} from 'lucide-react';
+import { Send, Plus, Pencil, Eye, X, Check, Mail } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -39,7 +31,6 @@ import {
 import { usePermissions } from '@/hooks/use-permissions';
 
 import { sanitize } from '@/lib/sanitize';
-
 
 interface Template {
     id?: number;
@@ -415,7 +406,9 @@ export default function EmailMarketingPage(props: Props) {
     if (!canAccess) {
         return (
             <div className="flex items-center justify-center py-12">
-                <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                <p className="text-muted-foreground">
+                    No tienes permiso para acceder a esta página.
+                </p>
             </div>
         );
     }
@@ -529,185 +522,187 @@ export default function EmailMarketingPage(props: Props) {
                         </Card>
                     ) : (
                         <Card className="overflow-hidden border-none shadow-sm ring-1 ring-muted">
-                        <CardHeader className="bg-muted/10 pb-6">
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                        <CardTitle className="text-xl">
-                                            {getTemplateName(activeTemplate)}
-                                        </CardTitle>
-                                        {activeTemplate?.is_default && (
-                                            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                                                Sistema
+                            <CardHeader className="bg-muted/10 pb-6">
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <CardTitle className="text-xl">
+                                                {getTemplateName(
+                                                    activeTemplate,
+                                                )}
+                                            </CardTitle>
+                                            {activeTemplate?.is_default && (
+                                                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                                                    Sistema
+                                                </span>
+                                            )}
+                                        </div>
+                                        <CardDescription className="flex items-center gap-2 text-xs">
+                                            <span className="font-mono">
+                                                {activeTemplate?.slug}
                                             </span>
-                                        )}
+                                            <span className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+                                            <span
+                                                className={
+                                                    activeTemplate?.is_active
+                                                        ? 'text-green-600'
+                                                        : 'text-muted-foreground'
+                                                }
+                                            >
+                                                {activeTemplate?.is_active
+                                                    ? 'Activo'
+                                                    : 'Inactivo'}
+                                            </span>
+                                        </CardDescription>
                                     </div>
-                                    <CardDescription className="flex items-center gap-2 text-xs">
-                                        <span className="font-mono">
-                                            {activeTemplate?.slug}
-                                        </span>
-                                        <span className="h-1 w-1 rounded-full bg-muted-foreground/30" />
-                                        <span
-                                            className={
-                                                activeTemplate?.is_active
-                                                    ? 'text-green-600'
-                                                    : 'text-muted-foreground'
-                                            }
-                                        >
-                                            {activeTemplate?.is_active
-                                                ? 'Activo'
-                                                : 'Inactivo'}
-                                        </span>
-                                    </CardDescription>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button
-                                                    type="button"
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    className="h-9 w-9 p-0"
-                                                    onClick={() =>
-                                                        handleTest(
-                                                            activeTemplate,
-                                                        )
-                                                    }
-                                                >
-                                                    <Send className="h-4 w-4" />
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                Enviar prueba
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
+                                    <div className="flex flex-wrap gap-2">
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        className="h-9 w-9 p-0"
+                                                        onClick={() =>
+                                                            handleTest(
+                                                                activeTemplate,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Send className="h-4 w-4" />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    Enviar prueba
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
 
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-9 gap-2"
-                                        onClick={() =>
-                                            openEditModal(activeTemplate)
-                                        }
-                                    >
-                                        <Pencil className="h-4 w-4" />
-                                        <span>Editar</span>
-                                    </Button>
-
-                                    {activeTemplate?.id && (
                                         <Button
                                             type="button"
-                                            variant={
-                                                activeTemplate.is_active
-                                                    ? 'outline'
-                                                    : 'default'
-                                            }
+                                            variant="outline"
                                             size="sm"
                                             className="h-9 gap-2"
                                             onClick={() =>
-                                                handleToggle(activeTemplate)
+                                                openEditModal(activeTemplate)
                                             }
                                         >
-                                            {activeTemplate.is_active ? (
-                                                <X className="h-4 w-4" />
-                                            ) : (
-                                                <Check className="h-4 w-4" />
-                                            )}
-                                            <span>
-                                                {activeTemplate.is_active
-                                                    ? 'Desactivar'
-                                                    : 'Activar'}
-                                            </span>
+                                            <Pencil className="h-4 w-4" />
+                                            <span>Editar</span>
                                         </Button>
-                                    )}
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-6 pt-6">
-                            <div className="space-y-2">
-                                <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                                    Asunto del correo
-                                </Label>
-                                <div className="rounded-xl border bg-muted/5 p-4 transition-colors hover:bg-muted/10">
-                                    <p className="text-sm leading-relaxed font-medium">
-                                        {getTemplateSubject(activeTemplate)}
-                                    </p>
-                                </div>
-                            </div>
 
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
+                                        {activeTemplate?.id && (
+                                            <Button
+                                                type="button"
+                                                variant={
+                                                    activeTemplate.is_active
+                                                        ? 'outline'
+                                                        : 'default'
+                                                }
+                                                size="sm"
+                                                className="h-9 gap-2"
+                                                onClick={() =>
+                                                    handleToggle(activeTemplate)
+                                                }
+                                            >
+                                                {activeTemplate.is_active ? (
+                                                    <X className="h-4 w-4" />
+                                                ) : (
+                                                    <Check className="h-4 w-4" />
+                                                )}
+                                                <span>
+                                                    {activeTemplate.is_active
+                                                        ? 'Desactivar'
+                                                        : 'Activar'}
+                                                </span>
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-6 pt-6">
+                                <div className="space-y-2">
                                     <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                                        Cuerpo del mensaje
+                                        Asunto del correo
                                     </Label>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 gap-2 text-xs hover:bg-primary/10 hover:text-primary"
-                                        onClick={handlePreview}
-                                    >
-                                        <Eye className="h-3.5 w-3.5" />
-                                        Vista previa
-                                    </Button>
-                                </div>
-                                <div className="group relative rounded-xl border bg-muted/5 transition-all focus-within:ring-2 focus-within:ring-primary/20">
-                                    <div className="max-h-[500px] overflow-y-auto p-6">
-                                        <div
-                                            className="prose prose-sm dark:prose-invert max-w-none"
-                                            dangerouslySetInnerHTML={{
-                                                __html: sanitize(
-                                                    getTemplateContent(
-                                                        activeTemplate,
-                                                    ) ||
-                                                        '<p class="text-muted-foreground italic">Sin contenido configurado</p>',
-                                                ),
-                                            }}
-                                        />
+                                    <div className="rounded-xl border bg-muted/5 p-4 transition-colors hover:bg-muted/10">
+                                        <p className="text-sm leading-relaxed font-medium">
+                                            {getTemplateSubject(activeTemplate)}
+                                        </p>
                                     </div>
-                                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background/50 to-transparent transition-opacity group-hover:opacity-0" />
                                 </div>
-                            </div>
 
-                            {/* Variables Ayuda Card */}
-                            <Card className="border-none bg-primary/5">
-                                <CardContent className="p-4">
-                                    <div className="mb-3 flex items-center gap-2">
-                                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/20 text-primary">
-                                            <Mail className="h-3.5 w-3.5" />
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                                            Cuerpo del mensaje
+                                        </Label>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 gap-2 text-xs hover:bg-primary/10 hover:text-primary"
+                                            onClick={handlePreview}
+                                        >
+                                            <Eye className="h-3.5 w-3.5" />
+                                            Vista previa
+                                        </Button>
+                                    </div>
+                                    <div className="group relative rounded-xl border bg-muted/5 transition-all focus-within:ring-2 focus-within:ring-primary/20">
+                                        <div className="max-h-[500px] overflow-y-auto p-6">
+                                            <div
+                                                className="prose prose-sm dark:prose-invert max-w-none"
+                                                dangerouslySetInnerHTML={{
+                                                    __html: sanitize(
+                                                        getTemplateContent(
+                                                            activeTemplate,
+                                                        ) ||
+                                                            '<p class="text-muted-foreground italic">Sin contenido configurado</p>',
+                                                    ),
+                                                }}
+                                            />
                                         </div>
-                                        <h4 className="text-xs font-bold tracking-wider text-primary uppercase">
-                                            Variables dinámicas
-                                        </h4>
+                                        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background/50 to-transparent transition-opacity group-hover:opacity-0" />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 md:grid-cols-4">
-                                        {variableHelp
-                                            .split('\n')
-                                            .slice(1)
-                                            .map((v: string, i: number) => {
-                                                const [tag, desc] =
-                                                    v.split(' - ');
-                                                return (
-                                                    <div
-                                                        key={i}
-                                                        className="group flex flex-col gap-0.5"
-                                                    >
-                                                        <code className="w-fit rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary transition-colors group-hover:bg-primary group-hover:text-white">
-                                                            {tag}
-                                                        </code>
-                                                        <span className="text-[10px] text-muted-foreground transition-colors group-hover:text-foreground">
-                                                            {desc}
-                                                        </span>
-                                                    </div>
-                                                );
-                                            })}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </CardContent>
+                                </div>
+
+                                {/* Variables Ayuda Card */}
+                                <Card className="border-none bg-primary/5">
+                                    <CardContent className="p-4">
+                                        <div className="mb-3 flex items-center gap-2">
+                                            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/20 text-primary">
+                                                <Mail className="h-3.5 w-3.5" />
+                                            </div>
+                                            <h4 className="text-xs font-bold tracking-wider text-primary uppercase">
+                                                Variables dinámicas
+                                            </h4>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 md:grid-cols-4">
+                                            {variableHelp
+                                                .split('\n')
+                                                .slice(1)
+                                                .map((v: string, i: number) => {
+                                                    const [tag, desc] =
+                                                        v.split(' - ');
+                                                    return (
+                                                        <div
+                                                            key={i}
+                                                            className="group flex flex-col gap-0.5"
+                                                        >
+                                                            <code className="w-fit rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary transition-colors group-hover:bg-primary group-hover:text-white">
+                                                                {tag}
+                                                            </code>
+                                                            <span className="text-[10px] text-muted-foreground transition-colors group-hover:text-foreground">
+                                                                {desc}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </CardContent>
                         </Card>
                     )}
                 </div>

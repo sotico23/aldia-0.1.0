@@ -19,7 +19,7 @@ import {
     RefreshCw,
     CheckCircle2,
     XCircle,
-    AlertTriangle
+    AlertTriangle,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -280,7 +280,14 @@ const TopProductsChart = ({ data }: { data: TopProducto[] }) => {
                     {data.map((p, i) => {
                         const percent = (Number(p.total_venta) / total) * 100;
                         const strokeDasharray = `${percent} ${100 - percent}`;
-                        const cumulativePercent = data.slice(0, i).reduce((sum, item) => sum + (Number(item.total_venta) / total) * 100, 0);
+                        const cumulativePercent = data
+                            .slice(0, i)
+                            .reduce(
+                                (sum, item) =>
+                                    sum +
+                                    (Number(item.total_venta) / total) * 100,
+                                0,
+                            );
                         const strokeDashoffset = -cumulativePercent;
                         return (
                             <circle
@@ -342,7 +349,7 @@ export default function Dashboard({
     productosCriticos,
 }: DashboardProps) {
     const [refreshing, setRefreshing] = useState(false);
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
 
     const handleRefreshToken = () => {
         setRefreshing(true);
@@ -387,13 +394,13 @@ export default function Dashboard({
                             </span>
                         </h1>
                         <p className="mt-1 flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                             <Calendar className="h-4 w-4" />
-                             {new Date().toLocaleDateString(currency.locale, {
-                                 weekday: 'long',
-                                 day: 'numeric',
-                                 month: 'long',
-                                 year: 'numeric',
-                             })}
+                            <Calendar className="h-4 w-4" />
+                            {new Date().toLocaleDateString(currency.locale, {
+                                weekday: 'long',
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                            })}
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -610,10 +617,10 @@ export default function Dashboard({
                                                 {p.mes}
                                             </span>
                                             <span className="font-black">
-                                                 $
-                                                 {new Intl.NumberFormat(
-                                                     currency.locale,
-                                                 ).format(p.total)}
+                                                $
+                                                {new Intl.NumberFormat(
+                                                    currency.locale,
+                                                ).format(p.total)}
                                             </span>
                                         </div>
                                     ))}

@@ -1,13 +1,13 @@
 <?php
+
 /**
  * Reverb Auth Service Feature Tests
  */
 
 namespace Tests\Feature;
 
-use App\Services\ReverbAuthService;
-use Laravel\Sanctum\PersonalAccessToken;
 use App\Models\User;
+use App\Services\ReverbAuthService;
 use Tests\TestCase;
 
 class ReverbAuthServiceTest extends TestCase
@@ -26,7 +26,7 @@ class ReverbAuthServiceTest extends TestCase
         $token = $user->createToken('test-token')->plainTextToken;
 
         $result = $this->authService->validateToken($token);
-        
+
         $this->assertNotNull($result);
         $this->assertEquals($user->id, $result->id);
     }
@@ -34,7 +34,7 @@ class ReverbAuthServiceTest extends TestCase
     public function test_validate_token_returns_null_for_invalid_token(): void
     {
         $result = $this->authService->validateToken('invalid-token');
-        
+
         $this->assertNull($result);
     }
 
@@ -44,7 +44,7 @@ class ReverbAuthServiceTest extends TestCase
         $token = $user->createToken('test-token', ['*'], now()->subDay())->plainTextToken;
 
         $result = $this->authService->validateToken($token);
-        
+
         $this->assertNull($result);
     }
 
@@ -54,9 +54,9 @@ class ReverbAuthServiceTest extends TestCase
         $socketId = 'socket-123';
 
         $this->authService->storeConnection($userId, $socketId);
-        
+
         $connections = $this->authService->getUserConnections($userId);
-        
+
         $this->assertNotEmpty($connections);
         $this->assertEquals($userId, $connections[0]['user_id']);
         $this->assertEquals($socketId, $connections[0]['socket_id']);
@@ -69,9 +69,9 @@ class ReverbAuthServiceTest extends TestCase
 
         $this->authService->storeConnection($userId, $socketId);
         $this->authService->removeConnection($userId, $socketId);
-        
+
         $connections = $this->authService->getUserConnections($userId);
-        
+
         $this->assertEmpty($connections);
     }
 
@@ -81,9 +81,9 @@ class ReverbAuthServiceTest extends TestCase
         $socketId = 'socket-789';
 
         $this->assertFalse($this->authService->isUserOnline($userId));
-        
+
         $this->authService->storeConnection($userId, $socketId);
-        
+
         $this->assertTrue($this->authService->isUserOnline($userId));
     }
 }

@@ -1,19 +1,10 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
 import 'date-fns/locale';
-import {
-    Calendar,
-    ArrowLeft,
-    Loader2
-} from 'lucide-react';
+import { Calendar, ArrowLeft, Loader2 } from 'lucide-react';
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
@@ -75,19 +66,27 @@ export default function Create({
                                 </Label>
                                 <select
                                     value={data.client_id}
-                                    onChange={(e) => setData('client_id', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('client_id', e.target.value)
+                                    }
                                     className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                                     required
                                 >
-                                    <option value="">Seleccionar cliente...</option>
+                                    <option value="">
+                                        Seleccionar cliente...
+                                    </option>
                                     {clients.map((c) => (
                                         <option key={c.id} value={c.user_id}>
-                                            {c.nombre}{c.rut ? ` (${c.rut})` : ''} — {c.telefono || c.email}
+                                            {c.nombre}
+                                            {c.rut ? ` (${c.rut})` : ''} —{' '}
+                                            {c.telefono || c.email}
                                         </option>
                                     ))}
                                 </select>
                                 {errors.client_id && (
-                                    <p className="text-xs text-red-500">{errors.client_id}</p>
+                                    <p className="text-xs text-red-500">
+                                        {errors.client_id}
+                                    </p>
                                 )}
                             </div>
 
@@ -97,20 +96,31 @@ export default function Create({
                                 </Label>
                                 <select
                                     value={data.producto_id}
-                                    onChange={(e) => setData('producto_id', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('producto_id', e.target.value)
+                                    }
                                     className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                                     required
                                 >
-                                    <option value="">Seleccionar servicio...</option>
+                                    <option value="">
+                                        Seleccionar servicio...
+                                    </option>
                                     {services.map((s) => (
                                         <option key={s.id} value={s.id}>
-                                            {s.nombre} — ${Number(s.precio_venta).toLocaleString()}
-                                            {s.duracion ? ` (${s.duracion} min)` : ''}
+                                            {s.nombre} — $
+                                            {Number(
+                                                s.precio_venta,
+                                            ).toLocaleString()}
+                                            {s.duracion
+                                                ? ` (${s.duracion} min)`
+                                                : ''}
                                         </option>
                                     ))}
                                 </select>
                                 {errors.producto_id && (
-                                    <p className="text-xs text-red-500">{errors.producto_id}</p>
+                                    <p className="text-xs text-red-500">
+                                        {errors.producto_id}
+                                    </p>
                                 )}
                             </div>
 
@@ -123,17 +133,36 @@ export default function Create({
                                         type="datetime-local"
                                         value={data.start_time}
                                         onChange={(e) => {
-                                            setData('start_time', e.target.value);
-                                            if (!data.end_time || data.end_time <= e.target.value) {
-                                                const end = new Date(new Date(e.target.value).getTime() + 60 * 60 * 1000);
-                                                setData('end_time', format(end, "yyyy-MM-dd'T'HH:mm"));
+                                            setData(
+                                                'start_time',
+                                                e.target.value,
+                                            );
+                                            if (
+                                                !data.end_time ||
+                                                data.end_time <= e.target.value
+                                            ) {
+                                                const end = new Date(
+                                                    new Date(
+                                                        e.target.value,
+                                                    ).getTime() +
+                                                        60 * 60 * 1000,
+                                                );
+                                                setData(
+                                                    'end_time',
+                                                    format(
+                                                        end,
+                                                        "yyyy-MM-dd'T'HH:mm",
+                                                    ),
+                                                );
                                             }
                                         }}
                                         className="h-10 rounded-xl"
                                         required
                                     />
                                     {errors.start_time && (
-                                        <p className="text-xs text-red-500">{errors.start_time}</p>
+                                        <p className="text-xs text-red-500">
+                                            {errors.start_time}
+                                        </p>
                                     )}
                                 </div>
                                 <div className="space-y-2">
@@ -143,12 +172,16 @@ export default function Create({
                                     <Input
                                         type="datetime-local"
                                         value={data.end_time}
-                                        onChange={(e) => setData('end_time', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('end_time', e.target.value)
+                                        }
                                         className="h-10 rounded-xl"
                                         required
                                     />
                                     {errors.end_time && (
-                                        <p className="text-xs text-red-500">{errors.end_time}</p>
+                                        <p className="text-xs text-red-500">
+                                            {errors.end_time}
+                                        </p>
                                     )}
                                 </div>
                             </div>
@@ -159,8 +192,10 @@ export default function Create({
                                 </Label>
                                 <textarea
                                     value={data.notes}
-                                    onChange={(e) => setData('notes', e.target.value)}
-                                    className="flex h-20 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 resize-none"
+                                    onChange={(e) =>
+                                        setData('notes', e.target.value)
+                                    }
+                                    className="flex h-20 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                                     placeholder="Notas adicionales..."
                                 />
                             </div>
@@ -169,15 +204,17 @@ export default function Create({
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    className="flex-1 h-11 rounded-xl"
-                                    onClick={() => router.visit('/appointments')}
+                                    className="h-11 flex-1 rounded-xl"
+                                    onClick={() =>
+                                        router.visit('/appointments')
+                                    }
                                 >
                                     Cancelar
                                 </Button>
                                 <Button
                                     type="submit"
                                     disabled={processing}
-                                    className="flex-1 h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+                                    className="h-11 flex-1 rounded-xl bg-indigo-600 font-bold text-white hover:bg-indigo-700"
                                 >
                                     {processing ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />

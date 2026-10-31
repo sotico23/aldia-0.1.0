@@ -72,7 +72,7 @@ interface Conversacion {
 }
 
 export function AppRightSidebar() {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const { auth } = usePage().props as any;
     const { hasPermission } = usePermissions();
 
@@ -253,7 +253,10 @@ export function AppRightSidebar() {
 
                 <SidebarSeparator />
 
-                {(hasPermission('finanzas.sii.viewAny') || auth.user.permissions?.some((p: string) => p.startsWith('finanzas.'))) && (
+                {(hasPermission('finanzas.sii.viewAny') ||
+                    auth.user.permissions?.some((p: string) =>
+                        p.startsWith('finanzas.'),
+                    )) && (
                     <Collapsible
                         className="mb-2 px-2"
                         open={siiMenuOpen}
@@ -529,7 +532,12 @@ export function AppRightSidebar() {
                     <SidebarGroup className="px-2 py-0">
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip={{ children: 'Automatiza tu negocio' }}>
+                                <SidebarMenuButton
+                                    asChild
+                                    tooltip={{
+                                        children: 'Automatiza tu negocio',
+                                    }}
+                                >
                                     <Link href="/canales" prefetch>
                                         <Bot className="h-4 w-4" />
                                         <Crown className="h-3.5 w-3.5 text-amber-500" />
@@ -545,7 +553,10 @@ export function AppRightSidebar() {
                     <SidebarGroup className="px-2 py-0">
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip={{ children: 'Conexiones API' }}>
+                                <SidebarMenuButton
+                                    asChild
+                                    tooltip={{ children: 'Conexiones API' }}
+                                >
                                     <Link href="/integraciones-api" prefetch>
                                         <KeyRound className="h-4 w-4" />
                                         <span>Conexiones API</span>
@@ -556,113 +567,120 @@ export function AppRightSidebar() {
                     </SidebarGroup>
                 )}
 
-                {hasPermission('comercial.oportunidades.viewAny') && (auth.user.pending_orders || 0) > 0 && (
-                    <>
-                        <SidebarSeparator />
-                        <SidebarGroup className="px-2 py-0">
-                            <SidebarGroupLabel>
-                                <CartIcon className="mr-2 inline h-4 w-4 text-amber-500" />
-                                Pedidos Pendientes
-                                <span className="ml-2 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] text-white">
-                                    {auth.user.pending_orders}
-                                </span>
-                            </SidebarGroupLabel>
-                            <SidebarGroupContent>
-                                <div className="space-y-2">
-                                    <Link
-                                        href="/pedidos-recibidos"
-                                        className="flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/10 dark:text-amber-400"
-                                    >
-                                        <CartIcon className="h-4 w-4" />
-                                        <span>
-                                            Tienes {auth.user.pending_orders}{' '}
-                                            pedidos nuevos en espera
-                                        </span>
-                                    </Link>
+                {hasPermission('comercial.oportunidades.viewAny') &&
+                    (auth.user.pending_orders || 0) > 0 && (
+                        <>
+                            <SidebarSeparator />
+                            <SidebarGroup className="px-2 py-0">
+                                <SidebarGroupLabel>
+                                    <CartIcon className="mr-2 inline h-4 w-4 text-amber-500" />
+                                    Pedidos Pendientes
+                                    <span className="ml-2 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] text-white">
+                                        {auth.user.pending_orders}
+                                    </span>
+                                </SidebarGroupLabel>
+                                <SidebarGroupContent>
+                                    <div className="space-y-2">
+                                        <Link
+                                            href="/pedidos-recibidos"
+                                            className="flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/10 dark:text-amber-400"
+                                        >
+                                            <CartIcon className="h-4 w-4" />
+                                            <span>
+                                                Tienes{' '}
+                                                {auth.user.pending_orders}{' '}
+                                                pedidos nuevos en espera
+                                            </span>
+                                        </Link>
 
-                                    {/* Notificaciones de Pedidos */}
-                                    {(() => {
-                                        const orderNotifs = (
-                                            auth.user.recent_notifications || []
-                                        ).filter((n: any) => {
-                                            const data =
-                                                typeof n.data === 'string'
-                                                    ? JSON.parse(n.data)
-                                                    : n.data || {};
-                                            return (
-                                                data.tipo === 'nuevo_pedido' ||
-                                                data.tipo ===
-                                                    'actualizacion_pedido'
-                                            );
-                                        });
-
-                                        if (orderNotifs.length === 0) {
-                                            return null;
-                                        }
-
-                                        return orderNotifs
-                                            .slice(0, 3)
-                                            .map((notification: any) => {
+                                        {/* Notificaciones de Pedidos */}
+                                        {(() => {
+                                            const orderNotifs = (
+                                                auth.user
+                                                    .recent_notifications || []
+                                            ).filter((n: any) => {
                                                 const data =
-                                                    typeof notification.data ===
-                                                    'string'
-                                                        ? JSON.parse(
-                                                              notification.data,
-                                                          )
-                                                        : notification.data ||
-                                                          {};
+                                                    typeof n.data === 'string'
+                                                        ? JSON.parse(n.data)
+                                                        : n.data || {};
                                                 return (
-                                                    <Link
-                                                        key={notification.id}
-                                                        href={
-                                                            data.pedido_id
-                                                                ? `/pedidos/${data.pedido_id}`
-                                                                : '/pedidos-recibidos'
-                                                        }
-                                                        className={cn(
-                                                            'group relative block overflow-hidden rounded-lg border border-border/50 p-2 text-xs transition-colors hover:bg-sidebar-accent/50',
-                                                            !notification.read_at &&
-                                                                'border-primary/20 bg-primary/5',
-                                                        )}
-                                                    >
-                                                        <div className="flex items-center gap-2">
-                                                            {data.tipo ===
-                                                            'nuevo_pedido' ? (
-                                                                <Package className="h-3 w-3 text-amber-500" />
-                                                            ) : (
-                                                                <RefreshCw className="h-3 w-3 text-blue-500" />
-                                                            )}
-                                                            <span className="truncate font-medium">
-                                                                {data.titulo ||
-                                                                    'Actualización de pedido'}
-                                                            </span>
-                                                            <button
-                                                                onClick={(
-                                                                    e,
-                                                                ) => {
-                                                                    e.preventDefault();
-                                                                    e.stopPropagation();
-                                                                    eliminarNotificacion(
-                                                                        notification.id,
-                                                                    );
-                                                                }}
-                                                                className="ml-auto text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-500"
-                                                            >
-                                                                <Trash2 className="h-3 w-3" />
-                                                            </button>
-                                                        </div>
-                                                        <p className="mt-1 line-clamp-2 text-muted-foreground">
-                                                            {data.message || ''}
-                                                        </p>
-                                                    </Link>
+                                                    data.tipo ===
+                                                        'nuevo_pedido' ||
+                                                    data.tipo ===
+                                                        'actualizacion_pedido'
                                                 );
                                             });
-                                    })()}
-                                </div>
-                            </SidebarGroupContent>
-                        </SidebarGroup>
-                    </>
-                )}
+
+                                            if (orderNotifs.length === 0) {
+                                                return null;
+                                            }
+
+                                            return orderNotifs
+                                                .slice(0, 3)
+                                                .map((notification: any) => {
+                                                    const data =
+                                                        typeof notification.data ===
+                                                        'string'
+                                                            ? JSON.parse(
+                                                                  notification.data,
+                                                              )
+                                                            : notification.data ||
+                                                              {};
+                                                    return (
+                                                        <Link
+                                                            key={
+                                                                notification.id
+                                                            }
+                                                            href={
+                                                                data.pedido_id
+                                                                    ? `/pedidos/${data.pedido_id}`
+                                                                    : '/pedidos-recibidos'
+                                                            }
+                                                            className={cn(
+                                                                'group relative block overflow-hidden rounded-lg border border-border/50 p-2 text-xs transition-colors hover:bg-sidebar-accent/50',
+                                                                !notification.read_at &&
+                                                                    'border-primary/20 bg-primary/5',
+                                                            )}
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                {data.tipo ===
+                                                                'nuevo_pedido' ? (
+                                                                    <Package className="h-3 w-3 text-amber-500" />
+                                                                ) : (
+                                                                    <RefreshCw className="h-3 w-3 text-blue-500" />
+                                                                )}
+                                                                <span className="truncate font-medium">
+                                                                    {data.titulo ||
+                                                                        'Actualización de pedido'}
+                                                                </span>
+                                                                <button
+                                                                    onClick={(
+                                                                        e,
+                                                                    ) => {
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        eliminarNotificacion(
+                                                                            notification.id,
+                                                                        );
+                                                                    }}
+                                                                    className="ml-auto text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-500"
+                                                                >
+                                                                    <Trash2 className="h-3 w-3" />
+                                                                </button>
+                                                            </div>
+                                                            <p className="mt-1 line-clamp-2 text-muted-foreground">
+                                                                {data.message ||
+                                                                    ''}
+                                                            </p>
+                                                        </Link>
+                                                    );
+                                                });
+                                        })()}
+                                    </div>
+                                </SidebarGroupContent>
+                            </SidebarGroup>
+                        </>
+                    )}
 
                 {/* Mensajes del Chat — always visible when user has chat notifications */}
                 <SidebarGroup className="px-2 py-0">
@@ -707,8 +725,7 @@ export function AppRightSidebar() {
                                             ? JSON.parse(n.data)
                                             : n.data || {};
                                     return (
-                                        data.tipo ===
-                                            'mensaje_chat_pedido' ||
+                                        data.tipo === 'mensaje_chat_pedido' ||
                                         data.tipo === 'mensaje_chat'
                                     );
                                 });
@@ -727,11 +744,8 @@ export function AppRightSidebar() {
                                         const data =
                                             typeof notification.data ===
                                             'string'
-                                                ? JSON.parse(
-                                                      notification.data,
-                                                  )
-                                                : notification.data ||
-                                                  {};
+                                                ? JSON.parse(notification.data)
+                                                : notification.data || {};
                                         return (
                                             <Link
                                                 key={notification.id}
@@ -756,9 +770,7 @@ export function AppRightSidebar() {
                                                             'Nuevo mensaje'}
                                                     </span>
                                                     <button
-                                                        onClick={(
-                                                            e,
-                                                        ) => {
+                                                        onClick={(e) => {
                                                             e.preventDefault();
                                                             e.stopPropagation();
                                                             eliminarNotificacion(
@@ -863,7 +875,8 @@ export function AppRightSidebar() {
                                                             'group relative overflow-hidden rounded-lg border border-border/50 text-xs transition-all duration-300 ease-in-out',
                                                             deletingIds.has(
                                                                 notification.id,
-                                                            ) && 'opacity-0 scale-95',
+                                                            ) &&
+                                                                'scale-95 opacity-0',
                                                             !notification.read_at &&
                                                                 'border-primary/20 bg-primary/5',
                                                         )}
@@ -892,11 +905,14 @@ export function AppRightSidebar() {
                                                                     'comentario' && (
                                                                     <MessageSquare className="h-3 w-3 text-violet-500" />
                                                                 )}
-                                                                {data.tipo !== 'comentario' &&
-                                                                    data.type !== 'like' &&
-                                                                    data.type !== 'heart' && (
-                                                                    <MessageSquare className="h-3 w-3 text-violet-500" />
-                                                                )}
+                                                                {data.tipo !==
+                                                                    'comentario' &&
+                                                                    data.type !==
+                                                                        'like' &&
+                                                                    data.type !==
+                                                                        'heart' && (
+                                                                        <MessageSquare className="h-3 w-3 text-violet-500" />
+                                                                    )}
                                                             </div>
                                                             <div className="min-w-0 flex-1">
                                                                 <p className="text-[11px] leading-snug">
@@ -920,7 +936,8 @@ export function AppRightSidebar() {
                                                                                 'Usuario'}
                                                                         </span>
                                                                     )}{' '}
-                                                                {data.message || ''}
+                                                                    {data.message ||
+                                                                        ''}
                                                                 </p>
                                                                 <span className="text-[9px] text-muted-foreground opacity-70">
                                                                     {formatFecha(
@@ -934,7 +951,9 @@ export function AppRightSidebar() {
                                                             onClick={(e) => {
                                                                 e.preventDefault();
                                                                 e.stopPropagation();
-                                                                eliminarConAnimacion(notification.id);
+                                                                eliminarConAnimacion(
+                                                                    notification.id,
+                                                                );
                                                             }}
                                                             className="absolute top-1 right-1 z-20 rounded-full p-1 text-muted-foreground opacity-0 transition-colors group-hover:opacity-100 hover:bg-red-100 hover:text-red-600"
                                                             title="Eliminar notificación"

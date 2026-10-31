@@ -15,7 +15,7 @@ import {
     AlertCircle,
     Image,
     Upload,
-    Trash2
+    Trash2,
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -75,7 +75,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function MiInformacion() {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const { profile } = usePage<PageProps>().props;
     const [editando, setEditando] = useState(false);
     const [guardando, setGuardando] = useState(false);
@@ -261,20 +261,49 @@ export default function MiInformacion() {
                                         <div className="flex items-center gap-2">
                                             <Input
                                                 value={nombreEdit}
-                                                onChange={(e) => setNombreEdit(e.target.value)}
+                                                onChange={(e) =>
+                                                    setNombreEdit(
+                                                        e.target.value,
+                                                    )
+                                                }
                                                 className="h-8 text-sm"
                                             />
-                                            <Button size="sm" onClick={handleGuardarNombre} disabled={guardandoNombre} className="h-8">
-                                                {guardandoNombre ? '...' : <CheckCircle className="h-4 w-4" />}
+                                            <Button
+                                                size="sm"
+                                                onClick={handleGuardarNombre}
+                                                disabled={guardandoNombre}
+                                                className="h-8"
+                                            >
+                                                {guardandoNombre ? (
+                                                    '...'
+                                                ) : (
+                                                    <CheckCircle className="h-4 w-4" />
+                                                )}
                                             </Button>
-                                            <Button size="sm" variant="ghost" onClick={() => { setEditandoNombre(false); setNombreEdit(profile.name); }} className="h-8">
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => {
+                                                    setEditandoNombre(false);
+                                                    setNombreEdit(profile.name);
+                                                }}
+                                                className="h-8"
+                                            >
                                                 <X className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-2">
-                                            <p className="font-medium">{profile.name}</p>
-                                            <button onClick={() => { setEditandoNombre(true); setNombreEdit(profile.name); }} className="text-muted-foreground hover:text-foreground">
+                                            <p className="font-medium">
+                                                {profile.name}
+                                            </p>
+                                            <button
+                                                onClick={() => {
+                                                    setEditandoNombre(true);
+                                                    setNombreEdit(profile.name);
+                                                }}
+                                                className="text-muted-foreground hover:text-foreground"
+                                            >
                                                 <Edit2 className="h-3.5 w-3.5" />
                                             </button>
                                         </div>
@@ -342,15 +371,23 @@ export default function MiInformacion() {
                                         <Label htmlFor="genero">Género</Label>
                                         <Select
                                             value={formData.genero}
-                                            onValueChange={(value) => handleChange('genero', value)}
+                                            onValueChange={(value) =>
+                                                handleChange('genero', value)
+                                            }
                                         >
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Seleccionar..." />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="Masculino">Masculino</SelectItem>
-                                                <SelectItem value="Femenino">Femenino</SelectItem>
-                                                <SelectItem value="Prefiero no especificar">Prefiero no especificar</SelectItem>
+                                                <SelectItem value="Masculino">
+                                                    Masculino
+                                                </SelectItem>
+                                                <SelectItem value="Femenino">
+                                                    Femenino
+                                                </SelectItem>
+                                                <SelectItem value="Prefiero no especificar">
+                                                    Prefiero no especificar
+                                                </SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -372,8 +409,8 @@ export default function MiInformacion() {
                                         <span className="font-medium">
                                             {profile.fecha_nacimiento
                                                 ? formatDate(
-                                                    profile.fecha_nacimiento,
-                                                )
+                                                      profile.fecha_nacimiento,
+                                                  )
                                                 : 'No registrado'}
                                         </span>
                                     </div>
@@ -468,7 +505,7 @@ export default function MiInformacion() {
                                             placeholder="Ej: Venta de combustibles, Supermercado..."
                                         />
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                    <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
                                         <div>
                                             <Label htmlFor="region">
                                                 Región
@@ -612,19 +649,24 @@ export default function MiInformacion() {
                         </div>
                     </div>
 
-
-
                     <div className="rounded-lg border bg-card p-6 shadow-sm">
                         <div className="mb-4 flex items-center gap-2">
                             <Building2 className="h-5 w-5 text-primary" />
-                            <h3 className="font-semibold">Nombre de la Empresa</h3>
+                            <h3 className="font-semibold">
+                                Nombre de la Empresa
+                            </h3>
                         </div>
                         <div className="space-y-4">
                             {editando ? (
                                 <div>
                                     <Input
                                         value={formData.business_name}
-                                        onChange={(e) => handleChange('business_name', e.target.value)}
+                                        onChange={(e) =>
+                                            handleChange(
+                                                'business_name',
+                                                e.target.value,
+                                            )
+                                        }
                                         placeholder="Nombre de tu empresa o negocio"
                                     />
                                 </div>
@@ -634,7 +676,8 @@ export default function MiInformacion() {
                                 </p>
                             )}
                             <p className="text-xs text-muted-foreground">
-                                Este nombre se usará en facturas, proformas y documentos.
+                                Este nombre se usará en facturas, proformas y
+                                documentos.
                             </p>
                         </div>
                     </div>
@@ -642,21 +685,30 @@ export default function MiInformacion() {
                     <div className="rounded-lg border bg-card p-6 shadow-sm">
                         <div className="mb-4 flex items-center gap-2">
                             <Image className="h-5 w-5 text-primary" />
-                            <h3 className="font-semibold">Logo de la Empresa</h3>
+                            <h3 className="font-semibold">
+                                Logo de la Empresa
+                            </h3>
                         </div>
                         <div className="space-y-4">
                             <div className="flex items-center gap-4">
                                 <div className="flex h-20 w-44 items-center justify-center rounded-xl border bg-muted/30 p-2">
-                                    {logoPreview || (profile.business_logo_url && !removeLogo) ? (
+                                    {logoPreview ||
+                                    (profile.business_logo_url &&
+                                        !removeLogo) ? (
                                         <img
-                                            src={logoPreview || profile.business_logo_url!}
+                                            src={
+                                                logoPreview ||
+                                                profile.business_logo_url!
+                                            }
                                             alt="Logo empresa"
                                             className="h-full w-full rounded-lg object-contain"
                                         />
                                     ) : (
                                         <div className="flex flex-col items-center gap-1 text-muted-foreground">
                                             <Building2 className="h-8 w-8" />
-                                            <span className="text-xs">Sin logo</span>
+                                            <span className="text-xs">
+                                                Sin logo
+                                            </span>
                                         </div>
                                     )}
                                 </div>
@@ -672,12 +724,17 @@ export default function MiInformacion() {
                                         type="button"
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => logoInputRef.current?.click()}
+                                        onClick={() =>
+                                            logoInputRef.current?.click()
+                                        }
                                     >
                                         <Upload className="mr-2 h-4 w-4" />
-                                        {profile.business_logo_url ? 'Cambiar Logo' : 'Subir Logo'}
+                                        {profile.business_logo_url
+                                            ? 'Cambiar Logo'
+                                            : 'Subir Logo'}
                                     </Button>
-                                    {(logoPreview || profile.business_logo_url) && (
+                                    {(logoPreview ||
+                                        profile.business_logo_url) && (
                                         <Button
                                             type="button"
                                             variant="outline"
@@ -692,12 +749,20 @@ export default function MiInformacion() {
                                 </div>
                             </div>
                             {(logoFile || removeLogo) && (
-                                <Button onClick={handleGuardarLogo} disabled={guardandoLogo} size="sm">
-                                    {guardandoLogo ? 'Guardando...' : 'Guardar Logo'}
+                                <Button
+                                    onClick={handleGuardarLogo}
+                                    disabled={guardandoLogo}
+                                    size="sm"
+                                >
+                                    {guardandoLogo
+                                        ? 'Guardando...'
+                                        : 'Guardar Logo'}
                                 </Button>
                             )}
                             <p className="text-xs text-muted-foreground">
-                                Este logo se usará en tu dashboard, facturas, proformas y documentos. Formatos: PNG, JPG. Máximo 2MB.
+                                Este logo se usará en tu dashboard, facturas,
+                                proformas y documentos. Formatos: PNG, JPG.
+                                Máximo 2MB.
                             </p>
                         </div>
                     </div>
@@ -709,7 +774,7 @@ export default function MiInformacion() {
                                 Información de Cuenta
                             </h3>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                        <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2 lg:grid-cols-4">
                             <div>
                                 <p className="text-muted-foreground">
                                     ID de Usuario

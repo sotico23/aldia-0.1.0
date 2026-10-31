@@ -10,7 +10,7 @@ import {
     RefreshCw,
     Search,
     Upload,
-    AlertTriangle
+    AlertTriangle,
 } from 'lucide-react';
 import React, { Fragment, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
@@ -89,7 +89,7 @@ interface Arqueo {
 }
 
 export default function CierreCaja({ arqueo }: { arqueo: Arqueo }) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const { hasPermission } = usePermissions();
     const canAccess = hasPermission('ventas.pos.viewAny');
     const [fechaDesde, setFechaDesde] = useState(arqueo.fecha_desde);
@@ -97,11 +97,16 @@ export default function CierreCaja({ arqueo }: { arqueo: Arqueo }) {
     const [filtroMetodo, setFiltroMetodo] = useState<string>('todos');
     const [showCierreModal, setShowCierreModal] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
-    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({
+    const [sortConfig, setSortConfig] = useState<{
+        key: string;
+        direction: 'asc' | 'desc';
+    }>({
         key: 'created_at',
         direction: 'desc',
     });
-    const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
+    const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>(
+        {},
+    );
 
     const toggleRow = (id: number) => {
         setExpandedRows((prev) => ({
@@ -112,7 +117,11 @@ export default function CierreCaja({ arqueo }: { arqueo: Arqueo }) {
 
     const requestSort = (key: string) => {
         let direction: 'asc' | 'desc' = 'asc';
-        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+        if (
+            sortConfig &&
+            sortConfig.key === key &&
+            sortConfig.direction === 'asc'
+        ) {
             direction = 'desc';
         }
         setSortConfig({ key, direction });
@@ -260,7 +269,7 @@ export default function CierreCaja({ arqueo }: { arqueo: Arqueo }) {
         );
     };
 
-const detalleFiltrado = (() => {
+    const detalleFiltrado = (() => {
         let filtered =
             filtroMetodo === 'todos'
                 ? arqueo.detalle
@@ -303,11 +312,14 @@ const detalleFiltrado = (() => {
 
     const esMismoDia = fechaDesde === fechaHasta;
     const fechaLabel = esMismoDia
-        ? new Date(fechaDesde + 'T12:00:00').toLocaleDateString(currency.locale, {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-          })
+        ? new Date(fechaDesde + 'T12:00:00').toLocaleDateString(
+              currency.locale,
+              {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+              },
+          )
         : `${new Date(fechaDesde + 'T12:00:00').toLocaleDateString(currency.locale, { day: 'numeric', month: 'short' })} — ${new Date(fechaHasta + 'T12:00:00').toLocaleDateString(currency.locale, { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
     if (!canAccess) {
@@ -319,7 +331,9 @@ const detalleFiltrado = (() => {
                 ]}
             >
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );
@@ -407,8 +421,7 @@ const detalleFiltrado = (() => {
                                     onClick={hoy}
                                     className={
                                         esMismoDia &&
-                                        fechaDesde ===
-                                            getLocalDateString()
+                                        fechaDesde === getLocalDateString()
                                             ? 'bg-primary text-primary-foreground'
                                             : ''
                                     }
@@ -588,9 +601,7 @@ const detalleFiltrado = (() => {
                                     <SelectItem value="transferencia">
                                         Transferencia
                                     </SelectItem>
-                                    <SelectItem value="vale">
-                                        Vales
-                                    </SelectItem>
+                                    <SelectItem value="vale">Vales</SelectItem>
                                     <SelectItem value="visa_transbank">
                                         Visa Transbank
                                     </SelectItem>
@@ -601,7 +612,8 @@ const detalleFiltrado = (() => {
                                         Contactar con Administración
                                     </SelectItem>
                                     <SelectItem value="otros">
-                                        Otros (Vale / Visa / Binance / Contactar)
+                                        Otros (Vale / Visa / Binance /
+                                        Contactar)
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
@@ -612,32 +624,56 @@ const detalleFiltrado = (() => {
                             <Table>
                                 <TableHeader className="bg-muted/50">
                                     <TableRow>
-                                        <TableHead className="p-3 text-xs font-semibold text-slate-600 select-none cursor-pointer hover:bg-slate-100/80 transition-colors" onClick={() => requestSort('fecha')}>
+                                        <TableHead
+                                            className="cursor-pointer p-3 text-xs font-semibold text-slate-600 transition-colors select-none hover:bg-slate-100/80"
+                                            onClick={() => requestSort('fecha')}
+                                        >
                                             <span className="flex items-center gap-1">
                                                 Fecha
                                                 {sortConfig.key === 'fecha' && (
                                                     <span className="ml-1">
-                                                        {sortConfig.direction === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                                        {sortConfig.direction ===
+                                                        'asc' ? (
+                                                            <ChevronUp className="h-3 w-3" />
+                                                        ) : (
+                                                            <ChevronDown className="h-3 w-3" />
+                                                        )}
                                                     </span>
                                                 )}
                                             </span>
                                         </TableHead>
-                                        <TableHead className="p-3 text-xs font-semibold text-slate-600 select-none cursor-pointer hover:bg-slate-100/80 transition-colors" onClick={() => requestSort('hora')}>
+                                        <TableHead
+                                            className="cursor-pointer p-3 text-xs font-semibold text-slate-600 transition-colors select-none hover:bg-slate-100/80"
+                                            onClick={() => requestSort('hora')}
+                                        >
                                             <span className="flex items-center gap-1">
                                                 Hora
                                                 {sortConfig.key === 'hora' && (
                                                     <span className="ml-1">
-                                                        {sortConfig.direction === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                                        {sortConfig.direction ===
+                                                        'asc' ? (
+                                                            <ChevronUp className="h-3 w-3" />
+                                                        ) : (
+                                                            <ChevronDown className="h-3 w-3" />
+                                                        )}
                                                     </span>
                                                 )}
                                             </span>
                                         </TableHead>
-                                        <TableHead className="p-3 text-xs font-semibold text-slate-600 select-none cursor-pointer hover:bg-slate-100/80 transition-colors" onClick={() => requestSort('tipo')}>
+                                        <TableHead
+                                            className="cursor-pointer p-3 text-xs font-semibold text-slate-600 transition-colors select-none hover:bg-slate-100/80"
+                                            onClick={() => requestSort('tipo')}
+                                        >
                                             <span className="flex items-center gap-1">
                                                 Concepto
                                                 {sortConfig.key === 'tipo' && (
                                                     <span className="ml-1">
-                                                        {sortConfig.direction === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                                        {sortConfig.direction ===
+                                                        'asc' ? (
+                                                            <ChevronUp className="h-3 w-3" />
+                                                        ) : (
+                                                            <ChevronDown className="h-3 w-3" />
+                                                        )}
                                                     </span>
                                                 )}
                                             </span>
@@ -647,54 +683,95 @@ const detalleFiltrado = (() => {
                                                 Detalle Productos
                                             </span>
                                         </TableHead>
-                                        <TableHead className="p-3 text-xs font-semibold text-slate-600 select-none cursor-pointer hover:bg-slate-100/80 transition-colors" onClick={() => requestSort('metodo')}>
+                                        <TableHead
+                                            className="cursor-pointer p-3 text-xs font-semibold text-slate-600 transition-colors select-none hover:bg-slate-100/80"
+                                            onClick={() =>
+                                                requestSort('metodo')
+                                            }
+                                        >
                                             <span className="flex items-center gap-1">
                                                 Método
-                                                {sortConfig.key === 'metodo' && (
+                                                {sortConfig.key ===
+                                                    'metodo' && (
                                                     <span className="ml-1">
-                                                        {sortConfig.direction === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                                        {sortConfig.direction ===
+                                                        'asc' ? (
+                                                            <ChevronUp className="h-3 w-3" />
+                                                        ) : (
+                                                            <ChevronDown className="h-3 w-3" />
+                                                        )}
                                                     </span>
                                                 )}
                                             </span>
                                         </TableHead>
-                                        <TableHead className="p-3 text-xs font-semibold text-slate-600 select-none cursor-pointer hover:bg-slate-100/80 transition-colors" onClick={() => requestSort('documento')}>
+                                        <TableHead
+                                            className="cursor-pointer p-3 text-xs font-semibold text-slate-600 transition-colors select-none hover:bg-slate-100/80"
+                                            onClick={() =>
+                                                requestSort('documento')
+                                            }
+                                        >
                                             <span className="flex items-center gap-1">
                                                 Referencia
-                                                {sortConfig.key === 'documento' && (
+                                                {sortConfig.key ===
+                                                    'documento' && (
                                                     <span className="ml-1">
-                                                        {sortConfig.direction === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                                        {sortConfig.direction ===
+                                                        'asc' ? (
+                                                            <ChevronUp className="h-3 w-3" />
+                                                        ) : (
+                                                            <ChevronDown className="h-3 w-3" />
+                                                        )}
                                                     </span>
                                                 )}
                                             </span>
                                         </TableHead>
-                                        <TableHead className="text-right p-3 text-xs font-semibold text-slate-600 select-none cursor-pointer hover:bg-slate-100/80 transition-colors" onClick={() => requestSort('monto')}>
+                                        <TableHead
+                                            className="cursor-pointer p-3 text-right text-xs font-semibold text-slate-600 transition-colors select-none hover:bg-slate-100/80"
+                                            onClick={() => requestSort('monto')}
+                                        >
                                             <span className="flex items-center justify-end gap-1">
                                                 Monto
                                                 {sortConfig.key === 'monto' && (
                                                     <span className="ml-1">
-                                                        {sortConfig.direction === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                                        {sortConfig.direction ===
+                                                        'asc' ? (
+                                                            <ChevronUp className="h-3 w-3" />
+                                                        ) : (
+                                                            <ChevronDown className="h-3 w-3" />
+                                                        )}
                                                     </span>
                                                 )}
                                             </span>
                                         </TableHead>
-                                        <TableHead className="p-3 text-xs font-semibold text-slate-600 select-none cursor-pointer hover:bg-slate-100/80 transition-colors text-center" onClick={() => {}}>
-                                            <span className="sr-only">Detalle</span>
+                                        <TableHead
+                                            className="cursor-pointer p-3 text-center text-xs font-semibold text-slate-600 transition-colors select-none hover:bg-slate-100/80"
+                                            onClick={() => {}}
+                                        >
+                                            <span className="sr-only">
+                                                Detalle
+                                            </span>
                                         </TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {detalleFiltrado.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                                                No hay ventas registradas en el período seleccionado.
+                                            <TableCell
+                                                colSpan={7}
+                                                className="h-24 text-center text-muted-foreground"
+                                            >
+                                                No hay ventas registradas en el
+                                                período seleccionado.
                                             </TableCell>
                                         </TableRow>
                                     ) : (
                                         detalleFiltrado.map((item, i) => (
                                             <Fragment key={item.id || i}>
                                                 <TableRow
-                                                    className="hover:bg-muted/5 cursor-pointer"
-                                                    onClick={() => toggleRow(item.id)}
+                                                    className="cursor-pointer hover:bg-muted/5"
+                                                    onClick={() =>
+                                                        toggleRow(item.id)
+                                                    }
                                                 >
                                                     <TableCell className="p-3 text-xs">
                                                         {item.fecha}
@@ -705,17 +782,32 @@ const detalleFiltrado = (() => {
                                                     <TableCell className="p-3 text-xs font-medium">
                                                         {item.tipo}
                                                     </TableCell>
-                                                    <TableCell className="p-3 text-xs text-slate-500 max-w-xs">
-                                                        {item.items && item.items.length > 0 ? (
+                                                    <TableCell className="max-w-xs p-3 text-xs text-slate-500">
+                                                        {item.items &&
+                                                        item.items.length >
+                                                            0 ? (
                                                             <div className="flex flex-wrap gap-1">
-                                                                {item.items.map((prod, idx) => (
-                                                                    <span
-                                                                        key={idx}
-                                                                        className="inline-flex items-center bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[10px] font-medium"
-                                                                    >
-                                                                        {prod.cantidad}x {prod.producto_nombre}
-                                                                    </span>
-                                                                ))}
+                                                                {item.items.map(
+                                                                    (
+                                                                        prod,
+                                                                        idx,
+                                                                    ) => (
+                                                                        <span
+                                                                            key={
+                                                                                idx
+                                                                            }
+                                                                            className="inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-700"
+                                                                        >
+                                                                            {
+                                                                                prod.cantidad
+                                                                            }
+                                                                            x{' '}
+                                                                            {
+                                                                                prod.producto_nombre
+                                                                            }
+                                                                        </span>
+                                                                    ),
+                                                                )}
                                                             </div>
                                                         ) : (
                                                             <span className="text-slate-400 italic">
@@ -726,11 +818,13 @@ const detalleFiltrado = (() => {
                                                     <TableCell className="p-3 text-xs">
                                                         <span
                                                             className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                                                                item.metodo === 'Efectivo'
+                                                                item.metodo ===
+                                                                'Efectivo'
                                                                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                                                    : item.metodo === 'Tarjeta'
-                                                                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                                                                        : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                                                                    : item.metodo ===
+                                                                        'Tarjeta'
+                                                                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                                                      : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
                                                             }`}
                                                         >
                                                             {item.metodo}
@@ -740,52 +834,100 @@ const detalleFiltrado = (() => {
                                                         {item.documento}
                                                     </TableCell>
                                                     <TableCell className="p-3 text-right font-black text-emerald-600">
-                                                        {formatCurrency(item.monto)}
+                                                        {formatCurrency(
+                                                            item.monto,
+                                                        )}
                                                     </TableCell>
                                                     <TableCell className="p-3 text-center">
                                                         <ChevronDown
                                                             className={`mx-auto h-4 w-4 transition-transform ${
-                                                                expandedRows[item.id] ? 'rotate-180' : ''
+                                                                expandedRows[
+                                                                    item.id
+                                                                ]
+                                                                    ? 'rotate-180'
+                                                                    : ''
                                                             }`}
                                                         />
                                                     </TableCell>
                                                 </TableRow>
                                                 {expandedRows[item.id] && (
                                                     <TableRow>
-                                                        <TableCell colSpan={7} className="px-0 py-0">
-                                                            <div className="bg-slate-50/50 p-4 border border-slate-100 rounded-lg border-t-0">
+                                                        <TableCell
+                                                            colSpan={7}
+                                                            className="px-0 py-0"
+                                                        >
+                                                            <div className="rounded-lg border border-t-0 border-slate-100 bg-slate-50/50 p-4">
                                                                 <div className="flex flex-col gap-3">
                                                                     <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
                                                                         <Calendar className="h-3 w-3" />
-                                                                        <span>{item.fecha_completa}</span>
+                                                                        <span>
+                                                                            {
+                                                                                item.fecha_completa
+                                                                            }
+                                                                        </span>
                                                                     </div>
                                                                     <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
                                                                         <CreditCard className="h-3 w-3" />
-                                                                        <span className="capitalize">{item.metodo.toLowerCase()}</span>
+                                                                        <span className="capitalize">
+                                                                            {item.metodo.toLowerCase()}
+                                                                        </span>
                                                                     </div>
                                                                     <div className="border-t border-slate-200 pt-3">
                                                                         <div className="overflow-x-auto">
                                                                             <table className="w-full text-xs">
                                                                                 <thead>
                                                                                     <tr className="border-b border-slate-200">
-                                                                                        <th className="text-left py-1.5 font-medium text-slate-500 uppercase tracking-wider">Producto</th>
-                                                                                        <th className="text-center py-1.5 font-medium text-slate-500 uppercase tracking-wider">Cant.</th>
-                                                                                        <th className="text-right py-1.5 font-medium text-slate-500 uppercase tracking-wider">P. Unit.</th>
-                                                                                        <th className="text-right py-1.5 font-medium text-slate-500 uppercase tracking-wider">Total</th>
+                                                                                        <th className="py-1.5 text-left font-medium tracking-wider text-slate-500 uppercase">
+                                                                                            Producto
+                                                                                        </th>
+                                                                                        <th className="py-1.5 text-center font-medium tracking-wider text-slate-500 uppercase">
+                                                                                            Cant.
+                                                                                        </th>
+                                                                                        <th className="py-1.5 text-right font-medium tracking-wider text-slate-500 uppercase">
+                                                                                            P.
+                                                                                            Unit.
+                                                                                        </th>
+                                                                                        <th className="py-1.5 text-right font-medium tracking-wider text-slate-500 uppercase">
+                                                                                            Total
+                                                                                        </th>
                                                                                     </tr>
                                                                                 </thead>
                                                                                 <tbody>
-                                                                                    {item.items.map((productItem, pi) => (
-                                                                                        <tr
-                                                                                            key={productItem.id || pi}
-                                                                                            className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50"
-                                                                                        >
-                                                                                            <td className="py-1.5 font-medium text-slate-700 dark:text-slate-300">{productItem.producto_nombre}</td>
-                                                                                            <td className="text-center py-1.5 font-mono text-slate-600 dark:text-slate-400">{productItem.cantidad}</td>
-                                                                                            <td className="text-right py-1.5 font-mono text-slate-600 dark:text-slate-400">{formatCurrency(productItem.precio_unitario)}</td>
-                                                                                            <td className="text-right py-1.5 font-bold text-slate-800 dark:text-slate-200">{formatCurrency(productItem.subtotal)}</td>
-                                                                                        </tr>
-                                                                                    ))}
+                                                                                    {item.items.map(
+                                                                                        (
+                                                                                            productItem,
+                                                                                            pi,
+                                                                                        ) => (
+                                                                                            <tr
+                                                                                                key={
+                                                                                                    productItem.id ||
+                                                                                                    pi
+                                                                                                }
+                                                                                                className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50"
+                                                                                            >
+                                                                                                <td className="py-1.5 font-medium text-slate-700 dark:text-slate-300">
+                                                                                                    {
+                                                                                                        productItem.producto_nombre
+                                                                                                    }
+                                                                                                </td>
+                                                                                                <td className="py-1.5 text-center font-mono text-slate-600 dark:text-slate-400">
+                                                                                                    {
+                                                                                                        productItem.cantidad
+                                                                                                    }
+                                                                                                </td>
+                                                                                                <td className="py-1.5 text-right font-mono text-slate-600 dark:text-slate-400">
+                                                                                                    {formatCurrency(
+                                                                                                        productItem.precio_unitario,
+                                                                                                    )}
+                                                                                                </td>
+                                                                                                <td className="py-1.5 text-right font-bold text-slate-800 dark:text-slate-200">
+                                                                                                    {formatCurrency(
+                                                                                                        productItem.subtotal,
+                                                                                                    )}
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                        ),
+                                                                                    )}
                                                                                 </tbody>
                                                                             </table>
                                                                         </div>
@@ -848,7 +990,7 @@ const detalleFiltrado = (() => {
                             deshacerse.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-3 rounded-lg bg-muted/50 p-4 mx-6">
+                    <div className="mx-6 space-y-3 rounded-lg bg-muted/50 p-4">
                         <div className="flex justify-between">
                             <span className="text-sm text-muted-foreground">
                                 Período:

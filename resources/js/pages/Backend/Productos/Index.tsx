@@ -27,12 +27,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -40,6 +35,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { ImageUploader } from '@/components/ui/image-uploader';
+import type { ImageUploaderImage } from '@/components/ui/image-uploader';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Pagination from '@/components/ui/Pagination';
@@ -137,10 +134,100 @@ interface Producto {
     }[];
 }
 
+const PRODUCT_IMAGE_KEYS = [
+    'imagen',
+    'imagen2',
+    'imagen3',
+    'imagen4',
+    'imagen5',
+] as const;
+
+function getProductImageUrl(path: string): string {
+    return /^https?:\/\//i.test(path)
+        ? path
+        : `/storage/${path.replace(/^\/+/, '')}`;
+}
+
+function buildProductImageItems(
+    producto: Producto | null,
+): ImageUploaderImage[] {
+    if (!producto) {
+        return [];
+    }
+
+    const seenPaths = new Set<string>();
+
+    return PRODUCT_IMAGE_KEYS.flatMap((key) => {
+        const path = producto[key];
+
+        if (!path || seenPaths.has(path)) {
+            return [];
+        }
+
+        seenPaths.add(path);
+
+        return [
+            {
+                id: `existing-${producto.id}-${key}`,
+                preview: getProductImageUrl(path),
+                existingPath: path,
+                existingKey: key,
+            },
+        ];
+    });
+}
+
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
     { title: 'Productos', href: '/productos' },
 ];
+
+function buildSkuRows(
+    selectedVariants: VarianteTipo[],
+    baseSku: string,
+    precioVenta: number,
+    precioCompra: number,
+    stockMinimo: number,
+    almacenId: string | undefined,
+): SkuRow[] {
+    if (selectedVariants.length === 0) {
+        return [];
+    }
+
+    const valueSets = selectedVariants.map((v) =>
+        v.valores.map((vl) => ({
+            id: vl.id,
+            valor: vl.valor,
+            varianteNombre: v.nombre,
+        })),
+    );
+
+    const cartesianProduct = <T,>(arrays: T[][]): T[][] => {
+        return arrays.reduce<T[][]>(
+            (acc, curr) => acc.flatMap((a) => curr.map((b) => [...a, b])),
+            [[]],
+        );
+    };
+
+    const combinations = cartesianProduct(valueSets);
+    const skuBase = baseSku || 'SKU';
+
+    return combinations.map((combo, i) => {
+        const labels = combo.map((c) => c.varianteNombre + ': ' + c.valor);
+        const suffix = combo.map((c) => c.valor).join('-');
+
+        return {
+            sku: i === 0 ? skuBase : `${skuBase}-${suffix}`,
+            precio_venta: precioVenta,
+            precio_compra: precioCompra,
+            stock: 0,
+            stock_minimo: stockMinimo,
+            almacen_id: almacenId || '',
+            variante_valores: combo.map((c) => c.id),
+            labels,
+        };
+    });
+}
 
 export default function Index({
     productos,
@@ -180,22 +267,11 @@ export default function Index({
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
     const [isSelfSelected, setIsSelfSelected] = useState(false);
 
-    const [previewMain, setPreviewMain] = useState<string | null>(null);
-    const [previews, setPreviews] = useState<Record<string, string | null>>({});
-
-    const handleFilePreview = (key: string, file: File | null) => {
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                if (key === 'imagen') setPreviewMain(reader.result as string);
-                else setPreviews((prev) => ({ ...prev, [key]: reader.result as string }));
-            };
-            reader.readAsDataURL(file);
-        } else {
-            if (key === 'imagen') setPreviewMain(null);
-            else setPreviews((prev) => ({ ...prev, [key]: null }));
-        }
-    };
+    const [productImages, setProductImages] = useState<ImageUploaderImage[]>(
+        [],
+    );
+    const [imageError, setImageError] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
 
@@ -212,15 +288,17 @@ export default function Index({
     // Variant UI state
     const [selectedVariantIds, setSelectedVariantIds] = useState<number[]>([]);
     const [newVariantName, setNewVariantName] = useState('');
-    const [newVariantType, setNewVariantType] = useState<'texto' | 'color' | 'numero'>('texto');
+    const [newVariantType, setNewVariantType] = useState<
+        'texto' | 'color' | 'numero'
+    >('texto');
     const [newVariantValues, setNewVariantValues] = useState<string[]>([]);
     const [newVariantValueInput, setNewVariantValueInput] = useState('');
     const [skuRows, setSkuRows] = useState<SkuRow[]>([]);
+    const [skuSignature, setSkuSignature] = useState<string | null>(null);
 
     const {
         data,
         setData,
-        post,
         delete: destroy,
         reset,
         processing,
@@ -245,11 +323,6 @@ export default function Index({
         tipo_medida: 'unidad' as 'unidad' | 'kilo' | 'litro',
         cantidad_medida: 0,
         tipo_envase: '',
-        imagen: null as File | null,
-        imagen2: null as File | null,
-        imagen3: null as File | null,
-        imagen4: null as File | null,
-        imagen5: null as File | null,
         video: null as File | null,
         mostrar_en_perfil: true,
         contenido_por_unidad: 1,
@@ -259,58 +332,47 @@ export default function Index({
     });
 
     const getSelectedVariants = useMemo(() => {
-        return variantesDisponibles.filter((v) => selectedVariantIds.includes(v.id));
+        return variantesDisponibles.filter((v) =>
+            selectedVariantIds.includes(v.id),
+        );
     }, [selectedVariantIds, variantesDisponibles]);
 
-    const generateSkuCombinations = () => {
-        if (getSelectedVariants.length === 0) {
-            setSkuRows([]);
-            return;
-        }
+    const currentSkuSignature =
+        data.tiene_variantes && selectedVariantIds.length > 0
+            ? `${selectedVariantIds.join(',')}|${data.codigo}`
+            : null;
 
-        const valueSets = getSelectedVariants.map((v) =>
-            v.valores.map((vl) => ({
-                id: vl.id,
-                valor: vl.valor,
-                varianteNombre: v.nombre,
-            }))
-        );
-
-        const cartesianProduct = <T,>(arrays: T[][]): T[][] => {
-            return arrays.reduce<T[][]>(
-                (acc, curr) => acc.flatMap((a) => curr.map((b) => [...a, b])),
-                [[]]
-            );
-        };
-
-        const combinations = cartesianProduct(valueSets);
-        const baseSku = data.codigo || 'SKU';
-
+    if (currentSkuSignature !== skuSignature) {
+        setSkuSignature(currentSkuSignature);
         setSkuRows(
-            combinations.map((combo, i) => {
-                const labels = combo.map((c) => c.varianteNombre + ': ' + c.valor);
-                const suffix = combo.map((c) => c.valor).join('-');
-                return {
-                    sku: i === 0 ? baseSku : `${baseSku}-${suffix}`,
-                    precio_venta: data.precio_venta,
-                    precio_compra: data.precio_compra,
-                    stock: 0,
-                    stock_minimo: data.stock_minimo,
-                    almacen_id: data.warehouse_ids[0]?.toString() || '',
-                    variante_valores: combo.map((c) => c.id),
-                    labels,
-                };
-            })
+            currentSkuSignature
+                ? buildSkuRows(
+                      getSelectedVariants,
+                      data.codigo,
+                      data.precio_venta,
+                      data.precio_compra,
+                      data.stock_minimo,
+                      data.warehouse_ids[0]?.toString(),
+                  )
+                : [],
+        );
+    }
+
+    const generateSkuCombinations = () => {
+        setSkuSignature(currentSkuSignature);
+        setSkuRows(
+            currentSkuSignature
+                ? buildSkuRows(
+                      getSelectedVariants,
+                      data.codigo,
+                      data.precio_venta,
+                      data.precio_compra,
+                      data.stock_minimo,
+                      data.warehouse_ids[0]?.toString(),
+                  )
+                : [],
         );
     };
-
-    useEffect(() => {
-        if (data.tiene_variantes && selectedVariantIds.length > 0) {
-            generateSkuCombinations();
-        } else if (!data.tiene_variantes) {
-            setSkuRows([]);
-        }
-    }, [data.tiene_variantes, selectedVariantIds, data.codigo]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -337,14 +399,58 @@ export default function Index({
         setAlmacenFilter('all');
     };
 
+    const appendProductImagesToFormData = (formData: FormData) => {
+        formData.append('manage_images', '1');
+
+        productImages.forEach((image, index) => {
+            const key = PRODUCT_IMAGE_KEYS[index];
+
+            if (!key) {
+                return;
+            }
+
+            if (image.file) {
+                formData.append(key, image.file);
+                return;
+            }
+
+            if (image.existingPath) {
+                formData.append(
+                    `imagenes_existentes[${key}]`,
+                    image.existingPath,
+                );
+            }
+        });
+    };
+
+    const handleImageSubmitError = (
+        submitErrors: Record<string, string>,
+    ) => {
+        const imageErrorKey = Object.keys(submitErrors).find((key) =>
+            key.startsWith('imagen'),
+        );
+
+        if (imageErrorKey) {
+            setImageError(submitErrors[imageErrorKey]);
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (isSubmitting) {
+            return;
+        }
+
+        setImageError(null);
 
         transform((currentData) => ({
             ...currentData,
             envase_producto_id:
                 currentData.envase_producto_id === 0
-                    ? (editando ? editando.id : null)
+                    ? editando
+                        ? editando.id
+                        : null
                     : currentData.envase_producto_id,
         }));
 
@@ -357,7 +463,10 @@ export default function Index({
                         return;
                     }
                     if (value === 'self') {
-                        formData.append(key, editando ? String(editando.id) : '');
+                        formData.append(
+                            key,
+                            editando ? String(editando.id) : '',
+                        );
                         return;
                     }
                     if (typeof value === 'number') {
@@ -371,15 +480,31 @@ export default function Index({
                     formData.append(key, '');
                     return;
                 }
-                if (key === 'variantes' && Array.isArray(value) && value.length > 0) {
+                if (
+                    key === 'variantes' &&
+                    Array.isArray(value) &&
+                    value.length > 0
+                ) {
                     // Check if these are System A (talla-based) or System B variants
                     const isLegacy = 'talla' in value[0];
                     if (isLegacy) {
                         value.forEach((v, index) => {
-                            formData.append(`variantes_legacy[${index}][talla]`, String(v.talla || ''));
-                            formData.append(`variantes_legacy[${index}][codigo]`, String(v.codigo || ''));
-                            formData.append(`variantes_legacy[${index}][stock]`, String(v.stock || 0));
-                            formData.append(`variantes_legacy[${index}][almacen_id]`, String(v.almacen_id || ''));
+                            formData.append(
+                                `variantes_legacy[${index}][talla]`,
+                                String(v.talla || ''),
+                            );
+                            formData.append(
+                                `variantes_legacy[${index}][codigo]`,
+                                String(v.codigo || ''),
+                            );
+                            formData.append(
+                                `variantes_legacy[${index}][stock]`,
+                                String(v.stock || 0),
+                            );
+                            formData.append(
+                                `variantes_legacy[${index}][almacen_id]`,
+                                String(v.almacen_id || ''),
+                            );
                         });
                     }
                     return;
@@ -395,7 +520,13 @@ export default function Index({
 
                 if (value === null) return;
                 if (value === undefined) return;
-                if (typeof value === 'string' && value === '' && key !== 'descripcion' && key !== 'envase_producto_id' && key !== 'fecha_vencimiento')
+                if (
+                    typeof value === 'string' &&
+                    value === '' &&
+                    key !== 'descripcion' &&
+                    key !== 'envase_producto_id' &&
+                    key !== 'fecha_vencimiento'
+                )
                     return;
 
                 if (typeof value === 'boolean') {
@@ -410,7 +541,10 @@ export default function Index({
             // Append variant data
             if (data.tiene_variantes) {
                 if (newVariantName.trim()) {
-                    formData.append(`variantes[0][nombre]`, newVariantName.trim());
+                    formData.append(
+                        `variantes[0][nombre]`,
+                        newVariantName.trim(),
+                    );
                     formData.append(`variantes[0][tipo]`, newVariantType);
                     newVariantValues.forEach((vv, vi) => {
                         formData.append(`variantes[0][valores][${vi}]`, vv);
@@ -421,33 +555,54 @@ export default function Index({
                 });
                 skuRows.forEach((sku, si) => {
                     formData.append(`skus[${si}][sku]`, sku.sku);
-                    formData.append(`skus[${si}][precio_venta]`, String(sku.precio_venta));
-                    formData.append(`skus[${si}][precio_compra]`, String(sku.precio_compra));
+                    formData.append(
+                        `skus[${si}][precio_venta]`,
+                        String(sku.precio_venta),
+                    );
+                    formData.append(
+                        `skus[${si}][precio_compra]`,
+                        String(sku.precio_compra),
+                    );
                     formData.append(`skus[${si}][stock]`, String(sku.stock));
-                    formData.append(`skus[${si}][stock_minimo]`, String(sku.stock_minimo));
+                    formData.append(
+                        `skus[${si}][stock_minimo]`,
+                        String(sku.stock_minimo),
+                    );
                     if (sku.almacen_id) {
-                        formData.append(`skus[${si}][almacen_id]`, sku.almacen_id);
+                        formData.append(
+                            `skus[${si}][almacen_id]`,
+                            sku.almacen_id,
+                        );
                     }
                     sku.variante_valores.forEach((vvId, vi) => {
-                        formData.append(`skus[${si}][variante_valores][${vi}]`, String(vvId));
+                        formData.append(
+                            `skus[${si}][variante_valores][${vi}]`,
+                            String(vvId),
+                        );
                     });
                 });
             }
 
+            appendProductImagesToFormData(formData);
             formData.append('_method', 'PUT');
 
             router.post(`/productos/${editando.id}`, formData, {
+                onStart: () => setIsSubmitting(true),
+                onFinish: () => setIsSubmitting(false),
                 onSuccess: () => {
                     setIsOpen(false);
                     setEditando(null);
                     reset();
+                    setProductImages([]);
+                    setImageError(null);
                     setSelectedVariantIds([]);
                     setSkuRows([]);
                     setNewVariantName('');
                     setNewVariantValues([]);
                 },
-                onError: (errors: any) => {
-                    console.error('Error:', errors);
+                onError: (submitErrors: Record<string, string>) => {
+                    handleImageSubmitError(submitErrors);
+                    console.error('Error:', submitErrors);
                 },
             });
         } else {
@@ -481,7 +636,13 @@ export default function Index({
                 }
                 if (value === null) return;
                 if (value === undefined) return;
-                if (typeof value === 'string' && value === '' && key !== 'descripcion' && key !== 'envase_producto_id' && key !== 'fecha_vencimiento')
+                if (
+                    typeof value === 'string' &&
+                    value === '' &&
+                    key !== 'descripcion' &&
+                    key !== 'envase_producto_id' &&
+                    key !== 'fecha_vencimiento'
+                )
                     return;
 
                 if (typeof value === 'boolean') {
@@ -495,7 +656,10 @@ export default function Index({
 
             if (data.tiene_variantes) {
                 if (newVariantName.trim()) {
-                    formData.append(`variantes[0][nombre]`, newVariantName.trim());
+                    formData.append(
+                        `variantes[0][nombre]`,
+                        newVariantName.trim(),
+                    );
                     formData.append(`variantes[0][tipo]`, newVariantType);
                     newVariantValues.forEach((vv, vi) => {
                         formData.append(`variantes[0][valores][${vi}]`, vv);
@@ -506,30 +670,52 @@ export default function Index({
                 });
                 skuRows.forEach((sku, si) => {
                     formData.append(`skus[${si}][sku]`, sku.sku);
-                    formData.append(`skus[${si}][precio_venta]`, String(sku.precio_venta));
-                    formData.append(`skus[${si}][precio_compra]`, String(sku.precio_compra));
+                    formData.append(
+                        `skus[${si}][precio_venta]`,
+                        String(sku.precio_venta),
+                    );
+                    formData.append(
+                        `skus[${si}][precio_compra]`,
+                        String(sku.precio_compra),
+                    );
                     formData.append(`skus[${si}][stock]`, String(sku.stock));
-                    formData.append(`skus[${si}][stock_minimo]`, String(sku.stock_minimo));
+                    formData.append(
+                        `skus[${si}][stock_minimo]`,
+                        String(sku.stock_minimo),
+                    );
                     if (sku.almacen_id) {
-                        formData.append(`skus[${si}][almacen_id]`, sku.almacen_id);
+                        formData.append(
+                            `skus[${si}][almacen_id]`,
+                            sku.almacen_id,
+                        );
                     }
                     sku.variante_valores.forEach((vvId, vi) => {
-                        formData.append(`skus[${si}][variante_valores][${vi}]`, String(vvId));
+                        formData.append(
+                            `skus[${si}][variante_valores][${vi}]`,
+                            String(vvId),
+                        );
                     });
                 });
             }
 
+            appendProductImagesToFormData(formData);
+
             router.post('/productos', formData, {
+                onStart: () => setIsSubmitting(true),
+                onFinish: () => setIsSubmitting(false),
                 onSuccess: () => {
                     setIsOpen(false);
                     reset();
+                    setProductImages([]);
+                    setImageError(null);
                     setSelectedVariantIds([]);
                     setSkuRows([]);
                     setNewVariantName('');
                     setNewVariantValues([]);
                 },
-                onError: (errors: any) => {
-                    console.error('Error:', errors);
+                onError: (submitErrors: Record<string, string>) => {
+                    handleImageSubmitError(submitErrors);
+                    console.error('Error:', submitErrors);
                 },
             });
         }
@@ -561,7 +747,9 @@ export default function Index({
             fecha_vencimiento: (producto as any).fecha_vencimiento || '',
             stock: producto.inventario?.cantidad || 0,
             warehouse_ids: producto.inventarios
-                ? (producto.inventarios.map((inv) => inv.almacen?.id).filter(Boolean) as number[])
+                ? (producto.inventarios
+                      .map((inv) => inv.almacen?.id)
+                      .filter(Boolean) as number[])
                 : [],
             unidad_medida: producto.unidad_medida || 'unidad',
             activo: producto.activo,
@@ -570,29 +758,23 @@ export default function Index({
             medida_pesable: Boolean((producto as any).medida_pesable),
             tipo_medida:
                 ((producto as any).tipo_medida as
-                    | 'unidad'
-                    | 'kilo'
-                    | 'litro') || 'unidad',
+                    'unidad' | 'kilo' | 'litro') || 'unidad',
             cantidad_medida: Number((producto as any).cantidad_medida) || 0,
             tipo_envase: (producto as any).tipo_envase || '',
-            imagen: null,
-            imagen2: null,
-            imagen3: null,
-            imagen4: null,
-            imagen5: null,
             video: null,
             mostrar_en_perfil: (producto as any).mostrar_en_perfil ?? true,
             contenido_por_unidad:
                 Number((producto as any).contenido_por_unidad) || 1,
             peso_base: Number((producto as any).peso_base) || 0,
             tiene_variantes: Boolean((producto as any).tiene_variantes),
-            variantes: producto.variantes?.map((v: any) => ({
-                talla: v.talla,
-                color: v.color || '',
-                codigo: v.codigo,
-                stock: v.inventarios?.[0]?.cantidad || 0,
-                almacen_id: v.inventarios?.[0]?.almacen_id || '',
-            })) || [],
+            variantes:
+                producto.variantes?.map((v: any) => ({
+                    talla: v.talla,
+                    color: v.color || '',
+                    codigo: v.codigo,
+                    stock: v.inventarios?.[0]?.cantidad || 0,
+                    almacen_id: v.inventarios?.[0]?.almacen_id || '',
+                })) || [],
         });
 
         // Load SKU data if exists (System B)
@@ -607,7 +789,9 @@ export default function Index({
                     stock_minimo: sku.stock_minimo || producto.stock_minimo,
                     almacen_id: '',
                     variante_valores: vvIds,
-                    labels: sku.valores.map((v) => v.varianteValor?.valor || ''),
+                    labels: sku.valores.map(
+                        (v) => v.varianteValor?.valor || '',
+                    ),
                 };
             });
             setSkuRows(rows);
@@ -621,15 +805,24 @@ export default function Index({
                         .find((vl2) => vl2.id === v.variante_valor_id);
                     if (vl) {
                         const parent = variantesDisponibles.find((vt) =>
-                            vt.valores.some((v2) => v2.id === vl.id)
+                            vt.valores.some((v2) => v2.id === vl.id),
                         );
                         if (parent) usedVariantTypeIds.add(parent.id);
                     }
                 });
             });
-            setSelectedVariantIds(Array.from(usedVariantTypeIds));
+            const usedVariantIds = Array.from(usedVariantTypeIds);
+            setSelectedVariantIds(usedVariantIds);
+            setSkuSignature(
+                Boolean((producto as any).tiene_variantes) &&
+                    usedVariantIds.length > 0
+                    ? `${usedVariantIds.join(',')}|${producto.codigo}`
+                    : null,
+            );
         }
 
+        setProductImages(buildProductImageItems(producto));
+        setImageError(null);
         setIsSelfSelected(isSelf);
         setIsOpen(true);
     };
@@ -637,6 +830,8 @@ export default function Index({
     const handleNew = () => {
         setEditando(null);
         reset();
+        setProductImages([]);
+        setImageError(null);
         setSelectedVariantIds([]);
         setSkuRows([]);
         setNewVariantName('');
@@ -653,7 +848,7 @@ export default function Index({
 
     const toggleVariantType = (id: number) => {
         setSelectedVariantIds((prev) =>
-            prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
+            prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id],
         );
     };
 
@@ -671,7 +866,9 @@ export default function Index({
 
     const updateSkuRow = (index: number, field: keyof SkuRow, value: any) => {
         setSkuRows((prev) =>
-            prev.map((row, i) => (i === index ? { ...row, [field]: value } : row))
+            prev.map((row, i) =>
+                i === index ? { ...row, [field]: value } : row,
+            ),
         );
     };
 
@@ -699,7 +896,10 @@ export default function Index({
                                 search: searchTerm,
                                 categoria_id: categoriaFilter,
                                 stock_bajo: stockBajoFilter ? '1' : '',
-                                almacen_id: almacenFilter !== 'all' ? almacenFilter : '',
+                                almacen_id:
+                                    almacenFilter !== 'all'
+                                        ? almacenFilter
+                                        : '',
                             }}
                             modelName="Productos"
                         />
@@ -765,7 +965,7 @@ export default function Index({
                                         onChange={(e) =>
                                             setSearchTerm(e.target.value)
                                         }
-                                        className="h-10 border-none bg-background/50 pl-10 pr-10 focus-visible:ring-primary/20"
+                                        className="h-10 border-none bg-background/50 pr-10 pl-10 focus-visible:ring-primary/20"
                                     />
                                 </div>
                                 <div className="flex gap-2">
@@ -887,11 +1087,15 @@ export default function Index({
                                                                 </div>
                                                                 <div>
                                                                     <div className="text-sm font-bold tracking-tight">
-                                                                        {p.nombre}
+                                                                        {
+                                                                            p.nombre
+                                                                        }
                                                                     </div>
                                                                     <div className="flex items-center gap-1.5 font-mono text-[10px] leading-none text-muted-foreground">
                                                                         <ArrowDownZA className="h-2.5 w-2.5" />
-                                                                        {p.codigo}
+                                                                        {
+                                                                            p.codigo
+                                                                        }
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -901,7 +1105,8 @@ export default function Index({
                                                                 variant="outline"
                                                                 className="border-primary/20 bg-primary/5 text-[10px] font-bold text-primary"
                                                             >
-                                                                {p.categoria?.nombre ||
+                                                                {p.categoria
+                                                                    ?.nombre ||
                                                                     'General'}
                                                             </Badge>
                                                         </td>
@@ -915,12 +1120,28 @@ export default function Index({
                                                                 className={`inline-flex items-center gap-1 text-sm font-black ${(p.inventarios?.reduce((sum, inv) => sum + inv.cantidad, 0) || 0) <= (p.inventarios?.reduce((sum, inv) => sum + inv.cantidad_minima, 0) || 0) ? 'text-red-500' : 'text-green-600'}`}
                                                             >
                                                                 {Math.round(
-                                                                    p.inventarios?.reduce((sum, inv) => sum + inv.cantidad, 0) || 0
+                                                                    p.inventarios?.reduce(
+                                                                        (
+                                                                            sum,
+                                                                            inv,
+                                                                        ) =>
+                                                                            sum +
+                                                                            inv.cantidad,
+                                                                        0,
+                                                                    ) || 0,
                                                                 )}
                                                                 <span className="text-[10px] font-medium text-muted-foreground lowercase italic">
                                                                     /{' '}
                                                                     {Math.round(
-                                                                        p.inventarios?.reduce((sum, inv) => sum + inv.cantidad_minima, 0) || 0
+                                                                        p.inventarios?.reduce(
+                                                                            (
+                                                                                sum,
+                                                                                inv,
+                                                                            ) =>
+                                                                                sum +
+                                                                                inv.cantidad_minima,
+                                                                            0,
+                                                                        ) || 0,
                                                                     )}
                                                                 </span>
                                                             </div>
@@ -943,7 +1164,9 @@ export default function Index({
                                                                     size="icon"
                                                                     className="h-8 w-8 text-blue-600 hover:bg-blue-50"
                                                                     onClick={() => {
-                                                                        setViendo(p);
+                                                                        setViendo(
+                                                                            p,
+                                                                        );
                                                                         setIsViewOpen(
                                                                             true,
                                                                         );
@@ -957,7 +1180,9 @@ export default function Index({
                                                                         size="icon"
                                                                         className="h-8 w-8 text-primary hover:bg-primary/10"
                                                                         onClick={() =>
-                                                                            handleEdit(p)
+                                                                            handleEdit(
+                                                                                p,
+                                                                            )
                                                                         }
                                                                     >
                                                                         <Pencil className="h-4 w-4" />
@@ -981,7 +1206,8 @@ export default function Index({
                                                         </td>
                                                     </tr>
                                                 ))}
-                                                {productos.data.length === 0 && (
+                                                {productos.data.length ===
+                                                    0 && (
                                                     <tr>
                                                         <td
                                                             colSpan={6}
@@ -990,7 +1216,8 @@ export default function Index({
                                                             <div className="flex flex-col items-center gap-2 text-muted-foreground">
                                                                 <Package className="h-10 w-10 opacity-20" />
                                                                 <p className="font-medium">
-                                                                    No se encontraron
+                                                                    No se
+                                                                    encontraron
                                                                     productos
                                                                     coincidentes
                                                                 </p>
@@ -1047,8 +1274,15 @@ export default function Index({
                                                         </div>
                                                         {p.categoria && (
                                                             <div className="absolute top-2 left-2">
-                                                                <Badge variant="secondary" className="px-2 py-0.5 text-[10px]">
-                                                                    {p.categoria.nombre}
+                                                                <Badge
+                                                                    variant="secondary"
+                                                                    className="px-2 py-0.5 text-[10px]"
+                                                                >
+                                                                    {
+                                                                        p
+                                                                            .categoria
+                                                                            .nombre
+                                                                    }
                                                                 </Badge>
                                                             </div>
                                                         )}
@@ -1056,19 +1290,74 @@ export default function Index({
                                                     <div className="space-y-2 p-4">
                                                         <div className="flex items-start justify-between gap-2">
                                                             <div>
-                                                                <h3 className="font-semibold leading-tight">{p.nombre}</h3>
-                                                                <p className="font-mono text-xs text-muted-foreground">{p.codigo}</p>
+                                                                <h3 className="leading-tight font-semibold">
+                                                                    {p.nombre}
+                                                                </h3>
+                                                                <p className="font-mono text-xs text-muted-foreground">
+                                                                    {p.codigo}
+                                                                </p>
                                                             </div>
                                                         </div>
                                                         <div className="space-y-1 text-xs text-muted-foreground">
                                                             <div className="flex items-center gap-1.5">
                                                                 <Tag className="h-3.5 w-3.5 shrink-0" />
-                                                                <span>{formatCurrency(p.precio_venta)}</span>
+                                                                <span>
+                                                                    {formatCurrency(
+                                                                        p.precio_venta,
+                                                                    )}
+                                                                </span>
                                                             </div>
                                                             <div className="flex items-center gap-1.5">
                                                                 <Package className="h-3.5 w-3.5 shrink-0" />
-                                                                <span className={((p.inventarios?.reduce((sum, inv) => sum + inv.cantidad, 0) || 0) <= (p.inventarios?.reduce((sum, inv) => sum + inv.cantidad_minima, 0) || 0)) ? 'text-red-500 font-medium' : ''}>
-                                                                    Stock: {Math.round(p.inventarios?.reduce((sum, inv) => sum + inv.cantidad, 0) || 0)} / {Math.round(p.inventarios?.reduce((sum, inv) => sum + inv.cantidad_minima, 0) || 0)}
+                                                                <span
+                                                                    className={
+                                                                        (p.inventarios?.reduce(
+                                                                            (
+                                                                                sum,
+                                                                                inv,
+                                                                            ) =>
+                                                                                sum +
+                                                                                inv.cantidad,
+                                                                            0,
+                                                                        ) ||
+                                                                            0) <=
+                                                                        (p.inventarios?.reduce(
+                                                                            (
+                                                                                sum,
+                                                                                inv,
+                                                                            ) =>
+                                                                                sum +
+                                                                                inv.cantidad_minima,
+                                                                            0,
+                                                                        ) || 0)
+                                                                            ? 'font-medium text-red-500'
+                                                                            : ''
+                                                                    }
+                                                                >
+                                                                    Stock:{' '}
+                                                                    {Math.round(
+                                                                        p.inventarios?.reduce(
+                                                                            (
+                                                                                sum,
+                                                                                inv,
+                                                                            ) =>
+                                                                                sum +
+                                                                                inv.cantidad,
+                                                                            0,
+                                                                        ) || 0,
+                                                                    )}{' '}
+                                                                    /{' '}
+                                                                    {Math.round(
+                                                                        p.inventarios?.reduce(
+                                                                            (
+                                                                                sum,
+                                                                                inv,
+                                                                            ) =>
+                                                                                sum +
+                                                                                inv.cantidad_minima,
+                                                                            0,
+                                                                        ) || 0,
+                                                                    )}
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -1078,20 +1367,30 @@ export default function Index({
                                                                 size="sm"
                                                                 className="h-8 px-2 text-xs"
                                                                 onClick={() => {
-                                                                    setViendo(p);
-                                                                    setIsViewOpen(true);
+                                                                    setViendo(
+                                                                        p,
+                                                                    );
+                                                                    setIsViewOpen(
+                                                                        true,
+                                                                    );
                                                                 }}
                                                             >
-                                                                <Eye className="mr-1 h-3.5 w-3.5" /> Ver
+                                                                <Eye className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                Ver
                                                             </Button>
                                                             {canEdit && (
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="sm"
                                                                     className="h-8 px-2 text-xs"
-                                                                    onClick={() => handleEdit(p)}
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            p,
+                                                                        )
+                                                                    }
                                                                 >
-                                                                    <Pencil className="mr-1 h-3.5 w-3.5" /> Editar
+                                                                    <Pencil className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                    Editar
                                                                 </Button>
                                                             )}
                                                             {canDelete && (
@@ -1099,9 +1398,14 @@ export default function Index({
                                                                     variant="ghost"
                                                                     size="sm"
                                                                     className="h-8 px-2 text-xs text-destructive hover:text-destructive"
-                                                                    onClick={() => handleDelete(p.id)}
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            p.id,
+                                                                        )
+                                                                    }
                                                                 >
-                                                                    <Trash2 className="mr-1 h-3.5 w-3.5" /> Eliminar
+                                                                    <Trash2 className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                    Eliminar
                                                                 </Button>
                                                             )}
                                                         </div>
@@ -1230,26 +1534,52 @@ export default function Index({
                                                     Almacenes Disponibles
                                                 </Label>
                                                 <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                                                    {almacenes.map((almacen) => (
-                                                        <label
-                                                            key={almacen.id}
-                                                            className="flex cursor-pointer select-none items-center gap-2.5 rounded-lg p-2 transition-colors hover:bg-white"
-                                                        >
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={data.warehouse_ids.includes(almacen.id)}
-                                                                onChange={(e) => {
-                                                                    const checked = e.target.checked;
-                                                                    const newIds = checked
-                                                                        ? [...data.warehouse_ids, almacen.id]
-                                                                        : data.warehouse_ids.filter((id) => id !== almacen.id);
-                                                                    setData('warehouse_ids', newIds);
-                                                                }}
-                                                                className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
-                                                            />
-                                                            <span className="text-xs font-medium text-slate-700">{almacen.nombre}</span>
-                                                        </label>
-                                                    ))}
+                                                    {almacenes.map(
+                                                        (almacen) => (
+                                                            <label
+                                                                key={almacen.id}
+                                                                className="flex cursor-pointer items-center gap-2.5 rounded-lg p-2 transition-colors select-none hover:bg-white"
+                                                            >
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={data.warehouse_ids.includes(
+                                                                        almacen.id,
+                                                                    )}
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) => {
+                                                                        const checked =
+                                                                            e
+                                                                                .target
+                                                                                .checked;
+                                                                        const newIds =
+                                                                            checked
+                                                                                ? [
+                                                                                      ...data.warehouse_ids,
+                                                                                      almacen.id,
+                                                                                  ]
+                                                                                : data.warehouse_ids.filter(
+                                                                                      (
+                                                                                          id,
+                                                                                      ) =>
+                                                                                          id !==
+                                                                                          almacen.id,
+                                                                                  );
+                                                                        setData(
+                                                                            'warehouse_ids',
+                                                                            newIds,
+                                                                        );
+                                                                    }}
+                                                                    className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                                                                />
+                                                                <span className="text-xs font-medium text-slate-700">
+                                                                    {
+                                                                        almacen.nombre
+                                                                    }
+                                                                </span>
+                                                            </label>
+                                                        ),
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -1302,7 +1632,7 @@ export default function Index({
                                                         checked={
                                                             data.medida_pesable ||
                                                             data.unidad_medida !==
-                                                            'unidad'
+                                                                'unidad'
                                                         }
                                                         onCheckedChange={(v) =>
                                                             setData(
@@ -1320,34 +1650,34 @@ export default function Index({
 
                                             {(data.unidad_medida !== 'unidad' ||
                                                 data.medida_pesable) && (
-                                                    <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2">
-                                                        <div className="space-y-2">
-                                                            <Label className="text-xs font-bold text-blue-600">
-                                                                ¿Cuántos
-                                                                kilos/litros
-                                                                contiene cada
-                                                                unidad?
-                                                            </Label>
-                                                            <Input
-                                                                type="number"
-                                                                value={
-                                                                    data.contenido_por_unidad
-                                                                }
-                                                                onChange={(e) =>
-                                                                    setData(
-                                                                        'contenido_por_unidad',
-                                                                        parseFloat(
-                                                                            e.target
-                                                                                .value,
-                                                                        ) || 0,
-                                                                    )
-                                                                }
-                                                                className="h-10 border-none bg-background font-black"
-                                                                placeholder="Ej: 15"
-                                                            />
-                                                        </div>
+                                                <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold text-blue-600">
+                                                            ¿Cuántos
+                                                            kilos/litros
+                                                            contiene cada
+                                                            unidad?
+                                                        </Label>
+                                                        <Input
+                                                            type="number"
+                                                            value={
+                                                                data.contenido_por_unidad
+                                                            }
+                                                            onChange={(e) =>
+                                                                setData(
+                                                                    'contenido_por_unidad',
+                                                                    parseFloat(
+                                                                        e.target
+                                                                            .value,
+                                                                    ) || 0,
+                                                                )
+                                                            }
+                                                            className="h-10 border-none bg-background font-black"
+                                                            placeholder="Ej: 15"
+                                                        />
                                                     </div>
-                                                )}
+                                                </div>
+                                            )}
                                             {/* Envase retornable section */}
                                             <div className="space-y-4 rounded-xl border border-primary/10 bg-primary/5 p-4">
                                                 <div className="flex items-center justify-between pt-2">
@@ -1357,11 +1687,21 @@ export default function Index({
                                                         </Label>
                                                     </div>
                                                     <Switch
-                                                        checked={data.envase_retornable}
-                                                        onCheckedChange={(v) => {
-                                                            setData('envase_retornable', v);
+                                                        checked={
+                                                            data.envase_retornable
+                                                        }
+                                                        onCheckedChange={(
+                                                            v,
+                                                        ) => {
+                                                            setData(
+                                                                'envase_retornable',
+                                                                v,
+                                                            );
                                                             if (!v) {
-                                                                setData('envase_producto_id', null);
+                                                                setData(
+                                                                    'envase_producto_id',
+                                                                    null,
+                                                                );
                                                             }
                                                         }}
                                                     />
@@ -1369,39 +1709,92 @@ export default function Index({
                                                 {data.envase_retornable && (
                                                     <div className="mt-4">
                                                         <Label className="text-xs font-bold tracking-wider text-primary uppercase">
-                                                            Envase Físico Asociado
+                                                            Envase Físico
+                                                            Asociado
                                                         </Label>
                                                         <Select
-                                                            value={data.envase_producto_id === null ? "none" : data.envase_producto_id === 0 ? "self" : String(data.envase_producto_id)}
-                                                            onValueChange={(v) => {
-                                                                const isSelf = v === 'self';
-                                                                setIsSelfSelected(isSelf);
+                                                            value={
+                                                                data.envase_producto_id ===
+                                                                null
+                                                                    ? 'none'
+                                                                    : data.envase_producto_id ===
+                                                                        0
+                                                                      ? 'self'
+                                                                      : String(
+                                                                            data.envase_producto_id,
+                                                                        )
+                                                            }
+                                                            onValueChange={(
+                                                                v,
+                                                            ) => {
+                                                                const isSelf =
+                                                                    v ===
+                                                                    'self';
+                                                                setIsSelfSelected(
+                                                                    isSelf,
+                                                                );
                                                                 setData(
                                                                     'envase_producto_id',
-                                                                    v === 'none' ? null : isSelf ? 0 : Number(v)
+                                                                    v === 'none'
+                                                                        ? null
+                                                                        : isSelf
+                                                                          ? 0
+                                                                          : Number(
+                                                                                v,
+                                                                            ),
                                                                 );
                                                             }}
                                                         >
                                                             <SelectTrigger className="h-10 border-none bg-background font-black">
-                                                                <SelectValue className={isSelfSelected ? 'font-semibold text-primary' : ''} placeholder="Seleccione el envase físico..." />
+                                                                <SelectValue
+                                                                    className={
+                                                                        isSelfSelected
+                                                                            ? 'font-semibold text-primary'
+                                                                            : ''
+                                                                    }
+                                                                    placeholder="Seleccione el envase físico..."
+                                                                />
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 <SelectItem value="none">
-                                                                    Ninguno (producto no retornable)
+                                                                    Ninguno
+                                                                    (producto no
+                                                                    retornable)
                                                                 </SelectItem>
-                                                                {(!editando && data.envase_retornable) || data.envase_producto_id === 0 ? (
+                                                                {(!editando &&
+                                                                    data.envase_retornable) ||
+                                                                data.envase_producto_id ===
+                                                                    0 ? (
                                                                     <SelectItem value="self">
-                                                                        Seleccione este producto como envase físico
+                                                                        Seleccione
+                                                                        este
+                                                                        producto
+                                                                        como
+                                                                        envase
+                                                                        físico
                                                                     </SelectItem>
                                                                 ) : null}
-                                                                {productosEnvase.map((envase) => (
-                                                                    <SelectItem
-                                                                        key={envase.id}
-                                                                        value={envase.id.toString()}
-                                                                    >
-                                                                        {envase.nombre} ({envase.codigo})
-                                                                    </SelectItem>
-                                                                ))}
+                                                                {productosEnvase.map(
+                                                                    (
+                                                                        envase,
+                                                                    ) => (
+                                                                        <SelectItem
+                                                                            key={
+                                                                                envase.id
+                                                                            }
+                                                                            value={envase.id.toString()}
+                                                                        >
+                                                                            {
+                                                                                envase.nombre
+                                                                            }{' '}
+                                                                            (
+                                                                            {
+                                                                                envase.codigo
+                                                                            }
+                                                                            )
+                                                                        </SelectItem>
+                                                                    ),
+                                                                )}
                                                             </SelectContent>
                                                         </Select>
                                                     </div>
@@ -1503,7 +1896,9 @@ export default function Index({
                                                 </Label>
                                                 <Input
                                                     type="date"
-                                                    value={data.fecha_vencimiento}
+                                                    value={
+                                                        data.fecha_vencimiento
+                                                    }
                                                     onChange={(e) =>
                                                         setData(
                                                             'fecha_vencimiento',
@@ -1549,14 +1944,20 @@ export default function Index({
                                                         Tiene Variantes
                                                     </Label>
                                                     <Switch
-                                                        checked={data.tiene_variantes}
+                                                        checked={
+                                                            data.tiene_variantes
+                                                        }
                                                         onCheckedChange={(v) =>
-                                                            setData('tiene_variantes', v)
+                                                            setData(
+                                                                'tiene_variantes',
+                                                                v,
+                                                            )
                                                         }
                                                     />
                                                 </div>
                                                 <p className="text-[10px] text-muted-foreground">
-                                                    Tallas, colores, sabores, numeración, etc.
+                                                    Tallas, colores, sabores,
+                                                    numeración, etc.
                                                 </p>
                                             </div>
                                         </div>
@@ -1567,115 +1968,234 @@ export default function Index({
                                                 <div className="flex items-center gap-2">
                                                     <Layers className="h-5 w-5 text-indigo-600" />
                                                     <h3 className="text-sm font-black tracking-wider text-indigo-700 uppercase">
-                                                        Configuración de Variantes
+                                                        Configuración de
+                                                        Variantes
                                                     </h3>
                                                 </div>
 
                                                 {/* Existing Variant Types */}
-                                                {variantesDisponibles.length > 0 && (
+                                                {variantesDisponibles.length >
+                                                    0 && (
                                                     <div className="space-y-3">
                                                         <Label className="text-xs font-bold text-indigo-600">
-                                                            Seleccionar variantes existentes
+                                                            Seleccionar
+                                                            variantes existentes
                                                         </Label>
                                                         <div className="flex flex-wrap gap-2">
-                                                            {variantesDisponibles.map((vt) => {
-                                                                const isSelected = selectedVariantIds.includes(vt.id);
-                                                                return (
-                                                                    <button
-                                                                        key={vt.id}
-                                                                        type="button"
-                                                                        onClick={() => toggleVariantType(vt.id)}
-                                                                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all ${
-                                                                            isSelected
-                                                                                ? 'bg-indigo-600 text-white shadow-md'
-                                                                                : 'bg-white text-indigo-600 border border-indigo-200 hover:border-indigo-400'
-                                                                        }`}
-                                                                    >
-                                                                        {vt.tipo === 'color' ? <Palette className="h-3 w-3" /> :
-                                                                         vt.tipo === 'numero' ? <Hash className="h-3 w-3" /> :
-                                                                         <Ruler className="h-3 w-3" />}
-                                                                        {vt.nombre}
-                                                                        {isSelected && (
-                                                                            <span className="ml-1 rounded-full bg-white/20 px-1.5 text-[9px]">
-                                                                                {vt.valores.length}
-                                                                            </span>
-                                                                        )}
-                                                                    </button>
-                                                                );
-                                                            })}
+                                                            {variantesDisponibles.map(
+                                                                (vt) => {
+                                                                    const isSelected =
+                                                                        selectedVariantIds.includes(
+                                                                            vt.id,
+                                                                        );
+                                                                    return (
+                                                                        <button
+                                                                            key={
+                                                                                vt.id
+                                                                            }
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                toggleVariantType(
+                                                                                    vt.id,
+                                                                                )
+                                                                            }
+                                                                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all ${
+                                                                                isSelected
+                                                                                    ? 'bg-indigo-600 text-white shadow-md'
+                                                                                    : 'border border-indigo-200 bg-white text-indigo-600 hover:border-indigo-400'
+                                                                            }`}
+                                                                        >
+                                                                            {vt.tipo ===
+                                                                            'color' ? (
+                                                                                <Palette className="h-3 w-3" />
+                                                                            ) : vt.tipo ===
+                                                                              'numero' ? (
+                                                                                <Hash className="h-3 w-3" />
+                                                                            ) : (
+                                                                                <Ruler className="h-3 w-3" />
+                                                                            )}
+                                                                            {
+                                                                                vt.nombre
+                                                                            }
+                                                                            {isSelected && (
+                                                                                <span className="ml-1 rounded-full bg-white/20 px-1.5 text-[9px]">
+                                                                                    {
+                                                                                        vt
+                                                                                            .valores
+                                                                                            .length
+                                                                                    }
+                                                                                </span>
+                                                                            )}
+                                                                        </button>
+                                                                    );
+                                                                },
+                                                            )}
                                                         </div>
                                                         {/* Show values for selected variants */}
-                                                        {getSelectedVariants.map((vt) => (
-                                                            <div key={vt.id} className="rounded-lg border border-indigo-200 bg-white p-3">
-                                                                <p className="text-[10px] font-bold text-indigo-600 uppercase mb-1">
-                                                                    {vt.nombre}
-                                                                </p>
-                                                                <div className="flex flex-wrap gap-1">
-                                                                    {vt.valores.map((vl) => (
-                                                                        <Badge key={vl.id} variant="secondary" className="text-[10px]">
-                                                                            {vl.valor}
-                                                                        </Badge>
-                                                                    ))}
+                                                        {getSelectedVariants.map(
+                                                            (vt) => (
+                                                                <div
+                                                                    key={vt.id}
+                                                                    className="rounded-lg border border-indigo-200 bg-white p-3"
+                                                                >
+                                                                    <p className="mb-1 text-[10px] font-bold text-indigo-600 uppercase">
+                                                                        {
+                                                                            vt.nombre
+                                                                        }
+                                                                    </p>
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {vt.valores.map(
+                                                                            (
+                                                                                vl,
+                                                                            ) => (
+                                                                                <Badge
+                                                                                    key={
+                                                                                        vl.id
+                                                                                    }
+                                                                                    variant="secondary"
+                                                                                    className="text-[10px]"
+                                                                                >
+                                                                                    {
+                                                                                        vl.valor
+                                                                                    }
+                                                                                </Badge>
+                                                                            ),
+                                                                        )}
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        ))}
+                                                            ),
+                                                        )}
                                                     </div>
                                                 )}
 
                                                 {/* Inline New Variant Creator */}
                                                 <div className="space-y-3 rounded-lg border border-dashed border-indigo-300 bg-white p-4">
                                                     <Label className="text-xs font-bold text-indigo-600">
-                                                        {variantesDisponibles.length > 0 ? 'O crear nueva variante' : 'Crear nueva variante'}
+                                                        {variantesDisponibles.length >
+                                                        0
+                                                            ? 'O crear nueva variante'
+                                                            : 'Crear nueva variante'}
                                                     </Label>
                                                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                                                         <div>
-                                                            <Label className="text-[9px] font-bold text-muted-foreground">Nombre</Label>
+                                                            <Label className="text-[9px] font-bold text-muted-foreground">
+                                                                Nombre
+                                                            </Label>
                                                             <Input
-                                                                value={newVariantName}
-                                                                onChange={(e) => setNewVariantName(e.target.value)}
+                                                                value={
+                                                                    newVariantName
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setNewVariantName(
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
                                                                 placeholder="Ej: Talla"
-                                                                className="h-9 text-xs border-none bg-indigo-50/50"
+                                                                className="h-9 border-none bg-indigo-50/50 text-xs"
                                                             />
                                                         </div>
                                                         <div>
-                                                            <Label className="text-[9px] font-bold text-muted-foreground">Tipo</Label>
-                                                            <Select value={newVariantType} onValueChange={(v: any) => setNewVariantType(v)}>
-                                                                <SelectTrigger className="h-9 text-xs border-none bg-indigo-50/50">
+                                                            <Label className="text-[9px] font-bold text-muted-foreground">
+                                                                Tipo
+                                                            </Label>
+                                                            <Select
+                                                                value={
+                                                                    newVariantType
+                                                                }
+                                                                onValueChange={(
+                                                                    v: any,
+                                                                ) =>
+                                                                    setNewVariantType(
+                                                                        v,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <SelectTrigger className="h-9 border-none bg-indigo-50/50 text-xs">
                                                                     <SelectValue />
                                                                 </SelectTrigger>
                                                                 <SelectContent>
-                                                                    <SelectItem value="texto">Texto</SelectItem>
-                                                                    <SelectItem value="color">Color</SelectItem>
-                                                                    <SelectItem value="numero">Número</SelectItem>
+                                                                    <SelectItem value="texto">
+                                                                        Texto
+                                                                    </SelectItem>
+                                                                    <SelectItem value="color">
+                                                                        Color
+                                                                    </SelectItem>
+                                                                    <SelectItem value="numero">
+                                                                        Número
+                                                                    </SelectItem>
                                                                 </SelectContent>
                                                             </Select>
                                                         </div>
                                                         <div>
-                                                            <Label className="text-[9px] font-bold text-muted-foreground">Valores</Label>
+                                                            <Label className="text-[9px] font-bold text-muted-foreground">
+                                                                Valores
+                                                            </Label>
                                                             <div className="flex gap-1">
                                                                 <Input
-                                                                    value={newVariantValueInput}
-                                                                    onChange={(e) => setNewVariantValueInput(e.target.value)}
-                                                                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addNewVariantValue())}
+                                                                    value={
+                                                                        newVariantValueInput
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        setNewVariantValueInput(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                    onKeyDown={(
+                                                                        e,
+                                                                    ) =>
+                                                                        e.key ===
+                                                                            'Enter' &&
+                                                                        (e.preventDefault(),
+                                                                        addNewVariantValue())
+                                                                    }
                                                                     placeholder="Agregar valor"
-                                                                    className="h-9 text-xs border-none bg-indigo-50/50"
+                                                                    className="h-9 border-none bg-indigo-50/50 text-xs"
                                                                 />
-                                                                <Button type="button" size="icon" variant="outline" className="h-9 w-9 shrink-0" onClick={addNewVariantValue}>
+                                                                <Button
+                                                                    type="button"
+                                                                    size="icon"
+                                                                    variant="outline"
+                                                                    className="h-9 w-9 shrink-0"
+                                                                    onClick={
+                                                                        addNewVariantValue
+                                                                    }
+                                                                >
                                                                     <Plus className="h-3 w-3" />
                                                                 </Button>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    {newVariantValues.length > 0 && (
+                                                    {newVariantValues.length >
+                                                        0 && (
                                                         <div className="flex flex-wrap gap-1.5">
-                                                            {newVariantValues.map((val) => (
-                                                                <Badge key={val} variant="secondary" className="flex items-center gap-1 text-[10px] pr-1">
-                                                                    {val}
-                                                                    <button type="button" onClick={() => removeNewVariantValue(val)}>
-                                                                        <XCircle className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                                                                    </button>
-                                                                </Badge>
-                                                            ))}
+                                                            {newVariantValues.map(
+                                                                (val) => (
+                                                                    <Badge
+                                                                        key={
+                                                                            val
+                                                                        }
+                                                                        variant="secondary"
+                                                                        className="flex items-center gap-1 pr-1 text-[10px]"
+                                                                    >
+                                                                        {val}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                removeNewVariantValue(
+                                                                                    val,
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <XCircle className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                                                                        </button>
+                                                                    </Badge>
+                                                                ),
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
@@ -1685,104 +2205,266 @@ export default function Index({
                                                     <div className="space-y-3">
                                                         <div className="flex items-center justify-between">
                                                             <Label className="text-xs font-bold text-indigo-600">
-                                                                Combinaciones SKU generadas ({skuRows.length})
+                                                                Combinaciones
+                                                                SKU generadas (
+                                                                {skuRows.length}
+                                                                )
                                                             </Label>
-                                                            <Button type="button" variant="outline" size="sm" className="h-7 text-[10px]" onClick={generateSkuCombinations}>
-                                                                <Layers className="mr-1 h-3 w-3" /> Regenerar
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="h-7 text-[10px]"
+                                                                onClick={
+                                                                    generateSkuCombinations
+                                                                }
+                                                            >
+                                                                <Layers className="mr-1 h-3 w-3" />{' '}
+                                                                Regenerar
                                                             </Button>
                                                         </div>
                                                         <div className="overflow-x-auto rounded-lg border border-indigo-200">
                                                             <table className="w-full text-left text-xs">
                                                                 <thead className="bg-indigo-100 text-[9px] font-bold text-indigo-700 uppercase">
                                                                     <tr>
-                                                                        {getSelectedVariants.map((vt) => (
-                                                                            <th key={vt.id} className="px-3 py-2">{vt.nombre}</th>
-                                                                        ))}
-                                                                        <th className="px-3 py-2">SKU</th>
-                                                                        <th className="px-3 py-2 text-right">Precio Vta</th>
-                                                                        <th className="px-3 py-2 text-right">Precio Comp</th>
-                                                                        <th className="px-3 py-2 text-right">Stock</th>
-                                                                        <th className="px-3 py-2 text-right">Stock Mín</th>
-                                                                        <th className="px-3 py-2">Almacén</th>
+                                                                        {getSelectedVariants.map(
+                                                                            (
+                                                                                vt,
+                                                                            ) => (
+                                                                                <th
+                                                                                    key={
+                                                                                        vt.id
+                                                                                    }
+                                                                                    className="px-3 py-2"
+                                                                                >
+                                                                                    {
+                                                                                        vt.nombre
+                                                                                    }
+                                                                                </th>
+                                                                            ),
+                                                                        )}
+                                                                        <th className="px-3 py-2">
+                                                                            SKU
+                                                                        </th>
+                                                                        <th className="px-3 py-2 text-right">
+                                                                            Precio
+                                                                            Vta
+                                                                        </th>
+                                                                        <th className="px-3 py-2 text-right">
+                                                                            Precio
+                                                                            Comp
+                                                                        </th>
+                                                                        <th className="px-3 py-2 text-right">
+                                                                            Stock
+                                                                        </th>
+                                                                        <th className="px-3 py-2 text-right">
+                                                                            Stock
+                                                                            Mín
+                                                                        </th>
+                                                                        <th className="px-3 py-2">
+                                                                            Almacén
+                                                                        </th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody className="divide-y divide-indigo-100 bg-white">
-                                                                    {skuRows.map((row, i) => (
-                                                                        <tr key={i} className="hover:bg-indigo-50/50">
-                                                                            {row.labels.map((label, j) => (
-                                                                                <td key={j} className="px-3 py-2 font-medium text-indigo-800">
-                                                                                    {label.split(': ')[1] || label}
+                                                                    {skuRows.map(
+                                                                        (
+                                                                            row,
+                                                                            i,
+                                                                        ) => (
+                                                                            <tr
+                                                                                key={
+                                                                                    i
+                                                                                }
+                                                                                className="hover:bg-indigo-50/50"
+                                                                            >
+                                                                                {row.labels.map(
+                                                                                    (
+                                                                                        label,
+                                                                                        j,
+                                                                                    ) => (
+                                                                                        <td
+                                                                                            key={
+                                                                                                j
+                                                                                            }
+                                                                                            className="px-3 py-2 font-medium text-indigo-800"
+                                                                                        >
+                                                                                            {label.split(
+                                                                                                ': ',
+                                                                                            )[1] ||
+                                                                                                label}
+                                                                                        </td>
+                                                                                    ),
+                                                                                )}
+                                                                                <td className="px-3 py-2">
+                                                                                    <Input
+                                                                                        value={
+                                                                                            row.sku
+                                                                                        }
+                                                                                        onChange={(
+                                                                                            e,
+                                                                                        ) =>
+                                                                                            updateSkuRow(
+                                                                                                i,
+                                                                                                'sku',
+                                                                                                e
+                                                                                                    .target
+                                                                                                    .value,
+                                                                                            )
+                                                                                        }
+                                                                                        className="h-7 w-28 border-none bg-indigo-50/50 font-mono text-[10px] font-bold"
+                                                                                    />
                                                                                 </td>
-                                                                            ))}
-                                                                            <td className="px-3 py-2">
-                                                                                <Input
-                                                                                    value={row.sku}
-                                                                                    onChange={(e) => updateSkuRow(i, 'sku', e.target.value)}
-                                                                                    className="h-7 w-28 border-none bg-indigo-50/50 text-[10px] font-mono font-bold"
-                                                                                />
-                                                                            </td>
-                                                                            <td className="px-3 py-2 text-right">
-                                                                                <Input
-                                                                                    type="number"
-                                                                                    value={row.precio_venta}
-                                                                                    onChange={(e) => updateSkuRow(i, 'precio_venta', parseInt(e.target.value) || 0)}
-                                                                                    className="h-7 w-20 ml-auto border-none bg-green-50/50 text-[10px] font-bold text-right"
-                                                                                />
-                                                                            </td>
-                                                                            <td className="px-3 py-2 text-right">
-                                                                                <Input
-                                                                                    type="number"
-                                                                                    value={row.precio_compra}
-                                                                                    onChange={(e) => updateSkuRow(i, 'precio_compra', parseInt(e.target.value) || 0)}
-                                                                                    className="h-7 w-20 ml-auto border-none bg-primary/5 text-[10px] font-bold text-right"
-                                                                                />
-                                                                            </td>
-                                                                            <td className="px-3 py-2 text-right">
-                                                                                <Input
-                                                                                    type="number"
-                                                                                    value={row.stock}
-                                                                                    onChange={(e) => updateSkuRow(i, 'stock', parseInt(e.target.value) || 0)}
-                                                                                    className="h-7 w-16 ml-auto border-none bg-blue-50/50 text-[10px] font-bold text-right"
-                                                                                />
-                                                                            </td>
-                                                                            <td className="px-3 py-2 text-right">
-                                                                                <Input
-                                                                                    type="number"
-                                                                                    value={row.stock_minimo}
-                                                                                    onChange={(e) => updateSkuRow(i, 'stock_minimo', parseInt(e.target.value) || 0)}
-                                                                                    className="h-7 w-16 ml-auto border-none bg-amber-50/50 text-[10px] font-bold text-right"
-                                                                                />
-                                                                            </td>
-                                                                            <td className="px-3 py-2">
-                                                                                <Select
-                                                                                    value={row.almacen_id}
-                                                                                    onValueChange={(v) => updateSkuRow(i, 'almacen_id', v)}
-                                                                                >
-                                                                                    <SelectTrigger className="h-7 w-32 border-none bg-muted/30 text-[10px]">
-                                                                                        <SelectValue placeholder="Almacén" />
-                                                                                    </SelectTrigger>
-                                                                                    <SelectContent>
-                                                                                        {almacenes.map((a) => (
-                                                                                            <SelectItem key={a.id} value={a.id.toString()}>
-                                                                                                {a.nombre}
-                                                                                            </SelectItem>
-                                                                                        ))}
-                                                                                    </SelectContent>
-                                                                                </Select>
-                                                                            </td>
-                                                                        </tr>
-                                                                    ))}
+                                                                                <td className="px-3 py-2 text-right">
+                                                                                    <Input
+                                                                                        type="number"
+                                                                                        value={
+                                                                                            row.precio_venta
+                                                                                        }
+                                                                                        onChange={(
+                                                                                            e,
+                                                                                        ) =>
+                                                                                            updateSkuRow(
+                                                                                                i,
+                                                                                                'precio_venta',
+                                                                                                parseInt(
+                                                                                                    e
+                                                                                                        .target
+                                                                                                        .value,
+                                                                                                ) ||
+                                                                                                    0,
+                                                                                            )
+                                                                                        }
+                                                                                        className="ml-auto h-7 w-20 border-none bg-green-50/50 text-right text-[10px] font-bold"
+                                                                                    />
+                                                                                </td>
+                                                                                <td className="px-3 py-2 text-right">
+                                                                                    <Input
+                                                                                        type="number"
+                                                                                        value={
+                                                                                            row.precio_compra
+                                                                                        }
+                                                                                        onChange={(
+                                                                                            e,
+                                                                                        ) =>
+                                                                                            updateSkuRow(
+                                                                                                i,
+                                                                                                'precio_compra',
+                                                                                                parseInt(
+                                                                                                    e
+                                                                                                        .target
+                                                                                                        .value,
+                                                                                                ) ||
+                                                                                                    0,
+                                                                                            )
+                                                                                        }
+                                                                                        className="ml-auto h-7 w-20 border-none bg-primary/5 text-right text-[10px] font-bold"
+                                                                                    />
+                                                                                </td>
+                                                                                <td className="px-3 py-2 text-right">
+                                                                                    <Input
+                                                                                        type="number"
+                                                                                        value={
+                                                                                            row.stock
+                                                                                        }
+                                                                                        onChange={(
+                                                                                            e,
+                                                                                        ) =>
+                                                                                            updateSkuRow(
+                                                                                                i,
+                                                                                                'stock',
+                                                                                                parseInt(
+                                                                                                    e
+                                                                                                        .target
+                                                                                                        .value,
+                                                                                                ) ||
+                                                                                                    0,
+                                                                                            )
+                                                                                        }
+                                                                                        className="ml-auto h-7 w-16 border-none bg-blue-50/50 text-right text-[10px] font-bold"
+                                                                                    />
+                                                                                </td>
+                                                                                <td className="px-3 py-2 text-right">
+                                                                                    <Input
+                                                                                        type="number"
+                                                                                        value={
+                                                                                            row.stock_minimo
+                                                                                        }
+                                                                                        onChange={(
+                                                                                            e,
+                                                                                        ) =>
+                                                                                            updateSkuRow(
+                                                                                                i,
+                                                                                                'stock_minimo',
+                                                                                                parseInt(
+                                                                                                    e
+                                                                                                        .target
+                                                                                                        .value,
+                                                                                                ) ||
+                                                                                                    0,
+                                                                                            )
+                                                                                        }
+                                                                                        className="ml-auto h-7 w-16 border-none bg-amber-50/50 text-right text-[10px] font-bold"
+                                                                                    />
+                                                                                </td>
+                                                                                <td className="px-3 py-2">
+                                                                                    <Select
+                                                                                        value={
+                                                                                            row.almacen_id
+                                                                                        }
+                                                                                        onValueChange={(
+                                                                                            v,
+                                                                                        ) =>
+                                                                                            updateSkuRow(
+                                                                                                i,
+                                                                                                'almacen_id',
+                                                                                                v,
+                                                                                            )
+                                                                                        }
+                                                                                    >
+                                                                                        <SelectTrigger className="h-7 w-32 border-none bg-muted/30 text-[10px]">
+                                                                                            <SelectValue placeholder="Almacén" />
+                                                                                        </SelectTrigger>
+                                                                                        <SelectContent>
+                                                                                            {almacenes.map(
+                                                                                                (
+                                                                                                    a,
+                                                                                                ) => (
+                                                                                                    <SelectItem
+                                                                                                        key={
+                                                                                                            a.id
+                                                                                                        }
+                                                                                                        value={a.id.toString()}
+                                                                                                    >
+                                                                                                        {
+                                                                                                            a.nombre
+                                                                                                        }
+                                                                                                    </SelectItem>
+                                                                                                ),
+                                                                                            )}
+                                                                                        </SelectContent>
+                                                                                    </Select>
+                                                                                </td>
+                                                                            </tr>
+                                                                        ),
+                                                                    )}
                                                                 </tbody>
                                                             </table>
                                                         </div>
                                                     </div>
                                                 )}
 
-                                                {getSelectedVariants.length === 0 && !newVariantName.trim() && (
-                                                    <p className="text-center text-[11px] text-muted-foreground italic py-4">
-                                                        Seleccione variantes existentes o cree una nueva para generar combinaciones SKU.
-                                                    </p>
-                                                )}
+                                                {getSelectedVariants.length ===
+                                                    0 &&
+                                                    !newVariantName.trim() && (
+                                                        <p className="py-4 text-center text-[11px] text-muted-foreground italic">
+                                                            Seleccione variantes
+                                                            existentes o cree
+                                                            una nueva para
+                                                            generar
+                                                            combinaciones SKU.
+                                                        </p>
+                                                    )}
                                             </div>
                                         )}
                                     </div>
@@ -1792,81 +2474,19 @@ export default function Index({
                                         <div className="space-y-4">
                                             <Label className="flex items-center gap-2 text-xs font-black tracking-wider text-muted-foreground uppercase">
                                                 <ImageIcon className="h-4 w-4" />{' '}
-                                                Multimedia Principal
+                                                Fotografías del Producto
                                             </Label>
 
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <div className="group relative aspect-square overflow-hidden rounded-2xl border-2 border-dashed border-muted-foreground/20 bg-muted/10">
-                                                    <input
-                                                        type="file"
-                                                        className="absolute inset-0 z-10 cursor-pointer opacity-0"
-                                                        accept="image/*"
-                                                        onChange={(e) => {
-                                                            const file = e.target.files?.[0] || null;
-                                                            setData('imagen', file);
-                                                            handleFilePreview('imagen', file);
-                                                        }}
-                                                    />
-                                                    {previewMain ||
-                                                        (editando &&
-                                                            editando.imagen) ? (
-                                                        <img
-                                                            src={
-                                                                previewMain ||
-                                                                `/storage/${editando?.imagen}`
-                                                            }
-                                                            className="h-full w-full object-cover"
-                                                            alt="Preview"
-                                                        />
-                                                    ) : (
-                                                        <div className="flex h-full flex-col items-center justify-center opacity-40 transition-opacity group-hover:opacity-100">
-                                                            <Plus className="mb-1 h-6 w-6" />
-                                                            <span className="text-[9px] font-black uppercase">
-                                                                Portada
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="grid aspect-square grid-cols-2 grid-rows-2 gap-2">
-                                                    {[2, 3, 4, 5].map((i) => {
-                                                        const key =
-                                                            `imagen${i}` as keyof typeof data;
-                                                        return (
-                                                            <div
-                                                                key={i}
-                                                                className="group relative overflow-hidden rounded-xl border border-dashed border-muted-foreground/20 bg-muted/10"
-                                                            >
-                                                                <input
-                                                                    type="file"
-                                                                    className="absolute inset-0 z-10 cursor-pointer opacity-0"
-                                                                    accept="image/*"
-                                                                    onChange={(e) => {
-                                                                        const file = e.target.files?.[0] || null;
-                                                                        setData(key as any, file);
-                                                                        handleFilePreview(key, file);
-                                                                    }}
-                                                                />
-                                                                {previews[key] ||
-                                                                    (editando &&
-                                                                        (editando as any)[key]) ? (
-                                                                    <img
-                                                                        src={
-                                                                            previews[key] ||
-                                                                            `/storage/${(editando as any)[key]}`
-                                                                        }
-                                                                        className="h-full w-full object-cover"
-                                                                        alt="Preview"
-                                                                    />
-                                                                ) : (
-                                                                    <div className="flex h-full items-center justify-center opacity-30 group-hover:opacity-100">
-                                                                        <Plus className="h-4 w-4" />
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
+                                            <ImageUploader
+                                                images={productImages}
+                                                onChange={setProductImages}
+                                                maxImages={PRODUCT_IMAGE_KEYS.length}
+                                                maxFileSizeMb={2}
+                                                disabled={isSubmitting}
+                                                isSubmitting={isSubmitting}
+                                                error={imageError}
+                                                onError={setImageError}
+                                            />
 
                                             <div className="space-y-4 rounded-2xl border border-muted-foreground/5 bg-muted/30 p-4">
                                                 <div className="flex items-center justify-between">
@@ -1890,7 +2510,7 @@ export default function Index({
                                                             'video',
                                                             e.target
                                                                 .files?.[0] ||
-                                                            null,
+                                                                null,
                                                         )
                                                     }
                                                     className="h-8 border-none bg-transparent p-0 text-[10px]"
@@ -1976,13 +2596,15 @@ export default function Index({
                             </Button>
                             <Button
                                 type="submit"
-                                disabled={processing}
+                                disabled={processing || isSubmitting}
                                 className="rounded-full bg-primary px-10 font-bold shadow-lg shadow-primary/20 hover:bg-primary/90"
                             >
                                 <Check className="mr-2 h-4 w-4" />{' '}
-                                {editando
-                                    ? 'Actualizar Ficha'
-                                    : 'Guardar Producto'}
+                                {isSubmitting
+                                    ? 'Guardando...'
+                                    : editando
+                                      ? 'Actualizar Ficha'
+                                      : 'Guardar Producto'}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -2019,25 +2641,48 @@ export default function Index({
                         <div className="relative z-20 -mt-2 mb-3 flex max-h-[calc(85vh-100px)] flex-col gap-3 overflow-y-auto px-4 md:-mt-4 md:mb-4 md:gap-4 md:px-6">
                             <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
                                 <div className="rounded-lg border border-blue-200 bg-blue-50 p-2">
-                                    <p className="text-[8px] font-bold text-blue-600 uppercase">SKU</p>
-                                    <p className="truncate text-xs font-semibold text-blue-800">{viendo.codigo}</p>
+                                    <p className="text-[8px] font-bold text-blue-600 uppercase">
+                                        SKU
+                                    </p>
+                                    <p className="truncate text-xs font-semibold text-blue-800">
+                                        {viendo.codigo}
+                                    </p>
                                 </div>
                                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-2">
-                                    <p className="text-[8px] font-bold text-gray-600 uppercase">Categoría</p>
-                                    <p className="truncate text-xs font-semibold text-gray-800">{viendo.categoria?.nombre || 'Sin categoría'}</p>
+                                    <p className="text-[8px] font-bold text-gray-600 uppercase">
+                                        Categoría
+                                    </p>
+                                    <p className="truncate text-xs font-semibold text-gray-800">
+                                        {viendo.categoria?.nombre ||
+                                            'Sin categoría'}
+                                    </p>
                                 </div>
                                 <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-2">
-                                    <p className="text-[8px] font-bold text-indigo-600 uppercase">Precio</p>
-                                    <p className="truncate text-xs font-semibold text-indigo-800">{formatCurrency(viendo.precio_venta || 0)}</p>
+                                    <p className="text-[8px] font-bold text-indigo-600 uppercase">
+                                        Precio
+                                    </p>
+                                    <p className="truncate text-xs font-semibold text-indigo-800">
+                                        {formatCurrency(
+                                            viendo.precio_venta || 0,
+                                        )}
+                                    </p>
                                 </div>
                                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-2">
-                                    <p className="text-[8px] font-bold text-amber-600 uppercase">Stock Mín</p>
-                                    <p className="truncate text-xs font-semibold text-amber-800">{viendo.stock_minimo ?? 0}</p>
+                                    <p className="text-[8px] font-bold text-amber-600 uppercase">
+                                        Stock Mín
+                                    </p>
+                                    <p className="truncate text-xs font-semibold text-amber-800">
+                                        {viendo.stock_minimo ?? 0}
+                                    </p>
                                 </div>
                                 {viendo.fecha_vencimiento && (
                                     <div className="rounded-lg border border-purple-200 bg-purple-50 p-2">
-                                        <p className="text-[8px] font-bold text-purple-600 uppercase">Vencimiento</p>
-                                        <p className="truncate text-xs font-semibold text-purple-800">{viendo.fecha_vencimiento}</p>
+                                        <p className="text-[8px] font-bold text-purple-600 uppercase">
+                                            Vencimiento
+                                        </p>
+                                        <p className="truncate text-xs font-semibold text-purple-800">
+                                            {viendo.fecha_vencimiento}
+                                        </p>
                                     </div>
                                 )}
                             </div>
@@ -2046,12 +2691,18 @@ export default function Index({
                                 <div>
                                     {viendo.imagen ? (
                                         <div className="aspect-square overflow-hidden rounded-lg border bg-gray-50">
-                                            <img src={`/storage/${viendo.imagen}`} alt={viendo.nombre} className="h-full w-full object-contain" />
+                                            <img
+                                                src={`/storage/${viendo.imagen}`}
+                                                alt={viendo.nombre}
+                                                className="h-full w-full object-contain"
+                                            />
                                         </div>
                                     ) : (
                                         <div className="flex aspect-video flex-col items-center justify-center rounded-xl border bg-gray-50 text-muted-foreground opacity-40">
                                             <ImageIcon className="h-12 w-12" />
-                                            <span className="mt-2 text-[10px] font-bold tracking-widest uppercase">Sin Imagen</span>
+                                            <span className="mt-2 text-[10px] font-bold tracking-widest uppercase">
+                                                Sin Imagen
+                                            </span>
                                         </div>
                                     )}
                                 </div>
@@ -2063,11 +2714,14 @@ export default function Index({
                                                 <div className="rounded-md bg-blue-100 p-1 text-blue-700">
                                                     <Package className="h-3 w-3" />
                                                 </div>
-                                                <CardTitle className="text-xs font-bold text-gray-800">Descripción</CardTitle>
+                                                <CardTitle className="text-xs font-bold text-gray-800">
+                                                    Descripción
+                                                </CardTitle>
                                             </div>
                                         </CardHeader>
                                         <CardContent className="p-3 text-xs leading-relaxed text-gray-600 italic">
-                                            {viendo.descripcion || 'Sin descripción'}
+                                            {viendo.descripcion ||
+                                                'Sin descripción'}
                                         </CardContent>
                                     </Card>
 
@@ -2076,13 +2730,41 @@ export default function Index({
                                             <Check className="h-2 w-2 text-amber-700" />
                                         </div>
                                         <div className="space-y-0.5 text-[10px] font-medium text-amber-800/70">
-                                            <p>Unidad: <strong>{viendo.unidad_medida?.toUpperCase()}</strong></p>
-                                            <p>Stock Mín: <strong>{Math.round(viendo.stock_minimo || 0)}</strong></p>
-                                            <p>Precio Compra: <strong>{formatCurrency(Math.round(viendo.precio_compra || 0))}</strong></p>
+                                            <p>
+                                                Unidad:{' '}
+                                                <strong>
+                                                    {viendo.unidad_medida?.toUpperCase()}
+                                                </strong>
+                                            </p>
+                                            <p>
+                                                Stock Mín:{' '}
+                                                <strong>
+                                                    {Math.round(
+                                                        viendo.stock_minimo ||
+                                                            0,
+                                                    )}
+                                                </strong>
+                                            </p>
+                                            <p>
+                                                Precio Compra:{' '}
+                                                <strong>
+                                                    {formatCurrency(
+                                                        Math.round(
+                                                            viendo.precio_compra ||
+                                                                0,
+                                                        ),
+                                                    )}
+                                                </strong>
+                                            </p>
                                             {viendo.envase_retornable && (
                                                 <p className="mt-1 flex items-center gap-1 text-primary">
                                                     <Warehouse className="h-3 w-3" />
-                                                    Requiere Envase: <strong>{viendo.envase_producto?.nombre || 'Envase Físico (No definido)'}</strong>
+                                                    Requiere Envase:{' '}
+                                                    <strong>
+                                                        {viendo.envase_producto
+                                                            ?.nombre ||
+                                                            'Envase Físico (No definido)'}
+                                                    </strong>
                                                 </p>
                                             )}
                                         </div>
@@ -2092,26 +2774,49 @@ export default function Index({
 
                             {/* Warehouse Stock Section */}
                             <div className="space-y-2">
-                                <h4 className="text-[10px] font-black tracking-widest text-gray-500 uppercase">Stock por Almacén</h4>
+                                <h4 className="text-[10px] font-black tracking-widest text-gray-500 uppercase">
+                                    Stock por Almacén
+                                </h4>
                                 <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white">
                                     <table className="w-full text-left">
                                         <thead className="bg-gray-50 text-[9px] font-bold text-gray-500 uppercase">
                                             <tr>
-                                                <th className="px-4 py-2">Almacén</th>
-                                                <th className="px-4 py-2 text-right">Cantidad</th>
+                                                <th className="px-4 py-2">
+                                                    Almacén
+                                                </th>
+                                                <th className="px-4 py-2 text-right">
+                                                    Cantidad
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-50 text-xs">
-                                            {viendo.inventarios && viendo.inventarios.length > 0 ? (
-                                                viendo.inventarios.map((inv) => (
-                                                    <tr key={inv.id}>
-                                                        <td className="px-4 py-2 font-medium text-gray-700">{inv.almacen?.nombre || 'General'}</td>
-                                                        <td className="px-4 py-2 text-right font-black text-blue-600">{Math.round(inv.cantidad)}</td>
-                                                    </tr>
-                                                ))
+                                            {viendo.inventarios &&
+                                            viendo.inventarios.length > 0 ? (
+                                                viendo.inventarios.map(
+                                                    (inv) => (
+                                                        <tr key={inv.id}>
+                                                            <td className="px-4 py-2 font-medium text-gray-700">
+                                                                {inv.almacen
+                                                                    ?.nombre ||
+                                                                    'General'}
+                                                            </td>
+                                                            <td className="px-4 py-2 text-right font-black text-blue-600">
+                                                                {Math.round(
+                                                                    inv.cantidad,
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    ),
+                                                )
                                             ) : (
                                                 <tr>
-                                                    <td colSpan={2} className="px-4 py-4 text-center text-gray-400 italic">No hay información de stock disponible</td>
+                                                    <td
+                                                        colSpan={2}
+                                                        className="px-4 py-4 text-center text-gray-400 italic"
+                                                    >
+                                                        No hay información de
+                                                        stock disponible
+                                                    </td>
                                                 </tr>
                                             )}
                                         </tbody>
@@ -2120,38 +2825,69 @@ export default function Index({
                             </div>
 
                             {/* Legacy Variants Section */}
-                            {viendo.variantes && viendo.variantes.length > 0 && (
-                                <div className="space-y-2 mt-4">
-                                    <h4 className="text-[10px] font-black tracking-widest text-purple-600 uppercase">Tallas y Variantes Disponibles</h4>
-                                    <div className="overflow-x-auto rounded-xl border border-purple-100 bg-white">
-                                        <table className="w-full text-left">
-                                            <thead className="bg-purple-50 text-[9px] font-bold text-purple-600 uppercase">
-                                                <tr>
-                                                    <th className="px-4 py-2">Talla</th>
-                                                    <th className="px-4 py-2">SKU</th>
-                                                    <th className="px-4 py-2 text-right">Stock</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-purple-50 text-xs">
-                                                {viendo.variantes.map((v) => (
-                                                    <tr key={v.id}>
-                                                        <td className="px-4 py-2 font-black text-purple-800">{v.talla}</td>
-                                                        <td className="px-4 py-2 text-gray-500">{v.codigo}</td>
-                                                        <td className="px-4 py-2 text-right font-black text-blue-600">
-                                                            {Math.round(v.inventarios?.reduce((sum, inv) => sum + inv.cantidad, 0) || 0)}
-                                                        </td>
+                            {viendo.variantes &&
+                                viendo.variantes.length > 0 && (
+                                    <div className="mt-4 space-y-2">
+                                        <h4 className="text-[10px] font-black tracking-widest text-purple-600 uppercase">
+                                            Tallas y Variantes Disponibles
+                                        </h4>
+                                        <div className="overflow-x-auto rounded-xl border border-purple-100 bg-white">
+                                            <table className="w-full text-left">
+                                                <thead className="bg-purple-50 text-[9px] font-bold text-purple-600 uppercase">
+                                                    <tr>
+                                                        <th className="px-4 py-2">
+                                                            Talla
+                                                        </th>
+                                                        <th className="px-4 py-2">
+                                                            SKU
+                                                        </th>
+                                                        <th className="px-4 py-2 text-right">
+                                                            Stock
+                                                        </th>
                                                     </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody className="divide-y divide-purple-50 text-xs">
+                                                    {viendo.variantes.map(
+                                                        (v) => (
+                                                            <tr key={v.id}>
+                                                                <td className="px-4 py-2 font-black text-purple-800">
+                                                                    {v.talla}
+                                                                </td>
+                                                                <td className="px-4 py-2 text-gray-500">
+                                                                    {v.codigo}
+                                                                </td>
+                                                                <td className="px-4 py-2 text-right font-black text-blue-600">
+                                                                    {Math.round(
+                                                                        v.inventarios?.reduce(
+                                                                            (
+                                                                                sum,
+                                                                                inv,
+                                                                            ) =>
+                                                                                sum +
+                                                                                inv.cantidad,
+                                                                            0,
+                                                                        ) || 0,
+                                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                        ),
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
                         </div>
                     )}
 
                     <DialogFooter className="border-t bg-gray-50 p-3">
-                        <Button variant="outline" onClick={() => setIsViewOpen(false)} className="w-full font-bold sm:w-auto">Cerrar</Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsViewOpen(false)}
+                            className="w-full font-bold sm:w-auto"
+                        >
+                            Cerrar
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

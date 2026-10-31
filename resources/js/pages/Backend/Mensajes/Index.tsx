@@ -1,5 +1,15 @@
 import { Head, usePage } from '@inertiajs/react';
-import { Send, X, Paperclip, FileText as FileIcon, Clock, AlertCircle, RefreshCw, LayoutGrid, List } from 'lucide-react';
+import {
+    Send,
+    X,
+    Paperclip,
+    FileText as FileIcon,
+    Clock,
+    AlertCircle,
+    RefreshCw,
+    LayoutGrid,
+    List,
+} from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,7 +58,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function MensajesIndex() {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const { hasPermission } = usePermissions();
     const { auth } = usePage().props as any;
     const [conversaciones, setConversaciones] = useState<Conversacion[]>([]);
@@ -59,6 +69,7 @@ export default function MensajesIndex() {
     const [nuevoMensaje, setNuevoMensaje] = useState('');
     const [archivo, setArchivo] = useState<File | null>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const tempMessageIdRef = useRef(-1);
 
     const canAccess = hasPermission('general.comunidad.edit');
 
@@ -120,12 +131,16 @@ export default function MensajesIndex() {
                 },
             });
             const data = await res.json();
-            
+
             // Only update messages if they changed or it's NOT a poll
-            if (!isPolling || JSON.stringify(data.mensajes) !== JSON.stringify(mensajesRef.current)) {
+            if (
+                !isPolling ||
+                JSON.stringify(data.mensajes) !==
+                    JSON.stringify(mensajesRef.current)
+            ) {
                 setMensajes(data.mensajes || []);
             }
-            
+
             if (!isPolling) {
                 setSelectedUser(data.otro_usuario);
                 setVista('chat');
@@ -164,7 +179,8 @@ export default function MensajesIndex() {
                 const msg = e.mensaje || e;
                 const senderId = msg.sender_id ?? msg.sender?.id;
                 if (!senderId) return;
-                if (senderId !== selectedUser.id && senderId !== auth.user.id) return;
+                if (senderId !== selectedUser.id && senderId !== auth.user.id)
+                    return;
 
                 const msgData: Mensaje = {
                     id: msg.id,
@@ -174,8 +190,16 @@ export default function MensajesIndex() {
                     archivo_nombre: msg.archivo_nombre || msg.file_name || null,
                     archivo_tipo: msg.archivo_tipo || msg.file_type || null,
                     created_at: msg.created_at,
-                    sender: msg.sender || { id: senderId, name: '', profile_photo_path: null },
-                    receiver: msg.receiver || { id: msg.receiver_id ?? auth.user.id, name: '', profile_photo_path: null },
+                    sender: msg.sender || {
+                        id: senderId,
+                        name: '',
+                        profile_photo_path: null,
+                    },
+                    receiver: msg.receiver || {
+                        id: msg.receiver_id ?? auth.user.id,
+                        name: '',
+                        profile_photo_path: null,
+                    },
                     leido: msg.leido ?? !!msg.read_at,
                 };
 
@@ -208,7 +232,11 @@ export default function MensajesIndex() {
         }
     }, [mensajes]);
 
-    const submitMensaje = async (content: string, file: File | null, tempId: string) => {
+    const submitMensaje = async (
+        content: string,
+        file: File | null,
+        tempId: string,
+    ) => {
         const formData = new FormData();
         formData.append('receiver_id', selectedUser!.id.toString());
         formData.append('contenido', content);
@@ -255,18 +283,23 @@ export default function MensajesIndex() {
 
     const enviarMensaje = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!nuevoMensaje.trim() && !archivo || !selectedUser) return;
+        if ((!nuevoMensaje.trim() && !archivo) || !selectedUser) return;
 
-        const tempId = `temp-${Date.now()}`;
+        const tempIdNumber = tempMessageIdRef.current--;
+        const tempId = `temp-${tempIdNumber}`;
         const tempMsg: Mensaje = {
-            id: -Date.now(),
+            id: tempIdNumber,
             sender_id: auth.user.id,
             contenido: nuevoMensaje.trim() || '',
             archivo_path: null,
             archivo_nombre: archivo?.name || null,
             archivo_tipo: archivo?.type || null,
             created_at: new Date().toISOString(),
-            sender: { id: auth.user.id, name: auth.user.name, profile_photo_path: auth.user.profile_photo_path },
+            sender: {
+                id: auth.user.id,
+                name: auth.user.name,
+                profile_photo_path: auth.user.profile_photo_path,
+            },
             receiver: selectedUser,
             leido: true,
             _temp: true,
@@ -308,7 +341,9 @@ export default function MensajesIndex() {
             <AppLayout breadcrumbs={breadcrumbs}>
                 <Head title="Mensajes" />
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );
@@ -317,7 +352,7 @@ export default function MensajesIndex() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Mensajes" />
-            <div className="flex flex-col gap-4 lg:flex-row lg:h-[calc(100vh-8rem)]">
+            <div className="flex flex-col gap-4 lg:h-[calc(100vh-8rem)] lg:flex-row">
                 {/* Lista de conversaciones */}
                 <div
                     className={`flex w-full flex-col rounded-lg border bg-card md:w-1/3 ${vista !== 'lista' ? 'hidden md:flex' : ''}`}
@@ -326,7 +361,9 @@ export default function MensajesIndex() {
                         <h1 className="text-xl font-bold">Mensajes</h1>
                         <div className="flex items-center gap-1 rounded-lg border bg-background/50 p-0.5">
                             <Button
-                                variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                                variant={
+                                    viewMode === 'table' ? 'secondary' : 'ghost'
+                                }
                                 size="sm"
                                 onClick={() => setViewMode('table')}
                                 className="h-7 w-7 p-0"
@@ -334,7 +371,9 @@ export default function MensajesIndex() {
                                 <List className="h-3.5 w-3.5" />
                             </Button>
                             <Button
-                                variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                                variant={
+                                    viewMode === 'cards' ? 'secondary' : 'ghost'
+                                }
                                 size="sm"
                                 onClick={() => setViewMode('cards')}
                                 className="h-7 w-7 p-0"
@@ -371,17 +410,17 @@ export default function MensajesIndex() {
                                         <div className="relative">
                                             {getFotoUrl(conv.usuario_foto) ? (
                                                 <img
-                                                    src={
-                                                        getFotoUrl(
-                                                            conv.usuario_foto,
-                                                        )!
-                                                    }
+                                                    src={getFotoUrl(
+                                                        conv.usuario_foto,
+                                                    )!}
                                                     alt={conv.usuario_nombre}
                                                     className="h-12 w-12 rounded-full object-cover"
                                                 />
                                             ) : (
                                                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg text-white">
-                                                    {conv.usuario_nombre.charAt(0)}
+                                                    {conv.usuario_nombre.charAt(
+                                                        0,
+                                                    )}
                                                 </div>
                                             )}
                                             {conv.sin_leer > 0 && (
@@ -396,7 +435,9 @@ export default function MensajesIndex() {
                                                     {conv.usuario_nombre}
                                                 </span>
                                                 <span className="text-xs text-muted-foreground">
-                                                    {formatFecha(conv.fecha_ultimo)}
+                                                    {formatFecha(
+                                                        conv.fecha_ultimo,
+                                                    )}
                                                 </span>
                                             </div>
                                             <p className="truncate text-sm text-muted-foreground">
@@ -406,54 +447,56 @@ export default function MensajesIndex() {
                                     </div>
                                 ))
                             )
+                        ) : conversaciones.length === 0 ? (
+                            <div className="p-4 text-center text-muted-foreground">
+                                No tienes conversaciones
+                            </div>
                         ) : (
-                            conversaciones.length === 0 ? (
-                                <div className="p-4 text-center text-muted-foreground">
-                                    No tienes conversaciones
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 gap-2 p-2 sm:grid-cols-2">
-                                    {conversaciones.map((conv) => (
-                                        <div
-                                            key={conv.usuario_id}
-                                            className="flex cursor-pointer items-center gap-3 rounded-lg border bg-card p-4 transition-colors hover:bg-muted"
-                                            onClick={() =>
-                                                fetchConversacion(conv.usuario_id)
-                                            }
-                                        >
-                                            <div className="relative">
-                                                {getFotoUrl(conv.usuario_foto) ? (
-                                                    <img
-                                                        src={getFotoUrl(conv.usuario_foto)!}
-                                                        alt={conv.usuario_nombre}
-                                                        className="h-12 w-12 rounded-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg text-white">
-                                                        {conv.usuario_nombre.charAt(0)}
-                                                    </div>
-                                                )}
-                                                {conv.sin_leer > 0 && (
-                                                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                                                        {conv.sin_leer}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="font-medium">
-                                                    {conv.usuario_nombre}
+                            <div className="grid grid-cols-1 gap-2 p-2 sm:grid-cols-2">
+                                {conversaciones.map((conv) => (
+                                    <div
+                                        key={conv.usuario_id}
+                                        className="flex cursor-pointer items-center gap-3 rounded-lg border bg-card p-4 transition-colors hover:bg-muted"
+                                        onClick={() =>
+                                            fetchConversacion(conv.usuario_id)
+                                        }
+                                    >
+                                        <div className="relative">
+                                            {getFotoUrl(conv.usuario_foto) ? (
+                                                <img
+                                                    src={getFotoUrl(
+                                                        conv.usuario_foto,
+                                                    )!}
+                                                    alt={conv.usuario_nombre}
+                                                    className="h-12 w-12 rounded-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg text-white">
+                                                    {conv.usuario_nombre.charAt(
+                                                        0,
+                                                    )}
                                                 </div>
-                                                <p className="truncate text-sm text-muted-foreground">
-                                                    {conv.ultimo_mensaje}
-                                                </p>
-                                                <span className="text-xs text-muted-foreground">
-                                                    {formatFecha(conv.fecha_ultimo)}
+                                            )}
+                                            {conv.sin_leer > 0 && (
+                                                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                                                    {conv.sin_leer}
                                                 </span>
-                                            </div>
+                                            )}
                                         </div>
-                                    ))}
-                                </div>
-                            )
+                                        <div className="min-w-0 flex-1">
+                                            <div className="font-medium">
+                                                {conv.usuario_nombre}
+                                            </div>
+                                            <p className="truncate text-sm text-muted-foreground">
+                                                {conv.ultimo_mensaje}
+                                            </p>
+                                            <span className="text-xs text-muted-foreground">
+                                                {formatFecha(conv.fecha_ultimo)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         )}
                     </div>
                 </div>
@@ -490,11 +533,9 @@ export default function MensajesIndex() {
                                                 user.profile_photo_path,
                                             ) ? (
                                                 <img
-                                                    src={
-                                                        getFotoUrl(
-                                                            user.profile_photo_path,
-                                                        )!
-                                                    }
+                                                    src={getFotoUrl(
+                                                        user.profile_photo_path,
+                                                    )!}
                                                     alt={user.name}
                                                     className="h-10 w-10 rounded-full object-cover"
                                                 />
@@ -532,11 +573,9 @@ export default function MensajesIndex() {
                             </Button>
                             {getFotoUrl(selectedUser.profile_photo_path) ? (
                                 <img
-                                    src={
-                                        getFotoUrl(
-                                            selectedUser.profile_photo_path,
-                                        )!
-                                    }
+                                    src={getFotoUrl(
+                                        selectedUser.profile_photo_path,
+                                    )!}
                                     alt={selectedUser.name}
                                     className="h-10 w-10 rounded-full object-cover"
                                 />
@@ -549,9 +588,9 @@ export default function MensajesIndex() {
                                 {selectedUser.name}
                             </h2>
                         </div>
-                        <div 
+                        <div
                             id="chat-messages"
-                            className="flex-1 space-y-4 overflow-y-auto p-4 scroll-smooth"
+                            className="flex-1 space-y-4 overflow-y-auto scroll-smooth p-4"
                         >
                             {mensajes.map((msg) => {
                                 const isSender =
@@ -570,25 +609,40 @@ export default function MensajesIndex() {
                                         >
                                             {msg.archivo_path && (
                                                 <div className="mb-2">
-                                                    {msg.archivo_tipo?.startsWith('image/') ? (
-                                                        <a href={`/storage/${msg.archivo_path}`} target="_blank" rel="noopener noreferrer">
-                                                            <img 
-                                                                src={`/storage/${msg.archivo_path}`} 
-                                                                alt={msg.archivo_nombre || 'Imagen'} 
+                                                    {msg.archivo_tipo?.startsWith(
+                                                        'image/',
+                                                    ) ? (
+                                                        <a
+                                                            href={`/storage/${msg.archivo_path}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                        >
+                                                            <img
+                                                                src={`/storage/${msg.archivo_path}`}
+                                                                alt={
+                                                                    msg.archivo_nombre ||
+                                                                    'Imagen'
+                                                                }
                                                                 className="max-h-60 w-full rounded-md object-cover hover:opacity-90"
                                                             />
                                                         </a>
                                                     ) : (
-                                                        <a 
-                                                            href={`/storage/${msg.archivo_path}`} 
-                                                            target="_blank" 
+                                                        <a
+                                                            href={`/storage/${msg.archivo_path}`}
+                                                            target="_blank"
                                                             rel="noopener noreferrer"
                                                             className={`flex items-center gap-2 rounded border p-2 text-xs transition-colors ${
-                                                                isSender ? 'border-primary-foreground/20 bg-primary-foreground/10 hover:bg-primary-foreground/20' : 'border-border bg-background hover:bg-muted'
+                                                                isSender
+                                                                    ? 'border-primary-foreground/20 bg-primary-foreground/10 hover:bg-primary-foreground/20'
+                                                                    : 'border-border bg-background hover:bg-muted'
                                                             }`}
                                                         >
                                                             <FileIcon className="h-4 w-4" />
-                                                            <span className="truncate max-w-[150px]">{msg.archivo_nombre}</span>
+                                                            <span className="max-w-[150px] truncate">
+                                                                {
+                                                                    msg.archivo_nombre
+                                                                }
+                                                            </span>
                                                         </a>
                                                     )}
                                                 </div>
@@ -601,7 +655,11 @@ export default function MensajesIndex() {
                                             <p
                                                 className={`mt-1 flex items-center justify-end gap-1 text-xs ${isSender ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}
                                             >
-                                                <span>{formatFecha(msg.created_at)}</span>
+                                                <span>
+                                                    {formatFecha(
+                                                        msg.created_at,
+                                                    )}
+                                                </span>
                                                 {isSender && msg._sending && (
                                                     <Clock className="h-3 w-3 animate-spin text-yellow-300" />
                                                 )}
@@ -614,15 +672,27 @@ export default function MensajesIndex() {
                                                     <button
                                                         type="button"
                                                         onClick={() => {
-                                                            if (!msg._tempId) return;
-                                                            setMensajes((prev) =>
-                                                                prev.map((m) =>
-                                                                    m._tempId === msg._tempId
-                                                                        ? { ...m, _sending: true, _error: false }
-                                                                        : m,
-                                                                ),
+                                                            if (!msg._tempId)
+                                                                return;
+                                                            setMensajes(
+                                                                (prev) =>
+                                                                    prev.map(
+                                                                        (m) =>
+                                                                            m._tempId ===
+                                                                            msg._tempId
+                                                                                ? {
+                                                                                      ...m,
+                                                                                      _sending: true,
+                                                                                      _error: false,
+                                                                                  }
+                                                                                : m,
+                                                                    ),
                                                             );
-                                                            submitMensaje(msg.contenido, null, msg._tempId!);
+                                                            submitMensaje(
+                                                                msg.contenido,
+                                                                null,
+                                                                msg._tempId!,
+                                                            );
                                                         }}
                                                         className="flex items-center gap-1 text-[10px] text-red-400 hover:text-red-300"
                                                     >
@@ -640,16 +710,19 @@ export default function MensajesIndex() {
                             <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-2 text-xs">
                                 <div className="flex items-center gap-2 truncate">
                                     <FileIcon className="h-3 w-3" />
-                                    <span className="truncate">{archivo.name}</span>
+                                    <span className="truncate">
+                                        {archivo.name}
+                                    </span>
                                 </div>
-                                <Button 
-                                    type="button" 
-                                    variant="ghost" 
-                                    size="sm" 
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
                                     className="h-6 w-6 p-0"
                                     onClick={() => {
                                         setArchivo(null);
-                                        if (fileInputRef.current) fileInputRef.current.value = '';
+                                        if (fileInputRef.current)
+                                            fileInputRef.current.value = '';
                                     }}
                                 >
                                     <X className="h-3 w-3" />
@@ -660,15 +733,17 @@ export default function MensajesIndex() {
                             onSubmit={enviarMensaje}
                             className="flex items-center gap-2 border-t p-4"
                         >
-                            <input 
-                                type="file" 
-                                className="hidden" 
+                            <input
+                                type="file"
+                                className="hidden"
                                 ref={fileInputRef}
-                                onChange={(e) => setArchivo(e.target.files?.[0] || null)}
+                                onChange={(e) =>
+                                    setArchivo(e.target.files?.[0] || null)
+                                }
                             />
-                            <Button 
-                                type="button" 
-                                variant="ghost" 
+                            <Button
+                                type="button"
+                                variant="ghost"
                                 size="icon"
                                 onClick={() => fileInputRef.current?.click()}
                             >

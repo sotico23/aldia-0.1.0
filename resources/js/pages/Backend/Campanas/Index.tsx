@@ -18,7 +18,7 @@ import {
     LayoutGrid,
     List,
     PieChart,
-    ArrowUpRight
+    ArrowUpRight,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
@@ -39,8 +39,7 @@ import {
     DialogTitle,
     DialogDescription,
 } from '@/components/ui/dialog';
-import {
-} from '@/components/ui/dropdown-menu';
+import {} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Pagination from '@/components/ui/Pagination';
@@ -372,8 +371,20 @@ export default function Index({
                     {/* View Toggle */}
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">
-                            <button onClick={() => setViewMode('table')} className={`rounded-md p-1.5 transition-colors ${viewMode === 'table' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`} title="Vista tabla"><List className="h-4 w-4" /></button>
-                            <button onClick={() => setViewMode('cards')} className={`rounded-md p-1.5 transition-colors ${viewMode === 'cards' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`} title="Vista tarjetas"><LayoutGrid className="h-4 w-4" /></button>
+                            <button
+                                onClick={() => setViewMode('table')}
+                                className={`rounded-md p-1.5 transition-colors ${viewMode === 'table' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                title="Vista tabla"
+                            >
+                                <List className="h-4 w-4" />
+                            </button>
+                            <button
+                                onClick={() => setViewMode('cards')}
+                                className={`rounded-md p-1.5 transition-colors ${viewMode === 'cards' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                title="Vista tarjetas"
+                            >
+                                <LayoutGrid className="h-4 w-4" />
+                            </button>
                         </div>
                     </div>
 
@@ -424,7 +435,7 @@ export default function Index({
                         </div>
                     </div>
 
-{viewMode === 'cards' ? (
+                    {viewMode === 'cards' ? (
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {campanas.data.map((cam) => {
                                 const config = getEstadoConfig(cam.estado);
@@ -471,7 +482,9 @@ export default function Index({
                                                             size="icon"
                                                             className="h-8 w-8 rounded-full text-destructive hover:bg-destructive/10"
                                                             onClick={() =>
-                                                                handleDelete(cam.id)
+                                                                handleDelete(
+                                                                    cam.id,
+                                                                )
                                                             }
                                                         >
                                                             <Trash2 className="h-4 w-4" />
@@ -489,7 +502,7 @@ export default function Index({
                                         </CardHeader>
 
                                         <CardContent className="space-y-6">
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+                                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
                                                 <div className="rounded-2xl border border-muted/50 bg-muted/30 p-3">
                                                     <div className="mb-1 text-[10px] font-black text-muted-foreground uppercase">
                                                         Presupuesto
@@ -565,45 +578,113 @@ export default function Index({
                         <div className="overflow-x-auto rounded-3xl border border-muted bg-background shadow-sm">
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="border-b bg-muted/30 text-[11px] font-black uppercase tracking-wider text-muted-foreground">
-                                        <th className="px-4 py-3 text-left">Nombre</th>
-                                        <th className="px-4 py-3 text-center">Estado</th>
-                                        <th className="px-4 py-3 text-left">Canal</th>
-                                        <th className="px-4 py-3 text-right">Presupuesto</th>
-                                        <th className="px-4 py-3 text-right">Leads</th>
-                                        <th className="px-4 py-3 text-right">Conv.</th>
-                                        <th className="px-4 py-3 text-right">ROI</th>
-                                        <th className="px-4 py-3 text-right">Acciones</th>
+                                    <tr className="border-b bg-muted/30 text-[11px] font-black tracking-wider text-muted-foreground uppercase">
+                                        <th className="px-4 py-3 text-left">
+                                            Nombre
+                                        </th>
+                                        <th className="px-4 py-3 text-center">
+                                            Estado
+                                        </th>
+                                        <th className="px-4 py-3 text-left">
+                                            Canal
+                                        </th>
+                                        <th className="px-4 py-3 text-right">
+                                            Presupuesto
+                                        </th>
+                                        <th className="px-4 py-3 text-right">
+                                            Leads
+                                        </th>
+                                        <th className="px-4 py-3 text-right">
+                                            Conv.
+                                        </th>
+                                        <th className="px-4 py-3 text-right">
+                                            ROI
+                                        </th>
+                                        <th className="px-4 py-3 text-right">
+                                            Acciones
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {campanas.data.map((cam) => {
-                                        const config = getEstadoConfig(cam.estado);
+                                        const config = getEstadoConfig(
+                                            cam.estado,
+                                        );
                                         return (
-                                            <tr key={cam.id} className="border-b transition-colors hover:bg-muted/20">
-                                                <td className="px-4 py-3 font-medium">{cam.nombre}</td>
+                                            <tr
+                                                key={cam.id}
+                                                className="border-b transition-colors hover:bg-muted/20"
+                                            >
+                                                <td className="px-4 py-3 font-medium">
+                                                    {cam.nombre}
+                                                </td>
                                                 <td className="px-4 py-3 text-center">
-                                                    <Badge variant="outline" className={`${config.color} border-none text-[9px] font-black uppercase px-2 py-0.5 rounded-full`}>
+                                                    <Badge
+                                                        variant="outline"
+                                                        className={`${config.color} rounded-full border-none px-2 py-0.5 text-[9px] font-black uppercase`}
+                                                    >
                                                         {config.label}
                                                     </Badge>
                                                 </td>
-                                                <td className="px-4 py-3 text-muted-foreground">{cam.canal || '-'}</td>
-                                                <td className="px-4 py-3 text-right font-medium">{formatCurrency(cam.presupuesto)}</td>
-                                                <td className="px-4 py-3 text-right">{cam.leads}</td>
-                                                <td className="px-4 py-3 text-right">{cam.conversiones}</td>
-                                                <td className="px-4 py-3 text-right font-semibold text-blue-600">{cam.roi}%</td>
+                                                <td className="px-4 py-3 text-muted-foreground">
+                                                    {cam.canal || '-'}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-medium">
+                                                    {formatCurrency(
+                                                        cam.presupuesto,
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    {cam.leads}
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    {cam.conversiones}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-semibold text-blue-600">
+                                                    {cam.roi}%
+                                                </td>
                                                 <td className="px-4 py-3 text-right">
                                                     <div className="flex justify-end gap-1">
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:bg-muted" onClick={() => { setCampanaVer(cam); setVerOpen(true); }}>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 rounded-full text-muted-foreground hover:bg-muted"
+                                                            onClick={() => {
+                                                                setCampanaVer(
+                                                                    cam,
+                                                                );
+                                                                setVerOpen(
+                                                                    true,
+                                                                );
+                                                            }}
+                                                        >
                                                             <Eye className="h-4 w-4" />
                                                         </Button>
                                                         {canEdit && (
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-primary hover:bg-primary/10" onClick={() => handleEdit(cam)}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 rounded-full text-primary hover:bg-primary/10"
+                                                                onClick={() =>
+                                                                    handleEdit(
+                                                                        cam,
+                                                                    )
+                                                                }
+                                                            >
                                                                 <Pencil className="h-4 w-4" />
                                                             </Button>
                                                         )}
                                                         {canDelete && (
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-destructive hover:bg-destructive/10" onClick={() => handleDelete(cam.id)}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 rounded-full text-destructive hover:bg-destructive/10"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        cam.id,
+                                                                    )
+                                                                }
+                                                            >
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         )}
@@ -831,7 +912,7 @@ export default function Index({
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                                    <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-3">
                                         <div className="space-y-2">
                                             <Label className="block text-center text-[9px] font-black text-muted-foreground uppercase">
                                                 Visitas
@@ -1013,7 +1094,7 @@ export default function Index({
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                                     <div className="rounded-2xl border border-muted/50 bg-muted/30 p-4 text-center">
                                         <div className="mb-1 text-[10px] font-black text-muted-foreground uppercase">
                                             Alcance

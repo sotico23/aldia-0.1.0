@@ -14,7 +14,6 @@ import {
     Mail,
     FileText,
     ShieldAlert,
-
     Download,
     Upload,
     FileSpreadsheet,
@@ -161,7 +160,7 @@ export default function Index({
     empleados: Empleado[];
     filters?: { search?: string; estado?: string };
 }) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const { hasPermission } = usePermissions();
     const canCreate = hasPermission('flota.conductores.create');
     const canEdit = hasPermission('flota.conductores.edit');
@@ -337,8 +336,7 @@ export default function Index({
         if (confirm('¿Eliminar?')) destroy(`/conductores/${id}`);
     };
 
-    
-        const estadoLabels: Record<string, string> = {
+    const estadoLabels: Record<string, string> = {
         activo: 'Activo',
         inactivo: 'Inactivo',
         licencia_vencida: 'Lic. Vencida',
@@ -404,8 +402,8 @@ export default function Index({
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
                                         onClick={() =>
-                                            window.location.href =
-                                                '/conductores/export'
+                                            (window.location.href =
+                                                '/conductores/export')
                                         }
                                     >
                                         <FileJson className="mr-2 h-4 w-4" />
@@ -413,8 +411,8 @@ export default function Index({
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={() =>
-                                            window.location.href =
-                                                '/conductores/export-excel'
+                                            (window.location.href =
+                                                '/conductores/export-excel')
                                         }
                                     >
                                         <FileSpreadsheet className="mr-2 h-4 w-4" />
@@ -430,12 +428,17 @@ export default function Index({
                                 <div>
                                     <CardTitle>Conductores</CardTitle>
                                     <CardDescription>
-                                        {conductores.total} conductores encontrados
+                                        {conductores.total} conductores
+                                        encontrados
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-1 rounded-lg border p-0.5">
                                     <Button
-                                        variant={viewMode === 'table' ? 'default' : 'ghost'}
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'default'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         className="h-8 w-8 p-0"
                                         onClick={() => setViewMode('table')}
@@ -443,7 +446,11 @@ export default function Index({
                                         <List className="h-4 w-4" />
                                     </Button>
                                     <Button
-                                        variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'default'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         className="h-8 w-8 p-0"
                                         onClick={() => setViewMode('cards')}
@@ -511,200 +518,253 @@ export default function Index({
                                 </Button>
                             </div>
                             {viewMode === 'table' ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-xs sm:text-sm">
-                                    <thead>
-                                        <tr className="border-b">
-                                            <th className="py-2 text-left font-medium">
-                                                Nombre / Licencia
-                                            </th>
-                                            <th className="py-2 text-left font-medium">
-                                                Contacto
-                                            </th>
-                                            <th className="py-2 text-center font-medium">
-                                                Estado
-                                            </th>
-                                            <th className="py-2 text-right font-medium">
-                                                Acciones
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {conductores.data.map(
-                                            (c: Conductor) => (
-                                                <tr
-                                                    key={c.id}
-                                                    className="border-b transition-colors hover:bg-muted/30"
-                                                >
-                                                    <td className="py-2">
-                                                        <div className="font-medium">
-                                                            {c.nombre}
-                                                        </div>
-                                                        <div className="text-[10px] text-muted-foreground">
-                                                            RUT: {c.rut || '-'}{' '}
-                                                            | L:{' '}
-                                                            {c.licencia || '-'}
-                                                        </div>
-                                                    </td>
-                                                    <td className="py-2">
-                                                        <div className="text-[10px]">
-                                                            {c.telefono || '-'}
-                                                        </div>
-                                                        <div className="text-[10px] text-muted-foreground">
-                                                            {c.email || '-'}
-                                                        </div>
-                                                    </td>
-                                                    <td className="py-2 text-center">
-                                                        <StatusDropdown
-                                                            value={c.estado}
-                                                            onChange={(val) =>
-                                                                router.put(
-                                                                    `/conductores/${c.id}`,
-                                                                    {
-                                                                        estado: val,
-                                                                    },
-                                                                    {
-                                                                        preserveScroll: true,
-                                                                        only: [
-                                                                            'conductores',
-                                                                        ],
-                                                                    },
-                                                                )
-                                                            }
-                                                        />
-                                                    </td>
-                                                    <td className="py-2 text-right">
-                                                        <div className="flex justify-end gap-1">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                                                                onClick={() =>
-                                                                    handleVer(c)
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-xs sm:text-sm">
+                                        <thead>
+                                            <tr className="border-b">
+                                                <th className="py-2 text-left font-medium">
+                                                    Nombre / Licencia
+                                                </th>
+                                                <th className="py-2 text-left font-medium">
+                                                    Contacto
+                                                </th>
+                                                <th className="py-2 text-center font-medium">
+                                                    Estado
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Acciones
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {conductores.data.map(
+                                                (c: Conductor) => (
+                                                    <tr
+                                                        key={c.id}
+                                                        className="border-b transition-colors hover:bg-muted/30"
+                                                    >
+                                                        <td className="py-2">
+                                                            <div className="font-medium">
+                                                                {c.nombre}
+                                                            </div>
+                                                            <div className="text-[10px] text-muted-foreground">
+                                                                RUT:{' '}
+                                                                {c.rut || '-'} |
+                                                                L:{' '}
+                                                                {c.licencia ||
+                                                                    '-'}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-2">
+                                                            <div className="text-[10px]">
+                                                                {c.telefono ||
+                                                                    '-'}
+                                                            </div>
+                                                            <div className="text-[10px] text-muted-foreground">
+                                                                {c.email || '-'}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-2 text-center">
+                                                            <StatusDropdown
+                                                                value={c.estado}
+                                                                onChange={(
+                                                                    val,
+                                                                ) =>
+                                                                    router.put(
+                                                                        `/conductores/${c.id}`,
+                                                                        {
+                                                                            estado: val,
+                                                                        },
+                                                                        {
+                                                                            preserveScroll: true,
+                                                                            only: [
+                                                                                'conductores',
+                                                                            ],
+                                                                        },
+                                                                    )
                                                                 }
-                                                                title="Ver Detalles"
-                                                            >
-                                                                <Eye className="h-4 w-4" />
-                                                            </Button>
-                                                            {canEdit && (
+                                                            />
+                                                        </td>
+                                                        <td className="py-2 text-right">
+                                                            <div className="flex justify-end gap-1">
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="sm"
-                                                                    className="h-8 w-8 p-0"
+                                                                    className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                                                                     onClick={() =>
-                                                                        handleEdit(
+                                                                        handleVer(
                                                                             c,
                                                                         )
                                                                     }
-                                                                    title="Editar"
+                                                                    title="Ver Detalles"
                                                                 >
-                                                                    <Pencil className="h-4 w-4" />
+                                                                    <Eye className="h-4 w-4" />
                                                                 </Button>
-                                                            )}
-                                                            {canDelete && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                                                    onClick={() =>
-                                                                        handleDelete(
-                                                                            c.id,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
-                                                        </div>
+                                                                {canEdit && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-8 w-8 p-0"
+                                                                        onClick={() =>
+                                                                            handleEdit(
+                                                                                c,
+                                                                            )
+                                                                        }
+                                                                        title="Editar"
+                                                                    >
+                                                                        <Pencil className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
+                                                                {canDelete && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                        onClick={() =>
+                                                                            handleDelete(
+                                                                                c.id,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ),
+                                            )}
+                                            {conductores.data.length === 0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan={4}
+                                                        className="py-8 text-center text-muted-foreground"
+                                                    >
+                                                        No se encontraron
+                                                        conductores con los
+                                                        filtros aplicados
                                                     </td>
                                                 </tr>
-                                            ),
-                                        )}
-                                        {conductores.data.length === 0 && (
-                                            <tr>
-                                                <td
-                                                    colSpan={4}
-                                                    className="py-8 text-center text-muted-foreground"
-                                                >
-                                                    No se encontraron
-                                                    conductores con los filtros
-                                                    aplicados
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                                <Pagination
-                                    links={conductores.links}
-                                    meta={conductores.meta}
-                                />
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {conductores.data.map((c: Conductor) => (
-                                    <Card key={c.id} className="overflow-hidden">
-                                        <CardContent className="space-y-3 p-4">
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                                                        <User className="h-5 w-5" />
+                                            )}
+                                        </tbody>
+                                    </table>
+                                    <Pagination
+                                        links={conductores.links}
+                                        meta={conductores.meta}
+                                    />
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    {conductores.data.map((c: Conductor) => (
+                                        <Card
+                                            key={c.id}
+                                            className="overflow-hidden"
+                                        >
+                                            <CardContent className="space-y-3 p-4">
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                                            <User className="h-5 w-5" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-bold">
+                                                                {c.nombre}
+                                                            </p>
+                                                            <p className="text-[10px] text-muted-foreground">
+                                                                RUT:{' '}
+                                                                {c.rut || '-'} |
+                                                                L:{' '}
+                                                                {c.licencia ||
+                                                                    '-'}
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <p className="font-bold">{c.nombre}</p>
-                                                        <p className="text-[10px] text-muted-foreground">
-                                                            RUT: {c.rut || '-'} | L: {c.licencia || '-'}
-                                                        </p>
-                                                    </div>
+                                                    <StatusDropdown
+                                                        value={c.estado}
+                                                        onChange={(val) =>
+                                                            router.put(
+                                                                `/conductores/${c.id}`,
+                                                                { estado: val },
+                                                                {
+                                                                    preserveScroll: true,
+                                                                    only: [
+                                                                        'conductores',
+                                                                    ],
+                                                                },
+                                                            )
+                                                        }
+                                                    />
                                                 </div>
-                                                <StatusDropdown
-                                                    value={c.estado}
-                                                    onChange={(val) =>
-                                                        router.put(`/conductores/${c.id}`, { estado: val }, { preserveScroll: true, only: ['conductores'] })
-                                                    }
-                                                />
-                                            </div>
-                                            <div className="space-y-1 text-sm">
-                                                <p className="flex items-center gap-2 text-xs">
-                                                    <Phone className="h-3 w-3 text-muted-foreground" />
-                                                    {c.telefono || '-'}
-                                                </p>
-                                                <p className="flex items-center gap-2 text-xs">
-                                                    <Mail className="h-3 w-3 text-muted-foreground" />
-                                                    {c.email || '-'}
-                                                </p>
-                                            </div>
-                                            <div className="flex justify-end gap-1 border-t pt-2">
-                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700" onClick={() => handleVer(c)} title="Ver Detalles">
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                                {canEdit && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(c)} title="Editar">
-                                                        <Pencil className="h-4 w-4" />
+                                                <div className="space-y-1 text-sm">
+                                                    <p className="flex items-center gap-2 text-xs">
+                                                        <Phone className="h-3 w-3 text-muted-foreground" />
+                                                        {c.telefono || '-'}
+                                                    </p>
+                                                    <p className="flex items-center gap-2 text-xs">
+                                                        <Mail className="h-3 w-3 text-muted-foreground" />
+                                                        {c.email || '-'}
+                                                    </p>
+                                                </div>
+                                                <div className="flex justify-end gap-1 border-t pt-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                        onClick={() =>
+                                                            handleVer(c)
+                                                        }
+                                                        title="Ver Detalles"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
                                                     </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(c.id)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                                {conductores.data.length === 0 && (
-                                    <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
-                                        <User className="mb-3 h-12 w-12 opacity-20" />
-                                        <p>No se encontraron conductores con los filtros aplicados</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                                    {canEdit && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0"
+                                                            onClick={() =>
+                                                                handleEdit(c)
+                                                            }
+                                                            title="Editar"
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                    {canDelete && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    c.id,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                    {conductores.data.length === 0 && (
+                                        <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
+                                            <User className="mb-3 h-12 w-12 opacity-20" />
+                                            <p>
+                                                No se encontraron conductores
+                                                con los filtros aplicados
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
             </AppLayout>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="max-w-[95vw] border-none p-0 shadow-2xl md:max-w-xl overflow-y-auto">
+                <DialogContent className="max-w-[95vw] overflow-y-auto border-none p-0 shadow-2xl md:max-w-xl">
                     <DialogHeader className="bg-gradient-to-r from-primary/10 to-transparent p-6 pb-2">
                         <DialogTitle className="text-2xl font-black tracking-tight text-primary">
                             {editando ? 'Editar' : 'Nuevo'} Conductor
@@ -717,7 +777,9 @@ export default function Index({
                                     Vincular con Empleado (Opcional)
                                 </Label>
                                 <Select
-                                    value={data.empleado_id?.toString() || 'none'}
+                                    value={
+                                        data.empleado_id?.toString() || 'none'
+                                    }
                                     onValueChange={handleEmpleadoChange}
                                 >
                                     <SelectTrigger className="h-11 border-none bg-muted/30 focus-visible:ring-primary/30">
@@ -752,16 +814,23 @@ export default function Index({
                                     required
                                     placeholder="Ej: Juan Pérez"
                                 />
-                                 <FormInput
-                                     label="RUT (Documento ID)"
-                                     id="rut"
-                                     value={data.rut || ''}
-                                     onChange={handleRutChange}
-                                     onBlur={(e) => setData('rut', formatRut(e.target.value.toUpperCase()))}
-                                     error={errors.rut}
-                                     placeholder="12.345.678-9"
-                                     className="font-mono"
-                                 />
+                                <FormInput
+                                    label="RUT (Documento ID)"
+                                    id="rut"
+                                    value={data.rut || ''}
+                                    onChange={handleRutChange}
+                                    onBlur={(e) =>
+                                        setData(
+                                            'rut',
+                                            formatRut(
+                                                e.target.value.toUpperCase(),
+                                            ),
+                                        )
+                                    }
+                                    error={errors.rut}
+                                    placeholder="12.345.678-9"
+                                    className="font-mono"
+                                />
                             </div>
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 <FormInput
@@ -989,8 +1058,6 @@ export default function Index({
                                             </div>
                                         </div>
                                     </div>
-
-
 
                                     <div className="border-t pt-6 md:col-span-2">
                                         <h3 className="mb-4 text-xs font-black tracking-[0.2em] text-primary/70 uppercase">

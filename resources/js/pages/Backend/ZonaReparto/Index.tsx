@@ -8,9 +8,16 @@ import {
     useJsApiLoader,
 } from '@react-google-maps/api';
 import { MapPin, Pencil, PlusCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import echo from '@/echo';
-import AppLayout from '@/layouts/app-layout';
+import { useEffect, useMemo, useState } from 'react';
+import {
+    Bar,
+    BarChart,
+    CartesianGrid,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+} from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,15 +41,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import {
-    Bar,
-    BarChart,
-    CartesianGrid,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
-} from 'recharts';
+import echo from '@/echo';
+import AppLayout from '@/layouts/app-layout';
 
 const MAP_CENTER = { lat: -33.4489, lng: -70.6693 };
 
@@ -150,9 +150,19 @@ export default function Index({
         libraries: ['drawing'],
     });
 
-    const [zonas, setZonas] = useState<Zona[]>(zonasProp);
-    const [repartidores, setRepartidores] =
-        useState<RepartidorMarker[]>(repartidoresProp);
+    const zonas = zonasProp;
+    const [repartidorPositions, setRepartidorPositions] = useState<
+        Record<number, { lat: number; lng: number }>
+    >({});
+    const repartidores = useMemo(
+        () =>
+            repartidoresProp.map((repartidor) => {
+                const position = repartidorPositions[repartidor.id];
+
+                return position ? { ...repartidor, ...position } : repartidor;
+            }),
+        [repartidoresProp, repartidorPositions],
+    );
     const [modalOpen, setModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [drawMode, setDrawMode] = useState(false);
@@ -163,15 +173,7 @@ export default function Index({
         useState<RepartidorMarker | null>(null);
     const [zonaAEliminar, setZonaAEliminar] = useState<Zona | null>(null);
 
-    const {
-        data,
-        setData,
-        post,
-        put,
-        reset,
-        processing,
-        errors,
-    } = useForm({
+    const { data, setData, post, put, reset, processing, errors } = useForm({
         name: '',
         lat: '',
         lng: '',
@@ -191,13 +193,13 @@ export default function Index({
             lat: number;
             lng: number;
         }) => {
-            setRepartidores((prev) =>
-                prev.map((repartidor) =>
-                    repartidor.id === event.repartidor_id
-                        ? { ...repartidor, lat: event.lat, lng: event.lng }
-                        : repartidor,
-                ),
-            );
+            setRepartidorPositions((prev) => ({
+                ...prev,
+                [event.repartidor_id]: {
+                    lat: event.lat,
+                    lng: event.lng,
+                },
+            }));
         };
 
         echo.private(channel).listen('DeliveryPositionUpdated', handler);
@@ -206,14 +208,6 @@ export default function Index({
             echo.leaveChannel(leaveChannel);
         };
     }, [owner_id]);
-
-    useEffect(() => {
-        setZonas(zonasProp);
-    }, [zonasProp]);
-
-    useEffect(() => {
-        setRepartidores(repartidoresProp);
-    }, [repartidoresProp]);
 
     const abrirNueva = () => {
         reset();
@@ -547,8 +541,7 @@ export default function Index({
                                 </p>
                             )}
                             {zonas.map((zona) => {
-                                const usoPercent =
-                                    zona.uso?.uso_percent ?? 0;
+                                const usoPercent = zona.uso?.uso_percent ?? 0;
 
                                 return (
                                     <div
@@ -847,8 +840,8 @@ export default function Index({
                                     {rendimiento.por_repartidor.length ===
                                         0 && (
                                         <p className="py-4 text-center text-sm text-muted-foreground">
-                                            Aún no hay asignaciones
-                                            registradas en el período.
+                                            Aún no hay asignaciones registradas
+                                            en el período.
                                         </p>
                                     )}
                                     {rendimiento.por_repartidor.map(
@@ -913,9 +906,7 @@ export default function Index({
                                             {rendimiento.por_repartidor.map(
                                                 (repartidor) => (
                                                     <TableRow
-                                                        key={
-                                                            repartidor.user_id
-                                                        }
+                                                        key={repartidor.user_id}
                                                     >
                                                         <TableCell className="font-medium">
                                                             {repartidor.nombre ??
@@ -927,10 +918,14 @@ export default function Index({
                                                             }
                                                         </TableCell>
                                                         <TableCell className="text-right text-emerald-600">
-                                                            {repartidor.entregadas}
+                                                            {
+                                                                repartidor.entregadas
+                                                            }
                                                         </TableCell>
                                                         <TableCell className="text-right">
-                                                            {repartidor.en_curso}
+                                                            {
+                                                                repartidor.en_curso
+                                                            }
                                                         </TableCell>
                                                     </TableRow>
                                                 ),
@@ -1069,9 +1064,8 @@ export default function Index({
                                                             : 'default'
                                                     }
                                                 >
-                                                    {motivoLabel[
-                                                        item.motivo
-                                                    ] ?? item.motivo}
+                                                    {motivoLabel[item.motivo] ??
+                                                        item.motivo}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>

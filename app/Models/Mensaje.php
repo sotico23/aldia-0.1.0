@@ -1,64 +1,98 @@
 <?php
-/**
- * Message Model
- */
 
 namespace App\Models;
 
-use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Auth;
 
-class Mensaje
+class Mensaje extends Model
 {
-    /**
-     * The message text
-     */
-    protected ?string $texto = null;
+    use HasFactory;
 
     /**
-     * Type of message
+     * Tabla asociada al modelo en la base de datos.
      */
-    protected ?string $tipo_mensaje = null;
+    protected $table = 'mensajes';
 
     /**
-     * Related conversation
+     * Valores por defecto que reflejan los defaults de la tabla.
      */
-    protected ?int $conversacion_id = null;
+    protected $attributes = [
+        'leido' => false,
+    ];
 
     /**
-     * Author of the message
+     * Atributos asignables masivamente.
+     *
+     * Deben coincidir con las columnas reales de la tabla `mensajes`
+     * (ver database/migrations/2026_03_15_043626_create_mensajes_table.php,
+     * 2026_03_15_131411_add_attachments_to_mensajes_table.php y
+     * 2026_03_29_011748_add_owner_id_to_remaining_operational_tables.php).
      */
-    protected ?string $autor = null;
+    protected $fillable = [
+        'owner_id',
+        'sender_id',
+        'receiver_id',
+        'contenido',
+        'archivo_path',
+        'archivo_nombre',
+        'archivo_tipo',
+        'leido',
+    ];
 
     /**
-     * Read status
+     * Conversión automática de tipos de atributos.
      */
-    protected ?bool $leido = null;
-
-    /**
-     * Casts method for Eloquent
-     */
-    public function casts(): array
+    protected function casts(): array
     {
         return [
-            'tipo_mensaje' => 'tipo_mensaje',
-            'leido' => 'leido',
+            'owner_id' => 'integer',
+            'sender_id' => 'integer',
+            'receiver_id' => 'integer',
+            'leido' => 'boolean',
         ];
     }
 
     /**
-     * Fill from DB
+     * Asigna el tenant del usuario autenticado al crear el mensaje.
      */
-    public function fillFromDb(): void
+    protected static function booted(): void
     {
-        $this->texto = $this->attributes->get('texto');
-        $this->tipo_mensaje = $this->attributes->get('tipo_mensaje');
-        $this->conversacion_id = $this->attributes->get('conversacion_id');
-        $this->autor = $this->attributes->get('autor');
-        $this->leido = $this->attributes->get('leido');
+        static::creating(function (Mensaje $mensaje) {
+            if (Auth::check() && ! $mensaje->owner_id) {
+                $mensaje->owner_id = Auth::user()->getOwnerId();
+            }
+        });
     }
 
     /**
-     * Get common fields for nested relations
+     * Tenant al que pertenece el mensaje.
+     */
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    /**
+     * Usuario que envía el mensaje.
+     */
+    public function sender(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    /**
+     * Usuario que recibe el mensaje.
+     */
+    public function receiver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'receiver_id');
+    }
+
+    /**
+     * Helper para formatear datos comunes en respuestas o recursos.
      */
     public function getCommonFields(): array
     {
@@ -68,10 +102,12 @@ class Mensaje
             'updated_at' => $this->updated_at,
             'data' => [
                 'id' => $this->id,
-                'conversacion_id' => $this->conversacion_id,
-                'autor' => $this->autor,
-                'texto' => $this->texto,
-                'tipo_mensaje' => $this->tipo_mensaje,
+                'sender_id' => $this->sender_id,
+                'receiver_id' => $this->receiver_id,
+                'contenido' => $this->contenido,
+                'archivo_path' => $this->archivo_path,
+                'archivo_nombre' => $this->archivo_nombre,
+                'archivo_tipo' => $this->archivo_tipo,
                 'leido' => $this->leido,
             ],
         ];

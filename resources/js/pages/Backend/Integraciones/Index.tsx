@@ -10,7 +10,7 @@ import {
     XCircle,
     Zap,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,10 +34,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
-import {
-    PROVIDERS,
-    type ProviderDefinition,
-} from './providers';
+import { PROVIDERS, type ProviderDefinition } from './providers';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -84,7 +81,10 @@ const CATEGORY_TABS: { value: string; label: string }[] = [
     { value: 'ecommerce', label: '🛒 E-commerce' },
 ];
 
-const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+const CATEGORY_ICONS: Record<
+    string,
+    React.ComponentType<{ className?: string }>
+> = {
     payment: CreditCard,
     bots: Zap,
     ecommerce: ShoppingCart,
@@ -92,40 +92,49 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
 
 function getCsrfToken(): string {
     return (
-        document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ??
-        ''
+        document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute('content') ?? ''
     );
 }
 
+function buildForms(
+    integraciones: IntegrationData[],
+): Record<string, ProviderForm> {
+    const next: Record<string, ProviderForm> = {};
+
+    for (const definition of PROVIDERS) {
+        const saved = integraciones.find(
+            (integration) => integration.provider === definition.id,
+        );
+
+        next[definition.id] = {
+            fields: saved?.credentials ?? {},
+            environment:
+                saved?.environment ?? definition.environments?.[0]?.value ?? '',
+            is_active: saved?.is_active ?? false,
+            hasSavedCredentials: saved !== undefined,
+        };
+    }
+
+    return next;
+}
+
 export default function Index({ integraciones }: PageProps) {
-    const [forms, setForms] = useState<Record<string, ProviderForm>>({});
+    const [forms, setForms] = useState<Record<string, ProviderForm>>(() =>
+        buildForms(integraciones),
+    );
+    const [prevIntegraciones, setPrevIntegraciones] = useState(integraciones);
     const [saving, setSaving] = useState<Record<string, boolean>>({});
     const [testing, setTesting] = useState<Record<string, boolean>>({});
     const [testResults, setTestResults] = useState<Record<string, TestResult>>(
         {},
     );
 
-    useEffect(() => {
-        const next: Record<string, ProviderForm> = {};
-
-        for (const definition of PROVIDERS) {
-            const saved = integraciones.find(
-                (integration) => integration.provider === definition.id,
-            );
-
-            next[definition.id] = {
-                fields: saved?.credentials ?? {},
-                environment:
-                    saved?.environment ??
-                    definition.environments?.[0]?.value ??
-                    '',
-                is_active: saved?.is_active ?? false,
-                hasSavedCredentials: saved !== undefined,
-            };
-        }
-
-        setForms(next);
-    }, [integraciones]);
+    if (integraciones !== prevIntegraciones) {
+        setPrevIntegraciones(integraciones);
+        setForms(buildForms(integraciones));
+    }
 
     const updateField = (
         provider: string,
@@ -183,7 +192,8 @@ export default function Index({ integraciones }: PageProps) {
             const result = await response.json();
 
             if (!response.ok || !result.success) {
-                const message = result.message ?? 'Error al guardar la integración.';
+                const message =
+                    result.message ?? 'Error al guardar la integración.';
                 throw new Error(message);
             }
 
@@ -196,7 +206,9 @@ export default function Index({ integraciones }: PageProps) {
                 },
             }));
 
-            toast.success(result.message ?? 'Integración guardada correctamente.');
+            toast.success(
+                result.message ?? 'Integración guardada correctamente.',
+            );
         } catch (error) {
             toast.error(
                 error instanceof Error
@@ -212,13 +224,16 @@ export default function Index({ integraciones }: PageProps) {
         setTesting((prev) => ({ ...prev, [provider]: true }));
 
         try {
-            const response = await fetch(`/integraciones-api/test/${provider}`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': getCsrfToken(),
-                    Accept: 'application/json',
+            const response = await fetch(
+                `/integraciones-api/test/${provider}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': getCsrfToken(),
+                        Accept: 'application/json',
+                    },
                 },
-            });
+            );
 
             const result = await response.json();
             const ok = response.ok && result.success;

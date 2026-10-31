@@ -10,7 +10,7 @@ import {
     Search,
     X,
     Eye,
-    TrendingUp
+    TrendingUp,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useMemo } from 'react';
@@ -26,7 +26,7 @@ import {
     ResponsiveContainer,
     PieChart,
     Pie,
-    Cell
+    Cell,
 } from 'recharts';
 import { BulkActions } from '@/components/shared/BulkActions';
 import { Badge } from '@/components/ui/badge';
@@ -255,7 +255,10 @@ export default function Index({
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                             {canCreate && (
-                                <Button onClick={() => setIsOpen(true)} size="sm">
+                                <Button
+                                    onClick={() => setIsOpen(true)}
+                                    size="sm"
+                                >
                                     <Plus className="mr-2 h-4 w-4" />
                                     <span className="hidden sm:inline">
                                         Nuevo Asiento
@@ -480,12 +483,17 @@ export default function Index({
                                 <div>
                                     <CardTitle>Asientos Contables</CardTitle>
                                     <CardDescription>
-                                        {asientosFiltrados.length} registros encontrados
+                                        {asientosFiltrados.length} registros
+                                        encontrados
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-1 rounded-lg border p-0.5">
                                     <Button
-                                        variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'secondary'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('table')}
                                         className="h-8 w-8 p-0"
@@ -493,7 +501,11 @@ export default function Index({
                                         <List className="h-4 w-4" />
                                     </Button>
                                     <Button
-                                        variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'secondary'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         onClick={() => setViewMode('cards')}
                                         className="h-8 w-8 p-0"
@@ -558,47 +570,123 @@ export default function Index({
                                     <table className="w-full">
                                         <thead>
                                             <tr className="border-b text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                                                <th className="py-3 text-left">N°</th>
-                                                <th className="py-3 text-left">Descripción</th>
-                                                <th className="py-3 text-left">Fecha</th>
-                                                <th className="py-3 text-right">Debe</th>
-                                                <th className="py-3 text-right">Haber</th>
-                                                <th className="py-3 text-center">Estado</th>
-                                                <th className="py-3 text-right">Acciones</th>
+                                                <th className="py-3 text-left">
+                                                    N°
+                                                </th>
+                                                <th className="py-3 text-left">
+                                                    Descripción
+                                                </th>
+                                                <th className="py-3 text-left">
+                                                    Fecha
+                                                </th>
+                                                <th className="py-3 text-right">
+                                                    Debe
+                                                </th>
+                                                <th className="py-3 text-right">
+                                                    Haber
+                                                </th>
+                                                <th className="py-3 text-center">
+                                                    Estado
+                                                </th>
+                                                <th className="py-3 text-right">
+                                                    Acciones
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-border/50">
-                                            {asientosFiltrados.map((asiento) => (
-                                                <tr key={asiento.id} className="group transition-colors hover:bg-muted/30">
-                                                    <td className="py-3 font-mono text-sm">#{asiento.numero}</td>
-                                                    <td className="py-3 text-sm font-medium">{asiento.descripcion}</td>
-                                                    <td className="py-3 text-sm text-muted-foreground">{formatDateCLP(asiento.fecha)}</td>
-                                                    <td className="py-3 text-right text-sm">{formatCurrency(asiento.total_debe)}</td>
-                                                    <td className="py-3 text-right text-sm">{formatCurrency(asiento.total_haber)}</td>
-                                                    <td className="py-3 text-center">
-                                                        <Badge variant={asiento.estado ? 'default' : 'secondary'} className="text-xs">
-                                                            {asiento.estado ? 'Activo' : 'Inactivo'}
-                                                        </Badge>
-                                                    </td>
-                                                    <td className="py-3 text-right">
-                                                        <div className="flex justify-end gap-1">
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setViendo(asiento); setIsViewOpen(true); }}>
-                                                                <Eye className="h-4 w-4" />
-                                                            </Button>
-                                                            {canEdit && (
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(asiento)}>
-                                                                    <Pencil className="h-4 w-4" />
-                                                                </Button>
+                                            {asientosFiltrados.map(
+                                                (asiento) => (
+                                                    <tr
+                                                        key={asiento.id}
+                                                        className="group transition-colors hover:bg-muted/30"
+                                                    >
+                                                        <td className="py-3 font-mono text-sm">
+                                                            #{asiento.numero}
+                                                        </td>
+                                                        <td className="py-3 text-sm font-medium">
+                                                            {
+                                                                asiento.descripcion
+                                                            }
+                                                        </td>
+                                                        <td className="py-3 text-sm text-muted-foreground">
+                                                            {formatDateCLP(
+                                                                asiento.fecha,
                                                             )}
-                                                            {canDelete && (
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600" onClick={() => handleDelete(asiento.id)}>
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
+                                                        </td>
+                                                        <td className="py-3 text-right text-sm">
+                                                            {formatCurrency(
+                                                                asiento.total_debe,
                                                             )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                                        </td>
+                                                        <td className="py-3 text-right text-sm">
+                                                            {formatCurrency(
+                                                                asiento.total_haber,
+                                                            )}
+                                                        </td>
+                                                        <td className="py-3 text-center">
+                                                            <Badge
+                                                                variant={
+                                                                    asiento.estado
+                                                                        ? 'default'
+                                                                        : 'secondary'
+                                                                }
+                                                                className="text-xs"
+                                                            >
+                                                                {asiento.estado
+                                                                    ? 'Activo'
+                                                                    : 'Inactivo'}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="py-3 text-right">
+                                                            <div className="flex justify-end gap-1">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8"
+                                                                    onClick={() => {
+                                                                        setViendo(
+                                                                            asiento,
+                                                                        );
+                                                                        setIsViewOpen(
+                                                                            true,
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <Eye className="h-4 w-4" />
+                                                                </Button>
+                                                                {canEdit && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8"
+                                                                        onClick={() =>
+                                                                            handleEdit(
+                                                                                asiento,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Pencil className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
+                                                                {canDelete && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8 text-red-500 hover:text-red-600"
+                                                                        onClick={() =>
+                                                                            handleDelete(
+                                                                                asiento.id,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ),
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>

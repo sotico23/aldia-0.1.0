@@ -6,7 +6,7 @@ import {
     ChevronRight,
     FileText,
     HelpCircle,
-    BookOpen
+    BookOpen,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -63,7 +63,7 @@ export default function LessonShow({
     previousLesson,
     viewToken,
 }: Props) {
-    const { data, setData, post, processing } = useForm({
+    const { post, processing } = useForm({
         view_token: viewToken,
     });
 

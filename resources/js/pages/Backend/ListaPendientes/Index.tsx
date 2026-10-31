@@ -1,10 +1,7 @@
 import { Head } from '@inertiajs/react';
 import { CheckCircle2, Clock, AlertCircle, Calendar, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import {
-    Card,
-    CardContent
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useCountry } from '@/hooks/use-country';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
@@ -32,7 +29,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Index({ pendientes }: { pendientes: Tarea[] }) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const getPrioridadBadge = (prioridad: string) => {
         switch (prioridad) {
             case 'alta':

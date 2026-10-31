@@ -38,7 +38,7 @@ import {
     Dialog,
     DialogContent,
     DialogHeader,
-    DialogTitle
+    DialogTitle,
 } from '@/components/ui/dialog';
 import {
     DropdownMenu,
@@ -549,12 +549,17 @@ export default function Index({
                                 <div>
                                     <CardTitle>Rutas y Vehículos</CardTitle>
                                     <CardDescription>
-                                        {cargasFiltradas.length} cargas registradas
+                                        {cargasFiltradas.length} cargas
+                                        registradas
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-1 rounded-lg border p-0.5">
                                     <Button
-                                        variant={viewMode === 'table' ? 'default' : 'ghost'}
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'default'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         className="h-8 w-8 p-0"
                                         onClick={() => setViewMode('table')}
@@ -562,7 +567,11 @@ export default function Index({
                                         <List className="h-4 w-4" />
                                     </Button>
                                     <Button
-                                        variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'default'
+                                                : 'ghost'
+                                        }
                                         size="sm"
                                         className="h-8 w-8 p-0"
                                         onClick={() => setViewMode('cards')}
@@ -586,9 +595,8 @@ export default function Index({
                                                     busqueda: e.target.value,
                                                 })
                                             }
-                                            className="h-9 pl-8 pr-8"
+                                            className="h-9 pr-8 pl-8"
                                         />
-
                                     </div>
                                 </div>
                                 <Select
@@ -629,183 +637,247 @@ export default function Index({
                                 </Button>
                             </div>
                             {viewMode === 'table' ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-xs sm:text-sm">
-                                    <thead>
-                                        <tr className="border-b">
-                                            <th className="py-2 text-left font-medium">
-                                                Fecha
-                                            </th>
-                                            <th className="py-2 text-left font-medium">
-                                                Vehículo
-                                            </th>
-                                            <th className="py-2 text-left font-medium">
-                                                Conductor
-                                            </th>
-                                            <th className="py-2 text-center font-medium">
-                                                Estado
-                                            </th>
-                                            <th className="py-2 text-right font-medium">
-                                                Acciones
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {cargasFiltradas.map((c) => (
-                                            <tr
-                                                key={c.id}
-                                                className="border-b transition-colors hover:bg-muted/30"
-                                            >
-                                                <td className="py-2 font-bold">
-                                                    {c.fecha
-                                                        ? c.fecha.split('T')[0]
-                                                        : ''}
-                                                </td>
-                                                <td className="py-2">
-                                                    <div className="font-bold uppercase">
-                                                        {c.vehiculo?.placa ||
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-xs sm:text-sm">
+                                        <thead>
+                                            <tr className="border-b">
+                                                <th className="py-2 text-left font-medium">
+                                                    Fecha
+                                                </th>
+                                                <th className="py-2 text-left font-medium">
+                                                    Vehículo
+                                                </th>
+                                                <th className="py-2 text-left font-medium">
+                                                    Conductor
+                                                </th>
+                                                <th className="py-2 text-center font-medium">
+                                                    Estado
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Acciones
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {cargasFiltradas.map((c) => (
+                                                <tr
+                                                    key={c.id}
+                                                    className="border-b transition-colors hover:bg-muted/30"
+                                                >
+                                                    <td className="py-2 font-bold">
+                                                        {c.fecha
+                                                            ? c.fecha.split(
+                                                                  'T',
+                                                              )[0]
+                                                            : ''}
+                                                    </td>
+                                                    <td className="py-2">
+                                                        <div className="font-bold uppercase">
+                                                            {c.vehiculo
+                                                                ?.placa || '-'}
+                                                        </div>
+                                                        <div className="text-[10px] text-muted-foreground">
+                                                            {c.vehiculo?.marca}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-2">
+                                                        {c.conductor?.nombre ||
                                                             '-'}
-                                                    </div>
-                                                    <div className="text-[10px] text-muted-foreground">
-                                                        {c.vehiculo?.marca}
-                                                    </div>
-                                                </td>
-                                                <td className="py-2">
-                                                    {c.conductor?.nombre || '-'}
-                                                </td>
-                                                <td className="py-2 text-center">
-                                                    {getEstadoBadge(c.estado)}
-                                                </td>
-                                                <td className="py-2 text-right">
-                                                    <div className="flex justify-end gap-1">
-                                                        {c.estado === 'en_ruta' && (
+                                                    </td>
+                                                    <td className="py-2 text-center">
+                                                        {getEstadoBadge(
+                                                            c.estado,
+                                                        )}
+                                                    </td>
+                                                    <td className="py-2 text-right">
+                                                        <div className="flex justify-end gap-1">
+                                                            {c.estado ===
+                                                                'en_ruta' && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                                                                    onClick={() =>
+                                                                        handleRecargar(
+                                                                            c,
+                                                                        )
+                                                                    }
+                                                                    title="Recargar / Registrar Llenos/Vacíos"
+                                                                >
+                                                                    <RefreshCw className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                                                                className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                                                                 onClick={() =>
-                                                                    handleRecargar(c)
+                                                                    handleVer(c)
                                                                 }
-                                                                title="Recargar / Registrar Llenos/Vacíos"
+                                                                title="Ver Detalles"
                                                             >
-                                                                <RefreshCw className="h-4 w-4" />
+                                                                <Eye className="h-4 w-4" />
                                                             </Button>
-                                                        )}
+                                                            {canEdit && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0"
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            c,
+                                                                        )
+                                                                    }
+                                                                    title="Editar"
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {canDelete && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            c.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {cargasFiltradas.length === 0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan={5}
+                                                        className="py-8 text-center text-muted-foreground"
+                                                    >
+                                                        No se encontraron
+                                                        cargas.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                    {cargas.links && (
+                                        <Pagination
+                                            links={cargas.links}
+                                            meta={cargas.meta}
+                                        />
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    {cargasFiltradas.map((c) => (
+                                        <Card
+                                            key={c.id}
+                                            className="overflow-hidden"
+                                        >
+                                            <CardContent className="space-y-3 p-4">
+                                                <div className="flex items-center justify-between">
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="text-xs"
+                                                    >
+                                                        {c.fecha
+                                                            ? c.fecha.split(
+                                                                  'T',
+                                                              )[0]
+                                                            : ''}
+                                                    </Badge>
+                                                    {getEstadoBadge(c.estado)}
+                                                </div>
+                                                <div>
+                                                    <p className="text-lg font-bold uppercase">
+                                                        {c.vehiculo?.placa ||
+                                                            '-'}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {c.vehiculo?.marca}{' '}
+                                                        {c.vehiculo?.modelo}
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-sm">
+                                                    <User className="h-4 w-4 text-muted-foreground" />
+                                                    <span>
+                                                        {c.conductor?.nombre ||
+                                                            '-'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-end gap-1 border-t pt-2">
+                                                    {c.estado === 'en_ruta' && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                            className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                                                             onClick={() =>
-                                                                handleVer(c)
+                                                                handleRecargar(
+                                                                    c,
+                                                                )
                                                             }
-                                                            title="Ver Detalles"
+                                                            title="Recargar"
                                                         >
-                                                            <Eye className="h-4 w-4" />
+                                                            <RefreshCw className="h-4 w-4" />
                                                         </Button>
-                                                        {canEdit && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-8 w-8 p-0"
-                                                                onClick={() =>
-                                                                    handleEdit(c)
-                                                                }
-                                                                title="Editar"
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                        {canDelete && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                                                onClick={() =>
-                                                                    handleDelete(
-                                                                        c.id,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {cargasFiltradas.length === 0 && (
-                                            <tr>
-                                                <td
-                                                    colSpan={5}
-                                                    className="py-8 text-center text-muted-foreground"
-                                                >
-                                                    No se encontraron cargas.
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                                {cargas.links && (
-                                    <Pagination
-                                        links={cargas.links}
-                                        meta={cargas.meta}
-                                    />
-                                )}
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {cargasFiltradas.map((c) => (
-                                    <Card key={c.id} className="overflow-hidden">
-                                        <CardContent className="space-y-3 p-4">
-                                            <div className="flex items-center justify-between">
-                                                <Badge variant="outline" className="text-xs">
-                                                    {c.fecha ? c.fecha.split('T')[0] : ''}
-                                                </Badge>
-                                                {getEstadoBadge(c.estado)}
-                                            </div>
-                                            <div>
-                                                <p className="text-lg font-bold uppercase">{c.vehiculo?.placa || '-'}</p>
-                                                <p className="text-xs text-muted-foreground">{c.vehiculo?.marca} {c.vehiculo?.modelo}</p>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-sm">
-                                                <User className="h-4 w-4 text-muted-foreground" />
-                                                <span>{c.conductor?.nombre || '-'}</span>
-                                            </div>
-                                            <div className="flex justify-end gap-1 border-t pt-2">
-                                                {c.estado === 'en_ruta' && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700" onClick={() => handleRecargar(c)} title="Recargar">
-                                                        <RefreshCw className="h-4 w-4" />
+                                                    )}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                        onClick={() =>
+                                                            handleVer(c)
+                                                        }
+                                                        title="Ver Detalles"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
                                                     </Button>
-                                                )}
-                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700" onClick={() => handleVer(c)} title="Ver Detalles">
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                                {canEdit && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(c)} title="Editar">
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(c.id)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                                {cargasFiltradas.length === 0 && (
-                                    <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
-                                        <Truck className="mb-3 h-12 w-12 opacity-20" />
-                                        <p>No se encontraron cargas.</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                                    {canEdit && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0"
+                                                            onClick={() =>
+                                                                handleEdit(c)
+                                                            }
+                                                            title="Editar"
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                    {canDelete && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    c.id,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                    {cargasFiltradas.length === 0 && (
+                                        <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
+                                            <Truck className="mb-3 h-12 w-12 opacity-20" />
+                                            <p>No se encontraron cargas.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
-
             </AppLayout>
 
             {/* Modal Crear/Editar */}
@@ -1009,7 +1081,7 @@ export default function Index({
                                                                 )
                                                             }
                                                         />
-                                                        <p className="text-[9px] text-muted-foreground text-center">
+                                                        <p className="text-center text-[9px] text-muted-foreground">
                                                             a bordo
                                                         </p>
                                                     </div>
@@ -1193,10 +1265,10 @@ export default function Index({
                                                                 </div>
                                                             </div>
                                                             {(p.cantidad_vendida !==
-                                                                    0 ||
+                                                                0 ||
                                                                 p.cantidad_devuelta !==
                                                                     0) && (
-                                                                <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2 border-t pt-2 text-center text-xs">
+                                                                <div className="mt-2 grid grid-cols-1 gap-2 border-t pt-2 text-center text-xs sm:grid-cols-3">
                                                                     <div>
                                                                         <p className="text-muted-foreground">
                                                                             Vendido
@@ -1221,7 +1293,7 @@ export default function Index({
                                                                             0
                                                                                 ? 'Pendiente'
                                                                                 : resto <
-                                                                                     0
+                                                                                    0
                                                                                   ? 'Sobrante'
                                                                                   : 'Cuadra'}
                                                                         </p>
@@ -1231,7 +1303,7 @@ export default function Index({
                                                                                 0
                                                                                     ? 'text-blue-600'
                                                                                     : resto <
-                                                                                          0
+                                                                                        0
                                                                                       ? 'text-red-500'
                                                                                       : 'text-green-600'
                                                                             }`}
@@ -1239,7 +1311,8 @@ export default function Index({
                                                                             {resto ===
                                                                             0
                                                                                 ? '✓'
-                                                                                : resto > 0
+                                                                                : resto >
+                                                                                    0
                                                                                   ? `-${resto}`
                                                                                   : `+${Math.abs(resto)}`}
                                                                         </p>
@@ -1305,10 +1378,7 @@ export default function Index({
                                         Conductor
                                     </p>
                                     <p className="font-medium">
-                                        {
-                                            cargaSeleccionada.conductor
-                                                ?.nombre
-                                        }
+                                        {cargaSeleccionada.conductor?.nombre}
                                     </p>
                                 </div>
                             </div>
@@ -1345,7 +1415,7 @@ export default function Index({
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div className="space-y-1">
-                                                        <Label className="text-[10px] font-black uppercase text-muted-foreground">
+                                                        <Label className="text-[10px] font-black text-muted-foreground uppercase">
                                                             Vendido en ruta
                                                         </Label>
                                                         <Input
@@ -1381,7 +1451,7 @@ export default function Index({
                                                         />
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <Label className="text-[10px] font-black uppercase text-muted-foreground">
+                                                        <Label className="text-[10px] font-black text-muted-foreground uppercase">
                                                             Devuelto físico
                                                         </Label>
                                                         <Input
@@ -1435,8 +1505,7 @@ export default function Index({
                                                                     newProductos[
                                                                         idx
                                                                     ].renovar =
-                                                                        e.target
-                                                                            .checked;
+                                                                        e.target.checked;
                                                                     setRenovarData(
                                                                         {
                                                                             ...renovarData,
@@ -1487,7 +1556,7 @@ export default function Index({
                             {/* Totales y dinero */}
                             <div className="grid grid-cols-2 gap-4 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
                                 <div className="space-y-1">
-                                    <Label className="text-xs font-bold uppercase text-muted-foreground">
+                                    <Label className="text-xs font-bold text-muted-foreground uppercase">
                                         Total Ventas ($)
                                     </Label>
                                     <div className="relative">
@@ -1510,7 +1579,7 @@ export default function Index({
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <Label className="text-xs font-bold uppercase text-muted-foreground">
+                                    <Label className="text-xs font-bold text-muted-foreground uppercase">
                                         Total Devoluciones ($)
                                     </Label>
                                     <div className="relative">
@@ -1666,7 +1735,7 @@ export default function Index({
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                                                     <div className="space-y-1">
-                                                        <Label className="text-[10px] font-black uppercase text-green-600">
+                                                        <Label className="text-[10px] font-black text-green-600 uppercase">
                                                             Llenos
                                                         </Label>
                                                         <Input
@@ -1687,17 +1756,19 @@ export default function Index({
                                                                         e.target
                                                                             .value,
                                                                     ) || 0;
-                                                                setRecargarData({
-                                                                    ...recargarData,
-                                                                    productos:
-                                                                        newProductos,
-                                                                });
+                                                                setRecargarData(
+                                                                    {
+                                                                        ...recargarData,
+                                                                        productos:
+                                                                            newProductos,
+                                                                    },
+                                                                );
                                                             }}
                                                             className="h-9 text-center font-bold"
                                                         />
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <Label className="text-[10px] font-black uppercase text-amber-600">
+                                                        <Label className="text-[10px] font-black text-amber-600 uppercase">
                                                             Vacíos
                                                         </Label>
                                                         <Input
@@ -1718,17 +1789,19 @@ export default function Index({
                                                                         e.target
                                                                             .value,
                                                                     ) || 0;
-                                                                setRecargarData({
-                                                                    ...recargarData,
-                                                                    productos:
-                                                                        newProductos,
-                                                                });
+                                                                setRecargarData(
+                                                                    {
+                                                                        ...recargarData,
+                                                                        productos:
+                                                                            newProductos,
+                                                                    },
+                                                                );
                                                             }}
                                                             className="h-9 text-center font-bold"
                                                         />
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <Label className="text-[10px] font-black uppercase text-red-600">
+                                                        <Label className="text-[10px] font-black text-red-600 uppercase">
                                                             Faltantes
                                                         </Label>
                                                         <Input
@@ -1749,17 +1822,19 @@ export default function Index({
                                                                         e.target
                                                                             .value,
                                                                     ) || 0;
-                                                                setRecargarData({
-                                                                    ...recargarData,
-                                                                    productos:
-                                                                        newProductos,
-                                                                });
+                                                                setRecargarData(
+                                                                    {
+                                                                        ...recargarData,
+                                                                        productos:
+                                                                            newProductos,
+                                                                    },
+                                                                );
                                                             }}
                                                             className="h-9 text-center font-bold"
                                                         />
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <Label className="text-[10px] font-black uppercase text-purple-600">
+                                                        <Label className="text-[10px] font-black text-purple-600 uppercase">
                                                             Defectuosos
                                                         </Label>
                                                         <Input
@@ -1780,17 +1855,19 @@ export default function Index({
                                                                         e.target
                                                                             .value,
                                                                     ) || 0;
-                                                                setRecargarData({
-                                                                    ...recargarData,
-                                                                    productos:
-                                                                        newProductos,
-                                                                });
+                                                                setRecargarData(
+                                                                    {
+                                                                        ...recargarData,
+                                                                        productos:
+                                                                            newProductos,
+                                                                    },
+                                                                );
                                                             }}
                                                             className="h-9 text-center font-bold"
                                                         />
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <Label className="text-[10px] font-black uppercase text-muted-foreground">
+                                                        <Label className="text-[10px] font-black text-muted-foreground uppercase">
                                                             Vendidos
                                                         </Label>
                                                         <Input
@@ -1811,11 +1888,13 @@ export default function Index({
                                                                         e.target
                                                                             .value,
                                                                     ) || 0;
-                                                                setRecargarData({
-                                                                    ...recargarData,
-                                                                    productos:
-                                                                        newProductos,
-                                                                });
+                                                                setRecargarData(
+                                                                    {
+                                                                        ...recargarData,
+                                                                        productos:
+                                                                            newProductos,
+                                                                    },
+                                                                );
                                                             }}
                                                             className="h-9 text-center font-bold"
                                                         />
@@ -1828,12 +1907,15 @@ export default function Index({
                                                     </span>
                                                     {diferencia > 0 ? (
                                                         <span className="font-bold text-blue-600">
-                                                            Pendiente: {diferencia}
+                                                            Pendiente:{' '}
+                                                            {diferencia}
                                                         </span>
                                                     ) : diferencia < 0 ? (
                                                         <span className="font-bold text-amber-600">
                                                             Sobrante:{' '}
-                                                            {Math.abs(diferencia)}
+                                                            {Math.abs(
+                                                                diferencia,
+                                                            )}
                                                         </span>
                                                     ) : (
                                                         <span className="font-bold text-green-600">
@@ -1850,7 +1932,7 @@ export default function Index({
                             {/* Totales y dinero */}
                             <div className="grid grid-cols-2 gap-4 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
                                 <div className="space-y-1">
-                                    <Label className="text-xs font-bold uppercase text-muted-foreground">
+                                    <Label className="text-xs font-bold text-muted-foreground uppercase">
                                         Total Ventas ($)
                                     </Label>
                                     <div className="relative">
@@ -1873,7 +1955,7 @@ export default function Index({
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <Label className="text-xs font-bold uppercase text-muted-foreground">
+                                    <Label className="text-xs font-bold text-muted-foreground uppercase">
                                         Total Devoluciones ($)
                                     </Label>
                                     <div className="relative">

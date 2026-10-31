@@ -16,14 +16,17 @@ export default function AppLogo() {
 
     return (
         <div className="flex w-full items-center justify-center py-2">
-            <div className={`flex items-center justify-center overflow-hidden rounded-2xl ${!appLogo ? 'size-32 bg-sidebar-primary text-sidebar-primary-foreground' : 'h-40 w-full max-w-[300px]'}`}>
+            <div
+                className={`flex items-center justify-center overflow-hidden rounded-2xl ${!appLogo ? 'size-32 bg-sidebar-primary text-sidebar-primary-foreground' : 'h-40 w-full max-w-[300px]'}`}
+            >
                 {appLogo ? (
                     <img
                         src={appLogo}
                         alt="Logo"
-                        className="h-full w-full object-contain rounded-2xl"
+                        className="h-full w-full rounded-2xl object-contain"
                         onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
+                            (e.target as HTMLImageElement).style.display =
+                                'none';
                         }}
                     />
                 ) : (

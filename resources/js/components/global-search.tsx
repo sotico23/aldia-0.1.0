@@ -1,13 +1,13 @@
 import { router } from '@inertiajs/react';
 import axios from 'axios';
-import { 
-    Search, 
-    LayoutDashboard, 
-    Users, 
-    Tags, 
-    FileText, 
-    ShoppingCart, 
-    Truck, 
+import {
+    Search,
+    LayoutDashboard,
+    Users,
+    Tags,
+    FileText,
+    ShoppingCart,
+    Truck,
     UserCheck,
     Car,
     Briefcase,
@@ -17,7 +17,7 @@ import {
     ReceiptText,
     BarChart3,
     Building2,
-    Loader2
+    Loader2,
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import {
@@ -51,7 +51,7 @@ const iconMap: Record<string, any> = {
     BadgeDollarSign,
     ReceiptText,
     BarChart3,
-    Building2
+    Building2,
 };
 
 export function GlobalSearch() {
@@ -80,7 +80,9 @@ export function GlobalSearch() {
 
         setIsLoading(true);
         try {
-            const response = await axios.get(`/api/global-search?q=${searchQuery}`);
+            const response = await axios.get(
+                `/api/global-search?q=${searchQuery}`,
+            );
             setResults(response.data);
         } catch (error) {
             console.error('Error in global search:', error);
@@ -111,19 +113,21 @@ export function GlobalSearch() {
         <>
             <button
                 onClick={() => setOpen(true)}
-                className="flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted transition-all border border-transparent hover:border-border group"
+                className="group flex items-center gap-2 rounded-xl border border-transparent bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground transition-all hover:border-border hover:bg-muted"
             >
-                <Search className="h-4 w-4 group-hover:text-primary transition-colors" />
+                <Search className="h-4 w-4 transition-colors group-hover:text-primary" />
                 <span className="hidden md:inline-block">Buscar...</span>
-                <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium opacity-100 md:flex">
+                <kbd className="pointer-events-none hidden h-5 items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium opacity-100 select-none md:flex">
                     <span className="text-xs">⌘</span>K
                 </kbd>
             </button>
 
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="p-0 border-none shadow-2xl max-w-xl bg-background/95 backdrop-blur-xl">
-                    <DialogHeader className="p-4 border-b">
-                        <DialogTitle className="sr-only">Búsqueda Global</DialogTitle>
+                <DialogContent className="max-w-xl border-none bg-background/95 p-0 shadow-2xl backdrop-blur-xl">
+                    <DialogHeader className="border-b p-4">
+                        <DialogTitle className="sr-only">
+                            Búsqueda Global
+                        </DialogTitle>
                         <div className="flex items-center gap-3">
                             <Search className="h-5 w-5 text-primary" />
                             <Input
@@ -131,35 +135,40 @@ export function GlobalSearch() {
                                 placeholder="Busca facturas, clientes, productos o módulos..."
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
-                                className="border-none focus-visible:ring-0 text-lg h-10 bg-transparent placeholder:text-muted-foreground/50"
+                                className="h-10 border-none bg-transparent text-lg placeholder:text-muted-foreground/50 focus-visible:ring-0"
                             />
-                            {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                            {isLoading && (
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            )}
                         </div>
                     </DialogHeader>
-                    <div className="max-h-[400px] overflow-y-auto p-2 scrollbar-thin">
+                    <div className="max-h-[400px] scrollbar-thin overflow-y-auto p-2">
                         {results.length > 0 ? (
                             <div className="grid gap-1">
                                 {results.map((result, idx) => {
-                                    const IconComponent = iconMap[result.icon] || FileText;
+                                    const IconComponent =
+                                        iconMap[result.icon] || FileText;
                                     return (
                                         <button
                                             key={`${result.href}-${idx}`}
-                                            onClick={() => navigate(result.href)}
-                                            className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-primary/10 transition-all text-left group"
+                                            onClick={() =>
+                                                navigate(result.href)
+                                            }
+                                            className="group flex w-full items-center gap-3 rounded-xl p-3 text-left transition-all hover:bg-primary/10"
                                         >
-                                            <div className="p-2.5 rounded-lg bg-muted group-hover:bg-primary group-hover:text-white transition-all transform group-hover:scale-110">
+                                            <div className="transform rounded-lg bg-muted p-2.5 transition-all group-hover:scale-110 group-hover:bg-primary group-hover:text-white">
                                                 <IconComponent className="h-4 w-4" />
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="font-semibold text-sm leading-tight text-foreground group-hover:text-primary transition-colors">
+                                                <span className="text-sm leading-tight font-semibold text-foreground transition-colors group-hover:text-primary">
                                                     {result.name}
                                                 </span>
-                                                <div className="flex items-center gap-2 mt-0.5">
-                                                    <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground/60 bg-muted px-1.5 py-0.5 rounded leading-none group-hover:bg-primary/20 group-hover:text-primary transition-colors">
+                                                <div className="mt-0.5 flex items-center gap-2">
+                                                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] leading-none font-bold tracking-wider text-muted-foreground/60 uppercase transition-colors group-hover:bg-primary/20 group-hover:text-primary">
                                                         {result.type}
                                                     </span>
                                                     {result.subtitle && (
-                                                        <span className="text-xs text-muted-foreground line-clamp-1">
+                                                        <span className="line-clamp-1 text-xs text-muted-foreground">
                                                             • {result.subtitle}
                                                         </span>
                                                     )}
@@ -171,24 +180,42 @@ export function GlobalSearch() {
                             </div>
                         ) : query.length >= 2 ? (
                             <div className="p-12 text-center text-muted-foreground">
-                                <div className="flex justify-center mb-4">
-                                    <div className="bg-muted p-4 rounded-full">
+                                <div className="mb-4 flex justify-center">
+                                    <div className="rounded-full bg-muted p-4">
                                         <Search className="h-8 w-8 opacity-20" />
                                     </div>
                                 </div>
-                                <p className="text-sm font-medium">No se encontraron resultados para "{query}"</p>
-                                <p className="text-xs opacity-60">Intenta con términos más generales como "factura", "cliente" o "pos".</p>
+                                <p className="text-sm font-medium">
+                                    No se encontraron resultados para "{query}"
+                                </p>
+                                <p className="text-xs opacity-60">
+                                    Intenta con términos más generales como
+                                    "factura", "cliente" o "pos".
+                                </p>
                             </div>
                         ) : (
                             <div className="p-12 text-center text-muted-foreground opacity-50">
-                                <p className="text-sm">Empieza a escribir para buscar en todo el sistema...</p>
+                                <p className="text-sm">
+                                    Empieza a escribir para buscar en todo el
+                                    sistema...
+                                </p>
                             </div>
                         )}
                     </div>
-                    <div className="p-3 border-t bg-muted/50 text-[10px] text-muted-foreground flex justify-between px-4">
+                    <div className="flex justify-between border-t bg-muted/50 p-3 px-4 text-[10px] text-muted-foreground">
                         <div className="flex gap-4">
-                            <span className="flex items-center gap-1"><kbd className="bg-background px-1 rounded border">⏎</kbd> seleccionar</span>
-                            <span className="flex items-center gap-1"><kbd className="bg-background px-1 rounded border">↑↓</kbd> navegar</span>
+                            <span className="flex items-center gap-1">
+                                <kbd className="rounded border bg-background px-1">
+                                    ⏎
+                                </kbd>{' '}
+                                seleccionar
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <kbd className="rounded border bg-background px-1">
+                                    ↑↓
+                                </kbd>{' '}
+                                navegar
+                            </span>
                         </div>
                         <span>ESC para cerrar</span>
                     </div>

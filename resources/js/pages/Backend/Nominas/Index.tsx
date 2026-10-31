@@ -1,5 +1,13 @@
 import { Head, useForm } from '@inertiajs/react';
-import { LayoutGrid, List, Pencil, Plus, Trash2, Search, X } from 'lucide-react';
+import {
+    LayoutGrid,
+    List,
+    Pencil,
+    Plus,
+    Trash2,
+    Search,
+    X,
+} from 'lucide-react';
 import { useState } from 'react';
 import { useMemo } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
@@ -47,7 +55,18 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const estados = ['borrador', 'procesada', 'pagada'];
 
-export default function Index({ nominas }: { nominas: { data: Nomina[]; links: any[]; from?: number; to?: number; total?: number; meta?: any } }) {
+export default function Index({
+    nominas,
+}: {
+    nominas: {
+        data: Nomina[];
+        links: any[];
+        from?: number;
+        to?: number;
+        total?: number;
+        meta?: any;
+    };
+}) {
     const [isOpen, setIsOpen] = useState(false);
     const [editando, setEditando] = useState<Nomina | null>(null);
     const {
@@ -161,8 +180,13 @@ export default function Index({ nominas }: { nominas: { data: Nomina[]; links: a
             alert('Ingrese el período primero (ej: 2026-05)');
             return;
         }
-        if ((data.fecha_inicio && !data.fecha_fin) || (!data.fecha_inicio && data.fecha_fin)) {
-            alert('Debe especificar ambas fechas (inicio y fin) o ninguna para calcular el mes completo.');
+        if (
+            (data.fecha_inicio && !data.fecha_fin) ||
+            (!data.fecha_inicio && data.fecha_fin)
+        ) {
+            alert(
+                'Debe especificar ambas fechas (inicio y fin) o ninguna para calcular el mes completo.',
+            );
             return;
         }
         try {
@@ -172,12 +196,15 @@ export default function Index({ nominas }: { nominas: { data: Nomina[]; links: a
             }
             const res = await fetch(url);
             const calculos = await res.json();
-            const sumBruto = calculos.reduce((acc: number, curr: any) => acc + curr.sueldo_proporcional, 0);
-            setData(prev => ({
+            const sumBruto = calculos.reduce(
+                (acc: number, curr: any) => acc + curr.sueldo_proporcional,
+                0,
+            );
+            setData((prev) => ({
                 ...prev,
                 detalles: calculos,
                 total_bruto: sumBruto,
-                total_neto: sumBruto - prev.total_deducciones
+                total_neto: sumBruto - prev.total_deducciones,
             }));
         } catch (error) {
             console.error('Error calculando:', error);
@@ -209,14 +236,15 @@ export default function Index({ nominas }: { nominas: { data: Nomina[]; links: a
                                 Gestión de nóminas
                             </p>
                         </div>
-                        <div className="flex gap-2 items-center">
+                        <div className="flex items-center gap-2">
                             <BulkActions
                                 baseUrl="/nominas"
                                 modelName="Nóminas"
                             />
                             {canCreate && (
                                 <Button onClick={handleNew}>
-                                    <Plus className="mr-2 h-4 w-4" /> Nueva Nómina
+                                    <Plus className="mr-2 h-4 w-4" /> Nueva
+                                    Nómina
                                 </Button>
                             )}
                         </div>
@@ -226,12 +254,17 @@ export default function Index({ nominas }: { nominas: { data: Nomina[]; links: a
                             <div>
                                 <CardTitle>Nóminas</CardTitle>
                                 <CardDescription>
-                                    {nominasFiltradas.length} períodos encontrados
+                                    {nominasFiltradas.length} períodos
+                                    encontrados
                                 </CardDescription>
                             </div>
                             <div className="flex items-center gap-1 rounded-lg bg-muted/30 p-1">
                                 <Button
-                                    variant={viewMode === 'table' ? 'default' : 'ghost'}
+                                    variant={
+                                        viewMode === 'table'
+                                            ? 'default'
+                                            : 'ghost'
+                                    }
                                     size="sm"
                                     onClick={() => setViewMode('table')}
                                     className="h-8 w-8 p-0"
@@ -239,7 +272,11 @@ export default function Index({ nominas }: { nominas: { data: Nomina[]; links: a
                                     <List className="h-4 w-4" />
                                 </Button>
                                 <Button
-                                    variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                                    variant={
+                                        viewMode === 'cards'
+                                            ? 'default'
+                                            : 'ghost'
+                                    }
                                     size="sm"
                                     onClick={() => setViewMode('cards')}
                                     className="h-8 w-8 p-0"
@@ -274,12 +311,13 @@ export default function Index({ nominas }: { nominas: { data: Nomina[]; links: a
                                             estado: e.target.value,
                                         })
                                     }
-                                    className="flex h-9 rounded-md border bg-background px-3 py-1 min-w-[150px]"
+                                    className="flex h-9 min-w-[150px] rounded-md border bg-background px-3 py-1"
                                 >
                                     <option value="">Todos los estados</option>
                                     {estados.map((est) => (
                                         <option key={est} value={est}>
-                                            {est.charAt(0).toUpperCase() + est.slice(1)}
+                                            {est.charAt(0).toUpperCase() +
+                                                est.slice(1)}
                                         </option>
                                     ))}
                                 </select>
@@ -294,67 +332,183 @@ export default function Index({ nominas }: { nominas: { data: Nomina[]; links: a
                                 </Button>
                             </div>
                             {viewMode === 'table' ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-xs sm:text-sm">
-                                    <thead>
-                                        <tr className="border-b">
-                                            <th className="py-2 text-left font-medium">
-                                                Período
-                                            </th>
-                                            <th className="py-2 text-right font-medium">
-                                                Bruto
-                                            </th>
-                                            <th className="py-2 text-right font-medium">
-                                                Deducciones
-                                            </th>
-                                            <th className="py-2 text-right font-medium">
-                                                Neto
-                                            </th>
-                                            <th className="py-2 text-center font-medium">
-                                                Estado
-                                            </th>
-                                            <th className="py-2 text-right font-medium">
-                                                Acciones
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-xs sm:text-sm">
+                                        <thead>
+                                            <tr className="border-b">
+                                                <th className="py-2 text-left font-medium">
+                                                    Período
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Bruto
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Deducciones
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Neto
+                                                </th>
+                                                <th className="py-2 text-center font-medium">
+                                                    Estado
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Acciones
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {nominasFiltradas.map((n) => (
+                                                <tr
+                                                    key={n.id}
+                                                    className="border-b transition-colors hover:bg-muted/30"
+                                                >
+                                                    <td className="py-2">
+                                                        <div className="font-medium">
+                                                            {n.periodo || '-'}
+                                                        </div>
+                                                        <div className="max-w-[150px] truncate text-[10px] text-muted-foreground">
+                                                            {n.notas || ''}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-2 text-right text-muted-foreground">
+                                                        {formatCurrency(
+                                                            n.total_bruto,
+                                                        )}
+                                                    </td>
+                                                    <td className="py-2 text-right text-destructive/70">
+                                                        {formatCurrency(
+                                                            n.total_deducciones,
+                                                        )}
+                                                    </td>
+                                                    <td className="py-2 text-right font-bold text-primary">
+                                                        {formatCurrency(
+                                                            n.total_neto,
+                                                        )}
+                                                    </td>
+                                                    <td className="py-2 text-center">
+                                                        {getEstadoBadge(
+                                                            n.estado,
+                                                        )}
+                                                    </td>
+                                                    <td className="py-2 text-right">
+                                                        <div className="flex justify-end gap-1">
+                                                            {canEdit && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0"
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            n,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {canDelete && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            n.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {nominasFiltradas.length === 0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan={6}
+                                                        className="py-8 text-center text-muted-foreground"
+                                                    >
+                                                        No se encontraron
+                                                        períodos con los filtros
+                                                        aplicados
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                    <Pagination
+                                        links={nominas.links}
+                                        meta={nominas.meta || nominas}
+                                    />
+                                </div>
+                            ) : (
+                                <div>
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                         {nominasFiltradas.map((n) => (
-                                            <tr
+                                            <Card
                                                 key={n.id}
-                                                className="border-b transition-colors hover:bg-muted/30"
+                                                className="overflow-hidden"
                                             >
-                                                <td className="py-2">
-                                                    <div className="font-medium">
-                                                        {n.periodo || '-'}
+                                                <CardHeader className="pb-2">
+                                                    <div className="flex items-start justify-between">
+                                                        <CardTitle className="text-base">
+                                                            {n.periodo || '-'}
+                                                        </CardTitle>
+                                                        {getEstadoBadge(
+                                                            n.estado,
+                                                        )}
                                                     </div>
-                                                    <div className="text-[10px] text-muted-foreground truncate max-w-[150px]">
-                                                        {n.notas || ''}
-                                                    </div>
-                                                </td>
-                                                <td className="py-2 text-right text-muted-foreground">
-                                                    {formatCurrency(n.total_bruto)}
-                                                </td>
-                                                <td className="py-2 text-right text-destructive/70">
-                                                    {formatCurrency(n.total_deducciones)}
-                                                </td>
-                                                <td className="py-2 text-right font-bold text-primary">
-                                                    {formatCurrency(n.total_neto)}
-                                                </td>
-                                                <td className="py-2 text-center">
-                                                    {getEstadoBadge(
-                                                        n.estado,
+                                                    {n.notas && (
+                                                        <CardDescription className="truncate text-xs">
+                                                            {n.notas}
+                                                        </CardDescription>
                                                     )}
-                                                </td>
-                                                <td className="py-2 text-right">
-                                                    <div className="flex justify-end gap-1">
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                                        <div>
+                                                            <p className="text-[10px] text-muted-foreground">
+                                                                Bruto
+                                                            </p>
+                                                            <p className="font-medium text-muted-foreground">
+                                                                {formatCurrency(
+                                                                    n.total_bruto,
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] text-muted-foreground">
+                                                                Deducciones
+                                                            </p>
+                                                            <p className="font-medium text-destructive/70">
+                                                                {formatCurrency(
+                                                                    n.total_deducciones,
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] text-muted-foreground">
+                                                                Neto
+                                                            </p>
+                                                            <p className="font-bold text-primary">
+                                                                {formatCurrency(
+                                                                    n.total_neto,
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-3 flex justify-end gap-1 border-t pt-2">
                                                         {canEdit && (
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 className="h-8 w-8 p-0"
                                                                 onClick={() =>
-                                                                    handleEdit(n)
+                                                                    handleEdit(
+                                                                        n,
+                                                                    )
                                                                 }
                                                             >
                                                                 <Pencil className="h-4 w-4" />
@@ -375,85 +529,33 @@ export default function Index({ nominas }: { nominas: { data: Nomina[]; links: a
                                                             </Button>
                                                         )}
                                                     </div>
-                                                </td>
-                                            </tr>
+                                                </CardContent>
+                                            </Card>
                                         ))}
-                                        {nominasFiltradas.length === 0 && (
-                                            <tr>
-                                                <td
-                                                    colSpan={6}
-                                                    className="py-8 text-center text-muted-foreground"
-                                                >
-                                                    No se encontraron períodos con los filtros aplicados
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                                <Pagination links={nominas.links} meta={nominas.meta || nominas} />
-                            </div>
-                            ) : (
-                            <div>
-                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                    {nominasFiltradas.map((n) => (
-                                        <Card key={n.id} className="overflow-hidden">
-                                            <CardHeader className="pb-2">
-                                                <div className="flex items-start justify-between">
-                                                    <CardTitle className="text-base">{n.periodo || '-'}</CardTitle>
-                                                    {getEstadoBadge(n.estado)}
-                                                </div>
-                                                {n.notas && (
-                                                    <CardDescription className="truncate text-xs">{n.notas}</CardDescription>
-                                                )}
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="grid grid-cols-3 gap-2 text-sm">
-                                                    <div>
-                                                        <p className="text-[10px] text-muted-foreground">Bruto</p>
-                                                        <p className="font-medium text-muted-foreground">{formatCurrency(n.total_bruto)}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] text-muted-foreground">Deducciones</p>
-                                                        <p className="font-medium text-destructive/70">{formatCurrency(n.total_deducciones)}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] text-muted-foreground">Neto</p>
-                                                        <p className="font-bold text-primary">{formatCurrency(n.total_neto)}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="mt-3 flex justify-end gap-1 border-t pt-2">
-                                                    {canEdit && (
-                                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(n)}>
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-                                                    {canDelete && (
-                                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(n.id)}>
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                                </div>
-                                {nominasFiltradas.length === 0 && (
-                                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                                        <div className="mb-4 rounded-full bg-muted/30 p-4">
-                                            <LayoutGrid className="h-8 w-8 text-muted-foreground" />
-                                        </div>
-                                        <p className="text-muted-foreground">No se encontraron períodos con los filtros aplicados</p>
                                     </div>
-                                )}
-                                <Pagination links={nominas.links} meta={nominas.meta || nominas} />
-                            </div>
+                                    {nominasFiltradas.length === 0 && (
+                                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                                            <div className="mb-4 rounded-full bg-muted/30 p-4">
+                                                <LayoutGrid className="h-8 w-8 text-muted-foreground" />
+                                            </div>
+                                            <p className="text-muted-foreground">
+                                                No se encontraron períodos con
+                                                los filtros aplicados
+                                            </p>
+                                        </div>
+                                    )}
+                                    <Pagination
+                                        links={nominas.links}
+                                        meta={nominas.meta || nominas}
+                                    />
+                                </div>
                             )}
                         </CardContent>
                     </Card>
                 </div>
             </AppLayout>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="mx-4 sm:mx-auto max-w-full sm:max-w-lg md:max-w-2xl lg:max-w-4xl p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
+                <DialogContent className="mx-4 max-h-[90vh] max-w-full overflow-y-auto p-4 sm:mx-auto sm:max-w-lg sm:p-6 md:max-w-2xl lg:max-w-4xl">
                     <DialogHeader>
                         <DialogTitle>
                             {editando ? 'Editar' : 'Nueva'} Nómina
@@ -462,7 +564,7 @@ export default function Index({ nominas }: { nominas: { data: Nomina[]; links: a
                     <form onSubmit={handleSubmit}>
                         <div className="grid gap-4 py-4">
                             <div className="flex items-end gap-2">
-                                <div className="space-y-2 flex-1">
+                                <div className="flex-1 space-y-2">
                                     <Label>Período *</Label>
                                     <Input
                                         value={data.periodo}
@@ -473,11 +575,15 @@ export default function Index({ nominas }: { nominas: { data: Nomina[]; links: a
                                         required
                                     />
                                 </div>
-                                <Button type="button" onClick={calcularNominas} variant="secondary">
+                                <Button
+                                    type="button"
+                                    onClick={calcularNominas}
+                                    variant="secondary"
+                                >
                                     Calcular Asistencia
                                 </Button>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label>Fecha Inicio</Label>
                                     <Input
@@ -502,7 +608,7 @@ export default function Index({ nominas }: { nominas: { data: Nomina[]; links: a
                                     />
                                 </div>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                                 <div className="space-y-2">
                                     <Label>Bruto</Label>
                                     <Input
@@ -565,64 +671,135 @@ export default function Index({ nominas }: { nominas: { data: Nomina[]; links: a
 
                             {/* Detalles de Empleados */}
                             {data.detalles && data.detalles.length > 0 && (
-                                <div className="mt-4 border rounded-md overflow-hidden">
-                                    <div className="bg-muted px-4 py-2 font-semibold text-sm">Desglose de Empleados</div>
-                                    <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
+                                <div className="mt-4 overflow-hidden rounded-md border">
+                                    <div className="bg-muted px-4 py-2 text-sm font-semibold">
+                                        Desglose de Empleados
+                                    </div>
+                                    <div className="max-h-[300px] overflow-x-auto overflow-y-auto">
                                         <table className="w-full text-xs sm:text-sm">
-                                            <thead className="bg-muted/50 sticky top-0">
+                                            <thead className="sticky top-0 bg-muted/50">
                                                 <tr>
-                                                    <th className="px-3 py-2 text-left">Empleado</th>
-                                                    <th className="px-3 py-2 text-center">Horario</th>
-                                                    <th className="px-3 py-2 text-right">Sueldo Base</th>
-                                                    <th className="px-3 py-2 text-center">Días Asist.</th>
-                                                    <th className="px-3 py-2 text-right">Sueldo Prop.</th>
+                                                    <th className="px-3 py-2 text-left">
+                                                        Empleado
+                                                    </th>
+                                                    <th className="px-3 py-2 text-center">
+                                                        Horario
+                                                    </th>
+                                                    <th className="px-3 py-2 text-right">
+                                                        Sueldo Base
+                                                    </th>
+                                                    <th className="px-3 py-2 text-center">
+                                                        Días Asist.
+                                                    </th>
+                                                    <th className="px-3 py-2 text-right">
+                                                        Sueldo Prop.
+                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {data.detalles.map((det: any, index: number) => (
-                                                    <tr key={det.empleado_id} className="border-t hover:bg-muted/20">
-                                                        <td className="px-3 py-2">
-                                                            <div className="font-medium">{det.nombre} {det.apellido}</div>
-                                                            <div className="text-muted-foreground text-[10px]">{det.rut}</div>
-                                                        </td>
-                                                        <td className="px-3 py-2 text-center">
-                                                            {det.hora_entrada || det.hora_salida ? (
-                                                                <span className="text-muted-foreground text-[10px] whitespace-nowrap">
-                                                                    {det.hora_entrada && det.hora_salida
-                                                                        ? `${det.hora_entrada} - ${det.hora_salida}`
-                                                                        : det.hora_entrada || det.hora_salida}
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-muted-foreground/40">--</span>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-3 py-2 text-right text-muted-foreground">
-                                                            {formatCurrency(det.sueldo_pactado)}
-                                                        </td>
-                                                        <td className="px-3 py-2 text-center font-medium text-primary">
-                                                            {det.dias_asistidos}
-                                                        </td>
-                                                        <td className="px-3 py-2 text-right">
-                                                            <Input
-                                                                type="number"
-                                                                className="h-8 w-28 ml-auto text-right"
-                                                                value={det.sueldo_proporcional}
-                                                                onChange={(e) => {
-                                                                    const val = parseInt(e.target.value) || 0;
-                                                                    const newDetalles = [...data.detalles];
-                                                                    newDetalles[index].sueldo_proporcional = val;
-                                                                    const newBruto = newDetalles.reduce((acc, curr) => acc + curr.sueldo_proporcional, 0);
-                                                                    setData(prev => ({
-                                                                        ...prev,
-                                                                        detalles: newDetalles,
-                                                                        total_bruto: newBruto,
-                                                                        total_neto: newBruto - prev.total_deducciones
-                                                                    }));
-                                                                }}
-                                                            />
-                                                        </td>
-                                                    </tr>
-                                                ))}
+                                                {data.detalles.map(
+                                                    (
+                                                        det: any,
+                                                        index: number,
+                                                    ) => (
+                                                        <tr
+                                                            key={
+                                                                det.empleado_id
+                                                            }
+                                                            className="border-t hover:bg-muted/20"
+                                                        >
+                                                            <td className="px-3 py-2">
+                                                                <div className="font-medium">
+                                                                    {det.nombre}{' '}
+                                                                    {
+                                                                        det.apellido
+                                                                    }
+                                                                </div>
+                                                                <div className="text-[10px] text-muted-foreground">
+                                                                    {det.rut}
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-3 py-2 text-center">
+                                                                {det.hora_entrada ||
+                                                                det.hora_salida ? (
+                                                                    <span className="text-[10px] whitespace-nowrap text-muted-foreground">
+                                                                        {det.hora_entrada &&
+                                                                        det.hora_salida
+                                                                            ? `${det.hora_entrada} - ${det.hora_salida}`
+                                                                            : det.hora_entrada ||
+                                                                              det.hora_salida}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-muted-foreground/40">
+                                                                        --
+                                                                    </span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-3 py-2 text-right text-muted-foreground">
+                                                                {formatCurrency(
+                                                                    det.sueldo_pactado,
+                                                                )}
+                                                            </td>
+                                                            <td className="px-3 py-2 text-center font-medium text-primary">
+                                                                {
+                                                                    det.dias_asistidos
+                                                                }
+                                                            </td>
+                                                            <td className="px-3 py-2 text-right">
+                                                                <Input
+                                                                    type="number"
+                                                                    className="ml-auto h-8 w-28 text-right"
+                                                                    value={
+                                                                        det.sueldo_proporcional
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) => {
+                                                                        const val =
+                                                                            parseInt(
+                                                                                e
+                                                                                    .target
+                                                                                    .value,
+                                                                            ) ||
+                                                                            0;
+                                                                        const newDetalles =
+                                                                            [
+                                                                                ...data.detalles,
+                                                                            ];
+                                                                        newDetalles[
+                                                                            index
+                                                                        ].sueldo_proporcional =
+                                                                            val;
+                                                                        const newBruto =
+                                                                            newDetalles.reduce(
+                                                                                (
+                                                                                    acc,
+                                                                                    curr,
+                                                                                ) =>
+                                                                                    acc +
+                                                                                    curr.sueldo_proporcional,
+                                                                                0,
+                                                                            );
+                                                                        setData(
+                                                                            (
+                                                                                prev,
+                                                                            ) => ({
+                                                                                ...prev,
+                                                                                detalles:
+                                                                                    newDetalles,
+                                                                                total_bruto:
+                                                                                    newBruto,
+                                                                                total_neto:
+                                                                                    newBruto -
+                                                                                    prev.total_deducciones,
+                                                                            }),
+                                                                        );
+                                                                    }}
+                                                                />
+                                                            </td>
+                                                        </tr>
+                                                    ),
+                                                )}
                                             </tbody>
                                         </table>
                                     </div>

@@ -12,7 +12,6 @@ import {
     Download,
     CheckCheck,
     AlertCircle,
-    RefreshCw,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -88,7 +87,7 @@ export default function PedidoDetalle({
     pedido: Pedido;
     auth: any;
 }) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
 
     const [mensajes, setMensajes] = useState<Mensaje[]>(
         pedido.conversacion?.mensajes || [],
@@ -102,6 +101,7 @@ export default function PedidoDetalle({
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const mEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const tempMessageIdRef = useRef(-1);
 
     const getEstadoColor = (estado: string) => {
         switch (estado) {
@@ -185,9 +185,10 @@ export default function PedidoDetalle({
 
         setIsLoadingChat(true);
 
-        const tempId = `temp-${Date.now()}`;
+        const tempIdNumber = tempMessageIdRef.current--;
+        const tempId = `temp-${tempIdNumber}`;
         const tempMsg: Mensaje = {
-            id: -Date.now(),
+            id: tempIdNumber,
             sender_id: auth.user.id,
             contenido: nuevoMensaje.trim() || '',
             created_at: new Date().toISOString(),
@@ -249,7 +250,12 @@ export default function PedidoDetalle({
                     const temps = prev.filter((m) => (m as Mensaje)._temp);
                     if (temps.length === 0) return data.mensajes;
                     const merged = data.mensajes.filter(
-                        (m: Mensaje) => !temps.some((t) => t.contenido === m.contenido && t.sender_id === m.sender_id),
+                        (m: Mensaje) =>
+                            !temps.some(
+                                (t) =>
+                                    t.contenido === m.contenido &&
+                                    t.sender_id === m.sender_id,
+                            ),
                     );
                     return [...merged, ...temps];
                 });
@@ -273,9 +279,7 @@ export default function PedidoDetalle({
         const addMensaje = (e: any) => {
             setMensajes((prev) => {
                 if (prev.some((m) => m.id === e.id)) return prev;
-                const withoutTemp = prev.filter(
-                    (m) => !(m as Mensaje)._temp,
-                );
+                const withoutTemp = prev.filter((m) => !(m as Mensaje)._temp);
                 return [...withoutTemp, e];
             });
             setTimeout(scrollToBottom, 100);
@@ -291,9 +295,15 @@ export default function PedidoDetalle({
                 contenido: e.message.content,
                 created_at: e.message.created_at,
                 sender: e.message.sender,
-                file_url: e.message.file_url ?? (e.message.file_path ? `/storage/${e.message.file_path}` : undefined),
+                file_url:
+                    e.message.file_url ??
+                    (e.message.file_path
+                        ? `/storage/${e.message.file_path}`
+                        : undefined),
                 file_name: e.message.file_name,
-                is_image: e.message.is_image ?? (e.message.file_type?.startsWith?.('image/') || false),
+                is_image:
+                    e.message.is_image ??
+                    (e.message.file_type?.startsWith?.('image/') || false),
                 leido: false,
             });
         });
@@ -311,7 +321,8 @@ export default function PedidoDetalle({
             if (e.user_id === auth.user.id) return;
             setTypingUser(e.name);
             setIsTyping(true);
-            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            if (typingTimeoutRef.current)
+                clearTimeout(typingTimeoutRef.current);
             typingTimeoutRef.current = setTimeout(() => {
                 setIsTyping(false);
                 setTypingUser(null);
@@ -325,7 +336,8 @@ export default function PedidoDetalle({
             clearInterval(interval);
             clearTimeout(connectTimer);
             echo.leave('conversacion.' + pedido.conversacion!.id);
-            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            if (typingTimeoutRef.current)
+                clearTimeout(typingTimeoutRef.current);
         };
     }, [fetchMensajes, scrollToBottom, pedido.conversacion, auth.user.id]);
 
@@ -493,12 +505,15 @@ export default function PedidoDetalle({
                                             </p>
                                         </div>
                                     ) : (
-                                        mensajes.map((msg, idx) => {
+                                        mensajes.map((msg) => {
                                             const isMe =
                                                 msg.sender_id === auth.user.id;
                                             return (
                                                 <div
-                                                    key={msg.id || (msg as Mensaje)._tempId}
+                                                    key={
+                                                        msg.id ||
+                                                        (msg as Mensaje)._tempId
+                                                    }
                                                     className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
                                                 >
                                                     <span className="mb-1 px-1 text-[10px] font-semibold text-gray-400 uppercase">
@@ -521,76 +536,103 @@ export default function PedidoDetalle({
                                                             </p>
                                                         )}
 
-                                                    {msg.file_url && !(msg as Mensaje)._sending && (
-                                                        <div
-                                                            className={`mt-2 ${msg.contenido ? 'border-t border-white/20 pt-2' : ''}`}
-                                                        >
-                                                            {msg.is_image ? (
-                                                                <a
-                                                                    href={
-                                                                        msg.file_url
-                                                                    }
-                                                                    target="_blank"
-                                                                    rel="noreferrer"
-                                                                    className="block overflow-hidden rounded-lg"
+                                                        {msg.file_url &&
+                                                            !(msg as Mensaje)
+                                                                ._sending && (
+                                                                <div
+                                                                    className={`mt-2 ${msg.contenido ? 'border-t border-white/20 pt-2' : ''}`}
                                                                 >
-                                                                    <img
-                                                                        src={
-                                                                            msg.file_url
-                                                                        }
-                                                                        alt="Adjunto"
-                                                                        className="h-auto max-w-full object-cover transition-opacity hover:opacity-90"
-                                                                    />
-                                                                </a>
-                                                            ) : (
-                                                                <a
-                                                                    href={
-                                                                        msg.file_url
-                                                                    }
-                                                                    target="_blank"
-                                                                    rel="noreferrer"
-                                                                    className={`flex items-center gap-2 rounded bg-black/5 p-2 transition-colors hover:bg-black/10 ${isMe ? 'text-white' : 'text-indigo-600'}`}
-                                                                >
-                                                                    <FileIcon className="h-4 w-4 shrink-0" />
-                                                                    <span className="truncate text-xs underline">
-                                                                        {
-                                                                            msg.file_name
-                                                                        }
-                                                                    </span>
-                                                                    <Download className="ml-auto h-3 w-3 shrink-0" />
-                                                                </a>
+                                                                    {msg.is_image ? (
+                                                                        <a
+                                                                            href={
+                                                                                msg.file_url
+                                                                            }
+                                                                            target="_blank"
+                                                                            rel="noreferrer"
+                                                                            className="block overflow-hidden rounded-lg"
+                                                                        >
+                                                                            <img
+                                                                                src={
+                                                                                    msg.file_url
+                                                                                }
+                                                                                alt="Adjunto"
+                                                                                className="h-auto max-w-full object-cover transition-opacity hover:opacity-90"
+                                                                            />
+                                                                        </a>
+                                                                    ) : (
+                                                                        <a
+                                                                            href={
+                                                                                msg.file_url
+                                                                            }
+                                                                            target="_blank"
+                                                                            rel="noreferrer"
+                                                                            className={`flex items-center gap-2 rounded bg-black/5 p-2 transition-colors hover:bg-black/10 ${isMe ? 'text-white' : 'text-indigo-600'}`}
+                                                                        >
+                                                                            <FileIcon className="h-4 w-4 shrink-0" />
+                                                                            <span className="truncate text-xs underline">
+                                                                                {
+                                                                                    msg.file_name
+                                                                                }
+                                                                            </span>
+                                                                            <Download className="ml-auto h-3 w-3 shrink-0" />
+                                                                        </a>
+                                                                    )}
+                                                                </div>
                                                             )}
-                                                        </div>
-                                                    )}
-                                                    {isMe && !(msg as Mensaje)._temp && !(msg as Mensaje)._error && (
-                                                        <div className="mt-1 flex justify-end">
-                                                            <CheckCheck className={`h-3 w-3 ${msg.leido ? 'text-blue-200' : 'opacity-50'}`} />
-                                                        </div>
-                                                    )}
-                                                    {isMe && (msg as Mensaje)._sending && (
-                                                        <div className="mt-1 flex justify-end">
-                                                            <Clock className="h-3 w-3 animate-spin text-yellow-200" />
-                                                        </div>
-                                                    )}
-                                                    {isMe && (msg as Mensaje)._error && (
-                                                        <div className="mt-1 flex items-center justify-end gap-1">
-                                                            <AlertCircle className="h-3 w-3 text-red-300" />
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    const tempId = (msg as Mensaje)._tempId;
-                                                                    if (!tempId) return;
-                                                                    const content = msg.contenido;
-                                                                    setMensajes((prev) =>
-                                                                        prev.filter((m) => m.id !== msg.id),
-                                                                    );
-                                                                }}
-                                                                className="text-[10px] text-red-400 hover:text-red-300"
-                                                            >
-                                                                Descartar
-                                                            </button>
-                                                        </div>
-                                                    )}
+                                                        {isMe &&
+                                                            !(msg as Mensaje)
+                                                                ._temp &&
+                                                            !(msg as Mensaje)
+                                                                ._error && (
+                                                                <div className="mt-1 flex justify-end">
+                                                                    <CheckCheck
+                                                                        className={`h-3 w-3 ${msg.leido ? 'text-blue-200' : 'opacity-50'}`}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        {isMe &&
+                                                            (msg as Mensaje)
+                                                                ._sending && (
+                                                                <div className="mt-1 flex justify-end">
+                                                                    <Clock className="h-3 w-3 animate-spin text-yellow-200" />
+                                                                </div>
+                                                            )}
+                                                        {isMe &&
+                                                            (msg as Mensaje)
+                                                                ._error && (
+                                                                <div className="mt-1 flex items-center justify-end gap-1">
+                                                                    <AlertCircle className="h-3 w-3 text-red-300" />
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            const tempId =
+                                                                                (
+                                                                                    msg as Mensaje
+                                                                                )
+                                                                                    ._tempId;
+                                                                            if (
+                                                                                !tempId
+                                                                            )
+                                                                                return;
+                                                                            setMensajes(
+                                                                                (
+                                                                                    prev,
+                                                                                ) =>
+                                                                                    prev.filter(
+                                                                                        (
+                                                                                            m,
+                                                                                        ) =>
+                                                                                            m.id !==
+                                                                                            msg.id,
+                                                                                    ),
+                                                                            );
+                                                                        }}
+                                                                        className="text-[10px] text-red-400 hover:text-red-300"
+                                                                    >
+                                                                        Descartar
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                     </div>
                                                 </div>
                                             );
@@ -604,7 +646,10 @@ export default function PedidoDetalle({
                                                     <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-400 [animation-delay:150ms]" />
                                                     <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-400 [animation-delay:300ms]" />
                                                 </span>
-                                                <span>{typingUser} está escribiendo...</span>
+                                                <span>
+                                                    {typingUser} está
+                                                    escribiendo...
+                                                </span>
                                             </div>
                                         </div>
                                     )}

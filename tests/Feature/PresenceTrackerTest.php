@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Presence Tracker Feature Tests
  */
@@ -27,9 +28,9 @@ class PresenceTrackerTest extends TestCase
         $userData = ['name' => 'Test User', 'avatar' => 'avatar.jpg'];
 
         $this->presenceTracker->trackJoin($channel, $userId, $userData);
-        
+
         $presence = $this->presenceTracker->getPresence($channel);
-        
+
         $this->assertArrayHasKey($userId, $presence);
         $this->assertEquals('Test User', $presence[$userId]['name']);
         $this->assertEquals('avatar.jpg', $presence[$userId]['avatar']);
@@ -44,9 +45,9 @@ class PresenceTrackerTest extends TestCase
 
         $this->presenceTracker->trackJoin($channel, $userId, ['name' => 'Test User']);
         $this->presenceTracker->trackLeave($channel, $userId);
-        
+
         $presence = $this->presenceTracker->getPresence($channel);
-        
+
         $this->assertArrayNotHasKey($userId, $presence);
     }
 
@@ -56,14 +57,14 @@ class PresenceTrackerTest extends TestCase
         $userId = 'user-3';
 
         $this->presenceTracker->trackJoin($channel, $userId, ['name' => 'Test User']);
-        
+
         // Small delay to ensure timestamp changes
         usleep(10000);
-        
+
         $this->presenceTracker->updateLastSeen($channel, $userId);
-        
+
         $presence = $this->presenceTracker->getPresence($channel);
-        
+
         $this->assertArrayHasKey($userId, $presence);
         $this->assertNotEquals(
             $presence[$userId]['joined_at'],
@@ -77,9 +78,9 @@ class PresenceTrackerTest extends TestCase
         $userId = 'user-4';
 
         $this->presenceTracker->trackJoin($channel, $userId, ['name' => 'Test User']);
-        
+
         $result = $this->presenceTracker->isUserPresent($channel, $userId);
-        
+
         $this->assertTrue($result);
     }
 
@@ -89,7 +90,7 @@ class PresenceTrackerTest extends TestCase
         $userId = 'user-5';
 
         $result = $this->presenceTracker->isUserPresent($channel, $userId);
-        
+
         $this->assertFalse($result);
     }
 
@@ -99,9 +100,9 @@ class PresenceTrackerTest extends TestCase
 
         $this->presenceTracker->trackJoin('chat.conversation.1', $userId, ['name' => 'Test']);
         $this->presenceTracker->trackJoin('notifications.1', $userId, ['name' => 'Test']);
-        
+
         $presence = $this->presenceTracker->getUserPresence($userId);
-        
+
         $this->assertArrayHasKey('chat', $presence);
         $this->assertArrayHasKey('notifications', $presence);
     }

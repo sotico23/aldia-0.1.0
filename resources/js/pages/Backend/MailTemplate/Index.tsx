@@ -26,12 +26,24 @@ export default function Index({ templates, type }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
         { title: 'Configuración', href: '#config' },
-        { title: currentType === 'system' ? 'Emails de Sistema' : 'Email Marketing', href: '/mail-templates' },
+        {
+            title:
+                currentType === 'system'
+                    ? 'Emails de Sistema'
+                    : 'Email Marketing',
+            href: '/mail-templates',
+        },
     ];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={currentType === 'system' ? 'Emails de Sistema' : 'Email Marketing'} />
+            <Head
+                title={
+                    currentType === 'system'
+                        ? 'Emails de Sistema'
+                        : 'Email Marketing'
+                }
+            />
             <div className="p-6">
                 <EmailMarketingPage templates={templates} type={currentType} />
             </div>

@@ -56,7 +56,7 @@ export default function ChatInbox({
     misConsultas,
     ventasYConsultas,
 }: Props) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const [searchQuery, setSearchQuery] = useState('');
 
     const filteredMisPedidos = misPedidos.filter(

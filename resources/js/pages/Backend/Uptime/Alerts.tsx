@@ -109,7 +109,9 @@ export default function AlertsIndex({
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );
@@ -162,7 +164,7 @@ export default function AlertsIndex({
                                     {alerts.map((alert) => (
                                         <div
                                             key={alert.id}
-                                            className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-lg border p-4 sm:p-6"
+                                            className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6"
                                         >
                                             <div className="flex items-center gap-4">
                                                 <AlertCircle className="h-5 w-5 text-muted-foreground" />

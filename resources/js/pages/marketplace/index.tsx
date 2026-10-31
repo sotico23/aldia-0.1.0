@@ -33,11 +33,16 @@ export default function MarketplaceIndex({ profiles }: Props) {
 
     return (
         <AppLayout breadcrumbs={[{ title: 'Marketplace', href: '/tienda' }]}>
-            <Head title={`Marketplace | ${web_settings?.app_name || 'Directorio de Tiendas'}`}>
-                <meta name="description" content={web_settings?.app_description} />
+            <Head
+                title={`Marketplace | ${web_settings?.app_name || 'Directorio de Tiendas'}`}
+            >
+                <meta
+                    name="description"
+                    content={web_settings?.app_description}
+                />
                 <meta name="keywords" content={web_settings?.app_keywords} />
             </Head>
-            
+
             <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 {/* Header Section */}
                 <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -46,7 +51,8 @@ export default function MarketplaceIndex({ profiles }: Props) {
                             Marketplace General
                         </h1>
                         <p className="mt-2 flex items-center gap-2 text-lg text-slate-500 dark:text-slate-400">
-                            Descubre empresas y tiendas disponibles en nuestra red.
+                            Descubre empresas y tiendas disponibles en nuestra
+                            red.
                         </p>
                     </div>
                     <div className="relative max-w-sm sm:w-80">
@@ -56,7 +62,7 @@ export default function MarketplaceIndex({ profiles }: Props) {
                         <input
                             type="text"
                             placeholder="Buscar tiendas..."
-                            className="block w-full rounded-full border-0 py-2.5 pl-10 pr-4 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 dark:bg-slate-800 dark:text-white dark:ring-slate-700"
+                            className="block w-full rounded-full border-0 py-2.5 pr-4 pl-10 text-slate-900 shadow-sm ring-1 ring-slate-300 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-primary focus:ring-inset sm:text-sm sm:leading-6 dark:bg-slate-800 dark:text-white dark:ring-slate-700"
                         />
                     </div>
                 </div>
@@ -72,22 +78,25 @@ export default function MarketplaceIndex({ profiles }: Props) {
                             >
                                 <div className="relative h-24 overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-indigo-50 group-hover:to-purple-50 dark:from-slate-800 dark:to-slate-800/80 dark:group-hover:from-indigo-950/50 dark:group-hover:to-purple-900/50">
                                     {store.user.cover_photo_url ? (
-                                        <img 
-                                            src={store.user.cover_photo_url} 
-                                            alt="Portada" 
-                                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                                        <img
+                                            src={store.user.cover_photo_url}
+                                            alt="Portada"
+                                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                                         />
                                     ) : null}
                                 </div>
-                                
-                                <div className="relative px-5 pb-5 pt-0">
+
+                                <div className="relative px-5 pt-0 pb-5">
                                     <div className="-mt-10 mb-3 flex justify-between">
                                         <div className="flex h-20 w-20 items-center justify-center rounded-xl border-4 border-white bg-white shadow-sm dark:border-slate-900 dark:bg-slate-800">
                                             {store.user.profile_photo_url ? (
-                                                <img 
-                                                    src={store.user.profile_photo_url} 
-                                                    alt={store.title} 
-                                                    className="h-full w-full rounded-lg object-cover" 
+                                                <img
+                                                    src={
+                                                        store.user
+                                                            .profile_photo_url
+                                                    }
+                                                    alt={store.title}
+                                                    className="h-full w-full rounded-lg object-cover"
                                                 />
                                             ) : (
                                                 <Store className="h-8 w-8 text-slate-400" />
@@ -97,27 +106,34 @@ export default function MarketplaceIndex({ profiles }: Props) {
                                             <ChevronRight className="h-4 w-4" />
                                         </div>
                                     </div>
-                                    
+
                                     <div>
                                         <h3 className="line-clamp-1 text-base font-semibold text-slate-900 dark:text-white">
                                             {store.title}
                                         </h3>
                                         <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                                             <User className="h-3 w-3" />
-                                            <span className="truncate">{store.user.name}</span>
+                                            <span className="truncate">
+                                                {store.user.name}
+                                            </span>
                                         </div>
                                     </div>
 
                                     <p className="mt-3 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">
-                                        {store.description || 'Sin descripción disponible.'}
+                                        {store.description ||
+                                            'Sin descripción disponible.'}
                                     </p>
-                                    
-                                    {(store.user.ciudad || store.user.region) && (
+
+                                    {(store.user.ciudad ||
+                                        store.user.region) && (
                                         <div className="mt-4 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                                             <MapPin className="h-3.5 w-3.5" />
                                             <span className="truncate">
                                                 {store.user.ciudad}
-                                                {store.user.ciudad && store.user.region ? ', ' : ''}
+                                                {store.user.ciudad &&
+                                                store.user.region
+                                                    ? ', '
+                                                    : ''}
                                                 {store.user.region}
                                             </span>
                                         </div>
@@ -133,7 +149,8 @@ export default function MarketplaceIndex({ profiles }: Props) {
                             No hay tiendas disponibles
                         </h3>
                         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                            Todavía no hay ninguna empresa o tienda registrada en el marketplace público.
+                            Todavía no hay ninguna empresa o tienda registrada
+                            en el marketplace público.
                         </p>
                     </div>
                 )}

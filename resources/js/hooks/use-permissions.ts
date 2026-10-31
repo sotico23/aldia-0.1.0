@@ -24,9 +24,13 @@ export function usePermissions() {
         if (permission.includes('*')) {
             const prefix = permission.replace('*', '');
             if (permission.endsWith('.*')) {
-                return user.permissions.some((p: string) => p.startsWith(prefix));
+                return user.permissions.some((p: string) =>
+                    p.startsWith(prefix),
+                );
             }
-            const regex = new RegExp('^' + permission.replace(/\*/g, '.*') + '$');
+            const regex = new RegExp(
+                '^' + permission.replace(/\*/g, '.*') + '$',
+            );
             return user.permissions.some((p: string) => regex.test(p));
         }
 

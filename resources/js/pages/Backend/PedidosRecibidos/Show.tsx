@@ -96,7 +96,7 @@ interface Pedido {
 }
 
 export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
 
     const [mensajes, setMensajes] = useState<Mensaje[]>(
         pedido.conversacion?.mensajes || [],
@@ -110,6 +110,7 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const mEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const tempMessageIdRef = useRef(-1);
 
     const estadoForm = useForm({
         estado: pedido.estado,
@@ -124,8 +125,11 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
     ];
 
     const { hasPermission, user } = usePermissions();
-    const canUpdateEstado = hasPermission('comercial.oportunidades.edit') || pedido.user_id === user?.id;
-    const canGenerarVenta = hasPermission('ventas.ventas.create') && pedido.user_id === user?.id;
+    const canUpdateEstado =
+        hasPermission('comercial.oportunidades.edit') ||
+        pedido.user_id === user?.id;
+    const canGenerarVenta =
+        hasPermission('ventas.ventas.create') && pedido.user_id === user?.id;
 
     const getEstadoColor = (estado: string) => {
         switch (estado) {
@@ -224,9 +228,10 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
 
         setIsSending(true);
 
-        const tempId = `temp-${Date.now()}`;
+        const tempIdNumber = tempMessageIdRef.current--;
+        const tempId = `temp-${tempIdNumber}`;
         const tempMsg: Mensaje = {
-            id: -Date.now(),
+            id: tempIdNumber,
             sender_id: auth.user.id,
             contenido: nuevoMensaje.trim() || '',
             created_at: new Date().toISOString(),
@@ -288,7 +293,12 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
                     const temps = prev.filter((m) => (m as Mensaje)._temp);
                     if (temps.length === 0) return data.mensajes;
                     const merged = data.mensajes.filter(
-                        (m: Mensaje) => !temps.some((t) => t.contenido === m.contenido && t.sender_id === m.sender_id),
+                        (m: Mensaje) =>
+                            !temps.some(
+                                (t) =>
+                                    t.contenido === m.contenido &&
+                                    t.sender_id === m.sender_id,
+                            ),
                     );
                     return [...merged, ...temps];
                 });
@@ -312,9 +322,7 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
         const addMensaje = (e: any) => {
             setMensajes((prev) => {
                 if (prev.some((m) => m.id === e.id)) return prev;
-                const withoutTemp = prev.filter(
-                    (m) => !(m as Mensaje)._temp,
-                );
+                const withoutTemp = prev.filter((m) => !(m as Mensaje)._temp);
                 return [...withoutTemp, e];
             });
             setTimeout(scrollToBottom, 100);
@@ -330,9 +338,15 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
                 contenido: e.message.content,
                 created_at: e.message.created_at,
                 sender: e.message.sender,
-                file_url: e.message.file_url ?? (e.message.file_path ? `/storage/${e.message.file_path}` : undefined),
+                file_url:
+                    e.message.file_url ??
+                    (e.message.file_path
+                        ? `/storage/${e.message.file_path}`
+                        : undefined),
                 file_name: e.message.file_name,
-                is_image: e.message.is_image ?? (e.message.file_type?.startsWith?.('image/') || false),
+                is_image:
+                    e.message.is_image ??
+                    (e.message.file_type?.startsWith?.('image/') || false),
                 leido: false,
             });
         });
@@ -350,7 +364,8 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
             if (e.user_id === auth.user.id) return;
             setTypingUser(e.name);
             setIsTyping(true);
-            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            if (typingTimeoutRef.current)
+                clearTimeout(typingTimeoutRef.current);
             typingTimeoutRef.current = setTimeout(() => {
                 setIsTyping(false);
                 setTypingUser(null);
@@ -365,7 +380,8 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
             clearInterval(interval);
             clearTimeout(connectTimer);
             echo.leave('conversacion.' + pedido.conversacion!.id);
-            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            if (typingTimeoutRef.current)
+                clearTimeout(typingTimeoutRef.current);
         };
     }, [fetchMensajes, scrollToBottom, pedido.conversacion, auth.user.id]);
 
@@ -455,8 +471,8 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
                                 disabled={pedido.estado === 'cancelado'}
                                 className="bg-green-600 text-white hover:bg-green-700"
                             >
-                                <CheckCircle className="mr-2 h-4 w-4" /> Convertir a
-                                Venta
+                                <CheckCircle className="mr-2 h-4 w-4" />{' '}
+                                Convertir a Venta
                             </Button>
                         )}
                     </div>
@@ -635,107 +651,133 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
                                                 msg.sender_id === auth.user.id;
                                             const m = msg as Mensaje;
                                             return (
+                                                <div
+                                                    key={m.id || m._tempId}
+                                                    className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
+                                                >
+                                                    <span className="mb-1 px-1 text-xs text-gray-400">
+                                                        {m.sender.name}
+                                                    </span>
                                                     <div
-                                                        key={m.id || m._tempId}
-                                                        className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
+                                                        className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm shadow-sm ${
+                                                            isMe
+                                                                ? 'rounded-br-none bg-indigo-600 text-white'
+                                                                : 'rounded-bl-none border border-gray-100 bg-white text-gray-800'
+                                                        } ${m._sending ? 'animate-pulse opacity-70' : ''} ${m._error ? 'ring-2 ring-red-400' : ''}`}
                                                     >
-                                                        <span className="mb-1 px-1 text-xs text-gray-400">
-                                                            {m.sender.name}
-                                                        </span>
-                                                        <div
-                                                            className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm shadow-sm ${
-                                                                isMe
-                                                                    ? 'rounded-br-none bg-indigo-600 text-white'
-                                                                    : 'rounded-bl-none border border-gray-100 bg-white text-gray-800'
-                                                            } ${m._sending ? 'animate-pulse opacity-70' : ''} ${m._error ? 'ring-2 ring-red-400' : ''}`}
-                                                        >
-                                                            {m.contenido && (
-                                                                <p className="whitespace-pre-wrap">
-                                                                    {m.contenido}
-                                                                </p>
-                                                            )}
+                                                        {m.contenido && (
+                                                            <p className="whitespace-pre-wrap">
+                                                                {m.contenido}
+                                                            </p>
+                                                        )}
 
-                                                            {m.file_url && (
-                                                                <div
-                                                                    className={`mt-2 ${m.contenido ? 'border-t border-white/20 pt-2' : ''}`}
-                                                                >
-                                                                    {m.is_image ? (
-                                                                        <a
-                                                                            href={
-                                                                                m.file_url
-                                                                            }
-                                                                            target="_blank"
-                                                                            rel="noreferrer"
-                                                                            className="block overflow-hidden rounded-lg"
-                                                                        >
-                                                                            <img
-                                                                                src={
-                                                                                    m.file_url
-                                                                                }
-                                                                                alt="Adjunto"
-                                                                                className="h-auto max-w-full object-cover transition-opacity hover:opacity-90"
-                                                                            />
-                                                                        </a>
-                                                                    ) : (
-                                                                        <a
-                                                                            href={
-                                                                                m.file_url
-                                                                            }
-                                                                            target="_blank"
-                                                                            rel="noreferrer"
-                                                                            className={`flex items-center gap-2 rounded bg-black/5 p-2 transition-colors hover:bg-black/10 ${isMe ? 'text-white' : 'text-indigo-600'}`}
-                                                                        >
-                                                                            <FileIcon className="h-4 w-4 shrink-0" />
-                                                                            <span className="truncate text-[10px] underline">
-                                                                                {
-                                                                                    m.file_name
-                                                                                }
-                                                                            </span>
-                                                                            <Download className="ml-auto h-3 w-3 shrink-0" />
-                                                                        </a>
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                            {isMe && !m._temp && !m._error && (
-                                                                <div className="mt-1 flex justify-end">
-                                                                    <CheckCheck className={`h-3 w-3 ${m.leido ? 'text-blue-200' : 'opacity-50'}`} />
-                                                                </div>
-                                                            )}
-                                                            {isMe && m._sending && (
-                                                                <div className="mt-1 flex justify-end">
-                                                                    <Clock className="h-3 w-3 animate-spin text-yellow-300" />
-                                                                </div>
-                                                            )}
-                                                            {isMe && m._error && (
-                                                                <div className="mt-1 flex justify-end">
-                                                                    <AlertCircle className="h-3 w-3 text-red-300" />
-                                                                </div>
-                                                            )}
-                                                            {isMe && m._error && (
-                                                                <div className="mt-1 flex gap-2">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            const tempId = m._tempId;
-                                                                            if (!tempId) return;
-                                                                            setMensajes((prev) =>
-                                                                                prev.map((x) =>
-                                                                                    (x as Mensaje)._tempId === tempId
-                                                                                        ? { ...x, _sending: true, _error: false }
-                                                                                        : x,
-                                                                                ),
-                                                                            );
-                                                                            submitMessage(m.contenido, null, tempId);
-                                                                        }}
-                                                                        className="flex items-center gap-1 text-[10px] text-red-400 hover:text-red-300"
+                                                        {m.file_url && (
+                                                            <div
+                                                                className={`mt-2 ${m.contenido ? 'border-t border-white/20 pt-2' : ''}`}
+                                                            >
+                                                                {m.is_image ? (
+                                                                    <a
+                                                                        href={
+                                                                            m.file_url
+                                                                        }
+                                                                        target="_blank"
+                                                                        rel="noreferrer"
+                                                                        className="block overflow-hidden rounded-lg"
                                                                     >
-                                                                        <RefreshCw className="h-3 w-3" />
-                                                                        Reintentar
-                                                                    </button>
+                                                                        <img
+                                                                            src={
+                                                                                m.file_url
+                                                                            }
+                                                                            alt="Adjunto"
+                                                                            className="h-auto max-w-full object-cover transition-opacity hover:opacity-90"
+                                                                        />
+                                                                    </a>
+                                                                ) : (
+                                                                    <a
+                                                                        href={
+                                                                            m.file_url
+                                                                        }
+                                                                        target="_blank"
+                                                                        rel="noreferrer"
+                                                                        className={`flex items-center gap-2 rounded bg-black/5 p-2 transition-colors hover:bg-black/10 ${isMe ? 'text-white' : 'text-indigo-600'}`}
+                                                                    >
+                                                                        <FileIcon className="h-4 w-4 shrink-0" />
+                                                                        <span className="truncate text-[10px] underline">
+                                                                            {
+                                                                                m.file_name
+                                                                            }
+                                                                        </span>
+                                                                        <Download className="ml-auto h-3 w-3 shrink-0" />
+                                                                    </a>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        {isMe &&
+                                                            !m._temp &&
+                                                            !m._error && (
+                                                                <div className="mt-1 flex justify-end">
+                                                                    <CheckCheck
+                                                                        className={`h-3 w-3 ${m.leido ? 'text-blue-200' : 'opacity-50'}`}
+                                                                    />
                                                                 </div>
                                                             )}
-                                                        </div>
+                                                        {isMe && m._sending && (
+                                                            <div className="mt-1 flex justify-end">
+                                                                <Clock className="h-3 w-3 animate-spin text-yellow-300" />
+                                                            </div>
+                                                        )}
+                                                        {isMe && m._error && (
+                                                            <div className="mt-1 flex justify-end">
+                                                                <AlertCircle className="h-3 w-3 text-red-300" />
+                                                            </div>
+                                                        )}
+                                                        {isMe && m._error && (
+                                                            <div className="mt-1 flex gap-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const tempId =
+                                                                            m._tempId;
+                                                                        if (
+                                                                            !tempId
+                                                                        )
+                                                                            return;
+                                                                        setMensajes(
+                                                                            (
+                                                                                prev,
+                                                                            ) =>
+                                                                                prev.map(
+                                                                                    (
+                                                                                        x,
+                                                                                    ) =>
+                                                                                        (
+                                                                                            x as Mensaje
+                                                                                        )
+                                                                                            ._tempId ===
+                                                                                        tempId
+                                                                                            ? {
+                                                                                                  ...x,
+                                                                                                  _sending: true,
+                                                                                                  _error: false,
+                                                                                              }
+                                                                                            : x,
+                                                                                ),
+                                                                        );
+                                                                        submitMessage(
+                                                                            m.contenido,
+                                                                            null,
+                                                                            tempId,
+                                                                        );
+                                                                    }}
+                                                                    className="flex items-center gap-1 text-[10px] text-red-400 hover:text-red-300"
+                                                                >
+                                                                    <RefreshCw className="h-3 w-3" />
+                                                                    Reintentar
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                     </div>
+                                                </div>
                                             );
                                         })
                                     )}
@@ -747,7 +789,10 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
                                                     <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-400 [animation-delay:150ms]" />
                                                     <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-400 [animation-delay:300ms]" />
                                                 </span>
-                                                <span>{typingUser} está escribiendo...</span>
+                                                <span>
+                                                    {typingUser} está
+                                                    escribiendo...
+                                                </span>
                                             </div>
                                         </div>
                                     )}

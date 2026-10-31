@@ -13,7 +13,7 @@ import {
     FileText,
     ChevronDown,
     Filter,
-    X
+    X,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -93,7 +93,7 @@ interface Props {
 }
 
 export default function Index({ pedidos, filtros }: Props) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
 
     const [search, setSearch] = useState(filtros.search || '');
     const [estado, setEstado] = useState(filtros.estado || 'all');
@@ -329,7 +329,9 @@ export default function Index({ pedidos, filtros }: Props) {
                         </h3>
                         <div className="flex items-center gap-1 rounded-lg bg-gray-100 p-1">
                             <Button
-                                variant={viewMode === 'table' ? 'default' : 'ghost'}
+                                variant={
+                                    viewMode === 'table' ? 'default' : 'ghost'
+                                }
                                 size="sm"
                                 onClick={() => setViewMode('table')}
                                 className="h-8 w-8 p-0"
@@ -337,7 +339,9 @@ export default function Index({ pedidos, filtros }: Props) {
                                 <List className="h-4 w-4" />
                             </Button>
                             <Button
-                                variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                                variant={
+                                    viewMode === 'cards' ? 'default' : 'ghost'
+                                }
                                 size="sm"
                                 onClick={() => setViewMode('cards')}
                                 className="h-8 w-8 p-0"
@@ -361,94 +365,248 @@ export default function Index({ pedidos, filtros }: Props) {
                         </div>
                     ) : (
                         <>
-                        {viewMode === 'table' ? (
-                        <>
-                            <Table>
-                                <TableHeader className="bg-gray-50/50">
-                                    <TableRow>
-                                        <TableHead className="font-semibold text-gray-700">
-                                            Pedido
-                                        </TableHead>
-                                        <TableHead className="font-semibold text-gray-700">
-                                            Fecha
-                                        </TableHead>
-                                        <TableHead className="font-semibold text-gray-700">
-                                            Cliente
-                                        </TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700">
-                                            Total
-                                        </TableHead>
-                                        <TableHead className="font-semibold text-gray-700">
-                                            Estado
-                                        </TableHead>
-                                        <TableHead className="text-right font-medium font-semibold text-gray-700">
-                                            Acciones
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {pedidos.data.map((pedido) => (
-                                        <TableRow
-                                            key={pedido.id}
-                                            className="transition-colors hover:bg-gray-50"
-                                        >
-                                            <TableCell className="font-medium">
-                                                <div className="flex items-center space-x-2">
-                                                    <ShoppingBag className="h-4 w-4 text-indigo-500" />
-                                                    <span className="max-w-[120px] truncate font-semibold text-indigo-700">
-                                                        #{pedido.numero_pedido}
-                                                    </span>
-                                                </div>
-                                                <div className="mt-1 ml-6 text-xs text-gray-500">
-                                                    {pedido.items.length}{' '}
-                                                    producto(s)
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                                                    <Calendar className="h-4 w-4" />
-                                                    <span>
-                                                        {formatDate(
-                                                            pedido.created_at,
-                                                        )}
-                                                    </span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center space-x-2 text-sm text-gray-700">
-                                                    <User className="h-4 w-4" />
-                                                    <span>
-                                                        {pedido.cliente?.name ||
-                                                            pedido.nombre_cliente}
-                                                    </span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-right font-medium text-gray-900">
-                                                <div className="flex items-center justify-end space-x-1">
-                                                    <DollarSign className="h-4 w-4 text-green-600" />
-                                                    <span>
-                                                        {formatCurrency(
-                                                            pedido.total,
-                                                        )}
-                                                    </span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    variant="outline"
-                                                    className={`shrink-0 border-0 capitalize ${getEstadoColor(pedido.estado)}`}
+                            {viewMode === 'table' ? (
+                                <>
+                                    <Table>
+                                        <TableHeader className="bg-gray-50/50">
+                                            <TableRow>
+                                                <TableHead className="font-semibold text-gray-700">
+                                                    Pedido
+                                                </TableHead>
+                                                <TableHead className="font-semibold text-gray-700">
+                                                    Fecha
+                                                </TableHead>
+                                                <TableHead className="font-semibold text-gray-700">
+                                                    Cliente
+                                                </TableHead>
+                                                <TableHead className="text-right font-semibold text-gray-700">
+                                                    Total
+                                                </TableHead>
+                                                <TableHead className="font-semibold text-gray-700">
+                                                    Estado
+                                                </TableHead>
+                                                <TableHead className="text-right font-medium font-semibold text-gray-700">
+                                                    Acciones
+                                                </TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {pedidos.data.map((pedido) => (
+                                                <TableRow
+                                                    key={pedido.id}
+                                                    className="transition-colors hover:bg-gray-50"
                                                 >
-                                                    {pedido.estado}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex items-center justify-end gap-2">
+                                                    <TableCell className="font-medium">
+                                                        <div className="flex items-center space-x-2">
+                                                            <ShoppingBag className="h-4 w-4 text-indigo-500" />
+                                                            <span className="max-w-[120px] truncate font-semibold text-indigo-700">
+                                                                #
+                                                                {
+                                                                    pedido.numero_pedido
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                        <div className="mt-1 ml-6 text-xs text-gray-500">
+                                                            {
+                                                                pedido.items
+                                                                    .length
+                                                            }{' '}
+                                                            producto(s)
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center space-x-2 text-sm text-gray-600">
+                                                            <Calendar className="h-4 w-4" />
+                                                            <span>
+                                                                {formatDate(
+                                                                    pedido.created_at,
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center space-x-2 text-sm text-gray-700">
+                                                            <User className="h-4 w-4" />
+                                                            <span>
+                                                                {pedido.cliente
+                                                                    ?.name ||
+                                                                    pedido.nombre_cliente}
+                                                            </span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-medium text-gray-900">
+                                                        <div className="flex items-center justify-end space-x-1">
+                                                            <DollarSign className="h-4 w-4 text-green-600" />
+                                                            <span>
+                                                                {formatCurrency(
+                                                                    pedido.total,
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={`shrink-0 border-0 capitalize ${getEstadoColor(pedido.estado)}`}
+                                                        >
+                                                            {pedido.estado}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            {pedido.conversacion && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    asChild
+                                                                    className="hover:bg-green-50 hover:text-green-600"
+                                                                >
+                                                                    <Link
+                                                                        href={`/conversaciones-pedidos/${pedido.conversacion.id}/chat`}
+                                                                    >
+                                                                        <MessageCircle className="h-4 w-4" />
+                                                                    </Link>
+                                                                </Button>
+                                                            )}
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                asChild
+                                                                className="hover:bg-indigo-50 hover:text-indigo-600"
+                                                            >
+                                                                <Link
+                                                                    href={`/pedidos-recibidos/${pedido.id}`}
+                                                                >
+                                                                    <Eye className="h-4 w-4" />
+                                                                </Link>
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+
+                                    {/* Paginación */}
+                                    {pedidos.last_page > 1 && (
+                                        <div className="flex items-center justify-between border-t px-4 py-3">
+                                            <div className="text-sm text-gray-500">
+                                                Mostrando {pedidos.from} a{' '}
+                                                {pedidos.to} de {pedidos.total}{' '}
+                                                pedidos
+                                            </div>
+                                            <div className="flex gap-1">
+                                                {pedidos.links.map(
+                                                    (link, index) => {
+                                                        if (
+                                                            link.label === '...'
+                                                        )
+                                                            return null;
+                                                        if (!link.url) {
+                                                            return (
+                                                                <span
+                                                                    key={index}
+                                                                    className="px-3 py-1 text-gray-400"
+                                                                >
+                                                                    ...
+                                                                </span>
+                                                            );
+                                                        }
+                                                        return (
+                                                            <Button
+                                                                key={index}
+                                                                variant={
+                                                                    link.active
+                                                                        ? 'default'
+                                                                        : 'ghost'
+                                                                }
+                                                                size="sm"
+                                                                className={
+                                                                    link.active
+                                                                        ? 'bg-indigo-600'
+                                                                        : ''
+                                                                }
+                                                                asChild
+                                                            >
+                                                                <Link
+                                                                    href={
+                                                                        link.url
+                                                                    }
+                                                                >
+                                                                    {link.label}
+                                                                </Link>
+                                                            </Button>
+                                                        );
+                                                    },
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <>
+                                    <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
+                                        {pedidos.data.map((pedido) => (
+                                            <div
+                                                key={pedido.id}
+                                                className="rounded-lg border bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+                                            >
+                                                <div className="mb-2 flex items-center justify-between">
+                                                    <div className="flex items-center space-x-2">
+                                                        <ShoppingBag className="h-5 w-5 text-indigo-500" />
+                                                        <span className="font-semibold text-indigo-700">
+                                                            #
+                                                            {
+                                                                pedido.numero_pedido
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                    <Badge
+                                                        variant="outline"
+                                                        className={`shrink-0 border-0 capitalize ${getEstadoColor(pedido.estado)}`}
+                                                    >
+                                                        {pedido.estado}
+                                                    </Badge>
+                                                </div>
+                                                <div className="mt-2 space-y-1.5 text-sm text-gray-600">
+                                                    <div className="flex items-center space-x-2">
+                                                        <User className="h-3.5 w-3.5" />
+                                                        <span>
+                                                            {pedido.cliente
+                                                                ?.name ||
+                                                                pedido.nombre_cliente}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center space-x-2">
+                                                        <Calendar className="h-3.5 w-3.5" />
+                                                        <span>
+                                                            {formatDate(
+                                                                pedido.created_at,
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between pt-1">
+                                                        <span className="text-xs text-gray-500">
+                                                            {
+                                                                pedido.items
+                                                                    .length
+                                                            }{' '}
+                                                            producto(s)
+                                                        </span>
+                                                        <span className="font-semibold text-green-600">
+                                                            {formatCurrency(
+                                                                pedido.total,
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-3 flex justify-end gap-2 border-t pt-2">
                                                     {pedido.conversacion && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
                                                             asChild
-                                                            className="hover:bg-green-50 hover:text-green-600"
+                                                            className="h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600"
                                                         >
                                                             <Link
                                                                 href={`/conversaciones-pedidos/${pedido.conversacion.id}/chat`}
@@ -461,7 +619,7 @@ export default function Index({ pedidos, filtros }: Props) {
                                                         variant="ghost"
                                                         size="sm"
                                                         asChild
-                                                        className="hover:bg-indigo-50 hover:text-indigo-600"
+                                                        className="h-8 w-8 p-0 hover:bg-indigo-50 hover:text-indigo-600"
                                                     >
                                                         <Link
                                                             href={`/pedidos-recibidos/${pedido.id}`}
@@ -470,127 +628,66 @@ export default function Index({ pedidos, filtros }: Props) {
                                                         </Link>
                                                     </Button>
                                                 </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                            </div>
+                                        ))}
+                                    </div>
 
-                            {/* Paginación */}
-                            {pedidos.last_page > 1 && (
-                                <div className="flex items-center justify-between border-t px-4 py-3">
-                                    <div className="text-sm text-gray-500">
-                                        Mostrando {pedidos.from} a {pedidos.to}{' '}
-                                        de {pedidos.total} pedidos
-                                    </div>
-                                    <div className="flex gap-1">
-                                        {pedidos.links.map((link, index) => {
-                                            if (link.label === '...')
-                                                return null;
-                                            if (!link.url) {
-                                                return (
-                                                    <span
-                                                        key={index}
-                                                        className="px-3 py-1 text-gray-400"
-                                                    >
-                                                        ...
-                                                    </span>
-                                                );
-                                            }
-                                            return (
-                                                <Button
-                                                    key={index}
-                                                    variant={
-                                                        link.active
-                                                            ? 'default'
-                                                            : 'ghost'
-                                                    }
-                                                    size="sm"
-                                                    className={
-                                                        link.active
-                                                            ? 'bg-indigo-600'
-                                                            : ''
-                                                    }
-                                                    asChild
-                                                >
-                                                    <Link href={link.url}>
-                                                        {link.label}
-                                                    </Link>
-                                                </Button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
+                                    {pedidos.last_page > 1 && (
+                                        <div className="flex items-center justify-between border-t px-4 py-3">
+                                            <div className="text-sm text-gray-500">
+                                                Mostrando {pedidos.from} a{' '}
+                                                {pedidos.to} de {pedidos.total}{' '}
+                                                pedidos
+                                            </div>
+                                            <div className="flex gap-1">
+                                                {pedidos.links.map(
+                                                    (link, index) => {
+                                                        if (
+                                                            link.label === '...'
+                                                        )
+                                                            return null;
+                                                        if (!link.url) {
+                                                            return (
+                                                                <span
+                                                                    key={index}
+                                                                    className="px-3 py-1 text-gray-400"
+                                                                >
+                                                                    ...
+                                                                </span>
+                                                            );
+                                                        }
+                                                        return (
+                                                            <Button
+                                                                key={index}
+                                                                variant={
+                                                                    link.active
+                                                                        ? 'default'
+                                                                        : 'ghost'
+                                                                }
+                                                                size="sm"
+                                                                className={
+                                                                    link.active
+                                                                        ? 'bg-indigo-600'
+                                                                        : ''
+                                                                }
+                                                                asChild
+                                                            >
+                                                                <Link
+                                                                    href={
+                                                                        link.url
+                                                                    }
+                                                                >
+                                                                    {link.label}
+                                                                </Link>
+                                                            </Button>
+                                                        );
+                                                    },
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
                             )}
-                        </>
-                        ) : (
-                        <>
-                            <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {pedidos.data.map((pedido) => (
-                                    <div key={pedido.id} className="rounded-lg border bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-                                        <div className="mb-2 flex items-center justify-between">
-                                            <div className="flex items-center space-x-2">
-                                                <ShoppingBag className="h-5 w-5 text-indigo-500" />
-                                                <span className="font-semibold text-indigo-700">#{pedido.numero_pedido}</span>
-                                            </div>
-                                            <Badge variant="outline" className={`shrink-0 border-0 capitalize ${getEstadoColor(pedido.estado)}`}>
-                                                {pedido.estado}
-                                            </Badge>
-                                        </div>
-                                        <div className="mt-2 space-y-1.5 text-sm text-gray-600">
-                                            <div className="flex items-center space-x-2">
-                                                <User className="h-3.5 w-3.5" />
-                                                <span>{pedido.cliente?.name || pedido.nombre_cliente}</span>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                                <Calendar className="h-3.5 w-3.5" />
-                                                <span>{formatDate(pedido.created_at)}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between pt-1">
-                                                <span className="text-xs text-gray-500">{pedido.items.length} producto(s)</span>
-                                                <span className="font-semibold text-green-600">{formatCurrency(pedido.total)}</span>
-                                            </div>
-                                        </div>
-                                        <div className="mt-3 flex justify-end gap-2 border-t pt-2">
-                                            {pedido.conversacion && (
-                                                <Button variant="ghost" size="sm" asChild className="h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600">
-                                                    <Link href={`/conversaciones-pedidos/${pedido.conversacion.id}/chat`}>
-                                                        <MessageCircle className="h-4 w-4" />
-                                                    </Link>
-                                                </Button>
-                                            )}
-                                            <Button variant="ghost" size="sm" asChild className="h-8 w-8 p-0 hover:bg-indigo-50 hover:text-indigo-600">
-                                                <Link href={`/pedidos-recibidos/${pedido.id}`}>
-                                                    <Eye className="h-4 w-4" />
-                                                </Link>
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {pedidos.last_page > 1 && (
-                                <div className="flex items-center justify-between border-t px-4 py-3">
-                                    <div className="text-sm text-gray-500">
-                                        Mostrando {pedidos.from} a {pedidos.to} de {pedidos.total} pedidos
-                                    </div>
-                                    <div className="flex gap-1">
-                                        {pedidos.links.map((link, index) => {
-                                            if (link.label === '...') return null;
-                                            if (!link.url) {
-                                                return <span key={index} className="px-3 py-1 text-gray-400">...</span>;
-                                            }
-                                            return (
-                                                <Button key={index} variant={link.active ? 'default' : 'ghost'} size="sm" className={link.active ? 'bg-indigo-600' : ''} asChild>
-                                                    <Link href={link.url}>{link.label}</Link>
-                                                </Button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                        )}
                         </>
                     )}
                 </div>

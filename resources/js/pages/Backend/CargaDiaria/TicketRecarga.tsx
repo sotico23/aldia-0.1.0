@@ -1,12 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Printer, Download } from 'lucide-react';
+import { ArrowLeft, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCountry } from '@/hooks/use-country';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
@@ -54,7 +49,7 @@ export default function TicketRecarga({
 }: {
     renovacion: Renovacion;
 }) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const handlePrint = () => {
         window.print();
     };
@@ -156,7 +151,9 @@ export default function TicketRecarga({
                                     </div>
                                     <div className="rounded-lg border border-red-200 bg-red-50 p-3">
                                         <p className="text-2xl font-black text-red-700">
-                                            {renovacion.total_productos_faltantes}
+                                            {
+                                                renovacion.total_productos_faltantes
+                                            }
                                         </p>
                                         <p className="text-xs font-bold text-red-600">
                                             FALTANTES
@@ -164,7 +161,9 @@ export default function TicketRecarga({
                                     </div>
                                     <div className="rounded-lg border border-purple-200 bg-purple-50 p-3">
                                         <p className="text-2xl font-black text-purple-700">
-                                            {renovacion.total_productos_defectuosos}
+                                            {
+                                                renovacion.total_productos_defectuosos
+                                            }
                                         </p>
                                         <p className="text-xs font-bold text-purple-600">
                                             DEFECTUOSOS
@@ -217,22 +216,34 @@ export default function TicketRecarga({
                                                                     '-'}
                                                             </td>
                                                             <td className="px-3 py-2 text-center font-bold">
-                                                                {d.cantidad_bordo}
+                                                                {
+                                                                    d.cantidad_bordo
+                                                                }
                                                             </td>
                                                             <td className="px-3 py-2 text-center font-bold text-green-600">
-                                                                {d.cantidad_llena}
+                                                                {
+                                                                    d.cantidad_llena
+                                                                }
                                                             </td>
                                                             <td className="px-3 py-2 text-center font-bold text-amber-600">
-                                                                {d.cantidad_vacia}
+                                                                {
+                                                                    d.cantidad_vacia
+                                                                }
                                                             </td>
                                                             <td className="px-3 py-2 text-center font-bold text-red-600">
-                                                                {d.cantidad_faltante}
+                                                                {
+                                                                    d.cantidad_faltante
+                                                                }
                                                             </td>
                                                             <td className="px-3 py-2 text-center font-bold text-purple-600">
-                                                                {d.cantidad_defectuosa}
+                                                                {
+                                                                    d.cantidad_defectuosa
+                                                                }
                                                             </td>
                                                             <td className="px-3 py-2 text-center font-bold">
-                                                                {d.cantidad_vendida}
+                                                                {
+                                                                    d.cantidad_vendida
+                                                                }
                                                             </td>
                                                         </tr>
                                                     ),

@@ -1,5 +1,13 @@
 import { Head, useForm } from '@inertiajs/react';
-import { LayoutGrid, List, Pencil, Plus, Trash2, Search, X } from 'lucide-react';
+import {
+    LayoutGrid,
+    List,
+    Pencil,
+    Plus,
+    Trash2,
+    Search,
+    X,
+} from 'lucide-react';
 import { useState } from 'react';
 import { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -46,7 +54,18 @@ const breadcrumbs: BreadcrumbItem[] = [
 const estados = ['pendiente', 'aprobado', 'rechazado', 'cancelado'];
 const tipos = ['ingreso', 'egreso', 'transferencia'];
 
-export default function Index({ tesorerias }: { tesorerias: { data: Tesoreria[]; links: any[]; from?: number; to?: number; total?: number; meta?: any } }) {
+export default function Index({
+    tesorerias,
+}: {
+    tesorerias: {
+        data: Tesoreria[];
+        links: any[];
+        from?: number;
+        to?: number;
+        total?: number;
+        meta?: any;
+    };
+}) {
     const [isOpen, setIsOpen] = useState(false);
     const [editando, setEditando] = useState<Tesoreria | null>(null);
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
@@ -191,17 +210,35 @@ export default function Index({ tesorerias }: { tesorerias: { data: Tesoreria[];
                         <CardHeader>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle>Movimientos de Tesorería</CardTitle>
+                                    <CardTitle>
+                                        Movimientos de Tesorería
+                                    </CardTitle>
                                     <CardDescription>
                                         {tesoreriasFiltradas.length} registros
                                         encontrados
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('table')}>
+                                    <Button
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'default'
+                                                : 'outline'
+                                        }
+                                        size="icon"
+                                        onClick={() => setViewMode('table')}
+                                    >
                                         <List className="h-4 w-4" />
                                     </Button>
-                                    <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('cards')}>
+                                    <Button
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'default'
+                                                : 'outline'
+                                        }
+                                        size="icon"
+                                        onClick={() => setViewMode('cards')}
+                                    >
                                         <LayoutGrid className="h-4 w-4" />
                                     </Button>
                                 </div>
@@ -233,7 +270,7 @@ export default function Index({ tesorerias }: { tesorerias: { data: Tesoreria[];
                                             tipo: e.target.value,
                                         })
                                     }
-                                    className="flex h-9 rounded-md border bg-background px-3 py-1 min-w-[130px]"
+                                    className="flex h-9 min-w-[130px] rounded-md border bg-background px-3 py-1"
                                 >
                                     <option value="">Todos los tipos</option>
                                     {tipos.map((t) => (
@@ -250,7 +287,7 @@ export default function Index({ tesorerias }: { tesorerias: { data: Tesoreria[];
                                             estado: e.target.value,
                                         })
                                     }
-                                    className="flex h-9 rounded-md border bg-background px-3 py-1 min-w-[130px]"
+                                    className="flex h-9 min-w-[130px] rounded-md border bg-background px-3 py-1"
                                 >
                                     <option value="">Todos los estados</option>
                                     {estados.map((e) => (
@@ -270,80 +307,204 @@ export default function Index({ tesorerias }: { tesorerias: { data: Tesoreria[];
                                 </Button>
                             </div>
                             {viewMode === 'table' ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-xs sm:text-sm">
-                                    <thead>
-                                        <tr className="border-b">
-                                            <th className="py-3 text-left font-medium">
-                                                Tipo / Categoría
-                                            </th>
-                                            <th className="py-3 text-right font-medium">
-                                                Monto
-                                            </th>
-                                            <th className="py-3 text-left font-medium">
-                                                Fecha / Referencia
-                                            </th>
-                                            <th className="py-3 text-center font-medium">
-                                                Estado
-                                            </th>
-                                            <th className="py-3 text-right font-medium">
-                                                Acciones
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {tesoreriasFiltradas.map((t) => (
-                                            <tr
-                                                key={t.id}
-                                                className="border-b transition-colors hover:bg-muted/30"
-                                            >
-                                                <td className="py-3">
-                                                    <div className="font-medium uppercase">
-                                                        {t.tipo}
-                                                    </div>
-                                                    <div className="text-[10px] text-muted-foreground truncate max-w-[150px]">
-                                                        {t.categoria ||
-                                                            'Sin cat.'}
-                                                    </div>
-                                                </td>
-                                                <td
-                                                    className={`py-3 text-right font-bold ${t.tipo === 'egreso'
-                                                        ? 'text-red-600'
-                                                        : 'text-green-600'
-                                                        }`}
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-xs sm:text-sm">
+                                        <thead>
+                                            <tr className="border-b">
+                                                <th className="py-3 text-left font-medium">
+                                                    Tipo / Categoría
+                                                </th>
+                                                <th className="py-3 text-right font-medium">
+                                                    Monto
+                                                </th>
+                                                <th className="py-3 text-left font-medium">
+                                                    Fecha / Referencia
+                                                </th>
+                                                <th className="py-3 text-center font-medium">
+                                                    Estado
+                                                </th>
+                                                <th className="py-3 text-right font-medium">
+                                                    Acciones
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {tesoreriasFiltradas.map((t) => (
+                                                <tr
+                                                    key={t.id}
+                                                    className="border-b transition-colors hover:bg-muted/30"
                                                 >
-                                                    {t.tipo === 'egreso'
-                                                        ? '-'
-                                                        : '+'}
-                                                    {formatCurrency(
-                                                        t.monto,
-                                                    )}
-                                                </td>
-                                                <td className="py-3">
-                                                    <div className="text-[10px] font-medium">
-                                                        {formatDateCLP(
-                                                            t.fecha,
+                                                    <td className="py-3">
+                                                        <div className="font-medium uppercase">
+                                                            {t.tipo}
+                                                        </div>
+                                                        <div className="max-w-[150px] truncate text-[10px] text-muted-foreground">
+                                                            {t.categoria ||
+                                                                'Sin cat.'}
+                                                        </div>
+                                                    </td>
+                                                    <td
+                                                        className={`py-3 text-right font-bold ${
+                                                            t.tipo === 'egreso'
+                                                                ? 'text-red-600'
+                                                                : 'text-green-600'
+                                                        }`}
+                                                    >
+                                                        {t.tipo === 'egreso'
+                                                            ? '-'
+                                                            : '+'}
+                                                        {formatCurrency(
+                                                            t.monto,
+                                                        )}
+                                                    </td>
+                                                    <td className="py-3">
+                                                        <div className="text-[10px] font-medium">
+                                                            {formatDateCLP(
+                                                                t.fecha,
+                                                            )}
+                                                        </div>
+                                                        <div className="max-w-[150px] truncate text-[10px] text-muted-foreground">
+                                                            {t.referencia ||
+                                                                '-'}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-3 text-center">
+                                                        {getEstadoBadge(
+                                                            t.estado,
+                                                        )}
+                                                    </td>
+                                                    <td className="py-3 text-right">
+                                                        <div className="flex justify-end gap-1">
+                                                            {canEdit && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0"
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            t,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {canDelete && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            t.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {tesoreriasFiltradas.length ===
+                                                0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan={5}
+                                                        className="py-8 text-center text-muted-foreground"
+                                                    >
+                                                        No se encontraron
+                                                        movimientos con los
+                                                        filtros aplicados
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                    <Pagination
+                                        links={tesorerias.links}
+                                        meta={tesorerias.meta || tesorerias}
+                                    />
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    {tesoreriasFiltradas.length === 0 ? (
+                                        <div className="col-span-full flex flex-col items-center py-12 text-center text-muted-foreground">
+                                            <Search className="mb-4 h-12 w-12 opacity-20" />
+                                            <p className="font-medium">
+                                                No se encontraron movimientos
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        tesoreriasFiltradas.map((t) => (
+                                            <Card
+                                                key={t.id}
+                                                className="overflow-hidden"
+                                            >
+                                                <CardHeader className="pb-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="text-xs uppercase"
+                                                        >
+                                                            {t.tipo}
+                                                        </Badge>
+                                                        {getEstadoBadge(
+                                                            t.estado,
                                                         )}
                                                     </div>
-                                                    <div className="text-[10px] text-muted-foreground truncate max-w-[150px]">
-                                                        {t.referencia ||
-                                                            '-'}
+                                                    <CardTitle
+                                                        className={`text-xl font-bold ${t.tipo === 'egreso' ? 'text-red-600' : 'text-green-600'}`}
+                                                    >
+                                                        {t.tipo === 'egreso'
+                                                            ? '-'
+                                                            : '+'}
+                                                        {formatCurrency(
+                                                            t.monto,
+                                                        )}
+                                                    </CardTitle>
+                                                </CardHeader>
+                                                <CardContent className="space-y-2 pt-0">
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="text-muted-foreground">
+                                                            Categoría
+                                                        </span>
+                                                        <span className="font-medium">
+                                                            {t.categoria ||
+                                                                'Sin cat.'}
+                                                        </span>
                                                     </div>
-                                                </td>
-                                                <td className="py-3 text-center">
-                                                    {getEstadoBadge(
-                                                        t.estado,
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="text-muted-foreground">
+                                                            Fecha
+                                                        </span>
+                                                        <span>
+                                                            {formatDateCLP(
+                                                                t.fecha,
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                    {t.referencia && (
+                                                        <div className="flex items-center justify-between text-sm">
+                                                            <span className="text-muted-foreground">
+                                                                Referencia
+                                                            </span>
+                                                            <span className="max-w-[150px] truncate">
+                                                                {t.referencia}
+                                                            </span>
+                                                        </div>
                                                     )}
-                                                </td>
-                                                <td className="py-3 text-right">
-                                                    <div className="flex justify-end gap-1">
+                                                    <div className="flex justify-end gap-1 border-t pt-2">
                                                         {canEdit && (
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 className="h-8 w-8 p-0"
                                                                 onClick={() =>
-                                                                    handleEdit(t)
+                                                                    handleEdit(
+                                                                        t,
+                                                                    )
                                                                 }
                                                             >
                                                                 <Pencil className="h-4 w-4" />
@@ -364,82 +525,18 @@ export default function Index({ tesorerias }: { tesorerias: { data: Tesoreria[];
                                                             </Button>
                                                         )}
                                                     </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {tesoreriasFiltradas.length ===
-                                            0 && (
-                                                <tr>
-                                                    <td
-                                                        colSpan={5}
-                                                        className="py-8 text-center text-muted-foreground"
-                                                    >
-                                                        No se encontraron
-                                                        movimientos con los
-                                                        filtros aplicados
-                                                    </td>
-                                                </tr>
-                                            )}
-                                    </tbody>
-                                </table>
-                                <Pagination links={tesorerias.links} meta={tesorerias.meta || tesorerias} />
-                            </div>
-                            ) : (
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {tesoreriasFiltradas.length === 0 ? (
-                                    <div className="col-span-full flex flex-col items-center py-12 text-center text-muted-foreground">
-                                        <Search className="mb-4 h-12 w-12 opacity-20" />
-                                        <p className="font-medium">No se encontraron movimientos</p>
-                                    </div>
-                                ) : tesoreriasFiltradas.map((t) => (
-                                    <Card key={t.id} className="overflow-hidden">
-                                        <CardHeader className="pb-3">
-                                            <div className="flex items-center justify-between">
-                                                <Badge variant="outline" className="uppercase text-xs">{t.tipo}</Badge>
-                                                {getEstadoBadge(t.estado)}
-                                            </div>
-                                            <CardTitle className={`text-xl font-bold ${t.tipo === 'egreso' ? 'text-red-600' : 'text-green-600'}`}>
-                                                {t.tipo === 'egreso' ? '-' : '+'}{formatCurrency(t.monto)}
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="space-y-2 pt-0">
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="text-muted-foreground">Categoría</span>
-                                                <span className="font-medium">{t.categoria || 'Sin cat.'}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="text-muted-foreground">Fecha</span>
-                                                <span>{formatDateCLP(t.fecha)}</span>
-                                            </div>
-                                            {t.referencia && (
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <span className="text-muted-foreground">Referencia</span>
-                                                    <span className="truncate max-w-[150px]">{t.referencia}</span>
-                                                </div>
-                                            )}
-                                            <div className="flex justify-end gap-1 border-t pt-2">
-                                                {canEdit && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(t)}>
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(t.id)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
+                                                </CardContent>
+                                            </Card>
+                                        ))
+                                    )}
+                                </div>
                             )}
                         </CardContent>
                     </Card>
                 </div>
             </AppLayout>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="sm:max-w-lg md:max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg md:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>
                             {editando ? 'Editar' : 'Nuevo'} Movimiento
@@ -447,7 +544,7 @@ export default function Index({ tesorerias }: { tesorerias: { data: Tesoreria[];
                     </DialogHeader>
                     <form onSubmit={handleSubmit}>
                         <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label>Tipo *</Label>
                                     <select
@@ -481,7 +578,7 @@ export default function Index({ tesorerias }: { tesorerias: { data: Tesoreria[];
                                     />
                                 </div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label>Fecha</Label>
                                     <Input

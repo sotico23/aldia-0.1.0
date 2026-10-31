@@ -43,7 +43,11 @@ interface ConfigSii {
     telefono: string | null;
 }
 
-export default function ConfiguracionEmisor({ config }: { config: ConfigSii | null }) {
+export default function ConfiguracionEmisor({
+    config,
+}: {
+    config: ConfigSii | null;
+}) {
     const { hasPermission } = usePermissions();
     const canAccess = hasPermission('finanzas.sii.viewAny');
     const { data, setData, post, processing, errors } = useForm({
@@ -70,7 +74,9 @@ export default function ConfiguracionEmisor({ config }: { config: ConfigSii | nu
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );
@@ -90,7 +96,8 @@ export default function ConfiguracionEmisor({ config }: { config: ConfigSii | nu
                                     Datos Legales del Emisor
                                 </CardTitle>
                                 <CardDescription>
-                                    Información que aparecerá en el encabezado de cada DTE emitido.
+                                    Información que aparecerá en el encabezado
+                                    de cada DTE emitido.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="grid gap-4 sm:grid-cols-2">
@@ -100,37 +107,71 @@ export default function ConfiguracionEmisor({ config }: { config: ConfigSii | nu
                                         id="rut"
                                         placeholder="Ej: 76.123.456-7"
                                         value={data.rut}
-                                        onChange={(e) => setData('rut', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('rut', e.target.value)
+                                        }
                                     />
-                                    {errors.rut && <p className="text-xs text-red-500">{errors.rut}</p>}
+                                    {errors.rut && (
+                                        <p className="text-xs text-red-500">
+                                            {errors.rut}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="razon_social">Razón Social</Label>
+                                    <Label htmlFor="razon_social">
+                                        Razón Social
+                                    </Label>
                                     <Input
                                         id="razon_social"
                                         value={data.razon_social}
-                                        onChange={(e) => setData('razon_social', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'razon_social',
+                                                e.target.value,
+                                            )
+                                        }
                                     />
-                                    {errors.razon_social && <p className="text-xs text-red-500">{errors.razon_social}</p>}
+                                    {errors.razon_social && (
+                                        <p className="text-xs text-red-500">
+                                            {errors.razon_social}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="giro">Giro</Label>
                                     <Input
                                         id="giro"
                                         value={data.giro}
-                                        onChange={(e) => setData('giro', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('giro', e.target.value)
+                                        }
                                     />
-                                    {errors.giro && <p className="text-xs text-red-500">{errors.giro}</p>}
+                                    {errors.giro && (
+                                        <p className="text-xs text-red-500">
+                                            {errors.giro}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="acteco">Código Actividad (ACTECO)</Label>
+                                    <Label htmlFor="acteco">
+                                        Código Actividad (ACTECO)
+                                    </Label>
                                     <Input
                                         id="acteco"
                                         type="number"
                                         value={data.acteco}
-                                        onChange={(e) => setData('acteco', parseInt(e.target.value))}
+                                        onChange={(e) =>
+                                            setData(
+                                                'acteco',
+                                                parseInt(e.target.value),
+                                            )
+                                        }
                                     />
-                                    {errors.acteco && <p className="text-xs text-red-500">{errors.acteco}</p>}
+                                    {errors.acteco && (
+                                        <p className="text-xs text-red-500">
+                                            {errors.acteco}
+                                        </p>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -144,12 +185,14 @@ export default function ConfiguracionEmisor({ config }: { config: ConfigSii | nu
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                                <div className="sm:col-span-1 space-y-2">
+                                <div className="space-y-2 sm:col-span-1">
                                     <Label htmlFor="direccion">Dirección</Label>
                                     <Input
                                         id="direccion"
                                         value={data.direccion}
-                                        onChange={(e) => setData('direccion', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('direccion', e.target.value)
+                                        }
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -157,7 +200,9 @@ export default function ConfiguracionEmisor({ config }: { config: ConfigSii | nu
                                     <Input
                                         id="comuna"
                                         value={data.comuna}
-                                        onChange={(e) => setData('comuna', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('comuna', e.target.value)
+                                        }
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -165,7 +210,9 @@ export default function ConfiguracionEmisor({ config }: { config: ConfigSii | nu
                                     <Input
                                         id="ciudad"
                                         value={data.ciudad}
-                                        onChange={(e) => setData('ciudad', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('ciudad', e.target.value)
+                                        }
                                     />
                                 </div>
                             </CardContent>
@@ -179,40 +226,65 @@ export default function ConfiguracionEmisor({ config }: { config: ConfigSii | nu
                                     Resolución SII
                                 </CardTitle>
                                 <CardDescription>
-                                    Datos de la resolución que autoriza el software.
+                                    Datos de la resolución que autoriza el
+                                    software.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                                 <div className="space-y-2">
-                                    <Label htmlFor="res_num">N° Resolución</Label>
+                                    <Label htmlFor="res_num">
+                                        N° Resolución
+                                    </Label>
                                     <Input
                                         id="res_num"
                                         type="number"
                                         value={data.resolucion_numero || ''}
-                                        onChange={(e) => setData('resolucion_numero', e.target.value ? parseInt(e.target.value) : null)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'resolucion_numero',
+                                                e.target.value
+                                                    ? parseInt(e.target.value)
+                                                    : null,
+                                            )
+                                        }
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="res_fch">Fecha Resolución</Label>
+                                    <Label htmlFor="res_fch">
+                                        Fecha Resolución
+                                    </Label>
                                     <Input
                                         id="res_fch"
                                         type="date"
                                         value={data.resolucion_fecha || ''}
-                                        onChange={(e) => setData('resolucion_fecha', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'resolucion_fecha',
+                                                e.target.value,
+                                            )
+                                        }
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="ambiente">Ambiente DTE</Label>
+                                    <Label htmlFor="ambiente">
+                                        Ambiente DTE
+                                    </Label>
                                     <Select
                                         value={data.ambiente}
-                                        onValueChange={(v) => setData('ambiente', v)}
+                                        onValueChange={(v) =>
+                                            setData('ambiente', v)
+                                        }
                                     >
                                         <SelectTrigger id="ambiente">
                                             <SelectValue placeholder="Selecciona ambiente" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="certificacion">Certificación (Pruebas)</SelectItem>
-                                            <SelectItem value="produccion">Producción (Real)</SelectItem>
+                                            <SelectItem value="certificacion">
+                                                Certificación (Pruebas)
+                                            </SelectItem>
+                                            <SelectItem value="produccion">
+                                                Producción (Real)
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -223,12 +295,20 @@ export default function ConfiguracionEmisor({ config }: { config: ConfigSii | nu
                             <div className="flex gap-3">
                                 <AlertCircle className="h-5 w-5 text-amber-500" />
                                 <p className="text-sm text-amber-800">
-                                    Asegúrate de que el RUT y ACTECO coincidan exactamente con lo registrado en el portal del SII.
+                                    Asegúrate de que el RUT y ACTECO coincidan
+                                    exactamente con lo registrado en el portal
+                                    del SII.
                                 </p>
                             </div>
-                            <Button type="submit" disabled={processing} className="min-w-[150px]">
+                            <Button
+                                type="submit"
+                                disabled={processing}
+                                className="min-w-[150px]"
+                            >
                                 <Save className="mr-2 h-4 w-4" />
-                                {processing ? 'Guardando...' : 'Guardar Cambios'}
+                                {processing
+                                    ? 'Guardando...'
+                                    : 'Guardar Cambios'}
                             </Button>
                         </div>
                     </form>

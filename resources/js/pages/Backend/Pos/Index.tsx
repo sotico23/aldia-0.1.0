@@ -1,7 +1,5 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import {
-    LayoutGrid,
-    List,
     Barcode,
     Search,
     Trash2,
@@ -23,14 +21,17 @@ import {
     RefreshCw,
     ArrowLeft,
 } from 'lucide-react';
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, {
+    useState,
+    useRef,
+    useEffect,
+    useMemo,
+    useCallback,
+} from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
@@ -219,22 +220,26 @@ export default function PosIndex({
     const [cuponDescuento, setCuponDescuento] = useState(0);
     const [cuponAplicado, setCuponAplicado] = useState(false);
     const [descuentoManualActivo, setDescuentoManualActivo] = useState(false);
-    const [tipoDescuentoManual, setTipoDescuentoManual] = useState<'fijo' | 'porcentaje'>('porcentaje');
+    const [tipoDescuentoManual, setTipoDescuentoManual] = useState<
+        'fijo' | 'porcentaje'
+    >('porcentaje');
     const [valorDescuentoManual, setValorDescuentoManual] = useState(0);
     const [incluyeIva, setIncluyeIva] = useState(true);
     const [mostrarModalPagos, setMostrarModalPagos] = useState(false);
     const [mostrandoMetodosPago, setMostrandoMetodosPago] = useState(false);
     const [cartOpen, setCartOpen] = useState(false);
-    const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
     const subtotal = useMemo(() => {
         return cart.reduce((acc, item) => {
             let envaseCost = 0;
             if (item.envase_retornable && item.envase_precio) {
-                const pend = Math.max(0, item.cantidad - (item.cantidad_retornada || 0));
+                const pend = Math.max(
+                    0,
+                    item.cantidad - (item.cantidad_retornada || 0),
+                );
                 envaseCost = pend * item.envase_precio;
             }
-            return acc + (item.precio_venta * item.cantidad) + envaseCost;
+            return acc + item.precio_venta * item.cantidad + envaseCost;
         }, 0);
     }, [cart]);
 
@@ -256,13 +261,15 @@ export default function PosIndex({
             precio: item.precio_venta,
         }));
 
-        const csrfToken = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
+        const csrfToken =
+            document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
+                ?.content ?? '';
 
         fetch('/validar-cupon', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
+                Accept: 'application/json',
                 'X-CSRF-TOKEN': csrfToken,
                 'X-Requested-With': 'XMLHttpRequest',
             },
@@ -270,24 +277,42 @@ export default function PosIndex({
         })
             .then(async (res) => {
                 if (!res.ok) {
-                    if (res.status === 419) throw new Error('Sesión expirada. Por favor recarga la página.');
-                    if (res.status === 429) throw new Error('Demasiados intentos. Intenta en unos minutos.');
+                    if (res.status === 419)
+                        throw new Error(
+                            'Sesión expirada. Por favor recarga la página.',
+                        );
+                    if (res.status === 429)
+                        throw new Error(
+                            'Demasiados intentos. Intenta en unos minutos.',
+                        );
                     throw new Error('Error al validar el cupón.');
                 }
                 return res.json();
             })
-            .then((data: { valido: boolean; descuento?: number; mensaje?: string; productos_ids?: number[]; productos_nombres?: string[] }) => {
-                setCuponValido(data.valido);
-                setCuponMensaje(data.mensaje ?? '');
-                setCuponDescuento(data.valido ? (data.descuento ?? 0) : 0);
-                setCuponAplicado(data.valido);
-                if (data.valido) {
-                    toast.success('Cupón aplicado correctamente');
-                }
-            })
+            .then(
+                (data: {
+                    valido: boolean;
+                    descuento?: number;
+                    mensaje?: string;
+                    productos_ids?: number[];
+                    productos_nombres?: string[];
+                }) => {
+                    setCuponValido(data.valido);
+                    setCuponMensaje(data.mensaje ?? '');
+                    setCuponDescuento(data.valido ? (data.descuento ?? 0) : 0);
+                    setCuponAplicado(data.valido);
+                    if (data.valido) {
+                        toast.success('Cupón aplicado correctamente');
+                    }
+                },
+            )
             .catch((error) => {
                 setCuponValido(null);
-                setCuponMensaje(error instanceof Error ? error.message : 'Error al validar el cupón.');
+                setCuponMensaje(
+                    error instanceof Error
+                        ? error.message
+                        : 'Error al validar el cupón.',
+                );
                 setCuponAplicado(false);
             })
             .finally(() => setCuponValidando(false));
@@ -301,101 +326,117 @@ export default function PosIndex({
         setCuponAplicado(false);
     }, []);
 
-    const buscarProductoSku = useCallback((codigo: string) => {
-        const codigoLimpio = codigo.trim();
-        const producto = productos.find(
-            (p) => p.codigo === codigoLimpio || String(p.id) === codigoLimpio,
-        );
-        if (producto) {
-            if (producto.tiene_variantes && producto.skus.length > 0) {
-                const sku =
-                    producto.skus.find((s) => s.sku === codigoLimpio) ||
-                    producto.skus[0];
-                return { producto, sku };
-            }
-            return { producto, sku: null };
-        }
-        return null;
-    }, [productos]);
-
-    const agregarAlCarrito = useCallback((producto: Producto, sku: Sku | null = null) => {
-        const precio = sku?.precio_venta ?? producto.precio_venta;
-        const stock = sku?.stock ?? producto.stock;
-
-        setCart((prev) => {
-            const existingIndex = prev.findIndex(
-                (item) =>
-                    item.productoId === producto.id &&
-                    item.skuId === (sku?.id ?? null),
+    const buscarProductoSku = useCallback(
+        (codigo: string) => {
+            const codigoLimpio = codigo.trim();
+            const producto = productos.find(
+                (p) =>
+                    p.codigo === codigoLimpio || String(p.id) === codigoLimpio,
             );
-            if (existingIndex >= 0) {
-                return prev.map((item, idx) =>
-                    idx === existingIndex
-                        ? {
-                            ...item,
-                            cantidad: parseFloat(
-                                (item.cantidad + 1).toFixed(3),
-                            ),
-                            cantidad_retornada: item.envase_retornable
-                                ? Math.min(Math.floor(item.cantidad + 1), (item.cantidad_retornada || 0) + 1)
-                                : item.cantidad_retornada,
-                        }
-                        : item,
-                );
+            if (producto) {
+                if (producto.tiene_variantes && producto.skus.length > 0) {
+                    const sku =
+                        producto.skus.find((s) => s.sku === codigoLimpio) ||
+                        producto.skus[0];
+                    return { producto, sku };
+                }
+                return { producto, sku: null };
             }
-            const step =
-                (producto.medida_pesable ?? false) &&
+            return null;
+        },
+        [productos],
+    );
+
+    const agregarAlCarrito = useCallback(
+        (producto: Producto, sku: Sku | null = null) => {
+            const precio = sku?.precio_venta ?? producto.precio_venta;
+            const stock = sku?.stock ?? producto.stock;
+
+            setCart((prev) => {
+                const existingIndex = prev.findIndex(
+                    (item) =>
+                        item.productoId === producto.id &&
+                        item.skuId === (sku?.id ?? null),
+                );
+                if (existingIndex >= 0) {
+                    return prev.map((item, idx) =>
+                        idx === existingIndex
+                            ? {
+                                  ...item,
+                                  cantidad: parseFloat(
+                                      (item.cantidad + 1).toFixed(3),
+                                  ),
+                                  cantidad_retornada: item.envase_retornable
+                                      ? Math.min(
+                                            Math.floor(item.cantidad + 1),
+                                            (item.cantidad_retornada || 0) + 1,
+                                        )
+                                      : item.cantidad_retornada,
+                              }
+                            : item,
+                    );
+                }
+                const step =
+                    (producto.medida_pesable ?? false) &&
                     (producto.unidad_medida === 'kg' ||
                         producto.unidad_medida === 'lt')
-                    ? 0.1
-                    : 1;
-            const skuDesc = sku
-                ? sku.variantes
-                    .map((v) => `${v.variante}: ${v.valor}`)
-                    .join(', ')
-                : null;
-            return [
-                ...prev,
-                {
-                    cartId: Math.random().toString(36).substr(2, 9),
-                    productoId: producto.id,
-                    skuId: sku?.id ?? null,
-                    nombre: producto.nombre,
-                    sku: sku?.sku ?? null,
-                    variantes: skuDesc,
-                    precio_venta: precio,
-                    cantidad: step,
-                    stock: stock,
-                    unidad_medida: producto.unidad_medida,
-                    peso_base: producto.peso_base ?? 0,
-                    contenido_por_unidad: producto.contenido_por_unidad ?? 1,
-                    medida_pesable: producto.medida_pesable,
-                    modoGramos: false,
-                    envase_retornable: (producto as any).envase_retornable,
-                    envase_precio: (producto as any).envase_precio,
-                    // Para cilindros de gas (retornables con unidad_medida='unidad' y medida_pesable=false),
-                    // cantidad_retornada se inicializa igual a la cantidad del producto
-                    // El operador puede ajustar manualmente si el cliente no devuelve todos los envases
-                    cantidad_retornada: (producto as any).envase_retornable ? step : 0,
-                },
-            ];
-        });
-    }, []);
+                        ? 0.1
+                        : 1;
+                const skuDesc = sku
+                    ? sku.variantes
+                          .map((v) => `${v.variante}: ${v.valor}`)
+                          .join(', ')
+                    : null;
+                return [
+                    ...prev,
+                    {
+                        cartId: Math.random().toString(36).substr(2, 9),
+                        productoId: producto.id,
+                        skuId: sku?.id ?? null,
+                        nombre: producto.nombre,
+                        sku: sku?.sku ?? null,
+                        variantes: skuDesc,
+                        precio_venta: precio,
+                        cantidad: step,
+                        stock: stock,
+                        unidad_medida: producto.unidad_medida,
+                        peso_base: producto.peso_base ?? 0,
+                        contenido_por_unidad:
+                            producto.contenido_por_unidad ?? 1,
+                        medida_pesable: producto.medida_pesable,
+                        modoGramos: false,
+                        envase_retornable: (producto as any).envase_retornable,
+                        envase_precio: (producto as any).envase_precio,
+                        // Para cilindros de gas (retornables con unidad_medida='unidad' y medida_pesable=false),
+                        // cantidad_retornada se inicializa igual a la cantidad del producto
+                        // El operador puede ajustar manualmente si el cliente no devuelve todos los envases
+                        cantidad_retornada: (producto as any).envase_retornable
+                            ? step
+                            : 0,
+                    },
+                ];
+            });
+        },
+        [],
+    );
 
-    const procesarCodigoBarra = useCallback((codigo: string) => {
-        const resultado = buscarProductoSku(codigo);
-        if (resultado) {
-            const { producto, sku } = resultado;
-            agregarAlCarrito(producto, sku);
-            toast.success(
-                `Agregado: ${producto.nombre}${sku ? ` (${sku.variantes.map((v) => v.valor).join(' - ')})` : ''}`,
-            );
-        } else {
-            toast.error(`Producto no encontrado: ${codigo}`);
-        }
-        setScannedCode('');
-        if (inputRef.current) inputRef.current.value = '';
-    }, [buscarProductoSku, agregarAlCarrito]);
+    const procesarCodigoBarra = useCallback(
+        (codigo: string) => {
+            const resultado = buscarProductoSku(codigo);
+            if (resultado) {
+                const { producto, sku } = resultado;
+                agregarAlCarrito(producto, sku);
+                toast.success(
+                    `Agregado: ${producto.nombre}${sku ? ` (${sku.variantes.map((v) => v.valor).join(' - ')})` : ''}`,
+                );
+            } else {
+                toast.error(`Producto no encontrado: ${codigo}`);
+            }
+            setScannedCode('');
+            if (inputRef.current) inputRef.current.value = '';
+        },
+        [buscarProductoSku, agregarAlCarrito],
+    );
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -487,8 +528,8 @@ export default function PosIndex({
                     }
                     const step =
                         (item.medida_pesable ?? false) &&
-                            (item.unidad_medida === 'kg' ||
-                                item.unidad_medida === 'lt')
+                        (item.unidad_medida === 'kg' ||
+                            item.unidad_medida === 'lt')
                             ? 0.1
                             : 1;
                     const finalDelta = delta > 0 ? step : -step;
@@ -501,7 +542,11 @@ export default function PosIndex({
                         ...item,
                         cantidad: parseFloat(nuevaCantidad.toFixed(3)),
                         cantidad_retornada: item.envase_retornable
-                            ? Math.min(maxRetornada, (item.cantidad_retornada || 0) + (delta > 0 ? Math.abs(finalDelta) : 0))
+                            ? Math.min(
+                                  maxRetornada,
+                                  (item.cantidad_retornada || 0) +
+                                      (delta > 0 ? Math.abs(finalDelta) : 0),
+                              )
                             : item.cantidad_retornada,
                     };
                 }
@@ -525,8 +570,8 @@ export default function PosIndex({
                     }
                     const step =
                         (item.medida_pesable ?? false) &&
-                            (item.unidad_medida === 'kg' ||
-                                item.unidad_medida === 'lt')
+                        (item.unidad_medida === 'kg' ||
+                            item.unidad_medida === 'lt')
                             ? 0.1
                             : 1;
                     const nuevaCantidad = Math.max(step, value || 0);
@@ -535,7 +580,13 @@ export default function PosIndex({
                         ...item,
                         cantidad: parseFloat(nuevaCantidad.toFixed(3)),
                         cantidad_retornada: item.envase_retornable
-                            ? Math.min(maxRetornada, Math.max((item.cantidad_retornada || 0), maxRetornada))
+                            ? Math.min(
+                                  maxRetornada,
+                                  Math.max(
+                                      item.cantidad_retornada || 0,
+                                      maxRetornada,
+                                  ),
+                              )
                             : item.cantidad_retornada,
                     };
                 }
@@ -549,7 +600,10 @@ export default function PosIndex({
             prev.map((item) => {
                 if (item.cartId === cartId) {
                     const max = Math.max(0, Math.floor(item.cantidad));
-                    const cantidadRetornada = Math.min(max, Math.max(0, Math.floor(value || 0)));
+                    const cantidadRetornada = Math.min(
+                        max,
+                        Math.max(0, Math.floor(value || 0)),
+                    );
                     return {
                         ...item,
                         cantidad_retornada: cantidadRetornada,
@@ -600,28 +654,55 @@ export default function PosIndex({
         [subtotal, descuento],
     );
     const iva = useMemo(
-        () => incluyeIva ? baseImponible * iva_tasa : 0,
+        () => (incluyeIva ? baseImponible * iva_tasa : 0),
         [baseImponible, iva_tasa, incluyeIva],
     );
     const descuentoManual = useMemo(() => {
-        if (!descuentoManualActivo || !valorDescuentoManual || valorDescuentoManual <= 0) return 0;
+        if (
+            !descuentoManualActivo ||
+            !valorDescuentoManual ||
+            valorDescuentoManual <= 0
+        )
+            return 0;
         if (tipoDescuentoManual === 'porcentaje') {
             return subtotal * (Math.min(valorDescuentoManual, 100) / 100);
         }
         return Math.min(valorDescuentoManual, subtotal);
-    }, [descuentoManualActivo, valorDescuentoManual, tipoDescuentoManual, subtotal]);
+    }, [
+        descuentoManualActivo,
+        valorDescuentoManual,
+        tipoDescuentoManual,
+        subtotal,
+    ]);
     const totalCuponAplicado = cuponAplicado ? cuponDescuento : 0;
-    const total = useMemo(() => Math.max(0, baseImponible + iva - descuentoManual - totalCuponAplicado), [baseImponible, iva, descuentoManual, totalCuponAplicado]);
+    const total = useMemo(
+        () =>
+            Math.max(
+                0,
+                baseImponible + iva - descuentoManual - totalCuponAplicado,
+            ),
+        [baseImponible, iva, descuentoManual, totalCuponAplicado],
+    );
 
-    const getStockForAlmacen = (producto: Producto, almacenId: string): number => {
+    const getStockForAlmacen = (
+        producto: Producto,
+        almacenId: string,
+    ): number => {
         if (!almacenId) return producto.stock || 0;
-        const inv = producto.inventarios?.find((inv) => inv.almacen_id === parseInt(almacenId));
+        const inv = producto.inventarios?.find(
+            (inv) => inv.almacen_id === parseInt(almacenId),
+        );
         return inv?.cantidad || 0;
     };
 
-    const getStockMinimoForAlmacen = (producto: Producto, almacenId: string): number => {
+    const getStockMinimoForAlmacen = (
+        producto: Producto,
+        almacenId: string,
+    ): number => {
         if (!almacenId) return producto.stock_minimo || 0;
-        const inv = producto.inventarios?.find((inv) => inv.almacen_id === parseInt(almacenId));
+        const inv = producto.inventarios?.find(
+            (inv) => inv.almacen_id === parseInt(almacenId),
+        );
         return inv?.cantidad_minima || producto.stock_minimo || 0;
     };
 
@@ -631,7 +712,9 @@ export default function PosIndex({
         // Filter by selected almacen (warehouse)
         if (almacenId) {
             filtered = filtered.filter((p) => {
-                const inv = p.inventarios?.find((inv) => inv.almacen_id === parseInt(almacenId));
+                const inv = p.inventarios?.find(
+                    (inv) => inv.almacen_id === parseInt(almacenId),
+                );
                 return inv && inv.cantidad > 0;
             });
         }
@@ -697,14 +780,21 @@ export default function PosIndex({
             incluye_iva: incluyeIva,
             descuento: descuento,
             descuento_manual: descuentoManual,
-            tipo_descuento_manual: descuentoManualActivo && valorDescuentoManual > 0 ? tipoDescuentoManual : null,
-            valor_descuento_manual: descuentoManualActivo ? valorDescuentoManual : 0,
+            tipo_descuento_manual:
+                descuentoManualActivo && valorDescuentoManual > 0
+                    ? tipoDescuentoManual
+                    : null,
+            valor_descuento_manual: descuentoManualActivo
+                ? valorDescuentoManual
+                : 0,
             almacen_id: almacenId,
             cupon_codigo: codigoCupon || undefined,
         });
 
         posForm.post('/pos', {
             preserveScroll: true,
+            onStart: () => setProcesando(true),
+            onFinish: () => setProcesando(false),
             onSuccess: (page) => {
                 const flash = (page as any)?.props?.flash ?? {};
                 const ultimaVentaId = flash.ultima_venta_id ?? null;
@@ -719,11 +809,14 @@ export default function PosIndex({
                     total: total,
                     metodoPago: metodo,
                     tipoDocumento: tipoDocumento,
-                    cupon: cuponAplicado && cuponDescuento > 0 ? {
-                        codigo: codigoCupon,
-                        nombre: codigoCupon,
-                        descuento: cuponDescuento,
-                    } : null,
+                    cupon:
+                        cuponAplicado && cuponDescuento > 0
+                            ? {
+                                  codigo: codigoCupon,
+                                  nombre: codigoCupon,
+                                  descuento: cuponDescuento,
+                              }
+                            : null,
                 });
                 vaciarCarrito();
                 limpiarCupon();
@@ -734,7 +827,9 @@ export default function PosIndex({
             onError: (errors) => {
                 // El backend es la fuente de verdad (lockForUpdate + transacciones)
                 // Si hay error de stock, mostramos el mensaje del servidor
-                const mensaje = Object.values(errors).join(' ') || 'Error al procesar la venta';
+                const mensaje =
+                    Object.values(errors).join(' ') ||
+                    'Error al procesar la venta';
                 toast.error(mensaje);
             },
         });
@@ -772,7 +867,7 @@ export default function PosIndex({
                                 <p>No se encontraron productos.</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                 {productosFiltrados.map((prod) => (
                                     <Card
                                         key={prod.id}
@@ -805,24 +900,36 @@ export default function PosIndex({
                                                     <Plus className="h-10 w-10 text-primary" />
                                                 )}
                                             </div>
-{getStockForAlmacen(prod, almacenId) > 0 &&
-                                                    getStockForAlmacen(prod, almacenId) <=
-                                                    getStockMinimoForAlmacen(prod, almacenId) && (
-                                                        <Badge
-                                                            variant="destructive"
-                                                            className="absolute top-2 right-2 text-[10px]"
-                                                        >
-                                                            Bajo stock
-                                                        </Badge>
-                                                    )}
-                                                {getStockForAlmacen(prod, almacenId) === 0 && (
+                                            {getStockForAlmacen(
+                                                prod,
+                                                almacenId,
+                                            ) > 0 &&
+                                                getStockForAlmacen(
+                                                    prod,
+                                                    almacenId,
+                                                ) <=
+                                                    getStockMinimoForAlmacen(
+                                                        prod,
+                                                        almacenId,
+                                                    ) && (
                                                     <Badge
                                                         variant="destructive"
                                                         className="absolute top-2 right-2 text-[10px]"
                                                     >
-                                                        Sin stock
+                                                        Bajo stock
                                                     </Badge>
                                                 )}
+                                            {getStockForAlmacen(
+                                                prod,
+                                                almacenId,
+                                            ) === 0 && (
+                                                <Badge
+                                                    variant="destructive"
+                                                    className="absolute top-2 right-2 text-[10px]"
+                                                >
+                                                    Sin stock
+                                                </Badge>
+                                            )}
                                         </div>
                                         <CardContent className="p-3">
                                             <div className="mb-1 truncate text-xs font-bold text-muted-foreground uppercase">
@@ -863,8 +970,14 @@ export default function PosIndex({
                                             </div>
                                             <div className="mt-1 text-xs text-muted-foreground">
                                                 Stock:{' '}
-                                                {getStockForAlmacen(prod, almacenId) > 0
-                                                    ? getStockForAlmacen(prod, almacenId)
+                                                {getStockForAlmacen(
+                                                    prod,
+                                                    almacenId,
+                                                ) > 0
+                                                    ? getStockForAlmacen(
+                                                          prod,
+                                                          almacenId,
+                                                      )
                                                     : 'Sin stock'}
                                             </div>
                                         </CardContent>
@@ -875,7 +988,7 @@ export default function PosIndex({
                     </div>
                 </div>
 
-                <div className="hidden lg:flex w-[400px] flex-col bg-muted/10">
+                <div className="hidden w-[400px] flex-col bg-muted/10 lg:flex">
                     <div className="space-y-4 border-b bg-background p-4 shadow-sm">
                         <div className="flex items-center gap-2">
                             <UserIcon className="h-4 w-4 text-muted-foreground" />
@@ -958,7 +1071,10 @@ export default function PosIndex({
                         {cart.length > 0 && (
                             <div className="flex items-center justify-between px-1">
                                 <span className="text-xs font-medium text-muted-foreground">
-                                    {cart.length} {cart.length === 1 ? 'producto' : 'productos'}
+                                    {cart.length}{' '}
+                                    {cart.length === 1
+                                        ? 'producto'
+                                        : 'productos'}
                                 </span>
                                 <Button
                                     variant="ghost"
@@ -1000,9 +1116,22 @@ export default function PosIndex({
                                                     item.precio_venta,
                                                 )}{' '}
                                                 x {item.cantidad}
-                                                {(item.medida_pesable || (item.peso_base ?? 0) > 0 || (item.contenido_por_unidad ?? 1) !== 1) && (
+                                                {(item.medida_pesable ||
+                                                    (item.peso_base ?? 0) > 0 ||
+                                                    (item.contenido_por_unidad ??
+                                                        1) !== 1) && (
                                                     <span className="ml-1 text-[10px]">
-                                                        ({(item.cantidad * (item.contenido_por_unidad ?? 1) + item.cantidad * (item.peso_base ?? 0)).toFixed(3)} {item.unidad_medida} reales)
+                                                        (
+                                                        {(
+                                                            item.cantidad *
+                                                                (item.contenido_por_unidad ??
+                                                                    1) +
+                                                            item.cantidad *
+                                                                (item.peso_base ??
+                                                                    0)
+                                                        ).toFixed(3)}{' '}
+                                                        {item.unidad_medida}{' '}
+                                                        reales)
                                                     </span>
                                                 )}
                                                 {item.stock > 0 &&
@@ -1017,7 +1146,18 @@ export default function PosIndex({
                                         <div className="flex flex-col items-end justify-between text-right">
                                             <div className="font-black text-emerald-600">
                                                 {formatCurrency(
-                                                    item.precio_venta * item.cantidad + (item.envase_retornable && item.envase_precio ? Math.max(0, item.cantidad - (item.cantidad_retornada || 0)) * item.envase_precio : 0),
+                                                    item.precio_venta *
+                                                        item.cantidad +
+                                                        (item.envase_retornable &&
+                                                        item.envase_precio
+                                                            ? Math.max(
+                                                                  0,
+                                                                  item.cantidad -
+                                                                      (item.cantidad_retornada ||
+                                                                          0),
+                                                              ) *
+                                                              item.envase_precio
+                                                            : 0),
                                                 )}
                                             </div>
                                             <div className="mt-2 flex items-center gap-1">
@@ -1036,28 +1176,76 @@ export default function PosIndex({
                                                 </Button>
                                                 <Input
                                                     type="number"
-                                                    step={item.modoGramos ? '1' : (esGrameable(item) ? '0.1' : '1')}
-                                                    min={item.modoGramos ? '1' : (esGrameable(item) ? '0.1' : '1')}
-                                                    value={item.modoGramos ? Math.round(item.cantidad * 1000) : item.cantidad}
-                                                    onChange={(e) => setCantidadItem(item.cartId, parseFloat(e.target.value) || 0)}
-                                                    className="h-7 w-16 text-center text-xs font-bold [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                    step={
+                                                        item.modoGramos
+                                                            ? '1'
+                                                            : esGrameable(item)
+                                                              ? '0.1'
+                                                              : '1'
+                                                    }
+                                                    min={
+                                                        item.modoGramos
+                                                            ? '1'
+                                                            : esGrameable(item)
+                                                              ? '0.1'
+                                                              : '1'
+                                                    }
+                                                    value={
+                                                        item.modoGramos
+                                                            ? Math.round(
+                                                                  item.cantidad *
+                                                                      1000,
+                                                              )
+                                                            : item.cantidad
+                                                    }
+                                                    onChange={(e) =>
+                                                        setCantidadItem(
+                                                            item.cartId,
+                                                            parseFloat(
+                                                                e.target.value,
+                                                            ) || 0,
+                                                        )
+                                                    }
+                                                    className="h-7 w-16 [appearance:textfield] text-center text-xs font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                                 />
                                                 <span className="text-[8px] uppercase">
                                                     {item.modoGramos
-                                                        ? (item.unidad_medida === 'kg' ? 'g' : item.unidad_medida === 'lt' ? 'ml' : 'u')
-                                                        : (esGrameable(item) ? item.unidad_medida : 'u')}
+                                                        ? item.unidad_medida ===
+                                                          'kg'
+                                                            ? 'g'
+                                                            : item.unidad_medida ===
+                                                                'lt'
+                                                              ? 'ml'
+                                                              : 'u'
+                                                        : esGrameable(item)
+                                                          ? item.unidad_medida
+                                                          : 'u'}
                                                 </span>
                                                 {esGrameable(item) && (
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
                                                         className="h-7 w-7 rounded-full bg-muted text-[9px] font-bold"
-                                                        onClick={() => toggleModoGramos(item.cartId)}
-                                                        title={item.modoGramos ? 'Cambiar a unidad completa' : 'Cambiar a gramos/ml'}
+                                                        onClick={() =>
+                                                            toggleModoGramos(
+                                                                item.cartId,
+                                                            )
+                                                        }
+                                                        title={
+                                                            item.modoGramos
+                                                                ? 'Cambiar a unidad completa'
+                                                                : 'Cambiar a gramos/ml'
+                                                        }
                                                     >
                                                         {item.modoGramos
-                                                            ? (item.unidad_medida === 'kg' ? 'kg' : 'L')
-                                                            : (item.unidad_medida === 'kg' ? 'g' : 'ml')}
+                                                            ? item.unidad_medida ===
+                                                              'kg'
+                                                                ? 'kg'
+                                                                : 'L'
+                                                            : item.unidad_medida ===
+                                                                'kg'
+                                                              ? 'g'
+                                                              : 'ml'}
                                                     </Button>
                                                 )}
                                                 <Button
@@ -1090,11 +1278,22 @@ export default function PosIndex({
                                     </div>
                                     {item.envase_retornable && (
                                         <div className="flex items-center justify-between gap-2 border-t bg-orange-50/50 p-2 dark:bg-orange-900/10">
-                                            <div className="text-[10px] font-semibold text-muted-foreground uppercase leading-tight">
+                                            <div className="text-[10px] leading-tight font-semibold text-muted-foreground uppercase">
                                                 Envases Devueltos
                                                 <br />
                                                 <span className="text-[9px] text-orange-500 normal-case">
-                                                    Faltantes: {Math.max(0, item.cantidad - (item.cantidad_retornada || 0))} se cobran a {formatCurrency(item.envase_precio || 0)} c/u
+                                                    Faltantes:{' '}
+                                                    {Math.max(
+                                                        0,
+                                                        item.cantidad -
+                                                            (item.cantidad_retornada ||
+                                                                0),
+                                                    )}{' '}
+                                                    se cobran a{' '}
+                                                    {formatCurrency(
+                                                        item.envase_precio || 0,
+                                                    )}{' '}
+                                                    c/u
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-1">
@@ -1102,23 +1301,57 @@ export default function PosIndex({
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-7 w-7 rounded-full bg-muted"
-                                                    onClick={() => setCantidadRetornada(item.cartId, Math.max(0, (item.cantidad_retornada || 0) - 1))}
+                                                    onClick={() =>
+                                                        setCantidadRetornada(
+                                                            item.cartId,
+                                                            Math.max(
+                                                                0,
+                                                                (item.cantidad_retornada ||
+                                                                    0) - 1,
+                                                            ),
+                                                        )
+                                                    }
                                                 >
                                                     <Minus className="h-3 w-3" />
                                                 </Button>
                                                 <Input
                                                     type="number"
-                                                    value={item.cantidad_retornada === undefined ? 0 : item.cantidad_retornada}
-                                                    onChange={(e) => setCantidadRetornada(item.cartId, parseFloat(e.target.value))}
-                                                    className="h-7 w-16 text-xs text-center p-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                    value={
+                                                        item.cantidad_retornada ===
+                                                        undefined
+                                                            ? 0
+                                                            : item.cantidad_retornada
+                                                    }
+                                                    onChange={(e) =>
+                                                        setCantidadRetornada(
+                                                            item.cartId,
+                                                            parseFloat(
+                                                                e.target.value,
+                                                            ),
+                                                        )
+                                                    }
+                                                    className="h-7 w-16 [appearance:textfield] p-1 text-center text-xs [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                                     min="0"
-                                                    max={Math.ceil(item.cantidad)}
+                                                    max={Math.ceil(
+                                                        item.cantidad,
+                                                    )}
                                                 />
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-7 w-7 rounded-full bg-muted"
-                                                    onClick={() => setCantidadRetornada(item.cartId, Math.min(Math.ceil(item.cantidad), (item.cantidad_retornada || 0) + 1))}
+                                                    onClick={() =>
+                                                        setCantidadRetornada(
+                                                            item.cartId,
+                                                            Math.min(
+                                                                Math.ceil(
+                                                                    item.cantidad,
+                                                                ),
+                                                                (item.cantidad_retornada ||
+                                                                    0) + 1,
+                                                            ),
+                                                        )
+                                                    }
                                                 >
                                                     <Plus className="h-3 w-3" />
                                                 </Button>
@@ -1145,26 +1378,43 @@ export default function PosIndex({
                             {cuponAplicado && cuponDescuento > 0 && (
                                 <div className="flex justify-between text-sm font-medium text-emerald-600">
                                     <span>Dto. Cupón</span>
-                                    <span>-{formatCurrency(cuponDescuento)}</span>
+                                    <span>
+                                        -{formatCurrency(cuponDescuento)}
+                                    </span>
                                 </div>
                             )}
                             {descuentoManual > 0 && (
                                 <div className="flex justify-between text-sm font-medium text-purple-600">
-                                    <span>Dto. Manual ({tipoDescuentoManual === 'porcentaje' ? `${valorDescuentoManual}%` : `$${formatCurrency(valorDescuentoManual)}`})</span>
-                                    <span>-{formatCurrency(descuentoManual)}</span>
+                                    <span>
+                                        Dto. Manual (
+                                        {tipoDescuentoManual === 'porcentaje'
+                                            ? `${valorDescuentoManual}%`
+                                            : `$${formatCurrency(valorDescuentoManual)}`}
+                                        )
+                                    </span>
+                                    <span>
+                                        -{formatCurrency(descuentoManual)}
+                                    </span>
                                 </div>
                             )}
                             <div className="flex justify-between text-sm font-medium text-muted-foreground">
-                                <span>IVA ({(iva_tasa * 100).toFixed(0)}%)</span>
+                                <span>
+                                    IVA ({(iva_tasa * 100).toFixed(0)}%)
+                                </span>
                                 <span>{formatCurrency(iva)}</span>
                             </div>
                             <div className="flex items-center gap-2 py-1">
                                 <Checkbox
                                     id="incluye-iva"
                                     checked={incluyeIva}
-                                    onCheckedChange={(checked) => setIncluyeIva(!!checked)}
+                                    onCheckedChange={(checked) =>
+                                        setIncluyeIva(!!checked)
+                                    }
                                 />
-                                <Label htmlFor="incluye-iva" className="text-xs font-medium cursor-pointer text-muted-foreground">
+                                <Label
+                                    htmlFor="incluye-iva"
+                                    className="cursor-pointer text-xs font-medium text-muted-foreground"
+                                >
                                     Incluir IVA
                                 </Label>
                             </div>
@@ -1183,10 +1433,14 @@ export default function PosIndex({
                                     checked={descuentoManualActivo}
                                     onCheckedChange={(checked) => {
                                         setDescuentoManualActivo(!!checked);
-                                        if (!checked) setValorDescuentoManual(0);
+                                        if (!checked)
+                                            setValorDescuentoManual(0);
                                     }}
                                 />
-                                <Label htmlFor="descuento-manual" className="text-sm font-medium cursor-pointer">
+                                <Label
+                                    htmlFor="descuento-manual"
+                                    className="cursor-pointer text-sm font-medium"
+                                >
                                     Descuento manual
                                 </Label>
                             </div>
@@ -1196,24 +1450,44 @@ export default function PosIndex({
                                         <Input
                                             type="number"
                                             min="0"
-                                            step={tipoDescuentoManual === 'porcentaje' ? '1' : '0.01'}
-                                            placeholder={tipoDescuentoManual === 'porcentaje' ? '% descuento' : 'Monto descuento'}
+                                            step={
+                                                tipoDescuentoManual ===
+                                                'porcentaje'
+                                                    ? '1'
+                                                    : '0.01'
+                                            }
+                                            placeholder={
+                                                tipoDescuentoManual ===
+                                                'porcentaje'
+                                                    ? '% descuento'
+                                                    : 'Monto descuento'
+                                            }
                                             value={valorDescuentoManual || ''}
-                                            onChange={(e) => setValorDescuentoManual(Number(e.target.value))}
+                                            onChange={(e) =>
+                                                setValorDescuentoManual(
+                                                    Number(e.target.value),
+                                                )
+                                            }
                                             className="h-9 text-sm"
                                             disabled={procesando}
                                         />
                                     </div>
                                     <Select
                                         value={tipoDescuentoManual}
-                                        onValueChange={(v: 'fijo' | 'porcentaje') => setTipoDescuentoManual(v)}
+                                        onValueChange={(
+                                            v: 'fijo' | 'porcentaje',
+                                        ) => setTipoDescuentoManual(v)}
                                     >
                                         <SelectTrigger className="h-9 w-[130px] text-sm">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="porcentaje">%</SelectItem>
-                                            <SelectItem value="fijo">Precio fijo</SelectItem>
+                                            <SelectItem value="porcentaje">
+                                                %
+                                            </SelectItem>
+                                            <SelectItem value="fijo">
+                                                Precio fijo
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -1227,7 +1501,9 @@ export default function PosIndex({
                                     placeholder="Código cupón"
                                     value={codigoCupon}
                                     onChange={(e) => {
-                                        setCodigoCupon(e.target.value.toUpperCase());
+                                        setCodigoCupon(
+                                            e.target.value.toUpperCase(),
+                                        );
                                         if (cuponAplicado) {
                                             setCuponAplicado(false);
                                             setCuponValido(null);
@@ -1241,7 +1517,14 @@ export default function PosIndex({
                                             validarCupon();
                                         }
                                     }}
-                                    className={'h-9 flex-1 text-sm ' + (cuponAplicado ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20' : cuponValido === false ? 'border-red-500' : '')}
+                                    className={
+                                        'h-9 flex-1 text-sm ' +
+                                        (cuponAplicado
+                                            ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20'
+                                            : cuponValido === false
+                                              ? 'border-red-500'
+                                              : '')
+                                    }
                                     disabled={procesando || cuponAplicado}
                                 />
                                 {!cuponAplicado ? (
@@ -1249,9 +1532,14 @@ export default function PosIndex({
                                         id="validate-coupon-btn"
                                         variant="default"
                                         size="sm"
-                                        className="h-9 shrink-0 bg-violet-600 hover:bg-violet-700 text-xs font-bold uppercase"
+                                        className="h-9 shrink-0 bg-violet-600 text-xs font-bold uppercase hover:bg-violet-700"
                                         onClick={validarCupon}
-                                        disabled={procesando || cuponValidando || !codigoCupon || codigoCupon.length < 3}
+                                        disabled={
+                                            procesando ||
+                                            cuponValidando ||
+                                            !codigoCupon ||
+                                            codigoCupon.length < 3
+                                        }
                                     >
                                         {cuponValidando ? (
                                             <RefreshCw className="mr-1 h-3.5 w-3.5 animate-spin" />
@@ -1273,11 +1561,24 @@ export default function PosIndex({
                                 )}
                             </div>
                             {cuponMensaje && (
-                                <p className={'text-xs flex items-center gap-1 ' + (cuponValido ? 'text-emerald-600' : 'text-red-500')}>
+                                <p
+                                    className={
+                                        'flex items-center gap-1 text-xs ' +
+                                        (cuponValido
+                                            ? 'text-emerald-600'
+                                            : 'text-red-500')
+                                    }
+                                >
                                     {cuponValido ? (
-                                        <><CheckCircle2 className="h-3 w-3 shrink-0" />{cuponMensaje}</>
+                                        <>
+                                            <CheckCircle2 className="h-3 w-3 shrink-0" />
+                                            {cuponMensaje}
+                                        </>
                                     ) : (
-                                        <><AlertTriangle className="h-3 w-3 shrink-0" />{cuponMensaje}</>
+                                        <>
+                                            <AlertTriangle className="h-3 w-3 shrink-0" />
+                                            {cuponMensaje}
+                                        </>
                                     )}
                                 </p>
                             )}
@@ -1287,9 +1588,14 @@ export default function PosIndex({
                             {!mostrandoMetodosPago ? (
                                 <>
                                     <Button
-                                        className="h-16 w-full bg-emerald-600 shadow-lg shadow-emerald-500/20 hover:bg-emerald-700 text-lg font-bold flex items-center justify-center gap-2"
-                                        disabled={cart.length === 0 || posForm.processing}
-                                        onClick={() => setMostrandoMetodosPago(true)}
+                                        className="flex h-16 w-full items-center justify-center gap-2 bg-emerald-600 text-lg font-bold shadow-lg shadow-emerald-500/20 hover:bg-emerald-700"
+                                        disabled={
+                                            cart.length === 0 ||
+                                            posForm.processing
+                                        }
+                                        onClick={() =>
+                                            setMostrandoMetodosPago(true)
+                                        }
                                     >
                                         <CreditCard className="h-6 w-6" />
                                         <span>Procesar Venta</span>
@@ -1299,8 +1605,11 @@ export default function PosIndex({
                                     </Button>
                                     <Button
                                         variant="outline"
-                                        className="h-12 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300 font-medium"
-                                        disabled={cart.length === 0 || posForm.processing}
+                                        className="h-12 w-full bg-gray-100 font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                                        disabled={
+                                            cart.length === 0 ||
+                                            posForm.processing
+                                        }
                                         onClick={vaciarCarrito}
                                     >
                                         <Trash2 className="mr-2 h-5 w-5" />
@@ -1309,11 +1618,16 @@ export default function PosIndex({
                                 </>
                             ) : (
                                 <>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                                         <Button
                                             className="h-16 flex-col gap-1 bg-blue-600 shadow-lg shadow-blue-500/20 hover:bg-blue-700"
-                                            disabled={cart.length === 0 || posForm.processing}
-                                            onClick={() => procesarPago('tarjeta')}
+                                            disabled={
+                                                cart.length === 0 ||
+                                                posForm.processing
+                                            }
+                                            onClick={() =>
+                                                procesarPago('tarjeta')
+                                            }
                                         >
                                             <CreditCard className="h-6 w-6" />
                                             <span className="text-[10px] font-bold uppercase">
@@ -1322,8 +1636,13 @@ export default function PosIndex({
                                         </Button>
                                         <Button
                                             className="h-16 flex-col gap-1 bg-emerald-600 shadow-lg shadow-emerald-500/20 hover:bg-emerald-700"
-                                            disabled={cart.length === 0 || posForm.processing}
-                                            onClick={() => procesarPago('efectivo')}
+                                            disabled={
+                                                cart.length === 0 ||
+                                                posForm.processing
+                                            }
+                                            onClick={() =>
+                                                procesarPago('efectivo')
+                                            }
                                         >
                                             <Banknote className="h-6 w-6" />
                                             <span className="text-[10px] font-bold uppercase">
@@ -1334,8 +1653,13 @@ export default function PosIndex({
 
                                     <Button
                                         className="mt-3 h-12 w-full bg-slate-600 hover:bg-slate-700"
-                                        disabled={cart.length === 0 || posForm.processing}
-                                        onClick={() => setMostrarModalPagos(true)}
+                                        disabled={
+                                            cart.length === 0 ||
+                                            posForm.processing
+                                        }
+                                        onClick={() =>
+                                            setMostrarModalPagos(true)
+                                        }
                                     >
                                         <Wallet className="mr-2 h-5 w-5" />
                                         <span className="font-bold uppercase">
@@ -1346,7 +1670,9 @@ export default function PosIndex({
                                     <Button
                                         variant="ghost"
                                         className="mt-2 h-10 w-full text-sm text-muted-foreground hover:text-foreground"
-                                        onClick={() => setMostrandoMetodosPago(false)}
+                                        onClick={() =>
+                                            setMostrandoMetodosPago(false)
+                                        }
                                     >
                                         <ArrowLeft className="mr-2 h-4 w-4" />
                                         Volver
@@ -1366,7 +1692,11 @@ export default function PosIndex({
                             <ShoppingCart className="h-6 w-6" />
                         </Button>
                     </SheetTrigger>
-                    <SheetContent aria-describedby={undefined} side="right" className="flex w-full flex-col p-0 sm:max-w-md">
+                    <SheetContent
+                        aria-describedby={undefined}
+                        side="right"
+                        className="flex w-full flex-col p-0 sm:max-w-md"
+                    >
                         <SheetHeader className="border-b px-4 py-3">
                             <SheetTitle>Carrito de Compras</SheetTitle>
                         </SheetHeader>
@@ -1399,34 +1729,54 @@ export default function PosIndex({
 
                                 <div className="flex gap-2">
                                     <Button
-                                        variant={tipoDocumento === 'boleta' ? 'default' : 'outline'}
+                                        variant={
+                                            tipoDocumento === 'boleta'
+                                                ? 'default'
+                                                : 'outline'
+                                        }
                                         size="sm"
                                         className="flex-1"
-                                        onClick={() => setTipoDocumento('boleta')}
+                                        onClick={() =>
+                                            setTipoDocumento('boleta')
+                                        }
                                     >
-                                        <Receipt className="mr-2 h-4 w-4" /> Boleta
+                                        <Receipt className="mr-2 h-4 w-4" />{' '}
+                                        Boleta
                                     </Button>
                                     <Button
-                                        variant={tipoDocumento === 'factura' ? 'default' : 'outline'}
+                                        variant={
+                                            tipoDocumento === 'factura'
+                                                ? 'default'
+                                                : 'outline'
+                                        }
                                         size="sm"
                                         className="flex-1"
-                                        onClick={() => setTipoDocumento('factura')}
+                                        onClick={() =>
+                                            setTipoDocumento('factura')
+                                        }
                                     >
-                                        <FileText className="mr-2 h-4 w-4" /> Factura
+                                        <FileText className="mr-2 h-4 w-4" />{' '}
+                                        Factura
                                     </Button>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-black uppercase text-primary/70">
+                                    <Label className="text-xs font-black text-primary/70 uppercase">
                                         Almacén de Origen
                                     </Label>
-                                    <Select value={almacenId} onValueChange={setAlmacenId}>
+                                    <Select
+                                        value={almacenId}
+                                        onValueChange={setAlmacenId}
+                                    >
                                         <SelectTrigger className="h-9">
                                             <SelectValue placeholder="Seleccionar Almacén" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {almacenes.map((a) => (
-                                                <SelectItem key={a.id} value={String(a.id)}>
+                                                <SelectItem
+                                                    key={a.id}
+                                                    value={String(a.id)}
+                                                >
                                                     {a.nombre}
                                                 </SelectItem>
                                             ))}
@@ -1439,7 +1789,10 @@ export default function PosIndex({
                                 {cart.length > 0 && (
                                     <div className="flex items-center justify-between px-1">
                                         <span className="text-xs font-medium text-muted-foreground">
-                                            {cart.length} {cart.length === 1 ? 'producto' : 'productos'}
+                                            {cart.length}{' '}
+                                            {cart.length === 1
+                                                ? 'producto'
+                                                : 'productos'}
                                         </span>
                                         <Button
                                             variant="ghost"
@@ -1456,68 +1809,163 @@ export default function PosIndex({
                                     <div className="flex h-full flex-col items-center justify-center py-20 text-muted-foreground/40">
                                         <Barcode className="mb-4 h-20 w-20" />
                                         <p className="font-bold">CAJA LISTA</p>
-                                        <p className="text-xs">Escanee o busque productos</p>
+                                        <p className="text-xs">
+                                            Escanee o busque productos
+                                        </p>
                                     </div>
                                 ) : (
                                     cart.map((item) => (
-                                        <Card key={item.cartId} className="shrink-0 overflow-hidden border-none shadow-sm">
+                                        <Card
+                                            key={item.cartId}
+                                            className="shrink-0 overflow-hidden border-none shadow-sm"
+                                        >
                                             <div className="flex gap-3 p-3">
                                                 <div className="min-w-0 flex-1">
-                                                    <div className="truncate text-sm font-bold">{item.nombre}</div>
+                                                    <div className="truncate text-sm font-bold">
+                                                        {item.nombre}
+                                                    </div>
                                                     {item.variantes && (
-                                                        <div className="text-xs text-muted-foreground">{item.variantes}</div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {item.variantes}
+                                                        </div>
                                                     )}
                                                     <div className="text-xs text-muted-foreground">
-                                                        {formatCurrency(item.precio_venta)} x {item.cantidad}
-                                                        {item.stock > 0 && item.stock <= 5 && (
-                                                            <span className="ml-1 text-orange-500">(Stock: {item.stock})</span>
-                                                        )}
+                                                        {formatCurrency(
+                                                            item.precio_venta,
+                                                        )}{' '}
+                                                        x {item.cantidad}
+                                                        {item.stock > 0 &&
+                                                            item.stock <= 5 && (
+                                                                <span className="ml-1 text-orange-500">
+                                                                    (Stock:{' '}
+                                                                    {item.stock}
+                                                                    )
+                                                                </span>
+                                                            )}
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col items-end justify-between text-right">
                                                     <div className="font-black text-emerald-600">
-                                                        {formatCurrency(item.precio_venta * item.cantidad + (item.envase_retornable && item.envase_precio ? Math.max(0, item.cantidad - (item.cantidad_retornada || 0)) * item.envase_precio : 0))}
+                                                        {formatCurrency(
+                                                            item.precio_venta *
+                                                                item.cantidad +
+                                                                (item.envase_retornable &&
+                                                                item.envase_precio
+                                                                    ? Math.max(
+                                                                          0,
+                                                                          item.cantidad -
+                                                                              (item.cantidad_retornada ||
+                                                                                  0),
+                                                                      ) *
+                                                                      item.envase_precio
+                                                                    : 0),
+                                                        )}
                                                     </div>
                                                     <div className="mt-2 flex items-center gap-1">
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
                                                             className="h-7 w-7 rounded-full bg-muted"
-                                                            onClick={() => actualizarCantidad(item.cartId, -1)}
+                                                            onClick={() =>
+                                                                actualizarCantidad(
+                                                                    item.cartId,
+                                                                    -1,
+                                                                )
+                                                            }
                                                         >
                                                             <Minus className="h-3 w-3" />
                                                         </Button>
                                                         <Input
                                                             type="number"
-                                                            step={item.modoGramos ? '1' : (esGrameable(item) ? '0.1' : '1')}
-                                                            min={item.modoGramos ? '1' : (esGrameable(item) ? '0.1' : '1')}
-                                                            value={item.modoGramos ? Math.round(item.cantidad * 1000) : item.cantidad}
-                                                            onChange={(e) => setCantidadItem(item.cartId, parseFloat(e.target.value) || 0)}
-                                                            className="h-7 w-16 text-center text-xs font-bold [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                            step={
+                                                                item.modoGramos
+                                                                    ? '1'
+                                                                    : esGrameable(
+                                                                            item,
+                                                                        )
+                                                                      ? '0.1'
+                                                                      : '1'
+                                                            }
+                                                            min={
+                                                                item.modoGramos
+                                                                    ? '1'
+                                                                    : esGrameable(
+                                                                            item,
+                                                                        )
+                                                                      ? '0.1'
+                                                                      : '1'
+                                                            }
+                                                            value={
+                                                                item.modoGramos
+                                                                    ? Math.round(
+                                                                          item.cantidad *
+                                                                              1000,
+                                                                      )
+                                                                    : item.cantidad
+                                                            }
+                                                            onChange={(e) =>
+                                                                setCantidadItem(
+                                                                    item.cartId,
+                                                                    parseFloat(
+                                                                        e.target
+                                                                            .value,
+                                                                    ) || 0,
+                                                                )
+                                                            }
+                                                            className="h-7 w-16 [appearance:textfield] text-center text-xs font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                                         />
                                                         <span className="text-[8px] uppercase">
                                                             {item.modoGramos
-                                                                ? (item.unidad_medida === 'kg' ? 'g' : item.unidad_medida === 'lt' ? 'ml' : 'u')
-                                                                : (esGrameable(item) ? item.unidad_medida : 'u')}
+                                                                ? item.unidad_medida ===
+                                                                  'kg'
+                                                                    ? 'g'
+                                                                    : item.unidad_medida ===
+                                                                        'lt'
+                                                                      ? 'ml'
+                                                                      : 'u'
+                                                                : esGrameable(
+                                                                        item,
+                                                                    )
+                                                                  ? item.unidad_medida
+                                                                  : 'u'}
                                                         </span>
                                                         {esGrameable(item) && (
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 className="h-7 w-7 rounded-full bg-muted text-[9px] font-bold"
-                                                                onClick={() => toggleModoGramos(item.cartId)}
-                                                                title={item.modoGramos ? 'Cambiar a unidad completa' : 'Cambiar a gramos/ml'}
+                                                                onClick={() =>
+                                                                    toggleModoGramos(
+                                                                        item.cartId,
+                                                                    )
+                                                                }
+                                                                title={
+                                                                    item.modoGramos
+                                                                        ? 'Cambiar a unidad completa'
+                                                                        : 'Cambiar a gramos/ml'
+                                                                }
                                                             >
                                                                 {item.modoGramos
-                                                                    ? (item.unidad_medida === 'kg' ? 'kg' : 'L')
-                                                                    : (item.unidad_medida === 'kg' ? 'g' : 'ml')}
+                                                                    ? item.unidad_medida ===
+                                                                      'kg'
+                                                                        ? 'kg'
+                                                                        : 'L'
+                                                                    : item.unidad_medida ===
+                                                                        'kg'
+                                                                      ? 'g'
+                                                                      : 'ml'}
                                                             </Button>
                                                         )}
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
                                                             className="h-7 w-7 rounded-full bg-muted"
-                                                            onClick={() => actualizarCantidad(item.cartId, 1)}
+                                                            onClick={() =>
+                                                                actualizarCantidad(
+                                                                    item.cartId,
+                                                                    1,
+                                                                )
+                                                            }
                                                         >
                                                             <Plus className="h-3 w-3" />
                                                         </Button>
@@ -1525,50 +1973,103 @@ export default function PosIndex({
                                                             variant="ghost"
                                                             size="icon"
                                                             className="ml-2 h-7 w-7 text-destructive hover:bg-destructive/10"
-                                                            onClick={() => eliminarItem(item.cartId)}
+                                                            onClick={() =>
+                                                                eliminarItem(
+                                                                    item.cartId,
+                                                                )
+                                                            }
                                                         >
                                                             <Trash2 className="h-3 w-3" />
                                                         </Button>
                                                     </div>
                                                 </div>
                                             </div>
-{item.envase_retornable && (
-                                            <div className="flex items-center justify-between gap-2 border-t bg-orange-50/50 p-2 dark:bg-orange-900/10">
-                                                <div className="text-[10px] font-semibold text-muted-foreground uppercase leading-tight">
-                                                    Envases Devueltos
-                                                    <br />
-                                                    <span className="text-[9px] text-orange-500 normal-case">
-                                                        Faltantes: {Math.max(0, item.cantidad - (item.cantidad_retornada || 0))} se cobran a {formatCurrency(item.envase_precio || 0)} c/u
-                                                    </span>
+                                            {item.envase_retornable && (
+                                                <div className="flex items-center justify-between gap-2 border-t bg-orange-50/50 p-2 dark:bg-orange-900/10">
+                                                    <div className="text-[10px] leading-tight font-semibold text-muted-foreground uppercase">
+                                                        Envases Devueltos
+                                                        <br />
+                                                        <span className="text-[9px] text-orange-500 normal-case">
+                                                            Faltantes:{' '}
+                                                            {Math.max(
+                                                                0,
+                                                                item.cantidad -
+                                                                    (item.cantidad_retornada ||
+                                                                        0),
+                                                            )}{' '}
+                                                            se cobran a{' '}
+                                                            {formatCurrency(
+                                                                item.envase_precio ||
+                                                                    0,
+                                                            )}{' '}
+                                                            c/u
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-7 w-7 rounded-full bg-muted"
+                                                            onClick={() =>
+                                                                setCantidadRetornada(
+                                                                    item.cartId,
+                                                                    Math.max(
+                                                                        0,
+                                                                        (item.cantidad_retornada ||
+                                                                            0) -
+                                                                            1,
+                                                                    ),
+                                                                )
+                                                            }
+                                                        >
+                                                            <Minus className="h-3 w-3" />
+                                                        </Button>
+                                                        <Input
+                                                            type="number"
+                                                            value={
+                                                                item.cantidad_retornada ===
+                                                                undefined
+                                                                    ? 0
+                                                                    : item.cantidad_retornada
+                                                            }
+                                                            onChange={(e) =>
+                                                                setCantidadRetornada(
+                                                                    item.cartId,
+                                                                    parseFloat(
+                                                                        e.target
+                                                                            .value,
+                                                                    ),
+                                                                )
+                                                            }
+                                                            className="h-7 w-16 [appearance:textfield] p-1 text-center text-xs [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                            min="0"
+                                                            max={Math.ceil(
+                                                                item.cantidad,
+                                                            )}
+                                                        />
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-7 w-7 rounded-full bg-muted"
+                                                            onClick={() =>
+                                                                setCantidadRetornada(
+                                                                    item.cartId,
+                                                                    Math.min(
+                                                                        Math.ceil(
+                                                                            item.cantidad,
+                                                                        ),
+                                                                        (item.cantidad_retornada ||
+                                                                            0) +
+                                                                            1,
+                                                                    ),
+                                                                )
+                                                            }
+                                                        >
+                                                            <Plus className="h-3 w-3" />
+                                                        </Button>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center gap-1">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 rounded-full bg-muted"
-                                                        onClick={() => setCantidadRetornada(item.cartId, Math.max(0, (item.cantidad_retornada || 0) - 1))}
-                                                    >
-                                                        <Minus className="h-3 w-3" />
-                                                    </Button>
-                                                    <Input
-                                                        type="number"
-                                                        value={item.cantidad_retornada === undefined ? 0 : item.cantidad_retornada}
-                                                        onChange={(e) => setCantidadRetornada(item.cartId, parseFloat(e.target.value))}
-                                                        className="h-7 w-16 text-xs text-center p-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                                        min="0"
-                                                        max={Math.ceil(item.cantidad)}
-                                                    />
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 rounded-full bg-muted"
-                                                        onClick={() => setCantidadRetornada(item.cartId, Math.min(Math.ceil(item.cantidad), (item.cantidad_retornada || 0) + 1))}
-                                                    >
-                                                        <Plus className="h-3 w-3" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        )}
+                                            )}
                                         </Card>
                                     ))
                                 )}
@@ -1583,32 +2084,46 @@ export default function PosIndex({
                                     {descuento > 0 && (
                                         <div className="flex justify-between text-sm font-medium text-orange-600">
                                             <span>Descuento</span>
-                                            <span>-{formatCurrency(descuento)}</span>
+                                            <span>
+                                                -{formatCurrency(descuento)}
+                                            </span>
                                         </div>
                                     )}
                                     {cuponAplicado && cuponDescuento > 0 && (
                                         <div className="flex justify-between text-sm font-medium text-emerald-600">
                                             <span>Dto. Cupón</span>
-                                            <span>-{formatCurrency(cuponDescuento)}</span>
+                                            <span>
+                                                -
+                                                {formatCurrency(cuponDescuento)}
+                                            </span>
                                         </div>
                                     )}
                                     <div className="flex justify-between text-sm font-medium text-muted-foreground">
-                                        <span>IVA ({(iva_tasa * 100).toFixed(0)}%)</span>
+                                        <span>
+                                            IVA ({(iva_tasa * 100).toFixed(0)}%)
+                                        </span>
                                         <span>{formatCurrency(iva)}</span>
                                     </div>
                                     <div className="flex items-center gap-2 py-1">
                                         <Checkbox
                                             id="incluye-iva-mobile"
                                             checked={incluyeIva}
-                                            onCheckedChange={(checked) => setIncluyeIva(!!checked)}
+                                            onCheckedChange={(checked) =>
+                                                setIncluyeIva(!!checked)
+                                            }
                                         />
-                                        <Label htmlFor="incluye-iva-mobile" className="text-xs font-medium cursor-pointer text-muted-foreground">
+                                        <Label
+                                            htmlFor="incluye-iva-mobile"
+                                            className="cursor-pointer text-xs font-medium text-muted-foreground"
+                                        >
                                             Incluir IVA
                                         </Label>
                                     </div>
                                     <div className="mt-2 flex justify-between border-t pt-2 text-xl font-black">
                                         <span>TOTAL</span>
-                                        <span className="text-emerald-600">{formatCurrency(total)}</span>
+                                        <span className="text-emerald-600">
+                                            {formatCurrency(total)}
+                                        </span>
                                     </div>
                                 </div>
 
@@ -1619,7 +2134,9 @@ export default function PosIndex({
                                             placeholder="Código cupón"
                                             value={codigoCupon}
                                             onChange={(e) => {
-                                                setCodigoCupon(e.target.value.toUpperCase());
+                                                setCodigoCupon(
+                                                    e.target.value.toUpperCase(),
+                                                );
                                                 if (cuponAplicado) {
                                                     setCuponAplicado(false);
                                                     setCuponValido(null);
@@ -1633,17 +2150,31 @@ export default function PosIndex({
                                                     validarCupon();
                                                 }
                                             }}
-                                            className={'h-9 flex-1 text-sm ' + (cuponAplicado ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20' : cuponValido === false ? 'border-red-500' : '')}
-                                            disabled={procesando || cuponAplicado}
+                                            className={
+                                                'h-9 flex-1 text-sm ' +
+                                                (cuponAplicado
+                                                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20'
+                                                    : cuponValido === false
+                                                      ? 'border-red-500'
+                                                      : '')
+                                            }
+                                            disabled={
+                                                procesando || cuponAplicado
+                                            }
                                         />
                                         {!cuponAplicado ? (
                                             <Button
                                                 id="validate-coupon-btn-mobile"
                                                 variant="default"
                                                 size="sm"
-                                                className="h-9 shrink-0 bg-violet-600 hover:bg-violet-700 text-xs font-bold uppercase"
+                                                className="h-9 shrink-0 bg-violet-600 text-xs font-bold uppercase hover:bg-violet-700"
                                                 onClick={validarCupon}
-                                                disabled={procesando || cuponValidando || !codigoCupon || codigoCupon.length < 3}
+                                                disabled={
+                                                    procesando ||
+                                                    cuponValidando ||
+                                                    !codigoCupon ||
+                                                    codigoCupon.length < 3
+                                                }
                                             >
                                                 {cuponValidando ? (
                                                     <RefreshCw className="mr-1 h-3.5 w-3.5 animate-spin" />
@@ -1665,11 +2196,24 @@ export default function PosIndex({
                                         )}
                                     </div>
                                     {cuponMensaje && (
-                                        <p className={'text-xs flex items-center gap-1 ' + (cuponValido ? 'text-emerald-600' : 'text-red-500')}>
+                                        <p
+                                            className={
+                                                'flex items-center gap-1 text-xs ' +
+                                                (cuponValido
+                                                    ? 'text-emerald-600'
+                                                    : 'text-red-500')
+                                            }
+                                        >
                                             {cuponValido ? (
-                                                <><CheckCircle2 className="h-3 w-3 shrink-0" />{cuponMensaje}</>
+                                                <>
+                                                    <CheckCircle2 className="h-3 w-3 shrink-0" />
+                                                    {cuponMensaje}
+                                                </>
                                             ) : (
-                                                <><AlertTriangle className="h-3 w-3 shrink-0" />{cuponMensaje}</>
+                                                <>
+                                                    <AlertTriangle className="h-3 w-3 shrink-0" />
+                                                    {cuponMensaje}
+                                                </>
                                             )}
                                         </p>
                                     )}
@@ -1678,25 +2222,33 @@ export default function PosIndex({
                                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                                     <Button
                                         className="h-16 flex-col gap-1 bg-blue-600 shadow-lg shadow-blue-500/20 hover:bg-blue-700"
-                                        disabled={cart.length === 0 || procesando}
+                                        disabled={
+                                            cart.length === 0 || procesando
+                                        }
                                         onClick={() => {
                                             procesarPago('tarjeta');
                                             setCartOpen(false);
                                         }}
                                     >
                                         <CreditCard className="h-6 w-6" />
-                                        <span className="text-[10px] font-bold uppercase">Tarjeta</span>
+                                        <span className="text-[10px] font-bold uppercase">
+                                            Tarjeta
+                                        </span>
                                     </Button>
                                     <Button
                                         className="h-16 flex-col gap-1 bg-emerald-600 shadow-lg shadow-emerald-500/20 hover:bg-emerald-700"
-                                        disabled={cart.length === 0 || procesando}
+                                        disabled={
+                                            cart.length === 0 || procesando
+                                        }
                                         onClick={() => {
                                             procesarPago('efectivo');
                                             setCartOpen(false);
                                         }}
                                     >
                                         <Banknote className="h-6 w-6" />
-                                        <span className="text-[10px] font-bold uppercase">Efectivo</span>
+                                        <span className="text-[10px] font-bold uppercase">
+                                            Efectivo
+                                        </span>
                                     </Button>
                                 </div>
 
@@ -1709,7 +2261,9 @@ export default function PosIndex({
                                     }}
                                 >
                                     <Wallet className="mr-2 h-5 w-5" />
-                                    <span className="font-bold uppercase">Otros Métodos</span>
+                                    <span className="font-bold uppercase">
+                                        Otros Métodos
+                                    </span>
                                 </Button>
                             </div>
                         </div>
@@ -1720,7 +2274,10 @@ export default function PosIndex({
                     open={mostrarModalPagos}
                     onOpenChange={setMostrarModalPagos}
                 >
-                    <DialogContent aria-describedby={undefined} className="w-[95vw] max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-3xl overflow-hidden p-6">
+                    <DialogContent
+                        aria-describedby={undefined}
+                        className="w-[95vw] max-w-md overflow-hidden p-6 sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
+                    >
                         <DialogHeader className="pb-4">
                             <DialogTitle className="flex items-center gap-2 text-lg">
                                 <Wallet className="h-5 w-5" />
@@ -1728,9 +2285,9 @@ export default function PosIndex({
                             </DialogTitle>
                         </DialogHeader>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
                             <Button
-                                className="h-20 sm:h-24 flex-col gap-2 bg-purple-600 hover:bg-purple-700 rounded-xl"
+                                className="h-20 flex-col gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 sm:h-24"
                                 disabled={cart.length === 0 || procesando}
                                 onClick={() => {
                                     procesarPago('vale');
@@ -1738,11 +2295,13 @@ export default function PosIndex({
                                 }}
                             >
                                 <Ticket className="h-6 w-6 sm:h-8 sm:w-8" />
-                                <span className="text-xs sm:text-sm font-bold leading-tight uppercase tracking-wider">Vales</span>
+                                <span className="text-xs leading-tight font-bold tracking-wider uppercase sm:text-sm">
+                                    Vales
+                                </span>
                             </Button>
 
                             <Button
-                                className="h-20 sm:h-24 flex-col gap-2 bg-indigo-600 hover:bg-indigo-700 rounded-xl"
+                                className="h-20 flex-col gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 sm:h-24"
                                 disabled={cart.length === 0 || procesando}
                                 onClick={() => {
                                     procesarPago('transferencia');
@@ -1750,11 +2309,13 @@ export default function PosIndex({
                                 }}
                             >
                                 <Building2 className="h-6 w-6 sm:h-8 sm:w-8" />
-                                <span className="text-xs sm:text-sm font-bold leading-tight uppercase tracking-wider">Transferencia</span>
+                                <span className="text-xs leading-tight font-bold tracking-wider uppercase sm:text-sm">
+                                    Transferencia
+                                </span>
                             </Button>
 
                             <Button
-                                className="h-20 sm:h-24 flex-col gap-2 bg-orange-600 hover:bg-orange-700 rounded-xl"
+                                className="h-20 flex-col gap-2 rounded-xl bg-orange-600 hover:bg-orange-700 sm:h-24"
                                 disabled={cart.length === 0 || procesando}
                                 onClick={() => {
                                     procesarPago('visa_transbank');
@@ -1762,25 +2323,32 @@ export default function PosIndex({
                                 }}
                             >
                                 <CreditCard className="h-6 w-6 sm:h-8 sm:w-8" />
-                                <span className="text-xs sm:text-sm font-bold leading-tight uppercase tracking-wider">Visa Transbank</span>
+                                <span className="text-xs leading-tight font-bold tracking-wider uppercase sm:text-sm">
+                                    Visa Transbank
+                                </span>
                             </Button>
 
                             <Button
-                                className="h-20 sm:h-24 flex-col gap-2 bg-yellow-500 hover:bg-yellow-600 rounded-xl"
+                                className="h-20 flex-col gap-2 rounded-xl bg-yellow-500 hover:bg-yellow-600 sm:h-24"
                                 disabled={cart.length === 0 || procesando}
                                 onClick={() => {
                                     procesarPago('binance');
                                     setMostrarModalPagos(false);
                                 }}
                             >
-                                <svg viewBox="0 0 24 24" className="h-6 w-6 sm:h-8 sm:w-8 fill-current">
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    className="h-6 w-6 fill-current sm:h-8 sm:w-8"
+                                >
                                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 13.53l-1.41-1.41-3.64 3.64-1.41-1.41-1.41 1.41 2.82 2.82 4.24-4.24-1.41-1.41z" />
                                 </svg>
-                                <span className="text-xs sm:text-sm font-bold leading-tight uppercase tracking-wider">Binance</span>
+                                <span className="text-xs leading-tight font-bold tracking-wider uppercase sm:text-sm">
+                                    Binance
+                                </span>
                             </Button>
 
                             <Button
-                                className="col-span-1 sm:col-span-2 lg:col-span-1 xl:col-span-1 h-16 sm:h-20 flex-col gap-2 bg-slate-700 hover:bg-slate-800 rounded-xl"
+                                className="col-span-1 h-16 flex-col gap-2 rounded-xl bg-slate-700 hover:bg-slate-800 sm:col-span-2 sm:h-20 lg:col-span-1 xl:col-span-1"
                                 disabled={cart.length === 0 || procesando}
                                 onClick={() => {
                                     procesarPago('contactar');
@@ -1788,12 +2356,19 @@ export default function PosIndex({
                                 }}
                             >
                                 <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
-                                <span className="text-xs sm:text-sm font-bold leading-tight uppercase tracking-wider">Contactar con Administración</span>
+                                <span className="text-xs leading-tight font-bold tracking-wider uppercase sm:text-sm">
+                                    Contactar con Administración
+                                </span>
                             </Button>
                         </div>
 
                         <DialogFooter className="pt-2">
-                            <Button variant="outline" size="sm" onClick={() => setMostrarModalPagos(false)} className="w-full sm:w-auto">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setMostrarModalPagos(false)}
+                                className="w-full sm:w-auto"
+                            >
                                 Cancelar
                             </Button>
                         </DialogFooter>
@@ -1802,9 +2377,14 @@ export default function PosIndex({
 
                 <Dialog
                     open={!!productoSeleccionado}
-                    onOpenChange={(open) => !open && setProductoSeleccionado(null)}
+                    onOpenChange={(open) =>
+                        !open && setProductoSeleccionado(null)
+                    }
                 >
-                    <DialogContent aria-describedby={undefined} className="w-[95vw] max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl">
+                    <DialogContent
+                        aria-describedby={undefined}
+                        className="w-[95vw] max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl"
+                    >
                         <DialogHeader>
                             <DialogTitle className="flex items-center gap-2">
                                 <Package className="h-5 w-5" />
@@ -1826,49 +2406,56 @@ export default function PosIndex({
                                         SKU / Variante
                                     </Label>
                                     <div className="grid max-h-[300px] grid-cols-1 gap-2 overflow-y-auto">
-                                        {productoSeleccionado.skus?.map((sku) => (
-                                            <div
-                                                key={sku.id}
-                                                className={`cursor-pointer rounded-lg border p-3 transition-all ${skuSeleccionado?.id === sku.id
-                                                        ? 'border-primary bg-primary/10'
-                                                        : sku.stock === 0
-                                                            ? 'cursor-not-allowed opacity-50'
-                                                            : 'hover:border-muted-foreground'
+                                        {productoSeleccionado.skus?.map(
+                                            (sku) => (
+                                                <div
+                                                    key={sku.id}
+                                                    className={`cursor-pointer rounded-lg border p-3 transition-all ${
+                                                        skuSeleccionado?.id ===
+                                                        sku.id
+                                                            ? 'border-primary bg-primary/10'
+                                                            : sku.stock === 0
+                                                              ? 'cursor-not-allowed opacity-50'
+                                                              : 'hover:border-muted-foreground'
                                                     }`}
-                                                onClick={() =>
-                                                    sku.stock > 0 &&
-                                                    setSkuSeleccionado(sku)
-                                                }
-                                            >
-                                                <div className="flex items-start justify-between">
-                                                    <div>
-                                                        <p className="font-medium">
-                                                            {sku.sku}
-                                                        </p>
-                                                        <p className="text-sm text-muted-foreground">
-                                                            {sku.variantes
-                                                                .map(
-                                                                    (v) =>
-                                                                        `${v.variante}: ${v.valor}`,
-                                                                )
-                                                                .join(' | ')}
-                                                        </p>
-                                                        <p
-                                                            className={`text-sm ${sku.stock > 0 ? 'text-emerald-600' : 'text-destructive'}`}
-                                                        >
-                                                            Stock: {sku.stock}
-                                                        </p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="font-bold text-emerald-600">
-                                                            {formatCurrency(
-                                                                sku.precio_venta,
-                                                            )}
-                                                        </p>
+                                                    onClick={() =>
+                                                        sku.stock > 0 &&
+                                                        setSkuSeleccionado(sku)
+                                                    }
+                                                >
+                                                    <div className="flex items-start justify-between">
+                                                        <div>
+                                                            <p className="font-medium">
+                                                                {sku.sku}
+                                                            </p>
+                                                            <p className="text-sm text-muted-foreground">
+                                                                {sku.variantes
+                                                                    .map(
+                                                                        (v) =>
+                                                                            `${v.variante}: ${v.valor}`,
+                                                                    )
+                                                                    .join(
+                                                                        ' | ',
+                                                                    )}
+                                                            </p>
+                                                            <p
+                                                                className={`text-sm ${sku.stock > 0 ? 'text-emerald-600' : 'text-destructive'}`}
+                                                            >
+                                                                Stock:{' '}
+                                                                {sku.stock}
+                                                            </p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="font-bold text-emerald-600">
+                                                                {formatCurrency(
+                                                                    sku.precio_venta,
+                                                                )}
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            ),
+                                        )}
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
@@ -1896,15 +2483,24 @@ export default function PosIndex({
                 </Dialog>
 
                 {ultimaVenta && (
-                    <Dialog open={true} onOpenChange={() => setUltimaVenta(null)}>
-                        <DialogContent aria-describedby={undefined} className="sm:max-w-lg">
+                    <Dialog
+                        open={true}
+                        onOpenChange={() => setUltimaVenta(null)}
+                    >
+                        <DialogContent
+                            aria-describedby={undefined}
+                            className="sm:max-w-lg"
+                        >
                             <DialogHeader className="px-6 pt-6">
                                 <DialogTitle className="flex items-center gap-2">
                                     <Receipt className="h-5 w-5" />
                                     Venta Completada
                                 </DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-4 overflow-y-auto px-6 pb-6" style={{ maxHeight: 'calc(85vh - 8rem)' }}>
+                            <div
+                                className="space-y-4 overflow-y-auto px-6 pb-6"
+                                style={{ maxHeight: 'calc(85vh - 8rem)' }}
+                            >
                                 <div className="border-b pb-4 text-center">
                                     <p className="text-sm text-muted-foreground">
                                         Número de Ticket
@@ -1933,7 +2529,18 @@ export default function PosIndex({
                                             </div>
                                             <p className="font-bold">
                                                 {formatCurrency(
-                                                    item.precio_venta * item.cantidad + (item.envase_retornable && item.envase_precio ? Math.max(0, item.cantidad - (item.cantidad_retornada || 0)) * item.envase_precio : 0),
+                                                    item.precio_venta *
+                                                        item.cantidad +
+                                                        (item.envase_retornable &&
+                                                        item.envase_precio
+                                                            ? Math.max(
+                                                                  0,
+                                                                  item.cantidad -
+                                                                      (item.cantidad_retornada ||
+                                                                          0),
+                                                              ) *
+                                                              item.envase_precio
+                                                            : 0),
                                                 )}
                                             </p>
                                         </div>
@@ -1951,9 +2558,15 @@ export default function PosIndex({
                                     </div>
                                     {ultimaVenta.cupon && (
                                         <div className="flex justify-between text-orange-600">
-                                            <span>Cupón: {ultimaVenta.cupon.codigo}</span>
                                             <span>
-                                                -{formatCurrency(ultimaVenta.cupon.descuento)}
+                                                Cupón:{' '}
+                                                {ultimaVenta.cupon.codigo}
+                                            </span>
+                                            <span>
+                                                -
+                                                {formatCurrency(
+                                                    ultimaVenta.cupon.descuento,
+                                                )}
                                             </span>
                                         </div>
                                     )}
@@ -1983,7 +2596,9 @@ export default function PosIndex({
                                 </div>
 
                                 <div className="text-center text-sm text-muted-foreground">
-                                    <p>Método de pago: {ultimaVenta.metodoPago}</p>
+                                    <p>
+                                        Método de pago: {ultimaVenta.metodoPago}
+                                    </p>
                                     <p>
                                         Documento:{' '}
                                         {ultimaVenta.tipoDocumento
@@ -2004,7 +2619,12 @@ export default function PosIndex({
                                             }}
                                         >
                                             <FileText className="h-4 w-4" />
-                                            Emitir DTE ({ultimaVenta.tipoDocumento === 'factura' ? 'Factura Electrónica' : 'Boleta Electrónica'})
+                                            Emitir DTE (
+                                            {ultimaVenta.tipoDocumento ===
+                                            'factura'
+                                                ? 'Factura Electrónica'
+                                                : 'Boleta Electrónica'}
+                                            )
                                         </Button>
                                     )}
 
@@ -2039,7 +2659,10 @@ export default function PosIndex({
                         }
                     }}
                 >
-                    <DialogContent aria-describedby={undefined} className="w-[95vw] max-w-md sm:max-w-md overflow-y-auto p-6">
+                    <DialogContent
+                        aria-describedby={undefined}
+                        className="w-[95vw] max-w-md overflow-y-auto p-6 sm:max-w-md"
+                    >
                         <DialogHeader>
                             <DialogTitle className="flex items-center gap-2">
                                 <FileText className="h-5 w-5" />
@@ -2050,10 +2673,11 @@ export default function PosIndex({
                         {dteResultado ? (
                             <div className="space-y-4">
                                 <div
-                                    className={`flex items-center gap-3 rounded-lg p-4 ${dteResultado.success
+                                    className={`flex items-center gap-3 rounded-lg p-4 ${
+                                        dteResultado.success
                                             ? 'bg-emerald-50 text-emerald-800'
                                             : 'bg-red-50 text-red-800'
-                                        }`}
+                                    }`}
                                 >
                                     {dteResultado.success ? (
                                         <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-500" />
@@ -2093,12 +2717,13 @@ export default function PosIndex({
                                 <p className="text-sm text-muted-foreground">
                                     Se emitirá un DTE tipo{' '}
                                     <strong>
-                                        {ultimaVenta?.tipoDocumento === 'factura'
+                                        {ultimaVenta?.tipoDocumento ===
+                                        'factura'
                                             ? 'Factura Electrónica (Tipo 33)'
                                             : 'Boleta Electrónica (Tipo 39)'}
                                     </strong>{' '}
-                                    para esta venta. Se asignará un folio SII y se
-                                    generará el XML firmado.
+                                    para esta venta. Se asignará un folio SII y
+                                    se generará el XML firmado.
                                 </p>
                                 <div className="rounded-lg border bg-muted/30 p-3 text-sm">
                                     <p>
@@ -2115,7 +2740,8 @@ export default function PosIndex({
                                         <span className="font-medium text-muted-foreground">
                                             Documento:
                                         </span>{' '}
-                                        {ultimaVenta?.tipoDocumento === 'factura'
+                                        {ultimaVenta?.tipoDocumento ===
+                                        'factura'
                                             ? 'Factura'
                                             : 'Boleta'}
                                     </p>
@@ -2156,9 +2782,7 @@ export default function PosIndex({
                                                     estado: data.dte?.estado,
                                                 });
                                                 if (data.success) {
-                                                    toast.success(
-                                                        data.message,
-                                                    );
+                                                    toast.success(data.message);
                                                 } else {
                                                     toast.error(data.message);
                                                 }

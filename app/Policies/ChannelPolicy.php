@@ -1,10 +1,12 @@
 <?php
+
 /**
  * Channel Policy - Handles channel authorization
  */
 
 namespace App\Policies;
 
+use App\Models\Conversacion;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
@@ -41,8 +43,8 @@ class ChannelPolicy
      */
     public function joinConversationChannel(User $user, int $conversationId): bool
     {
-        $conversacion = \App\Models\Conversacion::find($conversationId);
-        
+        $conversacion = Conversacion::find($conversationId);
+
         if (! $conversacion) {
             return false;
         }

@@ -18,7 +18,7 @@ import {
     Navigation,
     Users,
     LayoutGrid,
-    List
+    List,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
@@ -38,8 +38,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import {
-} from '@/components/ui/dropdown-menu';
+import {} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Pagination from '@/components/ui/Pagination';
@@ -162,7 +161,7 @@ export default function Index({
     filters: any;
     grupos_trabajo?: GrupoTrabajo[];
 }) {
-    const { code: countryCode, currency } = useCountry();
+    const { currency } = useCountry();
     const { hasPermission } = usePermissions();
     const canCreate = hasPermission('flota.entregas.create');
     const canEdit = hasPermission('flota.entregas.edit');
@@ -270,9 +269,13 @@ export default function Index({
             if (grupo.conductores && grupo.conductores.length > 0) {
                 setData('conductor_id', grupo.conductores[0].id.toString());
             }
-            const miembros = grupo.miembros?.map((m) => m.name).join(', ') || '';
+            const miembros =
+                grupo.miembros?.map((m) => m.name).join(', ') || '';
             if (miembros) {
-                setData('notas', `Grupo: ${grupo.nombre} — Equipo: ${miembros}`);
+                setData(
+                    'notas',
+                    `Grupo: ${grupo.nombre} — Equipo: ${miembros}`,
+                );
             }
         }
     };
@@ -308,7 +311,8 @@ export default function Index({
             venta_id: data.venta_id === '' ? null : data.venta_id,
             vehiculo_id: data.vehiculo_id === '' ? null : data.vehiculo_id,
             conductor_id: data.conductor_id === '' ? null : data.conductor_id,
-            grupo_trabajo_id: data.grupo_trabajo_id === '' ? null : data.grupo_trabajo_id,
+            grupo_trabajo_id:
+                data.grupo_trabajo_id === '' ? null : data.grupo_trabajo_id,
             productos_json: productosJson,
         };
 
@@ -436,7 +440,8 @@ export default function Index({
                                     onClick={handleNew}
                                     className="h-11 rounded-xl px-6 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
                                 >
-                                    <Truck className="mr-2 h-5 w-5" /> Nuevo Despacho
+                                    <Truck className="mr-2 h-5 w-5" /> Nuevo
+                                    Despacho
                                 </Button>
                             )}
                         </div>
@@ -502,12 +507,27 @@ export default function Index({
                                 <div>
                                     <CardTitle>Entregas</CardTitle>
                                     <CardDescription>
-                                        {entregasFiltradas.length} entregas encontradas
+                                        {entregasFiltradas.length} entregas
+                                        encontradas
                                     </CardDescription>
                                 </div>
                                 <div className="flex gap-1 rounded-lg border p-0.5">
-                                    <button type="button" onClick={() => setViewMode('table')} className={`rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${viewMode === 'table' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`} title="Vista tabla"><List className="h-4 w-4" /></button>
-                                    <button type="button" onClick={() => setViewMode('cards')} className={`rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${viewMode === 'cards' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`} title="Vista tarjetas"><LayoutGrid className="h-4 w-4" /></button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setViewMode('table')}
+                                        className={`rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${viewMode === 'table' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                        title="Vista tabla"
+                                    >
+                                        <List className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setViewMode('cards')}
+                                        className={`rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${viewMode === 'cards' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                        title="Vista tarjetas"
+                                    >
+                                        <LayoutGrid className="h-4 w-4" />
+                                    </button>
                                 </div>
                             </div>
                         </CardHeader>
@@ -525,9 +545,8 @@ export default function Index({
                                                     busqueda: e.target.value,
                                                 })
                                             }
-                                            className="h-9 pl-8 pr-8"
+                                            className="h-9 pr-8 pl-8"
                                         />
-
                                     </div>
                                 </div>
                                 <Select
@@ -607,34 +626,113 @@ export default function Index({
                                     <table className="w-full text-xs sm:text-sm">
                                         <thead>
                                             <tr className="border-b">
-                                                <th className="py-2 text-left font-medium">Pedido / Cliente</th>
-                                                <th className="py-2 text-left font-medium">Dirección</th>
-                                                <th className="py-2 text-left font-medium">Fecha</th>
-                                                <th className="py-2 text-center font-medium">Estado</th>
-                                                <th className="py-2 text-right font-medium">Acciones</th>
+                                                <th className="py-2 text-left font-medium">
+                                                    Pedido / Cliente
+                                                </th>
+                                                <th className="py-2 text-left font-medium">
+                                                    Dirección
+                                                </th>
+                                                <th className="py-2 text-left font-medium">
+                                                    Fecha
+                                                </th>
+                                                <th className="py-2 text-center font-medium">
+                                                    Estado
+                                                </th>
+                                                <th className="py-2 text-right font-medium">
+                                                    Acciones
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {entregasFiltradas.map((e) => (
-                                                <tr key={e.id} className="border-b transition-colors hover:bg-muted/30">
+                                                <tr
+                                                    key={e.id}
+                                                    className="border-b transition-colors hover:bg-muted/30"
+                                                >
                                                     <td className="py-2">
-                                                        <div className="font-bold">#{e.venta_id || '-'}</div>
-                                                        <div className="text-[10px] text-muted-foreground uppercase">{e.cliente || '-'}</div>
+                                                        <div className="font-bold">
+                                                            #{e.venta_id || '-'}
+                                                        </div>
+                                                        <div className="text-[10px] text-muted-foreground uppercase">
+                                                            {e.cliente || '-'}
+                                                        </div>
                                                     </td>
-                                                    <td className="py-2"><div className="line-clamp-1 text-[10px]">{e.direccion || '-'}</div></td>
-                                                    <td className="py-2"><div className="text-[10px]">{e.fecha_entrega ? e.fecha_entrega.split('T')[0] : '-'}</div></td>
-                                                    <td className="py-2 text-center">{getEstadoBadge(e.estado)}</td>
+                                                    <td className="py-2">
+                                                        <div className="line-clamp-1 text-[10px]">
+                                                            {e.direccion || '-'}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-2">
+                                                        <div className="text-[10px]">
+                                                            {e.fecha_entrega
+                                                                ? e.fecha_entrega.split(
+                                                                      'T',
+                                                                  )[0]
+                                                                : '-'}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-2 text-center">
+                                                        {getEstadoBadge(
+                                                            e.estado,
+                                                        )}
+                                                    </td>
                                                     <td className="py-2 text-right">
                                                         <div className="flex justify-end gap-1">
-                                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700" onClick={() => handleVer(e)} title="Ver Detalles"><Eye className="h-4 w-4" /></Button>
-                                                            {canEdit && <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(e)} title="Editar"><Pencil className="h-4 w-4" /></Button>}
-                                                            {canDelete && <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(e.id)}><Trash2 className="h-4 w-4" /></Button>}
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                                onClick={() =>
+                                                                    handleVer(e)
+                                                                }
+                                                                title="Ver Detalles"
+                                                            >
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                            {canEdit && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0"
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            e,
+                                                                        )
+                                                                    }
+                                                                    title="Editar"
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {canDelete && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            e.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>
                                             ))}
                                             {entregasFiltradas.length === 0 && (
-                                                <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">No se encontraron entregas con los filtros aplicados</td></tr>
+                                                <tr>
+                                                    <td
+                                                        colSpan={5}
+                                                        className="py-8 text-center text-muted-foreground"
+                                                    >
+                                                        No se encontraron
+                                                        entregas con los filtros
+                                                        aplicados
+                                                    </td>
+                                                </tr>
                                             )}
                                         </tbody>
                                     </table>
@@ -642,7 +740,10 @@ export default function Index({
                             ) : (
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                     {entregasFiltradas.map((e) => (
-                                        <Card key={e.id} className="overflow-hidden border-muted/80 transition-all hover:shadow-md">
+                                        <Card
+                                            key={e.id}
+                                            className="overflow-hidden border-muted/80 transition-all hover:shadow-md"
+                                        >
                                             <CardHeader className="pb-2">
                                                 <div className="flex items-start justify-between">
                                                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -651,29 +752,77 @@ export default function Index({
                                                     {getEstadoBadge(e.estado)}
                                                 </div>
                                                 <div className="mt-2">
-                                                    <span className="font-bold">#{e.venta_id || '-'}</span>
-                                                    <p className="text-sm text-muted-foreground">{e.cliente || 'Sin cliente'}</p>
+                                                    <span className="font-bold">
+                                                        #{e.venta_id || '-'}
+                                                    </span>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {e.cliente ||
+                                                            'Sin cliente'}
+                                                    </p>
                                                 </div>
                                             </CardHeader>
-                                            <CardContent className="space-y-2 text-sm pb-3">
+                                            <CardContent className="space-y-2 pb-3 text-sm">
                                                 <div className="flex items-center gap-2 text-muted-foreground">
                                                     <MapPin className="h-3.5 w-3.5 shrink-0" />
-                                                    <span className="text-xs line-clamp-1">{e.direccion || 'Sin dirección'}</span>
+                                                    <span className="line-clamp-1 text-xs">
+                                                        {e.direccion ||
+                                                            'Sin dirección'}
+                                                    </span>
                                                 </div>
                                                 <div className="flex items-center gap-2 text-muted-foreground">
                                                     <Calendar className="h-3.5 w-3.5 shrink-0" />
-                                                    <span className="text-xs">{e.fecha_entrega ? e.fecha_entrega.split('T')[0] : 'Sin fecha'}</span>
+                                                    <span className="text-xs">
+                                                        {e.fecha_entrega
+                                                            ? e.fecha_entrega.split(
+                                                                  'T',
+                                                              )[0]
+                                                            : 'Sin fecha'}
+                                                    </span>
                                                 </div>
                                             </CardContent>
-                                            <div className="border-t bg-muted/20 p-3 flex justify-end gap-1">
-                                                <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => handleVer(e)} title="Ver"><Eye className="h-4 w-4" /></Button>
-                                                {canEdit && <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(e)} title="Editar"><Pencil className="h-4 w-4" /></Button>}
-                                                {canDelete && <Button variant="outline" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(e.id)}><Trash2 className="h-4 w-4" /></Button>}
+                                            <div className="flex justify-end gap-1 border-t bg-muted/20 p-3">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-8 w-8 p-0"
+                                                    onClick={() => handleVer(e)}
+                                                    title="Ver"
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
+                                                {canEdit && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="h-8 w-8 p-0"
+                                                        onClick={() =>
+                                                            handleEdit(e)
+                                                        }
+                                                        title="Editar"
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                                {canDelete && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                        onClick={() =>
+                                                            handleDelete(e.id)
+                                                        }
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
                                             </div>
                                         </Card>
                                     ))}
                                     {entregasFiltradas.length === 0 && (
-                                        <div className="col-span-full py-8 text-center text-muted-foreground">No se encontraron entregas con los filtros aplicados</div>
+                                        <div className="col-span-full py-8 text-center text-muted-foreground">
+                                            No se encontraron entregas con los
+                                            filtros aplicados
+                                        </div>
                                     )}
                                 </div>
                             )}
@@ -684,7 +833,6 @@ export default function Index({
                         </CardContent>
                     </Card>
                 </div>
-
             </AppLayout>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto border-none bg-background p-0 shadow-2xl md:max-w-2xl">
@@ -720,7 +868,8 @@ export default function Index({
                                                     value={g.id.toString()}
                                                 >
                                                     {g.nombre}
-                                                    {g.conductores && g.conductores.length > 0
+                                                    {g.conductores &&
+                                                    g.conductores.length > 0
                                                         ? ` — ${g.conductores[0].nombre}`
                                                         : ''}
                                                 </SelectItem>
@@ -1200,22 +1349,35 @@ export default function Index({
                                                                 </Badge>
                                                             </div>
                                                             <div className="grid grid-cols-3 gap-2">
-                                                                <div className={`flex flex-col items-center justify-center rounded-lg p-2 text-center ring-1 md:rounded-xl md:p-2 ${item.unidad_medida === 'kg' ? 'bg-blue-500/5 ring-blue-500/10' : 'bg-cyan-500/5 ring-cyan-500/10'}`}>
-                                                                    {item.unidad_medida === 'kg' ? (
+                                                                <div
+                                                                    className={`flex flex-col items-center justify-center rounded-lg p-2 text-center ring-1 md:rounded-xl md:p-2 ${item.unidad_medida === 'kg' ? 'bg-blue-500/5 ring-blue-500/10' : 'bg-cyan-500/5 ring-cyan-500/10'}`}
+                                                                >
+                                                                    {item.unidad_medida ===
+                                                                    'kg' ? (
                                                                         <Scale className="mb-0.5 h-2.5 w-2.5 text-blue-500 md:h-3 md:w-3" />
                                                                     ) : (
                                                                         <Droplets className="mb-0.5 h-2.5 w-2.5 text-cyan-500 md:h-3 md:w-3" />
                                                                     )}
-                                                                    <p className={`text-[8px] font-black uppercase md:text-[8px] ${item.unidad_medida === 'kg' ? 'text-blue-600/60' : 'text-cyan-600/60'}`}>
-                                                                        {item.unidad_medida?.toUpperCase() === 'KG' ? 'Kilos' : 'Litros'}
+                                                                    <p
+                                                                        className={`text-[8px] font-black uppercase md:text-[8px] ${item.unidad_medida === 'kg' ? 'text-blue-600/60' : 'text-cyan-600/60'}`}
+                                                                    >
+                                                                        {item.unidad_medida?.toUpperCase() ===
+                                                                        'KG'
+                                                                            ? 'Kilos'
+                                                                            : 'Litros'}
                                                                     </p>
-                                                                    <p className={`text-xs font-black md:text-sm ${item.unidad_medida === 'kg' ? 'text-blue-700' : 'text-cyan-700'}`}>
+                                                                    <p
+                                                                        className={`text-xs font-black md:text-sm ${item.unidad_medida === 'kg' ? 'text-blue-700' : 'text-cyan-700'}`}
+                                                                    >
                                                                         {Number(
                                                                             item.subtotal_metrica,
                                                                         ).toFixed(
                                                                             1,
                                                                         )}
-                                                                        {item.unidad_medida?.toUpperCase() === 'KG' ? 'kg' : 'L'}
+                                                                        {item.unidad_medida?.toUpperCase() ===
+                                                                        'KG'
+                                                                            ? 'kg'
+                                                                            : 'L'}
                                                                     </p>
                                                                 </div>
                                                                 <div className="flex flex-col items-center justify-center rounded-lg bg-orange-500/5 p-2 text-center ring-1 ring-orange-500/10 md:rounded-xl md:p-2">
@@ -1432,7 +1594,6 @@ export default function Index({
                     )}
                 </DialogContent>
             </Dialog>
-
         </>
     );
 }

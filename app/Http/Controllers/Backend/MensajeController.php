@@ -141,11 +141,12 @@ class MensajeController extends Controller
             }
 
             $senderId = Auth::id();
+            $ownerId = Auth::user()->getOwnerId();
             $receiverId = $request->receiver_id;
             $receiver = User::find($receiverId);
 
-            // Verificar que el receptor existe
-            if (! $receiver) {
+            // Verificar que el receptor existe y pertenece a la misma empresa
+            if (! $receiver || $receiver->getOwnerId() !== $ownerId) {
                 return response()->json(['error' => 'Usuario receptor no encontrado'], 404);
             }
 

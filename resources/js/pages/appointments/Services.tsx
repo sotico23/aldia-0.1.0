@@ -1,5 +1,19 @@
 import { Head, useForm, router } from '@inertiajs/react';
-import { Edit, Trash2, Plus, Eye, X, Clock, DollarSign, ImageIcon, Calendar, ChevronDown, TrendingUp, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
+import {
+    Edit,
+    Trash2,
+    Plus,
+    Eye,
+    X,
+    Clock,
+    DollarSign,
+    ImageIcon,
+    Calendar,
+    ChevronDown,
+    TrendingUp,
+    BarChart3,
+    PieChart as PieChartIcon,
+} from 'lucide-react';
 import { useState, useRef } from 'react';
 import {
     BarChart,
@@ -17,31 +31,73 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-    Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-    Popover, PopoverContent, PopoverTrigger,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
 } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import {
-    Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 
-const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#14b8a6', '#f97316'];
+const COLORS = [
+    '#6366f1',
+    '#22c55e',
+    '#f59e0b',
+    '#3b82f6',
+    '#ef4444',
+    '#8b5cf6',
+    '#14b8a6',
+    '#f97316',
+];
 
-export default function Services({ services, categorias, employees, stats, popularServices, serviceCategories }: {
+export default function Services({
+    services,
+    categorias,
+    employees,
+    stats,
+    popularServices,
+    serviceCategories,
+}: {
     services: any[];
     categorias: any[];
-    employees: { id: number, name: string, email: string }[];
-    stats: { total: number; activos: number; totalReservas: number; totalIngresos: number; promedioReservas: number };
+    employees: { id: number; name: string; email: string }[];
+    stats: {
+        total: number;
+        activos: number;
+        totalReservas: number;
+        totalIngresos: number;
+        promedioReservas: number;
+    };
     popularServices: { name: string; reservas: number; ingresos: number }[];
     serviceCategories: { name: string; value: number }[];
 }) {
-    const { data, setData, post, delete: destroy, reset, processing, errors } = useForm({
+    const {
+        data,
+        setData,
+        post,
+        delete: destroy,
+        reset,
+        processing,
+        errors,
+    } = useForm({
         nombre: '',
         descripcion: '',
         duracion: 30,
@@ -80,7 +136,9 @@ export default function Services({ services, categorias, employees, stats, popul
             descripcion: service.descripcion || '',
             duracion: service.duracion || 30,
             precio_venta: service.precio_venta,
-            categoria_id: service.categoria_id || (categorias.length > 0 ? categorias[0].id : ''),
+            categoria_id:
+                service.categoria_id ||
+                (categorias.length > 0 ? categorias[0].id : ''),
             activo: service.activo,
             requires_appointment: service.requires_appointment ?? false,
             provider_ids: (service.providers || []).map((p: any) => p.id),
@@ -91,11 +149,13 @@ export default function Services({ services, categorias, employees, stats, popul
             imagen5: null,
         });
         const initialPreviews: Record<string, string> = {};
-        ['imagen', 'imagen2', 'imagen3', 'imagen4', 'imagen5'].forEach(key => {
-            if (service[key]) {
-                initialPreviews[key] = `/storage/${service[key]}`;
-            }
-        });
+        ['imagen', 'imagen2', 'imagen3', 'imagen4', 'imagen5'].forEach(
+            (key) => {
+                if (service[key]) {
+                    initialPreviews[key] = `/storage/${service[key]}`;
+                }
+            },
+        );
         setPreviews(initialPreviews);
         setOpenDialog(true);
     };
@@ -103,18 +163,22 @@ export default function Services({ services, categorias, employees, stats, popul
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (isEditing) {
-            router.post(`/services/${isEditing}`, {
-                _method: 'PUT',
-                forceFormData: true,
-                ...(data as any),
-            }, {
-                onSuccess: () => {
-                    setIsEditing(null);
-                    reset();
-                    setPreviews({});
-                    setOpenDialog(false);
+            router.post(
+                `/services/${isEditing}`,
+                {
+                    _method: 'PUT',
+                    forceFormData: true,
+                    ...(data as any),
                 },
-            });
+                {
+                    onSuccess: () => {
+                        setIsEditing(null);
+                        reset();
+                        setPreviews({});
+                        setOpenDialog(false);
+                    },
+                },
+            );
         } else {
             post('/services', {
                 onSuccess: () => {
@@ -131,11 +195,14 @@ export default function Services({ services, categorias, employees, stats, popul
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setPreviews(prev => ({ ...prev, [key]: reader.result as string }));
+                setPreviews((prev) => ({
+                    ...prev,
+                    [key]: reader.result as string,
+                }));
             };
             reader.readAsDataURL(file);
         } else {
-            setPreviews(prev => {
+            setPreviews((prev) => {
                 const updated = { ...prev };
                 delete updated[key];
                 return updated;
@@ -155,10 +222,14 @@ export default function Services({ services, categorias, employees, stats, popul
 
             <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Servicios</h1>
-                        <p className="text-sm text-muted-foreground">Gestiona los servicios ofrecidos en tu negocio</p>
+                        <h1 className="text-2xl font-bold tracking-tight">
+                            Servicios
+                        </h1>
+                        <p className="text-sm text-muted-foreground">
+                            Gestiona los servicios ofrecidos en tu negocio
+                        </p>
                     </div>
                     <Button onClick={openCreate} className="shrink-0">
                         <Plus className="mr-1.5 h-4 w-4" />
@@ -167,52 +238,68 @@ export default function Services({ services, categorias, employees, stats, popul
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                     <Card className="rounded-2xl border-slate-200/70">
                         <CardHeader className="p-4 pb-2">
-                            <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                            <CardTitle className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                                 <BarChart3 className="h-3.5 w-3.5 text-indigo-500" />
                                 Total Servicios
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 pt-0">
-                            <p className="text-2xl font-black text-slate-900">{stats.total}</p>
-                            <p className="text-xs text-emerald-600 font-semibold">{stats.activos} activos</p>
+                            <p className="text-2xl font-black text-slate-900">
+                                {stats.total}
+                            </p>
+                            <p className="text-xs font-semibold text-emerald-600">
+                                {stats.activos} activos
+                            </p>
                         </CardContent>
                     </Card>
                     <Card className="rounded-2xl border-slate-200/70">
                         <CardHeader className="p-4 pb-2">
-                            <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                            <CardTitle className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                                 <Calendar className="h-3.5 w-3.5 text-blue-500" />
                                 Total Reservas
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 pt-0">
-                            <p className="text-2xl font-black text-slate-900">{stats.totalReservas}</p>
-                            <p className="text-xs text-slate-400 font-semibold">Prom. {stats.promedioReservas} x servicio</p>
+                            <p className="text-2xl font-black text-slate-900">
+                                {stats.totalReservas}
+                            </p>
+                            <p className="text-xs font-semibold text-slate-400">
+                                Prom. {stats.promedioReservas} x servicio
+                            </p>
                         </CardContent>
                     </Card>
                     <Card className="rounded-2xl border-slate-200/70">
                         <CardHeader className="p-4 pb-2">
-                            <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                            <CardTitle className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                                 <DollarSign className="h-3.5 w-3.5 text-emerald-500" />
                                 Ingresos Generados
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 pt-0">
-                            <p className="text-2xl font-black text-emerald-600">${stats.totalIngresos.toLocaleString()}</p>
+                            <p className="text-2xl font-black text-emerald-600">
+                                ${stats.totalIngresos.toLocaleString()}
+                            </p>
                         </CardContent>
                     </Card>
                     <Card className="rounded-2xl border-slate-200/70">
                         <CardHeader className="p-4 pb-2">
-                            <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                            <CardTitle className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                                 <TrendingUp className="h-3.5 w-3.5 text-violet-500" />
                                 Proyección Mensual
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 pt-0">
                             <p className="text-2xl font-black text-violet-600">
-                                ${stats.total > 0 ? (stats.totalIngresos / stats.total * stats.activos).toLocaleString() : '0'}
+                                $
+                                {stats.total > 0
+                                    ? (
+                                          (stats.totalIngresos / stats.total) *
+                                          stats.activos
+                                      ).toLocaleString()
+                                    : '0'}
                             </p>
                         </CardContent>
                     </Card>
@@ -227,13 +314,46 @@ export default function Services({ services, categorias, employees, stats, popul
                                 Servicios Más Reservados
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="px-2 pb-4 pt-0">
+                        <CardContent className="px-2 pt-0 pb-4">
                             <ResponsiveContainer width="100%" height={250}>
-                                <BarChart data={popularServices} layout="vertical">
-                                    <XAxis type="number" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                                    <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} width={100} />
-                                    <Tooltip formatter={(value, name) => [value, name === 'reservas' ? 'Reservas' : 'Ingresos']} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
-                                    <Bar dataKey="reservas" radius={[0, 4, 4, 0]} fill="#8b5cf6" maxBarSize={16} name="reservas" />
+                                <BarChart
+                                    data={popularServices}
+                                    layout="vertical"
+                                >
+                                    <XAxis
+                                        type="number"
+                                        tick={{ fontSize: 10, fill: '#94a3b8' }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
+                                    <YAxis
+                                        type="category"
+                                        dataKey="name"
+                                        tick={{ fontSize: 10, fill: '#64748b' }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                        width={100}
+                                    />
+                                    <Tooltip
+                                        formatter={(value, name) => [
+                                            value,
+                                            name === 'reservas'
+                                                ? 'Reservas'
+                                                : 'Ingresos',
+                                        ]}
+                                        contentStyle={{
+                                            borderRadius: 12,
+                                            border: '1px solid #e2e8f0',
+                                            fontSize: 12,
+                                        }}
+                                    />
+                                    <Bar
+                                        dataKey="reservas"
+                                        radius={[0, 4, 4, 0]}
+                                        fill="#8b5cf6"
+                                        maxBarSize={16}
+                                        name="reservas"
+                                    />
                                 </BarChart>
                             </ResponsiveContainer>
                         </CardContent>
@@ -246,19 +366,51 @@ export default function Services({ services, categorias, employees, stats, popul
                                 Distribución por Categoría
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="px-2 pb-4 pt-0">
+                        <CardContent className="px-2 pt-0 pb-4">
                             <ResponsiveContainer width="100%" height={220}>
                                 <PieChart>
-                                    <Pie data={serviceCategories} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" stroke="none">
-                                        {serviceCategories.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                                    <Pie
+                                        data={serviceCategories}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={55}
+                                        outerRadius={85}
+                                        dataKey="value"
+                                        stroke="none"
+                                    >
+                                        {serviceCategories.map((_, i) => (
+                                            <Cell
+                                                key={i}
+                                                fill={COLORS[i % COLORS.length]}
+                                            />
+                                        ))}
                                     </Pie>
-                                    <Tooltip formatter={(value, name) => [value, name]} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
+                                    <Tooltip
+                                        formatter={(value, name) => [
+                                            value,
+                                            name,
+                                        ]}
+                                        contentStyle={{
+                                            borderRadius: 12,
+                                            border: '1px solid #e2e8f0',
+                                            fontSize: 12,
+                                        }}
+                                    />
                                 </PieChart>
                             </ResponsiveContainer>
-                            <div className="mt-2 flex flex-wrap gap-2 px-3 justify-center">
+                            <div className="mt-2 flex flex-wrap justify-center gap-2 px-3">
                                 {serviceCategories.map((c, i) => (
-                                    <div key={c.name} className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
-                                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                                    <div
+                                        key={c.name}
+                                        className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600"
+                                    >
+                                        <span
+                                            className="h-2.5 w-2.5 shrink-0 rounded-full"
+                                            style={{
+                                                backgroundColor:
+                                                    COLORS[i % COLORS.length],
+                                            }}
+                                        />
                                         {c.name}: {c.value}
                                     </div>
                                 ))}
@@ -269,12 +421,21 @@ export default function Services({ services, categorias, employees, stats, popul
 
                 {/* Extra stat row for popular services revenue */}
                 {popularServices.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                         {popularServices.slice(0, 5).map((s) => (
-                            <div key={s.name} className="bg-white rounded-xl border border-slate-200 p-3">
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 truncate">{s.name}</p>
-                                <p className="text-lg font-black text-slate-900">{s.reservas}</p>
-                                <p className="text-[10px] text-emerald-600 font-semibold">${s.ingresos.toLocaleString()}</p>
+                            <div
+                                key={s.name}
+                                className="rounded-xl border border-slate-200 bg-white p-3"
+                            >
+                                <p className="truncate text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                                    {s.name}
+                                </p>
+                                <p className="text-lg font-black text-slate-900">
+                                    {s.reservas}
+                                </p>
+                                <p className="text-[10px] font-semibold text-emerald-600">
+                                    ${s.ingresos.toLocaleString()}
+                                </p>
                             </div>
                         ))}
                     </div>
@@ -285,10 +446,18 @@ export default function Services({ services, categorias, employees, stats, popul
                     <CardContent className="p-0">
                         {services.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-16 text-center">
-                                <ImageIcon className="h-12 w-12 text-muted-foreground/40 mb-4" />
-                                <p className="text-muted-foreground font-medium">No hay servicios registrados</p>
-                                <p className="text-sm text-muted-foreground/60 mt-1">Crea tu primer servicio para empezar</p>
-                                <Button onClick={openCreate} variant="outline" className="mt-4">
+                                <ImageIcon className="mb-4 h-12 w-12 text-muted-foreground/40" />
+                                <p className="font-medium text-muted-foreground">
+                                    No hay servicios registrados
+                                </p>
+                                <p className="mt-1 text-sm text-muted-foreground/60">
+                                    Crea tu primer servicio para empezar
+                                </p>
+                                <Button
+                                    onClick={openCreate}
+                                    variant="outline"
+                                    className="mt-4"
+                                >
                                     <Plus className="mr-1.5 h-4 w-4" />
                                     Nuevo Servicio
                                 </Button>
@@ -306,7 +475,9 @@ export default function Services({ services, categorias, employees, stats, popul
                                                 <TableHead>Precio</TableHead>
                                                 <TableHead>Cita</TableHead>
                                                 <TableHead>Estado</TableHead>
-                                                <TableHead className="text-right">Acciones</TableHead>
+                                                <TableHead className="text-right">
+                                                    Acciones
+                                                </TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -318,59 +489,116 @@ export default function Services({ services, categorias, employees, stats, popul
                                                                 <img
                                                                     src={`/storage/${service.imagen}`}
                                                                     alt=""
-                                                                    className="h-10 w-10 rounded-lg object-cover border shrink-0"
+                                                                    className="h-10 w-10 shrink-0 rounded-lg border object-cover"
                                                                 />
                                                             ) : (
-                                                                <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
                                                                     <ImageIcon className="h-4 w-4 text-muted-foreground" />
                                                                 </div>
                                                             )}
                                                             <div className="min-w-0">
-                                                                <p className="font-medium truncate">{service.nombre}</p>
+                                                                <p className="truncate font-medium">
+                                                                    {
+                                                                        service.nombre
+                                                                    }
+                                                                </p>
                                                                 {service.descripcion && (
-                                                                    <p className="text-xs text-muted-foreground truncate max-w-48">{service.descripcion}</p>
+                                                                    <p className="max-w-48 truncate text-xs text-muted-foreground">
+                                                                        {
+                                                                            service.descripcion
+                                                                        }
+                                                                    </p>
                                                                 )}
                                                             </div>
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Badge variant="secondary">{service.categoria?.nombre || '-'}</Badge>
+                                                        <Badge variant="secondary">
+                                                            {service.categoria
+                                                                ?.nombre || '-'}
+                                                        </Badge>
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex items-center gap-1.5 text-sm">
                                                             <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                                                            {service.duracion} min
+                                                            {service.duracion}{' '}
+                                                            min
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex items-center gap-1.5 text-sm font-medium">
                                                             <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                                                            ${Number(service.precio_venta).toLocaleString()}
+                                                            $
+                                                            {Number(
+                                                                service.precio_venta,
+                                                            ).toLocaleString()}
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>
                                                         {service.requires_appointment ? (
-                                                            <Badge variant="outline" className="border-amber-300 text-amber-700 bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:bg-amber-950">
-                                                                <Calendar className="h-3 w-3 mr-1" /> Cita
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-400"
+                                                            >
+                                                                <Calendar className="mr-1 h-3 w-3" />{' '}
+                                                                Cita
                                                             </Badge>
                                                         ) : (
-                                                            <span className="text-xs text-muted-foreground">—</span>
+                                                            <span className="text-xs text-muted-foreground">
+                                                                —
+                                                            </span>
                                                         )}
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Badge variant={service.activo ? 'default' : 'secondary'}>
-                                                            {service.activo ? 'Activo' : 'Inactivo'}
+                                                        <Badge
+                                                            variant={
+                                                                service.activo
+                                                                    ? 'default'
+                                                                    : 'secondary'
+                                                            }
+                                                        >
+                                                            {service.activo
+                                                                ? 'Activo'
+                                                                : 'Inactivo'}
                                                         </Badge>
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                         <div className="inline-flex gap-1">
-                                                            <Button variant="ghost" size="icon" onClick={() => setViewingService(service)} title="Ver">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() =>
+                                                                    setViewingService(
+                                                                        service,
+                                                                    )
+                                                                }
+                                                                title="Ver"
+                                                            >
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
-                                                            <Button variant="ghost" size="icon" onClick={() => openEdit(service)} title="Editar">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() =>
+                                                                    openEdit(
+                                                                        service,
+                                                                    )
+                                                                }
+                                                                title="Editar"
+                                                            >
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
-                                                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(service.id)} title="Eliminar">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="text-destructive hover:text-destructive"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        service.id,
+                                                                    )
+                                                                }
+                                                                title="Eliminar"
+                                                            >
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         </div>
@@ -382,52 +610,109 @@ export default function Services({ services, categorias, employees, stats, popul
                                 </div>
 
                                 {/* Mobile cards */}
-                                <div className="md:hidden divide-y">
+                                <div className="divide-y md:hidden">
                                     {services.map((service: any) => (
-                                        <div key={service.id} className="p-4 space-y-3">
+                                        <div
+                                            key={service.id}
+                                            className="space-y-3 p-4"
+                                        >
                                             <div className="flex items-start gap-3">
                                                 {service.imagen ? (
-                                                    <img src={`/storage/${service.imagen}`} alt="" className="h-12 w-12 rounded-lg object-cover border shrink-0" />
+                                                    <img
+                                                        src={`/storage/${service.imagen}`}
+                                                        alt=""
+                                                        className="h-12 w-12 shrink-0 rounded-lg border object-cover"
+                                                    />
                                                 ) : (
-                                                    <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-muted">
                                                         <ImageIcon className="h-5 w-5 text-muted-foreground" />
                                                     </div>
                                                 )}
                                                 <div className="min-w-0 flex-1">
-                                                    <p className="font-medium">{service.nombre}</p>
-                                                    <p className="text-xs text-muted-foreground">{service.categoria?.nombre || '-'}</p>
+                                                    <p className="font-medium">
+                                                        {service.nombre}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {service.categoria
+                                                            ?.nombre || '-'}
+                                                    </p>
                                                 </div>
-                                                <div className="flex flex-col gap-1 shrink-0">
-                                                    <Badge variant={service.activo ? 'default' : 'secondary'}>
-                                                        {service.activo ? 'Activo' : 'Inactivo'}
+                                                <div className="flex shrink-0 flex-col gap-1">
+                                                    <Badge
+                                                        variant={
+                                                            service.activo
+                                                                ? 'default'
+                                                                : 'secondary'
+                                                        }
+                                                    >
+                                                        {service.activo
+                                                            ? 'Activo'
+                                                            : 'Inactivo'}
                                                     </Badge>
                                                     {service.requires_appointment && (
-                                                        <Badge variant="outline" className="border-amber-300 text-amber-700 bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:bg-amber-950 text-[10px]">
-                                                            <Calendar className="h-2.5 w-2.5 mr-0.5" /> Cita
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="border-amber-300 bg-amber-50 text-[10px] text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-400"
+                                                        >
+                                                            <Calendar className="mr-0.5 h-2.5 w-2.5" />{' '}
+                                                            Cita
                                                         </Badge>
                                                     )}
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                                 <span className="flex items-center gap-1">
-                                                    <Clock className="h-3.5 w-3.5" /> {service.duracion} min
+                                                    <Clock className="h-3.5 w-3.5" />{' '}
+                                                    {service.duracion} min
                                                 </span>
                                                 <span className="flex items-center gap-1 font-medium text-foreground">
-                                                    <DollarSign className="h-3.5 w-3.5" /> ${Number(service.precio_venta).toLocaleString()}
+                                                    <DollarSign className="h-3.5 w-3.5" />{' '}
+                                                    $
+                                                    {Number(
+                                                        service.precio_venta,
+                                                    ).toLocaleString()}
                                                 </span>
                                             </div>
                                             {service.descripcion && (
-                                                <p className="text-sm text-muted-foreground line-clamp-2">{service.descripcion}</p>
+                                                <p className="line-clamp-2 text-sm text-muted-foreground">
+                                                    {service.descripcion}
+                                                </p>
                                             )}
                                             <div className="flex gap-2 pt-1">
-                                                <Button variant="outline" size="sm" className="flex-1" onClick={() => setViewingService(service)}>
-                                                    <Eye className="h-3.5 w-3.5 mr-1" /> Ver
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="flex-1"
+                                                    onClick={() =>
+                                                        setViewingService(
+                                                            service,
+                                                        )
+                                                    }
+                                                >
+                                                    <Eye className="mr-1 h-3.5 w-3.5" />{' '}
+                                                    Ver
                                                 </Button>
-                                                <Button variant="outline" size="sm" className="flex-1" onClick={() => openEdit(service)}>
-                                                    <Edit className="h-3.5 w-3.5 mr-1" /> Editar
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="flex-1"
+                                                    onClick={() =>
+                                                        openEdit(service)
+                                                    }
+                                                >
+                                                    <Edit className="mr-1 h-3.5 w-3.5" />{' '}
+                                                    Editar
                                                 </Button>
-                                                <Button variant="outline" size="sm" className="flex-1 text-destructive" onClick={() => handleDelete(service.id)}>
-                                                    <Trash2 className="h-3.5 w-3.5 mr-1" /> Eliminar
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="flex-1 text-destructive"
+                                                    onClick={() =>
+                                                        handleDelete(service.id)
+                                                    }
+                                                >
+                                                    <Trash2 className="mr-1 h-3.5 w-3.5" />{' '}
+                                                    Eliminar
                                                 </Button>
                                             </div>
                                         </div>
@@ -441,67 +726,157 @@ export default function Services({ services, categorias, employees, stats, popul
 
             {/* Create / Edit Dialog */}
             <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-                <DialogContent className="sm:max-w-xl p-0 gap-0">
-                    <DialogHeader className="px-6 pt-6 pb-4 border-b">
-                        <DialogTitle>{isEditing ? 'Editar Servicio' : 'Nuevo Servicio'}</DialogTitle>
+                <DialogContent className="gap-0 p-0 sm:max-w-xl">
+                    <DialogHeader className="border-b px-6 pt-6 pb-4">
+                        <DialogTitle>
+                            {isEditing ? 'Editar Servicio' : 'Nuevo Servicio'}
+                        </DialogTitle>
                         <DialogDescription>
-                            {isEditing ? 'Modifica los datos del servicio seleccionado.' : 'Completa los datos para registrar un nuevo servicio.'}
+                            {isEditing
+                                ? 'Modifica los datos del servicio seleccionado.'
+                                : 'Completa los datos para registrar un nuevo servicio.'}
                         </DialogDescription>
                     </DialogHeader>
 
-                    <form onSubmit={handleSubmit} className="overflow-y-auto px-6 py-4 space-y-5 max-h-[60vh]">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="max-h-[60vh] space-y-5 overflow-y-auto px-6 py-4"
+                    >
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label htmlFor="nombre">Nombre</Label>
-                                <Input id="nombre" value={data.nombre} onChange={e => setData('nombre', e.target.value)} required placeholder="Ej: Corte de cabello" />
-                                {errors.nombre && <p className="text-xs text-destructive">{errors.nombre}</p>}
+                                <Input
+                                    id="nombre"
+                                    value={data.nombre}
+                                    onChange={(e) =>
+                                        setData('nombre', e.target.value)
+                                    }
+                                    required
+                                    placeholder="Ej: Corte de cabello"
+                                />
+                                {errors.nombre && (
+                                    <p className="text-xs text-destructive">
+                                        {errors.nombre}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="categoria">Categoría</Label>
                                 <select
                                     id="categoria"
                                     value={String(data.categoria_id)}
-                                    onChange={e => setData('categoria_id', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('categoria_id', e.target.value)
+                                    }
                                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                                 >
-                                    {categorias.map(cat => (
-                                        <option key={cat.id} value={String(cat.id)}>{cat.nombre}</option>
+                                    {categorias.map((cat) => (
+                                        <option
+                                            key={cat.id}
+                                            value={String(cat.id)}
+                                        >
+                                            {cat.nombre}
+                                        </option>
                                     ))}
                                 </select>
-                                {errors.categoria_id && <p className="text-xs text-destructive">{errors.categoria_id}</p>}
+                                {errors.categoria_id && (
+                                    <p className="text-xs text-destructive">
+                                        {errors.categoria_id}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="duracion">Duración (min)</Label>
-                                <Input id="duracion" type="number" min="1" value={data.duracion} onChange={e => setData('duracion', parseInt(e.target.value) || 30)} required />
-                                {errors.duracion && <p className="text-xs text-destructive">{errors.duracion}</p>}
+                                <Input
+                                    id="duracion"
+                                    type="number"
+                                    min="1"
+                                    value={data.duracion}
+                                    onChange={(e) =>
+                                        setData(
+                                            'duracion',
+                                            parseInt(e.target.value) || 30,
+                                        )
+                                    }
+                                    required
+                                />
+                                {errors.duracion && (
+                                    <p className="text-xs text-destructive">
+                                        {errors.duracion}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="precio">Precio ($)</Label>
-                                <Input id="precio" type="number" min="0" step="0.01" value={data.precio_venta} onChange={e => setData('precio_venta', parseFloat(e.target.value) || 0)} required />
-                                {errors.precio_venta && <p className="text-xs text-destructive">{errors.precio_venta}</p>}
+                                <Input
+                                    id="precio"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={data.precio_venta}
+                                    onChange={(e) =>
+                                        setData(
+                                            'precio_venta',
+                                            parseFloat(e.target.value) || 0,
+                                        )
+                                    }
+                                    required
+                                />
+                                {errors.precio_venta && (
+                                    <p className="text-xs text-destructive">
+                                        {errors.precio_venta}
+                                    </p>
+                                )}
                             </div>
                         </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="descripcion">Descripción</Label>
-                            <Textarea id="descripcion" value={data.descripcion} onChange={e => setData('descripcion', e.target.value)} placeholder="Descripción opcional del servicio..." rows={3} />
+                            <Textarea
+                                id="descripcion"
+                                value={data.descripcion}
+                                onChange={(e) =>
+                                    setData('descripcion', e.target.value)
+                                }
+                                placeholder="Descripción opcional del servicio..."
+                                rows={3}
+                            />
                         </div>
 
                         <div className="space-y-2">
                             <Label>Imágenes (máximo 5)</Label>
-                            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                                {['imagen', 'imagen2', 'imagen3', 'imagen4', 'imagen5'].map((key, index) => (
-                                    <div key={key}
-                                        className="relative aspect-square border-2 border-dashed rounded-lg flex items-center justify-center overflow-hidden hover:bg-muted/50 transition-colors cursor-pointer"
-                                        onClick={() => fileInputs.current[key]?.click()}
+                            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                                {[
+                                    'imagen',
+                                    'imagen2',
+                                    'imagen3',
+                                    'imagen4',
+                                    'imagen5',
+                                ].map((key, index) => (
+                                    <div
+                                        key={key}
+                                        className="relative flex aspect-square cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed transition-colors hover:bg-muted/50"
+                                        onClick={() =>
+                                            fileInputs.current[key]?.click()
+                                        }
                                     >
                                         {previews[key] ? (
                                             <>
-                                                <img src={previews[key]} className="w-full h-full object-cover" alt="" />
+                                                <img
+                                                    src={previews[key]}
+                                                    className="h-full w-full object-cover"
+                                                    alt=""
+                                                />
                                                 <button
                                                     type="button"
-                                                    onClick={e => { e.stopPropagation(); handleFileChange(key, null); }}
-                                                    className="absolute top-0.5 right-0.5 bg-background/80 backdrop-blur-sm text-muted-foreground hover:text-destructive p-0.5 rounded"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleFileChange(
+                                                            key,
+                                                            null,
+                                                        );
+                                                    }}
+                                                    className="absolute top-0.5 right-0.5 rounded bg-background/80 p-0.5 text-muted-foreground backdrop-blur-sm hover:text-destructive"
                                                 >
                                                     <X className="h-3 w-3" />
                                                 </button>
@@ -509,40 +884,65 @@ export default function Services({ services, categorias, employees, stats, popul
                                         ) : (
                                             <div className="flex flex-col items-center gap-1 text-muted-foreground">
                                                 <ImageIcon className="h-4 w-4" />
-                                                <span className="text-[10px]">{index === 0 ? 'Principal' : `${index + 1}`}</span>
+                                                <span className="text-[10px]">
+                                                    {index === 0
+                                                        ? 'Principal'
+                                                        : `${index + 1}`}
+                                                </span>
                                             </div>
                                         )}
                                         <input
-                                            ref={el => { fileInputs.current[key] = el; }}
+                                            ref={(el) => {
+                                                fileInputs.current[key] = el;
+                                            }}
                                             type="file"
                                             className="hidden"
                                             accept="image/*"
-                                            onChange={e => handleFileChange(key, e.target.files?.[0] || null)}
+                                            onChange={(e) =>
+                                                handleFileChange(
+                                                    key,
+                                                    e.target.files?.[0] || null,
+                                                )
+                                            }
                                         />
                                     </div>
                                 ))}
                             </div>
-                            {errors.imagen && <p className="text-xs text-destructive">La imagen principal es obligatoria.</p>}
+                            {errors.imagen && (
+                                <p className="text-xs text-destructive">
+                                    La imagen principal es obligatoria.
+                                </p>
+                            )}
                         </div>
 
                         <div className="flex items-center gap-3">
                             <Switch
                                 id="activo"
                                 checked={data.activo}
-                                onCheckedChange={v => setData('activo', v)}
+                                onCheckedChange={(v) => setData('activo', v)}
                             />
-                            <Label htmlFor="activo" className="cursor-pointer">Servicio activo</Label>
+                            <Label htmlFor="activo" className="cursor-pointer">
+                                Servicio activo
+                            </Label>
                         </div>
 
                         <div className="flex items-center gap-3">
                             <Switch
                                 id="requires_appointment"
                                 checked={data.requires_appointment}
-                                onCheckedChange={v => setData('requires_appointment', v)}
+                                onCheckedChange={(v) =>
+                                    setData('requires_appointment', v)
+                                }
                             />
-                            <Label htmlFor="requires_appointment" className="cursor-pointer leading-tight">
+                            <Label
+                                htmlFor="requires_appointment"
+                                className="cursor-pointer leading-tight"
+                            >
                                 <span>Requiere cita previa</span>
-                                <p className="text-xs text-muted-foreground font-normal mt-0.5">El cliente deberá elegir fecha y hora al comprar</p>
+                                <p className="mt-0.5 text-xs font-normal text-muted-foreground">
+                                    El cliente deberá elegir fecha y hora al
+                                    comprar
+                                </p>
                             </Label>
                         </div>
 
@@ -550,54 +950,91 @@ export default function Services({ services, categorias, employees, stats, popul
                             <Label>Empleados / Proveedores</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" className="w-full justify-between font-normal">
+                                    <Button
+                                        variant="outline"
+                                        className="w-full justify-between font-normal"
+                                    >
                                         {data.provider_ids.length === 0
                                             ? 'Seleccionar empleados...'
                                             : `${data.provider_ids.length} empleado${data.provider_ids.length !== 1 ? 's' : ''} seleccionado${data.provider_ids.length !== 1 ? 's' : ''}`}
                                         <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-full min-w-[260px] p-2" align="start">
-                                    <div className="space-y-1 max-h-48 overflow-y-auto">
-                                        {employees.map(emp => {
-                                            const checked = data.provider_ids.includes(emp.id);
+                                <PopoverContent
+                                    className="w-full min-w-[260px] p-2"
+                                    align="start"
+                                >
+                                    <div className="max-h-48 space-y-1 overflow-y-auto">
+                                        {employees.map((emp) => {
+                                            const checked =
+                                                data.provider_ids.includes(
+                                                    emp.id,
+                                                );
                                             return (
                                                 <label
                                                     key={emp.id}
-                                                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm"
+                                                    className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted"
                                                 >
                                                     <Checkbox
                                                         checked={checked}
                                                         onCheckedChange={() => {
-                                                            setData('provider_ids',
+                                                            setData(
+                                                                'provider_ids',
                                                                 checked
-                                                                    ? data.provider_ids.filter(id => id !== emp.id)
-                                                                    : [...data.provider_ids, emp.id]
+                                                                    ? data.provider_ids.filter(
+                                                                          (
+                                                                              id,
+                                                                          ) =>
+                                                                              id !==
+                                                                              emp.id,
+                                                                      )
+                                                                    : [
+                                                                          ...data.provider_ids,
+                                                                          emp.id,
+                                                                      ],
                                                             );
                                                         }}
                                                     />
                                                     <div className="min-w-0">
-                                                        <p className="font-medium truncate">{emp.name}</p>
-                                                        <p className="text-xs text-muted-foreground truncate">{emp.email}</p>
+                                                        <p className="truncate font-medium">
+                                                            {emp.name}
+                                                        </p>
+                                                        <p className="truncate text-xs text-muted-foreground">
+                                                            {emp.email}
+                                                        </p>
                                                     </div>
                                                 </label>
                                             );
                                         })}
                                         {employees.length === 0 && (
-                                            <p className="text-sm text-muted-foreground px-2 py-4 text-center">
+                                            <p className="px-2 py-4 text-center text-sm text-muted-foreground">
                                                 No hay empleados disponibles
                                             </p>
                                         )}
                                     </div>
                                 </PopoverContent>
                             </Popover>
-                            {errors.provider_ids && <p className="text-xs text-destructive">{errors.provider_ids}</p>}
+                            {errors.provider_ids && (
+                                <p className="text-xs text-destructive">
+                                    {errors.provider_ids}
+                                </p>
+                            )}
                         </div>
 
-                        <DialogFooter className="px-0 pb-0 sticky bottom-0 bg-background pt-4 border-t">
-                            <Button type="button" variant="outline" onClick={() => setOpenDialog(false)}>Cancelar</Button>
+                        <DialogFooter className="sticky bottom-0 border-t bg-background px-0 pt-4 pb-0">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setOpenDialog(false)}
+                            >
+                                Cancelar
+                            </Button>
                             <Button type="submit" disabled={processing}>
-                                {processing ? 'Guardando...' : isEditing ? 'Actualizar' : 'Guardar'}
+                                {processing
+                                    ? 'Guardando...'
+                                    : isEditing
+                                      ? 'Actualizar'
+                                      : 'Guardar'}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -605,75 +1042,161 @@ export default function Services({ services, categorias, employees, stats, popul
             </Dialog>
 
             {/* View Dialog */}
-            <Dialog open={!!viewingService} onOpenChange={o => { if (!o) setViewingService(null); }}>
-                <DialogContent className="sm:max-w-md p-0 gap-0">
-                    <DialogHeader className="px-6 pt-6 pb-4 border-b">
+            <Dialog
+                open={!!viewingService}
+                onOpenChange={(o) => {
+                    if (!o) setViewingService(null);
+                }}
+            >
+                <DialogContent className="gap-0 p-0 sm:max-w-md">
+                    <DialogHeader className="border-b px-6 pt-6 pb-4">
                         <DialogTitle>{viewingService?.nombre}</DialogTitle>
                     </DialogHeader>
                     {viewingService && (
-                        <div className="overflow-y-auto px-6 py-4 space-y-5 max-h-[60vh]">
-                            {['imagen', 'imagen2', 'imagen3', 'imagen4', 'imagen5'].some(k => viewingService[k]) && (
+                        <div className="max-h-[60vh] space-y-5 overflow-y-auto px-6 py-4">
+                            {[
+                                'imagen',
+                                'imagen2',
+                                'imagen3',
+                                'imagen4',
+                                'imagen5',
+                            ].some((k) => viewingService[k]) && (
                                 <div className="grid grid-cols-5 gap-2">
-                                    {['imagen', 'imagen2', 'imagen3', 'imagen4', 'imagen5'].map(key =>
+                                    {[
+                                        'imagen',
+                                        'imagen2',
+                                        'imagen3',
+                                        'imagen4',
+                                        'imagen5',
+                                    ].map((key) =>
                                         viewingService[key] ? (
-                                            <img key={key} src={`/storage/${viewingService[key]}`} className="w-full aspect-square object-cover rounded-lg border" alt="" />
-                                        ) : null
+                                            <img
+                                                key={key}
+                                                src={`/storage/${viewingService[key]}`}
+                                                className="aspect-square w-full rounded-lg border object-cover"
+                                                alt=""
+                                            />
+                                        ) : null,
                                     )}
                                 </div>
                             )}
                             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
                                 <div>
-                                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Categoría</p>
-                                    <p className="font-medium">{viewingService.categoria?.nombre || '-'}</p>
+                                    <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                                        Categoría
+                                    </p>
+                                    <p className="font-medium">
+                                        {viewingService.categoria?.nombre ||
+                                            '-'}
+                                    </p>
                                 </div>
                                 <div>
-                                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Duración</p>
-                                    <p className="font-medium flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-muted-foreground" />{viewingService.duracion} min</p>
+                                    <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                                        Duración
+                                    </p>
+                                    <p className="flex items-center gap-1.5 font-medium">
+                                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                                        {viewingService.duracion} min
+                                    </p>
                                 </div>
                                 <div>
-                                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Precio</p>
-                                    <p className="font-medium flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5 text-muted-foreground" />${Number(viewingService.precio_venta).toLocaleString()}</p>
+                                    <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                                        Precio
+                                    </p>
+                                    <p className="flex items-center gap-1.5 font-medium">
+                                        <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                                        $
+                                        {Number(
+                                            viewingService.precio_venta,
+                                        ).toLocaleString()}
+                                    </p>
                                 </div>
                                 <div>
-                                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Estado</p>
-                                    <Badge variant={viewingService.activo ? 'default' : 'secondary'}>{viewingService.activo ? 'Activo' : 'Inactivo'}</Badge>
+                                    <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                                        Estado
+                                    </p>
+                                    <Badge
+                                        variant={
+                                            viewingService.activo
+                                                ? 'default'
+                                                : 'secondary'
+                                        }
+                                    >
+                                        {viewingService.activo
+                                            ? 'Activo'
+                                            : 'Inactivo'}
+                                    </Badge>
                                 </div>
                                 <div>
-                                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Cita previa</p>
+                                    <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                                        Cita previa
+                                    </p>
                                     {viewingService.requires_appointment ? (
-                                        <Badge variant="outline" className="border-amber-300 text-amber-700 bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:bg-amber-950">
-                                            <Calendar className="h-3 w-3 mr-1" /> Requiere cita
+                                        <Badge
+                                            variant="outline"
+                                            className="border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-400"
+                                        >
+                                            <Calendar className="mr-1 h-3 w-3" />{' '}
+                                            Requiere cita
                                         </Badge>
                                     ) : (
-                                        <span className="text-sm text-muted-foreground">No requiere</span>
+                                        <span className="text-sm text-muted-foreground">
+                                            No requiere
+                                        </span>
                                     )}
                                 </div>
                                 <div>
-                                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Empleados asignados</p>
-                                    {viewingService.providers && viewingService.providers.length > 0 ? (
-                                        <div className="flex flex-wrap gap-1 mt-1">
-                                            {viewingService.providers.map((p: any) => (
-                                                <Badge key={p.id} variant="outline" className="text-xs">
-                                                    {p.name}
-                                                </Badge>
-                                            ))}
+                                    <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                                        Empleados asignados
+                                    </p>
+                                    {viewingService.providers &&
+                                    viewingService.providers.length > 0 ? (
+                                        <div className="mt-1 flex flex-wrap gap-1">
+                                            {viewingService.providers.map(
+                                                (p: any) => (
+                                                    <Badge
+                                                        key={p.id}
+                                                        variant="outline"
+                                                        className="text-xs"
+                                                    >
+                                                        {p.name}
+                                                    </Badge>
+                                                ),
+                                            )}
                                         </div>
                                     ) : (
-                                        <span className="text-sm text-muted-foreground">Ninguno</span>
+                                        <span className="text-sm text-muted-foreground">
+                                            Ninguno
+                                        </span>
                                     )}
                                 </div>
                             </div>
                             {viewingService.descripcion && (
                                 <div>
-                                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">Descripción</p>
-                                    <p className="text-sm">{viewingService.descripcion}</p>
+                                    <p className="mb-1 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                                        Descripción
+                                    </p>
+                                    <p className="text-sm">
+                                        {viewingService.descripcion}
+                                    </p>
                                 </div>
                             )}
                         </div>
                     )}
-                    <DialogFooter className="px-6 py-4 border-t">
-                        <Button variant="outline" onClick={() => setViewingService(null)}>Cerrar</Button>
-                        <Button onClick={() => { const s = viewingService; setViewingService(null); openEdit(s); }}>
+                    <DialogFooter className="border-t px-6 py-4">
+                        <Button
+                            variant="outline"
+                            onClick={() => setViewingService(null)}
+                        >
+                            Cerrar
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                const s = viewingService;
+                                setViewingService(null);
+                                openEdit(s);
+                            }}
+                        >
                             Editar
                         </Button>
                     </DialogFooter>
