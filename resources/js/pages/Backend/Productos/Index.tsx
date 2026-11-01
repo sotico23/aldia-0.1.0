@@ -402,30 +402,41 @@ export default function Index({
     const appendProductImagesToFormData = (formData: FormData) => {
         formData.append('manage_images', '1');
 
-        productImages.forEach((image, index) => {
-            const key = PRODUCT_IMAGE_KEYS[index];
+        const usedKeys = new Set<string>();
+
+        productImages.forEach((image) => {
+            if (image.existingPath) {
+                const key = image.existingKey ?? 'imagen';
+                usedKeys.add(key);
+                formData.append(
+                    `imagenes_existentes[${key}]`,
+                    image.existingPath,
+                );
+                return;
+            }
+
+            if (!image.file) {
+                return;
+            }
+
+            let key = '';
+            for (const candidate of PRODUCT_IMAGE_KEYS) {
+                if (!usedKeys.has(candidate)) {
+                    key = candidate;
+                    break;
+                }
+            }
 
             if (!key) {
                 return;
             }
 
-            if (image.file) {
-                formData.append(key, image.file);
-                return;
-            }
-
-            if (image.existingPath) {
-                formData.append(
-                    `imagenes_existentes[${key}]`,
-                    image.existingPath,
-                );
-            }
+            usedKeys.add(key);
+            formData.append(key, image.file);
         });
     };
 
-    const handleImageSubmitError = (
-        submitErrors: Record<string, string>,
-    ) => {
+    const handleImageSubmitError = (submitErrors: Record<string, string>) => {
         const imageErrorKey = Object.keys(submitErrors).find((key) =>
             key.startsWith('imagen'),
         );
@@ -2480,7 +2491,9 @@ export default function Index({
                                             <ImageUploader
                                                 images={productImages}
                                                 onChange={setProductImages}
-                                                maxImages={PRODUCT_IMAGE_KEYS.length}
+                                                maxImages={
+                                                    PRODUCT_IMAGE_KEYS.length
+                                                }
                                                 maxFileSizeMb={2}
                                                 disabled={isSubmitting}
                                                 isSubmitting={isSubmitting}

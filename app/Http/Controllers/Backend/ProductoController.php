@@ -56,7 +56,7 @@ class ProductoController extends Controller implements HasMiddleware
             $rules[$key] = [
                 'nullable',
                 'image',
-                'mimes:jpeg,jpg,png,webp',
+                'mimetypes:image/jpeg,image/png,image/webp',
                 'max:'.self::MAX_IMAGE_KB,
             ];
         }
@@ -485,14 +485,47 @@ class ProductoController extends Controller implements HasMiddleware
 
         $updateData['public_profile_id'] = $publicProfile?->id;
 
-        for ($i = 1; $i <= 5; $i++) {
-            $key = 'imagen'.($i === 1 ? '' : $i);
-            if ($request->hasFile($key)) {
-                if ($producto->{$key}) {
-                    Storage::disk('public')->delete($producto->{$key});
+        $manageImages = $request->boolean('manage_images');
+
+        $keptImages = [];
+
+        if ($manageImages) {
+            foreach ($request->input('imagenes_existentes', []) as $key => $path) {
+                if (is_string($path) && $path !== '') {
+                    $keptImages[$key] = $path;
                 }
-                $updateData[$key] = $request->file($key)->store('productos', 'public');
             }
+        }
+
+        foreach (self::IMAGE_KEYS as $key) {
+            if ($request->hasFile($key)) {
+                $keptImages[$key] = $request->file($key)->store('productos', 'public');
+            }
+        }
+
+        foreach (self::IMAGE_KEYS as $key) {
+            if (! $manageImages) {
+                continue;
+            }
+
+            $existingPath = $producto->{$key} ?: null;
+            $newPath = $keptImages[$key] ?? null;
+
+            if ($newPath === null) {
+                if ($existingPath) {
+                    Storage::disk('public')->delete($existingPath);
+                }
+
+                $updateData[$key] = null;
+
+                continue;
+            }
+
+            if ($existingPath && $existingPath !== $newPath) {
+                Storage::disk('public')->delete($existingPath);
+            }
+
+            $updateData[$key] = $newPath;
         }
 
         if ($request->hasFile('video')) {
@@ -506,6 +539,10 @@ class ProductoController extends Controller implements HasMiddleware
 
         if (! empty($updateDataFiltered)) {
             $producto->update($updateDataFiltered);
+        }
+
+        foreach (self::IMAGE_KEYS as $key) {
+            unset($updateDataFiltered[$key]);
         }
 
         // Handle variant changes

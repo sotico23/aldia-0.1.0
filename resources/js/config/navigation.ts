@@ -76,7 +76,7 @@ export const mainNavItems: ExtendedNavItem[] = [
         href: dashboard.url(),
         icon: Building2,
     },
-    {
+/*     {
         title: 'Reparto',
         group: 'REPARTO',
         href: '#reparto',
@@ -89,7 +89,7 @@ export const mainNavItems: ExtendedNavItem[] = [
                 permission: 'delivery.repartidor.mapa',
             },
         ],
-    },
+    }, */
     {
         title: 'Gestión Comercial',
         group: 'COMERCIAL',

@@ -89,6 +89,26 @@ class MarketplaceController extends Controller
         ]);
     }
 
+    public function categories($slug)
+    {
+        $publicProfile = PublicProfile::withoutGlobalScope(OwnerScope::class)
+            ->where('slug', $slug)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $categorias = Categoria::withoutGlobalScope(OwnerScope::class)
+            ->where('public_profile_id', $publicProfile->id)
+            ->where('activo', true)
+            ->where('mostrar_en_perfil', true)
+            ->orderBy('nombre')
+            ->get();
+
+        return Inertia::render('marketplace/categories', [
+            'store' => $publicProfile,
+            'categorias' => $categorias,
+        ]);
+    }
+
     public function react(Request $request, $slug)
     {
         if (! Auth::check()) {
