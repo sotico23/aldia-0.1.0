@@ -20,6 +20,9 @@ import {
     Phone,
     Calendar,
     Clock,
+    Trash2,
+    Package,
+    Tag,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -64,6 +67,7 @@ import { useCountry } from '@/hooks/use-country';
 import AppLayout from '@/layouts/app-layout';
 import { cn, formatRut } from '@/lib/utils';
 import chat from '@/routes/chat';
+import { categories as marketplaceCategories } from '@/routes/marketplace';
 import type { User } from '@/types';
 
 interface LocalUserType extends User {
@@ -80,17 +84,52 @@ interface Categoria {
     imagen: string | null;
 }
 
+interface SkuValor {
+    id: number;
+    variante_valor_id: number;
+    variante_valor?: {
+        id: number;
+        valor: string;
+        variante_id: number;
+    } | null;
+}
+
+interface Sku {
+    id: number;
+    sku: string;
+    precio_venta: number | null;
+    precio_compra: number | null;
+    stock: number;
+    stock_minimo: number;
+    activo: boolean;
+    valores: SkuValor[];
+}
+
+interface Inventario {
+    id: number;
+    cantidad: number;
+    cantidad_minima: number;
+}
+
 interface Producto {
     id: number;
+    codigo: string;
     nombre: string;
     descripcion: string | null;
     precio_venta: number;
     imagen: string | null;
+    imagen2?: string | null;
+    imagen3?: string | null;
+    imagen4?: string | null;
+    imagen5?: string | null;
     unidad_medida: string;
     categoria_id: number;
     is_service: boolean;
     duracion: number | null;
     requires_appointment: boolean;
+    tiene_variantes?: boolean;
+    inventarios?: Inventario[];
+    skus?: Sku[];
 }
 
 interface UserReaction {
@@ -181,6 +220,12 @@ export default function MarketplaceShow({
     );
     const [carritoAbierto, setCarritoAbierto] = useState(false);
     const [checkoutAbierto, setCheckoutAbierto] = useState(false);
+    const [productoDetalle, setProductoDetalle] = useState<Producto | null>(
+        null,
+    );
+    const [cantidadDetalle, setCantidadDetalle] = useState(1);
+    const [skuSeleccionado, setSkuSeleccionado] = useState<number | null>(null);
+    const [imagenActiva, setImagenActiva] = useState<string | null>(null);
     const [modoGramosProducto, setModoGramosProducto] = useState<{
         [key: number]: boolean;
     }>(() => {
@@ -269,13 +314,110 @@ export default function MarketplaceShow({
         [productosEnCarrito, carrito],
     );
 
-    const agregarAlCarrito = (productoId: number) => {
+    const stockProducto = (producto: Producto | null): number => {
+        if (!producto) {
+            return 0;
+        }
+
+        return (producto.inventarios ?? []).reduce(
+            (total, inventario) => total + Number(inventario.cantidad || 0),
+            0,
+        );
+    };
+
+    const imagenesProducto = (producto: Producto): string[] =>
+        [
+            producto.imagen,
+            producto.imagen2,
+            producto.imagen3,
+            producto.imagen4,
+            producto.imagen5,
+        ].filter((imagen): imagen is string => Boolean(imagen));
+
+    const nombreVariante = (sku: Sku): string => {
+        const valores = sku.valores
+            .map((valor) => valor.variante_valor?.valor)
+            .filter((valor): valor is string => Boolean(valor));
+
+        return valores.length > 0 ? valores.join(' / ') : sku.sku;
+    };
+
+    const abrirDetalle = (producto: Producto) => {
+        const imagenes = imagenesProducto(producto);
+        const skusDisponibles = producto.skus ?? [];
+        const skuInicial =
+            skusDisponibles.find((sku) => Number(sku.stock) > 0) ??
+            skusDisponibles[0];
+
+        setProductoDetalle(producto);
+        setCantidadDetalle(1);
+        setSkuSeleccionado(skuInicial?.id ?? null);
+        setImagenActiva(imagenes[0] ?? null);
+    };
+
+    const cerrarDetalle = () => {
+        setProductoDetalle(null);
+        setCantidadDetalle(1);
+        setSkuSeleccionado(null);
+        setImagenActiva(null);
+    };
+
+    const skuDetalle =
+        productoDetalle?.skus?.find((sku) => sku.id === skuSeleccionado) ??
+        null;
+    const precioDetalle = Number(
+        skuDetalle?.precio_venta ?? productoDetalle?.precio_venta ?? 0,
+    );
+    const stockDetalle = skuDetalle
+        ? Number(skuDetalle.stock)
+        : stockProducto(productoDetalle);
+    const categoriaDetalle = productoDetalle
+        ? (store.categorias.find(
+              (categoria) => categoria.id === productoDetalle.categoria_id,
+          )?.nombre ?? 'Sin categoría')
+        : '';
+    const imagenesDetalle = productoDetalle
+        ? imagenesProducto(productoDetalle)
+        : [];
+    const imagenDetalle =
+        imagenActiva && imagenesDetalle.includes(imagenActiva)
+            ? imagenActiva
+            : imagenesDetalle[0];
+    const unidadDetalle =
+        productoDetalle?.is_service === true
+            ? 'servicio'
+            : productoDetalle?.unidad_medida === 'kg'
+              ? 'kg'
+              : productoDetalle?.unidad_medida === 'lt'
+                ? 'litro'
+                : 'unidad';
+    const detalleModoGramos =
+        productoDetalle !== null &&
+        ['kg', 'lt'].includes(productoDetalle.unidad_medida) &&
+        Boolean(modoGramosProducto[productoDetalle.id]);
+    const detalleStep = detalleModoGramos ? 10 : 1;
+    const detalleEtiquetaCantidad = detalleModoGramos
+        ? productoDetalle?.unidad_medida === 'lt'
+            ? 'ml'
+            : 'g'
+        : unidadDetalle;
+
+    const agregarAlCarrito = (
+        productoId: number,
+        cantidadSolicitada?: number,
+    ) => {
         const producto = store.productos.find((p) => p.id === productoId);
-        const cantidadRaw = cantidadesAgregar[productoId] || 1;
+        const cantidadRaw =
+            cantidadSolicitada ?? cantidadesAgregar[productoId] ?? 1;
         const cantidad =
             producto && modoGramosProducto[productoId]
                 ? cantidadRaw / 1000
                 : cantidadRaw;
+
+        if (cantidad <= 0) {
+            return;
+        }
+
         setCarrito((prev) => ({
             ...prev,
             [productoId]: (prev[productoId] || 0) + cantidad,
@@ -284,6 +426,38 @@ export default function MarketplaceShow({
         setProductoAgregado(productoId);
         setTimeout(() => setProductoAgregado(null), 2000);
         toast.success('Añadido al pedido');
+    };
+
+    const agregarDetalleAlCarrito = () => {
+        if (!productoDetalle) {
+            return;
+        }
+
+        agregarAlCarrito(productoDetalle.id, cantidadDetalle);
+        cerrarDetalle();
+    };
+
+    const eliminarDelCarrito = (productoId: number) => {
+        setCarrito((prev) => {
+            const next = { ...prev };
+            delete next[productoId];
+
+            return next;
+        });
+        setCantidadesAgregar((prev) => ({ ...prev, [productoId]: 1 }));
+
+        if (Object.keys(carrito).length <= 1) {
+            setCarritoAbierto(false);
+        }
+
+        toast.success('Producto eliminado del pedido');
+    };
+
+    const vaciarCarrito = () => {
+        setCarrito({});
+        setCantidadesAgregar({});
+        setCarritoAbierto(false);
+        toast.success('Pedido vaciado');
     };
 
     const precioProporcional = (
@@ -386,7 +560,12 @@ export default function MarketplaceShow({
 
     const ProductCard = ({ producto }: { producto: Producto }) => (
         <div className="group relative flex flex-col rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md">
-            <div className="relative aspect-square overflow-hidden rounded-lg border border-slate-100 bg-slate-100">
+            <button
+                type="button"
+                onClick={() => abrirDetalle(producto)}
+                className="relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg border border-slate-100 bg-slate-100 text-left"
+                aria-label={`Ver detalles de ${producto.nombre}`}
+            >
                 {producto.imagen ? (
                     <img
                         src={`/storage/${producto.imagen}`}
@@ -406,11 +585,15 @@ export default function MarketplaceShow({
                         </span>
                     </div>
                 )}
-            </div>
+            </button>
             <div className="mt-3 flex-1">
-                <h4 className="line-clamp-2 text-sm leading-tight font-semibold text-slate-900">
+                <button
+                    type="button"
+                    onClick={() => abrirDetalle(producto)}
+                    className="line-clamp-2 text-left text-sm leading-tight font-semibold text-slate-900 hover:text-primary"
+                >
                     {producto.nombre}
-                </h4>
+                </button>
                 <p className="mt-1 text-lg font-bold text-slate-900">
                     ${Number(producto.precio_venta).toLocaleString()}
                 </p>
@@ -831,9 +1014,12 @@ export default function MarketplaceShow({
                         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                             <h2 className="mb-4 flex items-center justify-between text-lg font-bold text-slate-900">
                                 Categorías
-                                <span className="cursor-pointer text-sm font-normal text-primary hover:underline">
+                                <Link
+                                    href={marketplaceCategories(store.slug).url}
+                                    className="text-sm font-normal text-primary hover:underline"
+                                >
                                     Ver todas
-                                </span>
+                                </Link>
                             </h2>
                             <div className="grid grid-cols-2 gap-2">
                                 {store.categorias.map((cat) => (
@@ -1100,9 +1286,28 @@ export default function MarketplaceShow({
                     {/* Right Column (Cart Widget) */}
                     <div className="w-full flex-shrink-0 lg:w-[320px]">
                         <div className="sticky top-20 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                            <h2 className="mb-4 border-b border-slate-100 pb-2 text-lg font-bold text-slate-900">
-                                Tu Pedido
-                            </h2>
+                            <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-2">
+                                <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+                                    Tu Pedido
+                                    {totalItems > 0 && (
+                                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-black text-primary">
+                                            {totalItems}
+                                        </span>
+                                    )}
+                                </h2>
+                                {totalItems > 0 && (
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={vaciarCarrito}
+                                        className="h-8 gap-1 px-2 text-xs font-bold text-slate-500 hover:bg-destructive/10 hover:text-destructive"
+                                    >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                        Vaciar
+                                    </Button>
+                                )}
+                            </div>
                             <div className="custom-scrollbar mb-4 max-h-[40vh] space-y-4 overflow-y-auto">
                                 {productosEnCarrito.map((p) => (
                                     <div
@@ -1128,6 +1333,13 @@ export default function MarketplaceShow({
                                                 x $
                                                 {p.precio_venta.toLocaleString()}
                                             </p>
+                                            <p className="text-[11px] font-bold text-slate-700">
+                                                Subtotal: $
+                                                {(
+                                                    p.precio_venta *
+                                                    (carrito[p.id] || 0)
+                                                ).toLocaleString()}
+                                            </p>
                                             {['kg', 'lt'].includes(
                                                 p.unidad_medida,
                                             ) &&
@@ -1144,6 +1356,18 @@ export default function MarketplaceShow({
                                                     </p>
                                                 )}
                                         </div>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() =>
+                                                eliminarDelCarrito(p.id)
+                                            }
+                                            className="h-8 w-8 shrink-0 text-slate-400 hover:bg-destructive/10 hover:text-destructive"
+                                            aria-label={`Eliminar ${p.nombre} del pedido`}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
                                     </div>
                                 ))}
                                 {totalItems === 0 && (
@@ -1178,9 +1402,21 @@ export default function MarketplaceShow({
                                         </SheetTrigger>
                                         <SheetContent className="rounded-l-[3rem] border-l-0 bg-white sm:max-w-md">
                                             <SheetHeader className="border-b pb-8">
-                                                <SheetTitle className="text-3xl font-black tracking-tighter uppercase">
-                                                    Mi Compra
-                                                </SheetTitle>
+                                                <div className="flex items-center justify-between">
+                                                    <SheetTitle className="text-3xl font-black tracking-tighter uppercase">
+                                                        Mi Compra
+                                                    </SheetTitle>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={vaciarCarrito}
+                                                        className="gap-1 text-xs font-bold text-slate-500 hover:bg-destructive/10 hover:text-destructive"
+                                                    >
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                        Vaciar
+                                                    </Button>
+                                                </div>
                                             </SheetHeader>
                                             <div className="flex-1 overflow-y-auto py-8">
                                                 {productosEnCarrito.map((p) => (
@@ -1381,6 +1617,31 @@ export default function MarketplaceShow({
                                                                     }
                                                                 >
                                                                     <Plus className="h-3 w-3" />
+                                                                </Button>
+                                                            </div>
+                                                            <div className="mt-3 flex items-center justify-between border-t border-slate-200/70 pt-2">
+                                                                <span className="text-xs font-black text-slate-700">
+                                                                    Subtotal: $
+                                                                    {(
+                                                                        p.precio_venta *
+                                                                        (carrito[
+                                                                            p.id
+                                                                        ] || 0)
+                                                                    ).toLocaleString()}
+                                                                </span>
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        eliminarDelCarrito(
+                                                                            p.id,
+                                                                        )
+                                                                    }
+                                                                    className="h-8 w-8 text-slate-400 hover:bg-destructive/10 hover:text-destructive"
+                                                                    aria-label={`Eliminar ${p.nombre} del pedido`}
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
                                                                 </Button>
                                                             </div>
                                                         </div>
@@ -1864,6 +2125,257 @@ export default function MarketplaceShow({
                     </div>
                 </div>
             </div>
+
+            <Dialog
+                open={productoDetalle !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        cerrarDetalle();
+                    }
+                }}
+            >
+                <DialogContent className="max-h-[92vh] max-w-5xl overflow-y-auto rounded-2xl p-0">
+                    {productoDetalle && (
+                        <div className="grid md:grid-cols-2">
+                            <div className="bg-slate-50 p-4">
+                                <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                    {imagenDetalle ? (
+                                        <img
+                                            src={`/storage/${imagenDetalle}`}
+                                            alt={productoDetalle.nombre}
+                                            className="h-full w-full object-contain"
+                                        />
+                                    ) : (
+                                        <Store className="h-16 w-16 text-slate-300" />
+                                    )}
+                                </div>
+                                {imagenesDetalle.length > 1 && (
+                                    <div className="mt-3 grid grid-cols-5 gap-2">
+                                        {imagenesDetalle.map((imagen) => (
+                                            <button
+                                                key={imagen}
+                                                type="button"
+                                                onClick={() =>
+                                                    setImagenActiva(imagen)
+                                                }
+                                                className={cn(
+                                                    'aspect-square overflow-hidden rounded-lg border-2 bg-white transition-all',
+                                                    imagenDetalle === imagen
+                                                        ? 'border-primary'
+                                                        : 'border-transparent hover:border-slate-300',
+                                                )}
+                                            >
+                                                <img
+                                                    src={`/storage/${imagen}`}
+                                                    alt={productoDetalle.nombre}
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex flex-col gap-5 p-6">
+                                <DialogHeader>
+                                    <DialogTitle className="text-left text-2xl font-black tracking-tight text-slate-900">
+                                        {productoDetalle.nombre}
+                                    </DialogTitle>
+                                </DialogHeader>
+
+                                <div className="flex items-end gap-2">
+                                    <span className="text-3xl font-black text-primary">
+                                        ${precioDetalle.toLocaleString()}
+                                    </span>
+                                    <span className="pb-1 text-sm font-semibold text-slate-500">
+                                        / {unidadDetalle}
+                                    </span>
+                                </div>
+
+                                <p className="text-sm leading-relaxed whitespace-pre-line text-slate-600">
+                                    {productoDetalle.descripcion ||
+                                        'Este producto aún no tiene una descripción ampliada.'}
+                                </p>
+
+                                <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm">
+                                    <div>
+                                        <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                            Código
+                                        </p>
+                                        <p className="font-bold text-slate-800">
+                                            {productoDetalle.codigo}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                            Categoría
+                                        </p>
+                                        <p className="flex items-center gap-1 font-bold text-slate-800">
+                                            <Tag className="h-3.5 w-3.5 text-slate-400" />
+                                            {categoriaDetalle}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                            Unidad
+                                        </p>
+                                        <p className="font-bold text-slate-800">
+                                            {unidadDetalle}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                            Disponibilidad
+                                        </p>
+                                        <p className="flex items-center gap-1 font-bold text-slate-800">
+                                            <Package className="h-3.5 w-3.5 text-slate-400" />
+                                            {stockDetalle > 0
+                                                ? `${stockDetalle.toLocaleString()} disponibles`
+                                                : 'Sin stock registrado'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {productoDetalle.skus &&
+                                    productoDetalle.skus.length > 0 && (
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                                Variante
+                                            </Label>
+                                            <Select
+                                                value={
+                                                    skuSeleccionado !== null
+                                                        ? String(
+                                                              skuSeleccionado,
+                                                          )
+                                                        : undefined
+                                                }
+                                                onValueChange={(value) =>
+                                                    setSkuSeleccionado(
+                                                        Number(value),
+                                                    )
+                                                }
+                                            >
+                                                <SelectTrigger className="h-11 rounded-xl">
+                                                    <SelectValue placeholder="Seleccionar variante" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {productoDetalle.skus.map(
+                                                        (sku) => (
+                                                            <SelectItem
+                                                                key={sku.id}
+                                                                value={String(
+                                                                    sku.id,
+                                                                )}
+                                                            >
+                                                                {nombreVariante(
+                                                                    sku,
+                                                                )}
+                                                                {Number(
+                                                                    sku.stock,
+                                                                ) <= 0
+                                                                    ? ' — Sin stock'
+                                                                    : ''}
+                                                            </SelectItem>
+                                                        ),
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
+
+                                {productoDetalle.is_service &&
+                                productoDetalle.requires_appointment ? (
+                                    <Link
+                                        href={`/booking/${store.slug}?service_id=${productoDetalle.id}`}
+                                        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground transition-all hover:bg-primary/90"
+                                    >
+                                        <Calendar className="h-4 w-4" />
+                                        Agendar Cita
+                                    </Link>
+                                ) : (
+                                    <>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                                Cantidad
+                                            </Label>
+                                            <div className="flex items-center gap-3">
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="h-10 w-10 rounded-xl"
+                                                    onClick={() =>
+                                                        setCantidadDetalle(
+                                                            (prev) =>
+                                                                Math.max(
+                                                                    1,
+                                                                    prev -
+                                                                        detalleStep,
+                                                                ),
+                                                        )
+                                                    }
+                                                >
+                                                    <Minus className="h-4 w-4" />
+                                                </Button>
+                                                <div className="flex flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white px-3">
+                                                    <Input
+                                                        type="number"
+                                                        min={1}
+                                                        step={detalleStep}
+                                                        value={cantidadDetalle}
+                                                        onChange={(e) =>
+                                                            setCantidadDetalle(
+                                                                Math.max(
+                                                                    1,
+                                                                    parseFloat(
+                                                                        e.target
+                                                                            .value,
+                                                                    ) || 1,
+                                                                ),
+                                                            )
+                                                        }
+                                                        className="h-10 w-full [appearance:textfield] border-0 bg-transparent text-center text-lg font-black [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                    />
+                                                    <span className="text-xs font-bold text-slate-400 uppercase">
+                                                        {
+                                                            detalleEtiquetaCantidad
+                                                        }
+                                                    </span>
+                                                </div>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="h-10 w-10 rounded-xl"
+                                                    onClick={() =>
+                                                        setCantidadDetalle(
+                                                            (prev) =>
+                                                                prev +
+                                                                detalleStep,
+                                                        )
+                                                    }
+                                                >
+                                                    <Plus className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <Button
+                                            type="button"
+                                            onClick={agregarDetalleAlCarrito}
+                                            className="h-12 w-full rounded-xl bg-primary text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
+                                        >
+                                            <ShoppingCart className="mr-2 h-4 w-4" />
+                                            Agregar al pedido
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

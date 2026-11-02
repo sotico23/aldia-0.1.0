@@ -199,6 +199,14 @@ class Producto extends Model
     }
 
     /**
+     * Master stock is derived from the inventory records of its warehouses.
+     */
+    public function getStockAttribute(): float
+    {
+        return $this->stock_total;
+    }
+
+    /**
      * Check if product is a gas cylinder (recarga)
      */
     public function esRecargaGas(): bool

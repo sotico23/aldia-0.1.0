@@ -100,6 +100,54 @@ class ProductoController extends Controller implements HasMiddleware
         return $images;
     }
 
+    /**
+     * Synchronize the product stock with the inventories of its associated warehouses.
+     *
+     * When a stock value is provided, every selected warehouse receives that value so
+     * the master stock and the warehouse inventory stay aligned.
+     *
+     * @param  array<int, int|string>  $warehouseIds
+     */
+    private function syncWarehouseInventory(Producto $producto, array $warehouseIds, ?float $stock, float $stockMinimo): void
+    {
+        $ownerId = (int) Auth::user()->getOwnerId();
+
+        DB::transaction(function () use ($producto, $warehouseIds, $stock, $stockMinimo, $ownerId) {
+            $warehouseIds = array_values(array_filter($warehouseIds, fn ($warehouseId) => filled($warehouseId)));
+
+            $currentInventarios = $producto->inventarios()->get()->keyBy('almacen_id');
+
+            if ($warehouseIds === []) {
+                $warehouseIds = $currentInventarios->keys()->filter()->values()->all();
+            }
+
+            if ($warehouseIds === [] && $stock !== null) {
+                $defaultWarehouseId = Almacen::where('owner_id', $ownerId)
+                    ->where('activo', true)
+                    ->orderBy('id')
+                    ->value('id');
+
+                if ($defaultWarehouseId) {
+                    $warehouseIds = [$defaultWarehouseId];
+                }
+            }
+
+            $syncData = [];
+
+            foreach ($warehouseIds as $warehouseId) {
+                $inventario = $currentInventarios->get($warehouseId);
+
+                $syncData[$warehouseId] = [
+                    'cantidad' => $stock ?? (float) ($inventario?->cantidad ?? 0),
+                    'cantidad_minima' => $stockMinimo,
+                    'owner_id' => $ownerId,
+                ];
+            }
+
+            $producto->warehouses()->sync($syncData);
+        });
+    }
+
     public function getExportClass(array $filters): object
     {
         return new ProductosExport($filters);
@@ -643,27 +691,12 @@ class ProductoController extends Controller implements HasMiddleware
             }
             $producto->update(['tiene_variantes' => false]);
 
-            if (array_key_exists('warehouse_ids', $validated)) {
+            if (array_key_exists('warehouse_ids', $validated) || array_key_exists('stock', $validated) || array_key_exists('stock_minimo', $validated)) {
                 $warehouseIds = $validated['warehouse_ids'] ?? [];
-                DB::transaction(function () use ($producto, $warehouseIds, $validated) {
-                    $currentIds = $producto->warehouses()->pluck('almacen_id')->toArray();
-                    $ownerId = Auth::user()->getOwnerId();
-                    $syncData = [];
+                $stock = isset($validated['stock']) ? (float) $validated['stock'] : null;
+                $stockMinimo = (float) ($validated['stock_minimo'] ?? $producto->stock_minimo);
 
-                    foreach ($warehouseIds as $id) {
-                        if (in_array($id, $currentIds)) {
-                            $syncData[$id] = [];
-                        } else {
-                            $syncData[$id] = [
-                                'cantidad' => 0,
-                                'cantidad_minima' => $validated['stock_minimo'] ?? $producto->stock_minimo,
-                                'owner_id' => $ownerId,
-                            ];
-                        }
-                    }
-
-                    $producto->warehouses()->sync($syncData);
-                });
+                $this->syncWarehouseInventory($producto, $warehouseIds, $stock, $stockMinimo);
             }
         }
 

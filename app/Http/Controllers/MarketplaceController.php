@@ -45,6 +45,12 @@ class MarketplaceController extends Controller
                 $query->withoutGlobalScope(OwnerScope::class)
                     ->where('activo', true)
                     ->where('mostrar_en_perfil', true)
+                    ->with([
+                        'inventarios' => fn ($inventariosQuery) => $inventariosQuery->withoutGlobalScope(OwnerScope::class),
+                        'skus' => fn ($skusQuery) => $skusQuery->withoutGlobalScope(OwnerScope::class)->where('activo', true),
+                        'skus.valores' => fn ($valoresQuery) => $valoresQuery->withoutGlobalScope(OwnerScope::class),
+                        'skus.valores.varianteValor' => fn ($varianteValorQuery) => $varianteValorQuery->withoutGlobalScope(OwnerScope::class),
+                    ])
                     ->orderBy('nombre');
             }])
             ->firstOrFail();
