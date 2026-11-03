@@ -9,6 +9,7 @@ import {
     CreditCard,
     Banknote,
     User as UserIcon,
+    UserCheck,
     FileText,
     Receipt,
     Package,
@@ -99,11 +100,32 @@ interface Cliente {
     id: number;
     nombre: string;
     rut: string | null;
+    direccion: string | null;
+    comuna: string | null;
+    ciudad: string | null;
+    region: string | null;
+}
+
+interface DeliveryRate {
+    id: number;
+    calculation_type: 'comuna' | 'rango_km' | 'valor_fijo_km';
+    commune: string | null;
+    km_from: number | null;
+    km_to: number | null;
+    cost: number;
 }
 
 interface Almacen {
     id: number;
     nombre: string;
+}
+
+interface Empleado {
+    id: number;
+    nombre: string;
+    apellido: string;
+    cargo: string | null;
+    user_id: number | null;
 }
 
 interface Promocion {
@@ -136,17 +158,188 @@ interface CartItem {
     cantidad_retornada?: number;
 }
 
+function DeliveryControls({
+    enabled,
+    onEnabledChange,
+    rates,
+    rateId,
+    onRateChange,
+    distanceKm,
+    onDistanceChange,
+    manualCost,
+    onManualCostChange,
+    address,
+    onAddressChange,
+    suffix,
+}: {
+    enabled: boolean;
+    onEnabledChange: (enabled: boolean) => void;
+    rates: DeliveryRate[];
+    rateId: string;
+    onRateChange: (rateId: string) => void;
+    distanceKm: string;
+    onDistanceChange: (distanceKm: string) => void;
+    manualCost: string;
+    onManualCostChange: (cost: string) => void;
+    address: string;
+    onAddressChange: (address: string) => void;
+    suffix: string;
+}) {
+    const selectedRate = rates.find((rate) => String(rate.id) === rateId);
+
+    return (
+        <div className="space-y-2 border-t pt-3">
+            <div className="flex items-center gap-2">
+                <Checkbox
+                    id={`include-delivery-${suffix}`}
+                    checked={enabled}
+                    onCheckedChange={(checked) =>
+                        onEnabledChange(checked === true)
+                    }
+                />
+                <Label
+                    htmlFor={`include-delivery-${suffix}`}
+                    className="cursor-pointer text-sm font-medium"
+                >
+                    Incluir Despacho
+                </Label>
+            </div>
+            {enabled && (
+                <div className="space-y-3 rounded-lg bg-muted/30 p-3">
+                    <div className="space-y-1">
+                        <Label htmlFor={`delivery-rate-${suffix}`}>
+                            Comuna o regla de kilómetros
+                        </Label>
+                        <Select
+                            value={rateId || 'manual'}
+                            onValueChange={(value) =>
+                                onRateChange(value === 'manual' ? '' : value)
+                            }
+                        >
+                            <SelectTrigger id={`delivery-rate-${suffix}`}>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="manual">
+                                    Ingreso manual
+                                </SelectItem>
+                                {rates.map((rate) => {
+                                    const description =
+                                        rate.calculation_type === 'comuna'
+                                            ? rate.commune
+                                            : rate.calculation_type ===
+                                                'rango_km'
+                                              ? `${rate.km_from} - ${rate.km_to} km`
+                                              : 'Valor fijo por km';
+
+                                    return (
+                                        <SelectItem
+                                            key={rate.id}
+                                            value={String(rate.id)}
+                                        >
+                                            {description} —{' '}
+                                            {formatCurrency(rate.cost)}
+                                            {rate.calculation_type ===
+                                                'valor_fijo_km' && '/km'}
+                                        </SelectItem>
+                                    );
+                                })}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {selectedRate?.calculation_type === 'valor_fijo_km' && (
+                        <div className="space-y-1">
+                            <Label htmlFor={`delivery-distance-${suffix}`}>
+                                Distancia (km)
+                            </Label>
+                            <Input
+                                id={`delivery-distance-${suffix}`}
+                                type="number"
+                                min="0.01"
+                                step="0.01"
+                                value={distanceKm}
+                                onChange={(event) =>
+                                    onDistanceChange(event.target.value)
+                                }
+                                required
+                            />
+                        </div>
+                    )}
+
+                    {!selectedRate && (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="space-y-1">
+                                <Label htmlFor={`manual-distance-${suffix}`}>
+                                    Distancia (km), opcional
+                                </Label>
+                                <Input
+                                    id={`manual-distance-${suffix}`}
+                                    type="number"
+                                    min="0.01"
+                                    step="0.01"
+                                    value={distanceKm}
+                                    onChange={(event) =>
+                                        onDistanceChange(event.target.value)
+                                    }
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor={`manual-cost-${suffix}`}>
+                                    Monto del despacho
+                                </Label>
+                                <Input
+                                    id={`manual-cost-${suffix}`}
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={manualCost}
+                                    onChange={(event) =>
+                                        onManualCostChange(event.target.value)
+                                    }
+                                    required
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="space-y-1">
+                        <Label htmlFor={`delivery-address-${suffix}`}>
+                            Dirección de entrega
+                        </Label>
+                        <Input
+                            id={`delivery-address-${suffix}`}
+                            value={address}
+                            onChange={(event) =>
+                                onAddressChange(event.target.value)
+                            }
+                            maxLength={255}
+                            required
+                        />
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function PosIndex({
     productos,
     clientes,
     almacenes = [],
+    empleados = [],
+    empleado_id = null,
     promociones = [],
+    delivery_rates = [],
     iva_tasa = 0.19,
 }: {
     productos: Producto[];
     clientes: Cliente[];
     almacenes?: Almacen[];
+    empleados?: Empleado[];
+    empleado_id?: number | null;
     promociones?: Promocion[];
+    delivery_rates?: DeliveryRate[];
     iva_tasa?: number;
 }) {
     const [cart, setCart] = useState<CartItem[]>(() => {
@@ -170,6 +363,8 @@ export default function PosIndex({
         items: CartItem[];
         subtotal: number;
         descuento: number;
+        hasDelivery: boolean;
+        deliveryCost: number;
         iva: number;
         total: number;
         metodoPago: string;
@@ -197,6 +392,11 @@ export default function PosIndex({
     } | null>(null);
 
     const [clienteId, setClienteId] = useState<string | undefined>(undefined);
+    const [hasDelivery, setHasDelivery] = useState(false);
+    const [deliveryRateId, setDeliveryRateId] = useState('');
+    const [deliveryDistanceKm, setDeliveryDistanceKm] = useState('');
+    const [manualDeliveryCost, setManualDeliveryCost] = useState('');
+    const [deliveryAddress, setDeliveryAddress] = useState('');
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [metodoPago, setMetodoPago] = useState<
         | 'efectivo'
@@ -213,6 +413,13 @@ export default function PosIndex({
     const [almacenId, setAlmacenId] = useState<string>(
         almacenes.length > 0 ? String(almacenes[0].id) : '',
     );
+    const [empleadoId, setEmpleadoId] = useState<string>(() => {
+        if (empleado_id) {
+            return String(empleado_id);
+        }
+
+        return empleados.length > 0 ? String(empleados[0].id) : '';
+    });
     const [codigoCupon, setCodigoCupon] = useState('');
     const [cuponValidando, setCuponValidando] = useState(false);
     const [cuponValido, setCuponValido] = useState<boolean | null>(null);
@@ -228,6 +435,46 @@ export default function PosIndex({
     const [mostrarModalPagos, setMostrarModalPagos] = useState(false);
     const [mostrandoMetodosPago, setMostrandoMetodosPago] = useState(false);
     const [cartOpen, setCartOpen] = useState(false);
+
+    const handleClienteChange = (clienteIdSeleccionado: string) => {
+        setClienteId(clienteIdSeleccionado);
+        const cliente = clientes.find(
+            (item) => String(item.id) === clienteIdSeleccionado,
+        );
+        setDeliveryAddress(
+            cliente
+                ? [
+                      cliente.direccion,
+                      cliente.comuna,
+                      cliente.ciudad,
+                      cliente.region,
+                  ]
+                      .filter(Boolean)
+                      .join(', ')
+                : '',
+        );
+    };
+
+    const selectedDeliveryRate = delivery_rates.find(
+        (rate) => String(rate.id) === deliveryRateId,
+    );
+    const deliveryCost = useMemo(() => {
+        if (!hasDelivery) return 0;
+        if (!selectedDeliveryRate) return Number(manualDeliveryCost) || 0;
+        if (selectedDeliveryRate.calculation_type === 'valor_fijo_km') {
+            return Math.round(
+                Number(selectedDeliveryRate.cost) *
+                    (Number(deliveryDistanceKm) || 0),
+            );
+        }
+
+        return Math.round(Number(selectedDeliveryRate.cost));
+    }, [
+        deliveryDistanceKm,
+        hasDelivery,
+        manualDeliveryCost,
+        selectedDeliveryRate,
+    ]);
 
     const subtotal = useMemo(() => {
         return cart.reduce((acc, item) => {
@@ -649,14 +896,6 @@ export default function PosIndex({
         return descuentoTotal;
     }, [cart, promociones]);
 
-    const baseImponible = useMemo(
-        () => Math.max(0, subtotal - descuento),
-        [subtotal, descuento],
-    );
-    const iva = useMemo(
-        () => (incluyeIva ? baseImponible * iva_tasa : 0),
-        [baseImponible, iva_tasa, incluyeIva],
-    );
     const descuentoManual = useMemo(() => {
         if (
             !descuentoManualActivo ||
@@ -675,14 +914,34 @@ export default function PosIndex({
         subtotal,
     ]);
     const totalCuponAplicado = cuponAplicado ? cuponDescuento : 0;
-    const total = useMemo(
+    const baseImponible = useMemo(
         () =>
             Math.max(
                 0,
-                baseImponible + iva - descuentoManual - totalCuponAplicado,
-            ),
-        [baseImponible, iva, descuentoManual, totalCuponAplicado],
+                subtotal -
+                    Math.round(
+                        Math.min(
+                            subtotal,
+                            descuento + descuentoManual + totalCuponAplicado,
+                        ),
+                    ),
+            ) + deliveryCost,
+        [
+            deliveryCost,
+            descuento,
+            descuentoManual,
+            subtotal,
+            totalCuponAplicado,
+        ],
     );
+    const iva = useMemo(
+        () =>
+            incluyeIva
+                ? baseImponible - Math.round(baseImponible / (1 + iva_tasa))
+                : 0,
+        [baseImponible, iva_tasa, incluyeIva],
+    );
+    const total = baseImponible;
 
     const getStockForAlmacen = (
         producto: Producto,
@@ -742,12 +1001,18 @@ export default function PosIndex({
         subtotal: 0,
         iva: 0,
         total: 0,
+        has_delivery: false,
+        delivery_rate_id: null as number | null,
+        delivery_cost: 0,
+        delivery_distance_km: null as number | null,
+        delivery_address: '',
         incluye_iva: true,
         descuento: 0,
         descuento_manual: 0,
         tipo_descuento_manual: null as 'fijo' | 'porcentaje' | null,
         valor_descuento_manual: 0,
         almacen_id: '',
+        empleado_id: null as string | number | null,
         cupon_codigo: undefined as string | undefined,
     });
 
@@ -762,6 +1027,26 @@ export default function PosIndex({
             | 'contactar',
     ) => {
         if (cart.length === 0) return;
+        if (hasDelivery && !deliveryAddress.trim()) {
+            toast.error('Ingrese la dirección de entrega.');
+            return;
+        }
+        if (
+            hasDelivery &&
+            selectedDeliveryRate?.calculation_type === 'valor_fijo_km' &&
+            Number(deliveryDistanceKm) <= 0
+        ) {
+            toast.error('Ingrese una distancia válida en kilómetros.');
+            return;
+        }
+        if (
+            hasDelivery &&
+            !selectedDeliveryRate &&
+            manualDeliveryCost.trim() === ''
+        ) {
+            toast.error('Ingrese el monto del despacho.');
+            return;
+        }
 
         posForm.setData({
             cliente_id: clienteId,
@@ -774,9 +1059,18 @@ export default function PosIndex({
                 precio: item.precio_venta,
                 cantidad_retornada: item.cantidad_retornada,
             })),
-            subtotal: baseImponible,
+            subtotal: subtotal + deliveryCost,
             iva: iva,
             total: total,
+            has_delivery: hasDelivery,
+            delivery_rate_id:
+                hasDelivery && deliveryRateId ? Number(deliveryRateId) : null,
+            delivery_cost: deliveryCost,
+            delivery_distance_km:
+                hasDelivery && deliveryDistanceKm
+                    ? Number(deliveryDistanceKm)
+                    : null,
+            delivery_address: hasDelivery ? deliveryAddress : '',
             incluye_iva: incluyeIva,
             descuento: descuento,
             descuento_manual: descuentoManual,
@@ -788,6 +1082,7 @@ export default function PosIndex({
                 ? valorDescuentoManual
                 : 0,
             almacen_id: almacenId,
+            empleado_id: empleadoId || null,
             cupon_codigo: codigoCupon || undefined,
         });
 
@@ -805,6 +1100,8 @@ export default function PosIndex({
                     items: [...cart],
                     subtotal: subtotal,
                     descuento: descuento,
+                    hasDelivery,
+                    deliveryCost,
                     iva: iva,
                     total: total,
                     metodoPago: metodo,
@@ -821,6 +1118,25 @@ export default function PosIndex({
                 vaciarCarrito();
                 limpiarCupon();
                 posForm.reset();
+                setHasDelivery(false);
+                setDeliveryRateId('');
+                setDeliveryDistanceKm('');
+                setManualDeliveryCost('');
+                const clienteSeleccionado = clientes.find(
+                    (cliente) => String(cliente.id) === clienteId,
+                );
+                setDeliveryAddress(
+                    clienteSeleccionado
+                        ? [
+                              clienteSeleccionado.direccion,
+                              clienteSeleccionado.comuna,
+                              clienteSeleccionado.ciudad,
+                              clienteSeleccionado.region,
+                          ]
+                              .filter(Boolean)
+                              .join(', ')
+                        : '',
+                );
                 setMostrandoMetodosPago(false);
                 toast.success('Venta registrada exitosamente');
             },
@@ -994,7 +1310,7 @@ export default function PosIndex({
                             <UserIcon className="h-4 w-4 text-muted-foreground" />
                             <Select
                                 value={clienteId}
-                                onValueChange={setClienteId}
+                                onValueChange={handleClienteChange}
                             >
                                 <SelectTrigger className="h-9">
                                     <SelectValue placeholder="Cliente Genérico" />
@@ -1060,6 +1376,35 @@ export default function PosIndex({
                                             value={String(a.id)}
                                         >
                                             {a.nombre}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="flex items-center gap-1 text-xs font-black text-primary/70 uppercase">
+                                <UserCheck className="h-3.5 w-3.5" />
+                                Cajero / Vendedor
+                            </Label>
+                            <Select
+                                value={empleadoId || undefined}
+                                onValueChange={setEmpleadoId}
+                            >
+                                <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Seleccionar Cajero" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {empleados.map((empleado) => (
+                                        <SelectItem
+                                            key={empleado.id}
+                                            value={String(empleado.id)}
+                                        >
+                                            {empleado.nombre}{' '}
+                                            {empleado.apellido}
+                                            {empleado.cargo
+                                                ? ` — ${empleado.cargo}`
+                                                : ''}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -1397,6 +1742,26 @@ export default function PosIndex({
                                     </span>
                                 </div>
                             )}
+                            <DeliveryControls
+                                enabled={hasDelivery}
+                                onEnabledChange={setHasDelivery}
+                                rates={delivery_rates}
+                                rateId={deliveryRateId}
+                                onRateChange={setDeliveryRateId}
+                                distanceKm={deliveryDistanceKm}
+                                onDistanceChange={setDeliveryDistanceKm}
+                                manualCost={manualDeliveryCost}
+                                onManualCostChange={setManualDeliveryCost}
+                                address={deliveryAddress}
+                                onAddressChange={setDeliveryAddress}
+                                suffix="desktop"
+                            />
+                            {hasDelivery && (
+                                <div className="flex justify-between text-sm font-medium text-blue-600">
+                                    <span>Despacho</span>
+                                    <span>{formatCurrency(deliveryCost)}</span>
+                                </div>
+                            )}
                             <div className="flex justify-between text-sm font-medium text-muted-foreground">
                                 <span>
                                     IVA ({(iva_tasa * 100).toFixed(0)}%)
@@ -1706,7 +2071,7 @@ export default function PosIndex({
                                     <UserIcon className="h-4 w-4 text-muted-foreground" />
                                     <Select
                                         value={clienteId}
-                                        onValueChange={setClienteId}
+                                        onValueChange={handleClienteChange}
                                     >
                                         <SelectTrigger className="h-9">
                                             <SelectValue placeholder="Cliente Genérico" />
@@ -1778,6 +2143,35 @@ export default function PosIndex({
                                                     value={String(a.id)}
                                                 >
                                                     {a.nombre}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="flex items-center gap-1 text-xs font-black text-primary/70 uppercase">
+                                        <UserCheck className="h-3.5 w-3.5" />
+                                        Cajero / Vendedor
+                                    </Label>
+                                    <Select
+                                        value={empleadoId || undefined}
+                                        onValueChange={setEmpleadoId}
+                                    >
+                                        <SelectTrigger className="h-9">
+                                            <SelectValue placeholder="Seleccionar Cajero" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {empleados.map((empleado) => (
+                                                <SelectItem
+                                                    key={empleado.id}
+                                                    value={String(empleado.id)}
+                                                >
+                                                    {empleado.nombre}{' '}
+                                                    {empleado.apellido}
+                                                    {empleado.cargo
+                                                        ? ` — ${empleado.cargo}`
+                                                        : ''}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -2095,6 +2489,30 @@ export default function PosIndex({
                                             <span>
                                                 -
                                                 {formatCurrency(cuponDescuento)}
+                                            </span>
+                                        </div>
+                                    )}
+                                    <DeliveryControls
+                                        enabled={hasDelivery}
+                                        onEnabledChange={setHasDelivery}
+                                        rates={delivery_rates}
+                                        rateId={deliveryRateId}
+                                        onRateChange={setDeliveryRateId}
+                                        distanceKm={deliveryDistanceKm}
+                                        onDistanceChange={setDeliveryDistanceKm}
+                                        manualCost={manualDeliveryCost}
+                                        onManualCostChange={
+                                            setManualDeliveryCost
+                                        }
+                                        address={deliveryAddress}
+                                        onAddressChange={setDeliveryAddress}
+                                        suffix="mobile"
+                                    />
+                                    {hasDelivery && (
+                                        <div className="flex justify-between text-sm font-medium text-blue-600">
+                                            <span>Despacho</span>
+                                            <span>
+                                                {formatCurrency(deliveryCost)}
                                             </span>
                                         </div>
                                     )}
@@ -2556,6 +2974,16 @@ export default function PosIndex({
                                             )}
                                         </span>
                                     </div>
+                                    {ultimaVenta.hasDelivery && (
+                                        <div className="flex justify-between text-blue-600">
+                                            <span>Despacho</span>
+                                            <span>
+                                                {formatCurrency(
+                                                    ultimaVenta.deliveryCost,
+                                                )}
+                                            </span>
+                                        </div>
+                                    )}
                                     {ultimaVenta.cupon && (
                                         <div className="flex justify-between text-orange-600">
                                             <span>

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\InvalidStateException;
 use Symfony\Component\HttpFoundation\Response;
 
 class SocialiteController extends Controller
@@ -29,6 +30,31 @@ class SocialiteController extends Controller
     }
 
     public function callback(string $provider): RedirectResponse
+    {
+        try {
+            return $this->loginWithSocialite($provider);
+        } catch (InvalidStateException $e) {
+            Log::warning("Socialite callback con state inválido para {$provider}", [
+                'message' => $e->getMessage(),
+                'class' => get_class($e),
+            ]);
+
+            return redirect()
+                ->route('login')
+                ->with('error', 'La sesión de autenticación expiró. Por favor, reintenta iniciar sesión.');
+        } catch (\Exception $e) {
+            Log::error("Socialite callback falló para {$provider}", [
+                'message' => $e->getMessage(),
+                'class' => get_class($e),
+            ]);
+
+            return redirect()
+                ->route('login')
+                ->with('error', 'No se pudo completar el inicio de sesión con '.ucfirst($provider).'. Inténtalo nuevamente.');
+        }
+    }
+
+    private function loginWithSocialite(string $provider): RedirectResponse
     {
         $socialiteUser = Socialite::driver($provider)->user();
 

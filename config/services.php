@@ -1,5 +1,7 @@
 <?php
 
+$appUrl = rtrim((string) env('APP_URL', 'http://localhost'), '/');
+
 return [
 
     /*
@@ -38,14 +40,14 @@ return [
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => env('GOOGLE_REDIRECT_URI', env('APP_URL').'/auth/google/callback'),
+        'redirect' => env('GOOGLE_REDIRECT_URI') ?: $appUrl.'/auth/google/callback',
         'maps_api_key' => env('GOOGLE_MAPS_API_KEY'),
     ],
 
     'facebook' => [
         'client_id' => env('FACEBOOK_CLIENT_ID'),
         'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
-        'redirect' => env('FACEBOOK_REDIRECT_URI', env('APP_URL').'/auth/facebook/callback'),
+        'redirect' => env('FACEBOOK_REDIRECT_URI') ?: $appUrl.'/auth/facebook/callback',
     ],
 
     'mailtrap' => [
@@ -58,7 +60,7 @@ return [
         'bot' => env('TELEGRAM_LOGIN_BOT_NAME'),
         'client_id' => null,
         'client_secret' => env('TELEGRAM_LOGIN_BOT_TOKEN'),
-        'redirect' => env('TELEGRAM_LOGIN_REDIRECT_URI', env('APP_URL').'/auth/telegram/callback'),
+        'redirect' => env('TELEGRAM_LOGIN_REDIRECT_URI') ?: $appUrl.'/auth/telegram/callback',
         // Max age, en segundos, de un auth_date de Telegram Login Widget para evitar ataques replay.
         'login_max_age' => env('TELEGRAM_LOGIN_MAX_AGE', 300),
     ],

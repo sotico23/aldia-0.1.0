@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Imports\EntregasImport;
 use App\Models\Cliente;
 use App\Models\Conductor;
+use App\Models\DeliveryRate;
 use App\Models\Entrega;
 use App\Models\GrupoTrabajo;
 use App\Models\Pedido;
@@ -77,6 +78,18 @@ class EntregaController extends Controller implements HasMiddleware
 
         return Inertia::render('Backend/Entregas/Index', [
             'entregas' => $entregas,
+            'delivery_rates' => DeliveryRate::where('owner_id', $ownerId)
+                ->orderByDesc('id')
+                ->get()
+                ->map(fn (DeliveryRate $rate) => [
+                    'id' => $rate->id,
+                    'calculation_type' => $rate->calculation_type,
+                    'commune' => $rate->commune,
+                    'km_from' => $rate->km_from === null ? null : (float) $rate->km_from,
+                    'km_to' => $rate->km_to === null ? null : (float) $rate->km_to,
+                    'cost' => (float) $rate->cost,
+                    'is_active' => $rate->is_active,
+                ]),
             'vehiculos' => $vehiculos,
             'conductores' => $conductores,
             'clientes' => $clientes,

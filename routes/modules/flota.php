@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Backend\CargaDiariaController;
 use App\Http\Controllers\Backend\ConductorController;
+use App\Http\Controllers\Backend\DeliveryRateController;
 use App\Http\Controllers\Backend\EntregaController;
 use App\Http\Controllers\Backend\GrupoTrabajoController;
 use App\Http\Controllers\Backend\GrupoTrabajoRendimientoController;
@@ -35,6 +36,9 @@ Route::middleware(['permission:flota.entregas.viewAny'])->group(function () {
     Route::get('entregas/export-excel', [EntregaController::class, 'exportExcel'])->name('entregas.exportExcel');
     Route::post('entregas/import', [EntregaController::class, 'importCsv'])->name('entregas.import');
     Route::post('entregas/import-excel', [EntregaController::class, 'importExcel'])->name('entregas.importExcel');
+    Route::post('entregas/tarifas', [DeliveryRateController::class, 'store'])->name('entregas.tarifas.store')->middleware('permission:flota.entregas.create');
+    Route::put('entregas/tarifas/{deliveryRate}', [DeliveryRateController::class, 'update'])->name('entregas.tarifas.update')->middleware('permission:flota.entregas.edit');
+    Route::delete('entregas/tarifas/{deliveryRate}', [DeliveryRateController::class, 'destroy'])->name('entregas.tarifas.destroy')->middleware('permission:flota.entregas.delete');
     Route::resource('entregas', EntregaController::class)->except(['create', 'show', 'edit'])->middleware('ownership:entrega');
 });
 

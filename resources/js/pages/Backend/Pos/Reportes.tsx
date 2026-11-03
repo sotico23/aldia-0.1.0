@@ -7,7 +7,9 @@ import {
     DollarSign,
     Download,
     Upload,
-    FileSpreadsheet
+    FileSpreadsheet,
+    UserCheck,
+    Calendar,
 } from 'lucide-react';
 import { useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +28,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
@@ -49,11 +52,44 @@ interface RankingItem {
     nombre: string;
     total_vendidos: number;
     total_ingresos: number;
+    total_ganancia?: number;
 }
 
 interface Almacen {
     id: number;
     nombre: string;
+}
+
+interface Cajero {
+    id: number;
+    nombre: string;
+    apellido: string;
+}
+
+interface VentaCajero {
+    empleado_id: number | null;
+    cajero_nombre: string;
+    total_ventas: number;
+    monto_total: number;
+    ganancia_total: number;
+    margen: number;
+}
+
+interface DesgloseProducto {
+    empleado_id: number | null;
+    cajero_nombre: string;
+    producto_id: number;
+    producto_nombre: string;
+    cantidad: number;
+    ingresos: number;
+    ganancia: number;
+    margen: number;
+}
+
+interface TotalesReporte {
+    monto_total: number;
+    ganancia_total: number;
+    total_ventas: number;
 }
 
 export default function Reportes({
@@ -62,12 +98,26 @@ export default function Reportes({
     totalMes,
     almacenes = [],
     almacenId = null,
+    cajeros = [],
+    empleadoId = null,
+    ventasPorCajero = [],
+    desgloseProductos = [],
+    totales = { monto_total: 0, ganancia_total: 0, total_ventas: 0 },
+    fechaDesde = '',
+    fechaHasta = '',
 }: {
     ranking: RankingItem[];
     utilidad: number;
     totalMes: number;
     almacenes?: Almacen[];
     almacenId?: string | null;
+    cajeros?: Cajero[];
+    empleadoId?: string | null;
+    ventasPorCajero?: VentaCajero[];
+    desgloseProductos?: DesgloseProducto[];
+    totales?: TotalesReporte;
+    fechaDesde?: string;
+    fechaHasta?: string;
 }) {
     const { hasPermission } = usePermissions();
     const canAccess = hasPermission('ventas.pos.viewAny');
@@ -101,12 +151,56 @@ export default function Reportes({
         });
     };
 
-    const handleAlmacenChange = (id: string) => {
+    const applyFilters = (next: Record<string, string | null | undefined>) => {
         router.get(
             '/pos/reportes',
-            { almacen_id: id === 'all' ? null : id },
-            { preserveState: true },
+            {
+                almacen_id: almacenId || null,
+                empleado_id: empleadoId || null,
+                fecha_desde: fechaDesde || null,
+                fecha_hasta: fechaHasta || null,
+                ...next,
+            },
+            { preserveState: true, preserveScroll: true },
         );
+    };
+
+    const handleAlmacenChange = (id: string) => {
+        applyFilters({ almacen_id: id === 'all' ? null : id });
+    };
+
+    const handleCajeroChange = (id: string) => {
+        applyFilters({ empleado_id: id === 'all' ? null : id });
+    };
+
+    const handleFechaDesdeChange = (value: string) => {
+        applyFilters({ fecha_desde: value || null });
+    };
+
+    const handleFechaHastaChange = (value: string) => {
+        applyFilters({ fecha_hasta: value || null });
+    };
+
+    const buildExportUrl = (format: string) => {
+        const params = new URLSearchParams({ format });
+
+        if (almacenId) {
+            params.set('almacen_id', almacenId);
+        }
+
+        if (empleadoId) {
+            params.set('empleado_id', empleadoId);
+        }
+
+        if (fechaDesde) {
+            params.set('fecha_desde', fechaDesde);
+        }
+
+        if (fechaHasta) {
+            params.set('fecha_hasta', fechaHasta);
+        }
+
+        return `/pos/reportes/exportar?${params.toString()}`;
     };
 
     // Simular stock bajo para la demo de "huesos" o slow moving si no tenemos data real de slow moving
@@ -122,7 +216,9 @@ export default function Reportes({
                 ]}
             >
                 <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-foreground">No tienes permiso para acceder a esta página.</p>
+                    <p className="text-muted-foreground">
+                        No tienes permiso para acceder a esta página.
+                    </p>
                 </div>
             </AppLayout>
         );
@@ -174,6 +270,53 @@ export default function Reportes({
                             </Select>
                         </div>
 
+                        <div className="w-52">
+                            <Select
+                                value={empleadoId || 'all'}
+                                onValueChange={handleCajeroChange}
+                            >
+                                <SelectTrigger className="h-9">
+                                    <UserCheck className="mr-2 h-4 w-4 text-muted-foreground" />
+                                    <SelectValue placeholder="Todos los Cajeros" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        Todos los Cajeros
+                                    </SelectItem>
+                                    {cajeros.map((cajero) => (
+                                        <SelectItem
+                                            key={cajero.id}
+                                            value={String(cajero.id)}
+                                        >
+                                            {cajero.nombre} {cajero.apellido}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="flex items-center gap-2 rounded-xl border bg-background px-2 py-1">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <Input
+                                type="date"
+                                value={fechaDesde}
+                                onChange={(e) =>
+                                    handleFechaDesdeChange(e.target.value)
+                                }
+                                className="h-7 w-32 border-0 p-0 text-xs"
+                            />
+                            <span className="text-xs text-muted-foreground">
+                                a
+                            </span>
+                            <Input
+                                type="date"
+                                value={fechaHasta}
+                                onChange={(e) =>
+                                    handleFechaHastaChange(e.target.value)
+                                }
+                                className="h-7 w-32 border-0 p-0 text-xs"
+                            />
+                        </div>
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -199,7 +342,7 @@ export default function Reportes({
                                 <DropdownMenuItem
                                     onClick={() =>
                                         window.open(
-                                            '/pos/reportes/exportar?format=csv',
+                                            buildExportUrl('csv'),
                                             '_blank',
                                         )
                                     }
@@ -210,7 +353,7 @@ export default function Reportes({
                                 <DropdownMenuItem
                                     onClick={() =>
                                         window.open(
-                                            '/pos/reportes/exportar?format=excel',
+                                            buildExportUrl('excel'),
                                             '_blank',
                                         )
                                     }
@@ -287,6 +430,199 @@ export default function Reportes({
                             <p className="mt-1 animate-pulse text-[10px] font-bold font-medium tracking-wider text-amber-700 italic">
                                 esperando nuevas ventas
                             </p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <Card className="border-primary/10 bg-primary/5">
+                    <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
+                        <div>
+                            <p className="text-[10px] font-black tracking-widest text-primary/70 uppercase">
+                                Ventas del rango
+                            </p>
+                            <p className="text-xl font-black text-primary">
+                                {formatCurrency(totales.monto_total)}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black tracking-widest text-emerald-700/70 uppercase">
+                                Ganancia del rango
+                            </p>
+                            <p className="text-xl font-black text-emerald-700">
+                                {formatCurrency(totales.ganancia_total)}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black tracking-widest text-slate-500 uppercase">
+                                Tickets
+                            </p>
+                            <p className="text-xl font-black text-slate-700">
+                                {totales.total_ventas}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black tracking-widest text-slate-500 uppercase">
+                                Rango consultado
+                            </p>
+                            <p className="text-sm font-bold text-slate-700">
+                                {fechaDesde} al {fechaHasta}
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="flex items-center gap-2 font-bold text-primary">
+                                <UserCheck className="h-5 w-5" />
+                                Ventas y Ganancias por Cajero
+                            </CardTitle>
+                            <CardDescription className="text-xs italic">
+                                Rendimiento del equipo en el rango seleccionado.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader className="bg-slate-50">
+                                    <TableRow>
+                                        <TableHead className="text-xs font-bold uppercase">
+                                            Cajero
+                                        </TableHead>
+                                        <TableHead className="text-xs font-bold uppercase">
+                                            Ventas
+                                        </TableHead>
+                                        <TableHead className="text-right text-xs font-bold uppercase">
+                                            Monto
+                                        </TableHead>
+                                        <TableHead className="text-right text-xs font-bold uppercase">
+                                            Ganancia
+                                        </TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {ventasPorCajero.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={4}
+                                                className="h-24 text-center text-xs text-muted-foreground italic"
+                                            >
+                                                Sin ventas en el rango
+                                                seleccionado.
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        ventasPorCajero.map((item) => (
+                                            <TableRow
+                                                key={
+                                                    item.empleado_id ??
+                                                    'sin-cajero'
+                                                }
+                                            >
+                                                <TableCell className="text-xs font-bold">
+                                                    {item.cajero_nombre}
+                                                </TableCell>
+                                                <TableCell className="text-xs">
+                                                    {item.total_ventas}
+                                                </TableCell>
+                                                <TableCell className="text-right text-xs">
+                                                    {formatCurrency(
+                                                        item.monto_total,
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="text-xs font-black text-emerald-600">
+                                                        {formatCurrency(
+                                                            item.ganancia_total,
+                                                        )}
+                                                    </div>
+                                                    <div className="text-[10px] text-muted-foreground">
+                                                        {item.margen}% margen
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="flex items-center gap-2 font-bold text-primary">
+                                <Package className="h-5 w-5" />
+                                Desglose de Productos por Cajero
+                            </CardTitle>
+                            <CardDescription className="text-xs italic">
+                                Utilidad potencial por producto vendido.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="max-h-[420px] overflow-y-auto">
+                                <Table>
+                                    <TableHeader className="bg-slate-50">
+                                        <TableRow>
+                                            <TableHead className="text-xs font-bold uppercase">
+                                                Cajero
+                                            </TableHead>
+                                            <TableHead className="text-xs font-bold uppercase">
+                                                Producto
+                                            </TableHead>
+                                            <TableHead className="text-right text-xs font-bold uppercase">
+                                                Cant.
+                                            </TableHead>
+                                            <TableHead className="text-right text-xs font-bold uppercase">
+                                                Ganancia
+                                            </TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {desgloseProductos.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell
+                                                    colSpan={4}
+                                                    className="h-24 text-center text-xs text-muted-foreground italic"
+                                                >
+                                                    Sin productos vendidos en el
+                                                    rango.
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            desgloseProductos.map(
+                                                (item, index) => (
+                                                    <TableRow
+                                                        key={`${item.empleado_id}-${item.producto_id}-${index}`}
+                                                    >
+                                                        <TableCell className="text-xs font-medium">
+                                                            {item.cajero_nombre}
+                                                        </TableCell>
+                                                        <TableCell className="text-xs font-bold">
+                                                            {
+                                                                item.producto_nombre
+                                                            }
+                                                        </TableCell>
+                                                        <TableCell className="text-right text-xs">
+                                                            {item.cantidad}
+                                                        </TableCell>
+                                                        <TableCell className="text-right">
+                                                            <div className="text-xs font-black text-emerald-600">
+                                                                {formatCurrency(
+                                                                    item.ganancia,
+                                                                )}
+                                                            </div>
+                                                            <div className="text-[10px] text-muted-foreground">
+                                                                {item.margen}%
+                                                                margen
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ),
+                                            )
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

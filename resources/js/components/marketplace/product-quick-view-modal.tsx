@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
 import { Minus, Package, Plus, ShoppingCart } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,

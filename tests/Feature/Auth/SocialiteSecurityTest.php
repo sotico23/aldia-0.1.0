@@ -5,6 +5,7 @@ use App\Notifications\TempPasswordNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\InvalidStateException;
 
 uses(RefreshDatabase::class);
 
@@ -76,4 +77,22 @@ test('Socialite new user created with random password hash, no notification', fu
     expect($user->password)->not->toBeNull();
 
     Notification::assertNotSentTo($user, TempPasswordNotification::class);
+});
+
+test('Socialite callback redirects to login when the OAuth state has expired', function () {
+    Socialite::shouldReceive('driver->user')->andThrow(new InvalidStateException);
+
+    $response = $this->get('/auth/facebook/callback');
+
+    $response->assertRedirect(route('login'));
+    $response->assertSessionHas('error', 'La sesión de autenticación expiró. Por favor, reintenta iniciar sesión.');
+});
+
+test('Socialite callback redirects to login when the provider fails', function () {
+    Socialite::shouldReceive('driver->user')->andThrow(new \Exception('Provider unavailable'));
+
+    $response = $this->get('/auth/facebook/callback');
+
+    $response->assertRedirect(route('login'));
+    $response->assertSessionHas('error', 'No se pudo completar el inicio de sesión con Facebook. Inténtalo nuevamente.');
 });

@@ -53,6 +53,7 @@ import { useCountry } from '@/hooks/use-country';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
+import DeliveryRatesTab, { type DeliveryRate } from './DeliveryRatesTab';
 
 interface EntregaItem {
     id: number;
@@ -151,6 +152,7 @@ export default function Index({
     stats,
     filters,
     grupos_trabajo = [],
+    delivery_rates = [],
 }: {
     entregas: { data: Entrega[]; links: any[]; meta?: any; total: number };
     vehiculos: Vehiculo[];
@@ -160,12 +162,16 @@ export default function Index({
     stats: { kg: number; litros: number; unidades: number };
     filters: any;
     grupos_trabajo?: GrupoTrabajo[];
+    delivery_rates?: DeliveryRate[];
 }) {
     const { currency } = useCountry();
     const { hasPermission } = usePermissions();
     const canCreate = hasPermission('flota.entregas.create');
     const canEdit = hasPermission('flota.entregas.edit');
     const canDelete = hasPermission('flota.entregas.delete');
+    const [activeTab, setActiveTab] = useState<'deliveries' | 'rates'>(
+        'deliveries',
+    );
 
     const [isOpen, setIsOpen] = useState(false);
     const [isVerOpen, setIsVerOpen] = useState(false);
@@ -429,25 +435,72 @@ export default function Index({
                                 Monitoreo automático de métricas por despacho
                             </p>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <BulkActions
-                                baseUrl="/entregas"
-                                modelName="Entregas"
-                                filters={filters}
-                            />
-                            {canCreate && (
-                                <Button
-                                    onClick={handleNew}
-                                    className="h-11 rounded-xl px-6 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
-                                >
-                                    <Truck className="mr-2 h-5 w-5" /> Nuevo
-                                    Despacho
-                                </Button>
-                            )}
-                        </div>
+                        {activeTab === 'deliveries' && (
+                            <div className="flex items-center gap-2">
+                                <BulkActions
+                                    baseUrl="/entregas"
+                                    modelName="Entregas"
+                                    filters={filters}
+                                />
+                                {canCreate && (
+                                    <Button
+                                        onClick={handleNew}
+                                        className="h-11 rounded-xl px-6 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+                                    >
+                                        <Truck className="mr-2 h-5 w-5" /> Nuevo
+                                        Despacho
+                                    </Button>
+                                )}
+                            </div>
+                        )}
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div
+                        className="flex flex-wrap gap-2 border-b"
+                        role="tablist"
+                        aria-label="Secciones de entregas"
+                    >
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={activeTab === 'deliveries'}
+                            onClick={() => setActiveTab('deliveries')}
+                            className={`border-b-2 px-4 py-2 text-sm font-medium ${
+                                activeTab === 'deliveries'
+                                    ? 'border-primary text-primary'
+                                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                            }`}
+                        >
+                            Entregas
+                        </button>
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={activeTab === 'rates'}
+                            onClick={() => setActiveTab('rates')}
+                            className={`border-b-2 px-4 py-2 text-sm font-medium ${
+                                activeTab === 'rates'
+                                    ? 'border-primary text-primary'
+                                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                            }`}
+                        >
+                            Tarifas de Despacho
+                        </button>
+                    </div>
+
+                    {activeTab === 'rates' && (
+                        <DeliveryRatesTab
+                            rates={delivery_rates}
+                            canCreate={canCreate}
+                            canEdit={canEdit}
+                            canDelete={canDelete}
+                        />
+                    )}
+                    <div
+                        className={`grid grid-cols-1 gap-4 md:grid-cols-3 ${
+                            activeTab === 'deliveries' ? '' : 'hidden'
+                        }`}
+                    >
                         <Card className="border-none bg-gradient-to-br from-blue-500/10 to-blue-500/5 shadow-none ring-1 ring-blue-500/20">
                             <CardContent className="p-6">
                                 <div className="flex items-center gap-4">
@@ -501,7 +554,11 @@ export default function Index({
                             </CardContent>
                         </Card>
                     </div>
-                    <Card>
+                    <Card
+                        className={
+                            activeTab === 'deliveries' ? undefined : 'hidden'
+                        }
+                    >
                         <CardHeader>
                             <div className="flex items-center justify-between">
                                 <div>

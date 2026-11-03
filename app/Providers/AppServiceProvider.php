@@ -257,7 +257,7 @@ class AppServiceProvider extends ServiceProvider
                 config([
                     'services.google.client_id' => $settings->google_client_id,
                     'services.google.client_secret' => $settings->google_client_secret,
-                    'services.google.redirect' => $settings->google_redirect_uri ?? config('services.google.redirect'),
+                    'services.google.redirect' => $settings->google_redirect_uri ?: config('services.google.redirect'),
                 ]);
             }
 
@@ -265,7 +265,7 @@ class AppServiceProvider extends ServiceProvider
                 config([
                     'services.facebook.client_id' => $settings->facebook_client_id,
                     'services.facebook.client_secret' => $settings->facebook_client_secret,
-                    'services.facebook.redirect' => $settings->facebook_redirect_uri ?? config('services.facebook.redirect'),
+                    'services.facebook.redirect' => $settings->facebook_redirect_uri ?: config('services.facebook.redirect'),
                 ]);
             }
 
@@ -273,7 +273,7 @@ class AppServiceProvider extends ServiceProvider
                 config([
                     'services.telegram.bot' => $settings->telegram_login_bot_name,
                     'services.telegram.client_secret' => $settings->telegram_login_bot_token,
-                    'services.telegram.redirect' => $settings->telegram_login_redirect_uri ?? config('services.telegram.redirect'),
+                    'services.telegram.redirect' => $settings->telegram_login_redirect_uri ?: config('services.telegram.redirect'),
                 ]);
             }
         } catch (\Throwable $e) {

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\BelongsToOwner;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,8 +19,10 @@ class DetalleVenta extends Model
         'producto_id',
         'cantidad',
         'precio_unitario',
+        'costo_unitario',
         'sku_variante_id',
         'subtotal',
+        'ganancia',
         'subtotal_metrica',
         'cantidad_retornada',
         'descuento_unitario',
@@ -30,7 +33,9 @@ class DetalleVenta extends Model
         return [
             'cantidad' => 'float',
             'precio_unitario' => 'decimal:2',
+            'costo_unitario' => 'decimal:2',
             'subtotal' => 'decimal:2',
+            'ganancia' => 'decimal:2',
             'subtotal_metrica' => 'decimal:2',
             'cantidad_retornada' => 'integer',
             'descuento_unitario' => 'decimal:2',
@@ -60,5 +65,12 @@ class DetalleVenta extends Model
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class);
+    }
+
+    protected function gananciaItem(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->ganancia,
+        );
     }
 }

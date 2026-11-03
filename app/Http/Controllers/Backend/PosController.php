@@ -12,7 +12,10 @@ use App\Models\Cliente;
 use App\Models\Cupon;
 use App\Models\CuponUso;
 use App\Models\CuponUsoDetalle;
+use App\Models\DeliveryRate;
 use App\Models\DetalleVenta;
+use App\Models\Empleado;
+use App\Models\Entrega;
 use App\Models\Inventario;
 use App\Models\Producto;
 use App\Models\Promocion;
@@ -20,6 +23,7 @@ use App\Models\SkuVariante;
 use App\Models\Tesoreria;
 use App\Models\Venta;
 use App\Services\Inventory\SalesInventoryService;
+use App\Services\DeliveryStatsService;
 use App\Services\Sii\FacturacionSiiService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -33,17 +37,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PosController extends Controller implements HasMiddleware
 {
-    protected SalesInventoryService $salesInventoryService;
-
-    public function __construct(SalesInventoryService $salesInventoryService)
-    {
-        $this->salesInventoryService = $salesInventoryService;
-    }
+    public function __construct(
+        protected SalesInventoryService $salesInventoryService,
+        protected DeliveryStatsService $deliveryStatsService
+    ) {}
 
     public static function middleware(): array
     {
@@ -111,7 +114,8 @@ class PosController extends Controller implements HasMiddleware
                 ];
             });
 
-        $clientes = Cliente::where('owner_id', $ownerId)->get(['id', 'nombre', 'rut']);
+        $clientes = Cliente::where('owner_id', $ownerId)
+            ->get(['id', 'nombre', 'rut', 'direccion', 'comuna', 'ciudad', 'region']);
 
         $promociones = Promocion::where('owner_id', $ownerId)
             ->where('activa', true)
@@ -125,10 +129,33 @@ class PosController extends Controller implements HasMiddleware
 
         $almacenes = Almacen::where('owner_id', $ownerId)->get(['id', 'nombre']);
 
+        $empleados = Empleado::where('owner_id', $ownerId)
+            ->where('estado', 'activo')
+            ->orderBy('nombre')
+            ->orderBy('apellido')
+            ->get(['id', 'nombre', 'apellido', 'cargo', 'user_id']);
+
+        $empleadoActual = $empleados->firstWhere('user_id', Auth::id());
+
         return Inertia::render('Backend/Pos/Index', [
             'productos' => $productos,
             'clientes' => $clientes,
+            'delivery_rates' => DeliveryRate::where('owner_id', $ownerId)
+                ->where('is_active', true)
+                ->orderBy('calculation_type')
+                ->orderBy('commune')
+                ->get(['id', 'calculation_type', 'commune', 'km_from', 'km_to', 'cost'])
+                ->map(fn (DeliveryRate $rate) => [
+                    'id' => $rate->id,
+                    'calculation_type' => $rate->calculation_type,
+                    'commune' => $rate->commune,
+                    'km_from' => $rate->km_from === null ? null : (float) $rate->km_from,
+                    'km_to' => $rate->km_to === null ? null : (float) $rate->km_to,
+                    'cost' => (float) $rate->cost,
+                ]),
             'almacenes' => $almacenes,
+            'empleados' => $empleados,
+            'empleado_id' => $empleadoActual?->id,
             'promociones' => $promociones,
             'iva_tasa' => (float) config('taxes.iva_rate', 0.19),
         ]);
@@ -160,20 +187,78 @@ class PosController extends Controller implements HasMiddleware
             'total' => 'required|numeric',
             'descuento' => 'nullable|numeric|min:0',
             'incluye_iva' => 'nullable|boolean',
+            'has_delivery' => ['sometimes', 'boolean'],
+            'delivery_rate_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('delivery_rates', 'id')
+                    ->where('owner_id', $ownerId)
+                    ->where('is_active', true),
+            ],
+            'delivery_cost' => [
+                Rule::requiredIf(fn () => $request->boolean('has_delivery') && ! $request->filled('delivery_rate_id')),
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:100000000',
+            ],
+            'delivery_distance_km' => ['nullable', 'numeric', 'min:0.01', 'max:100000'],
+            'delivery_address' => [
+                Rule::requiredIf(fn () => $request->boolean('has_delivery')),
+                'nullable',
+                'string',
+                'max:255',
+            ],
             'almacen_id' => ['required', Rule::exists('almacenes', 'id')->where('owner_id', $ownerId)],
+            'empleado_id' => ['nullable', Rule::exists('empleados', 'id')->where('owner_id', $ownerId)->where('estado', 'activo')],
             'cupon_codigo' => 'nullable|string|max:50',
+            'tipo_descuento_manual' => ['nullable', 'in:fijo,porcentaje'],
+            'valor_descuento_manual' => ['nullable', 'numeric', 'min:0', 'max:100000000'],
         ]);
 
+        $hasDelivery = (bool) ($validated['has_delivery'] ?? false);
+        $deliveryRate = null;
+
+        if ($hasDelivery && ! empty($validated['delivery_rate_id'])) {
+            $deliveryRate = DeliveryRate::where('owner_id', $ownerId)
+                ->where('is_active', true)
+                ->find($validated['delivery_rate_id']);
+
+            if (! $deliveryRate) {
+                throw ValidationException::withMessages([
+                    'delivery_rate_id' => 'La tarifa seleccionada ya no está disponible.',
+                ]);
+            }
+
+            if ($deliveryRate->calculation_type === 'valor_fijo_km' && empty($validated['delivery_distance_km'])) {
+                throw ValidationException::withMessages([
+                    'delivery_distance_km' => 'Indique la distancia en kilómetros.',
+                ]);
+            }
+        }
+
         try {
-            return DB::transaction(function () use ($request, $ownerId) {
+            return DB::transaction(function () use ($request, $ownerId, $validated, $hasDelivery, $deliveryRate) {
                 // Normalizar cliente_id: null, "", "0" => null (cliente genérico)
                 $clienteId = null;
                 if ($request->cliente_id && $request->cliente_id !== '0' && $request->cliente_id !== '') {
                     $clienteId = $request->cliente_id;
                 }
-                $descuento = (float) ($request->descuento ?? 0);
+                $descuento = (float) ($validated['descuento'] ?? 0);
                 $montoCupon = 0.0;
                 $cuponId = null;
+                $deliveryDistanceKm = $hasDelivery ? ($validated['delivery_distance_km'] ?? null) : null;
+                $deliveryCost = 0;
+
+                if ($hasDelivery) {
+                    if ($deliveryRate?->calculation_type === 'valor_fijo_km') {
+                        $deliveryCost = (int) round((float) $deliveryRate->cost * (float) $deliveryDistanceKm);
+                    } elseif ($deliveryRate) {
+                        $deliveryCost = (int) round((float) $deliveryRate->cost);
+                    } else {
+                        $deliveryCost = (int) round((float) $validated['delivery_cost']);
+                    }
+                }
 
                 // Recalcular subtotal server-side (no confiar en el cliente)
                 $subtotalCalculado = 0.0;
@@ -211,34 +296,42 @@ class PosController extends Controller implements HasMiddleware
                     $cuponId = $cupon->id;
                 }
 
-                $montoDescuentoTotal = (int) round($descuento + $montoCupon);
-                $baseImponible = max(0, $subtotalCalculado - $montoDescuentoTotal);
+                $descuentoManual = 0;
+                $valorDescuentoManual = (float) ($validated['valor_descuento_manual'] ?? 0);
+                if (($validated['tipo_descuento_manual'] ?? null) === 'porcentaje') {
+                    $descuentoManual = $subtotalCalculado * (min($valorDescuentoManual, 100) / 100);
+                } elseif (($validated['tipo_descuento_manual'] ?? null) === 'fijo') {
+                    $descuentoManual = min($valorDescuentoManual, $subtotalCalculado);
+                }
+
+                $montoDescuentoTotal = (int) round(min($subtotalCalculado, $descuento + $descuentoManual + $montoCupon));
+                $baseImponible = max(0, $subtotalCalculado - $montoDescuentoTotal) + $deliveryCost;
 
                 // En Chile, los precios de POS YA INCLUYEN IVA (precios finales).
                 // Si incluye_iva es true, el precio YA TIENE IVA incluido.
                 // Debemos EXTRAER el IVA, no sumarlo.
                 if ($incluyeIva) {
-                    // Precio final = Neto + IVA = Neto * (1 + iva_rate)
-                    // Neto = Precio / (1 + iva_rate)
-                    // IVA = Precio - Neto
-                    $baseImponibleNeta = round($baseImponible / (1 + $ivaTasa));
-                    $iva = $baseImponible - $baseImponibleNeta;
-                    $baseImponible = $baseImponibleNeta; // El neto real
+                    $iva = $baseImponible - round($baseImponible / (1 + $ivaTasa));
                 } else {
                     $iva = 0;
                 }
-                $total = $baseImponible + $iva;
+                $total = $baseImponible;
 
                 $venta = Venta::create([
                     'owner_id' => $ownerId,
                     'user_id' => Auth::id(),
                     'cliente_id' => $clienteId,
+                    'empleado_id' => $validated['empleado_id'] ?? null,
                     'numero' => 'POS-'.Str::random(8).'-'.time(),
                     'fecha' => now(),
-                    'subtotal' => (int) round($subtotalCalculado),
+                    'subtotal' => (int) round($subtotalCalculado + $deliveryCost),
                     'iva' => (int) round($iva),
                     'total' => (int) round($total),
                     'incluye_iva' => $incluyeIva,
+                    'has_delivery' => $hasDelivery,
+                    'delivery_rate_id' => $hasDelivery ? $deliveryRate?->id : null,
+                    'delivery_cost' => $deliveryCost,
+                    'delivery_distance_km' => $deliveryDistanceKm,
                     'metodo_pago' => $request->metodo_pago,
                     'tipo_documento' => $request->tipo_documento,
                     'almacen_id' => $request->almacen_id,
@@ -299,15 +392,22 @@ class PosController extends Controller implements HasMiddleware
                 $productosMap = Producto::whereIn('id', $productIds)->get()->keyBy('id');
                 $skusMap = ! empty($skuIds) ? SkuVariante::whereIn('id', $skuIds)->get()->keyBy('id') : collect();
 
-                $skusMap = ! empty($skuIds) ? SkuVariante::whereIn('id', $skuIds)->get()->keyBy('id') : collect();
-
                 // Crear DetalleVenta para los productos principales
                 foreach ($request->items as $item) {
-                    $producto = Producto::findOrFail($item['producto_id']);
+                    $producto = $productosMap->get($item['producto_id']) ?? Producto::findOrFail($item['producto_id']);
                     $skuId = $item['sku_variante_id'] ?? null;
+                    $sku = $skuId ? $skusMap->get($skuId) : null;
                     $precioUnitario = (int) round($item['precio']);
                     $descuentoUnitario = isset($item['descuento']) ? (int) round($item['descuento']) : 0;
-                    $cantidad = (int) $item['cantidad'];
+
+                    $costoUnitario = $sku && $sku->precio_compra !== null
+                        ? (float) $sku->precio_compra
+                        : (float) $producto->precio_compra;
+
+                    $ganancia = round(
+                        (($precioUnitario - $descuentoUnitario) - $costoUnitario) * (float) $item['cantidad'],
+                        2
+                    );
 
                     DetalleVenta::create([
                         'venta_id' => $venta->id,
@@ -315,16 +415,53 @@ class PosController extends Controller implements HasMiddleware
                         'sku_variante_id' => $skuId,
                         'cantidad' => $item['cantidad'],
                         'precio_unitario' => $precioUnitario,
+                        'costo_unitario' => $costoUnitario,
                         'descuento_unitario' => $descuentoUnitario ?: null,
                         'subtotal' => (int) round($precioUnitario * $item['cantidad']),
+                        'ganancia' => $ganancia,
                         'subtotal_metrica' => 0,
                         'cantidad_retornada' => $item['cantidad_retornada'] ?? null,
                     ]);
 
                     // Decrementar stock de SKU si aplica
-                    $itemSkuId = $item['sku_variante_id'] ?? null;
-                    if ($itemSkuId && ($sku = $skusMap->get($itemSkuId))) {
+                    if ($sku) {
                         $sku->decrement('stock', $item['cantidad']);
+                    }
+                }
+
+                if ($hasDelivery) {
+                    $cliente = $clienteId
+                        ? Cliente::where('owner_id', $ownerId)->find($clienteId)
+                        : null;
+                    $entrega = Entrega::create([
+                        'owner_id' => $ownerId,
+                        'venta_id' => $venta->id,
+                        'cliente_id' => $cliente?->id,
+                        'cliente' => $cliente?->nombre ?? 'Cliente POS',
+                        'direccion' => $validated['delivery_address'],
+                        'fecha_entrega' => today(),
+                        'estado' => 'pendiente',
+                    ]);
+
+                    foreach ($venta->detalleVentas()->with('producto')->get() as $detalle) {
+                        if (! $detalle->producto) {
+                            continue;
+                        }
+
+                        $metricas = $this->deliveryStatsService->calculateItemTotals(
+                            $detalle->producto_id,
+                            (float) $detalle->cantidad
+                        );
+
+                        $entrega->items()->create([
+                            'producto_id' => $detalle->producto_id,
+                            'cantidad_pedida' => $detalle->cantidad,
+                            'cantidad_entregada' => $detalle->cantidad,
+                            'unidad_medida' => $detalle->producto->unidad_medida ?? 'unidad',
+                            'subtotal_metrica' => $metricas['kg'] > 0 ? $metricas['kg'] : $metricas['litros'],
+                            'unidades_totales' => $metricas['unidades'],
+                            'owner_id' => $ownerId,
+                        ]);
                     }
                 }
 
@@ -720,16 +857,43 @@ class PosController extends Controller implements HasMiddleware
     {
         $ownerId = Auth::user()->getOwnerId();
         $almacenId = $request->query('almacen_id');
+        $empleadoId = $request->query('empleado_id');
+
+        if ($empleadoId === 'all' || $empleadoId === '') {
+            $empleadoId = null;
+        }
+
+        $fechaDesde = $request->query('fecha_desde')
+            ? Carbon::parse($request->query('fecha_desde'))->startOfDay()
+            : now()->startOfMonth();
+        $fechaHasta = $request->query('fecha_hasta')
+            ? Carbon::parse($request->query('fecha_hasta'))->endOfDay()
+            : now()->endOfDay();
+        $fechaDesdeStr = $fechaDesde->toDateString();
+        $fechaHastaStr = $fechaHasta->toDateString();
+        $fechaDesdeFiltro = $fechaDesde->toDateTimeString();
+        $fechaHastaFiltro = $fechaHasta->toDateTimeString();
 
         // Ranking de productos
         $rankingQuery = Producto::join('detalle_ventas', 'productos.id', '=', 'detalle_ventas.producto_id')
             ->join('ventas', 'detalle_ventas.venta_id', '=', 'ventas.id')
-            ->select('productos.nombre', DB::raw('SUM(detalle_ventas.cantidad) as total_vendidos'), DB::raw('SUM(detalle_ventas.subtotal) as total_ingresos'))
+            ->select(
+                'productos.nombre',
+                DB::raw('SUM(detalle_ventas.cantidad) as total_vendidos'),
+                DB::raw('SUM(detalle_ventas.subtotal) as total_ingresos'),
+                DB::raw('SUM(COALESCE(detalle_ventas.ganancia, detalle_ventas.subtotal - (productos.precio_compra * detalle_ventas.cantidad))) as total_ganancia')
+            )
             ->where('productos.owner_id', $ownerId)
-            ->where('ventas.estado', 'pagada');
+            ->where('ventas.owner_id', $ownerId)
+            ->where('ventas.estado', 'pagada')
+            ->whereBetween('ventas.fecha', [$fechaDesdeFiltro, $fechaHastaFiltro]);
 
         if ($almacenId) {
             $rankingQuery->where('ventas.almacen_id', $almacenId);
+        }
+
+        if ($empleadoId) {
+            $rankingQuery->where('ventas.empleado_id', $empleadoId);
         }
 
         $ranking = $rankingQuery->groupBy('productos.id', 'productos.nombre')
@@ -739,15 +903,107 @@ class PosController extends Controller implements HasMiddleware
         // Utilidad aproximada
         $utilidadQuery = Venta::join('detalle_ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
             ->join('productos', 'detalle_ventas.producto_id', '=', 'productos.id')
-            ->select(DB::raw('SUM(detalle_ventas.subtotal - (productos.precio_compra * detalle_ventas.cantidad)) as utilidad_total'))
+            ->select(DB::raw('SUM(COALESCE(detalle_ventas.ganancia, detalle_ventas.subtotal - (productos.precio_compra * detalle_ventas.cantidad))) as utilidad_total'))
             ->where('ventas.owner_id', $ownerId)
-            ->where('ventas.estado', 'pagada');
+            ->where('ventas.estado', 'pagada')
+            ->whereBetween('ventas.fecha', [$fechaDesdeFiltro, $fechaHastaFiltro]);
 
         if ($almacenId) {
             $utilidadQuery->where('ventas.almacen_id', $almacenId);
         }
 
+        if ($empleadoId) {
+            $utilidadQuery->where('ventas.empleado_id', $empleadoId);
+        }
+
         $utilidadData = $utilidadQuery->first();
+
+        // Desglose por cajero y producto
+        $desgloseProductosQuery = Venta::join('detalle_ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
+            ->join('productos', 'detalle_ventas.producto_id', '=', 'productos.id')
+            ->leftJoin('empleados', 'ventas.empleado_id', '=', 'empleados.id')
+            ->select(
+                'ventas.empleado_id',
+                DB::raw("COALESCE(CONCAT(empleados.nombre, ' ', empleados.apellido), 'Sin cajero') as cajero_nombre"),
+                'productos.id as producto_id',
+                'productos.nombre as producto_nombre',
+                DB::raw('SUM(detalle_ventas.cantidad) as cantidad'),
+                DB::raw('SUM(detalle_ventas.subtotal) as ingresos'),
+                DB::raw('SUM(COALESCE(detalle_ventas.ganancia, detalle_ventas.subtotal - (productos.precio_compra * detalle_ventas.cantidad))) as ganancia')
+            )
+            ->where('ventas.owner_id', $ownerId)
+            ->where('ventas.estado', 'pagada')
+            ->whereBetween('ventas.fecha', [$fechaDesdeFiltro, $fechaHastaFiltro]);
+
+        if ($almacenId) {
+            $desgloseProductosQuery->where('ventas.almacen_id', $almacenId);
+        }
+
+        if ($empleadoId) {
+            $desgloseProductosQuery->where('ventas.empleado_id', $empleadoId);
+        }
+
+        $desgloseProductos = $desgloseProductosQuery
+            ->groupBy('ventas.empleado_id', 'empleados.nombre', 'empleados.apellido', 'productos.id', 'productos.nombre')
+            ->orderByDesc('ganancia')
+            ->get()
+            ->map(function ($item) {
+                $ingresos = (float) $item->ingresos;
+                $ganancia = (float) $item->ganancia;
+
+                return [
+                    'empleado_id' => $item->empleado_id,
+                    'cajero_nombre' => $item->cajero_nombre,
+                    'producto_id' => $item->producto_id,
+                    'producto_nombre' => $item->producto_nombre,
+                    'cantidad' => (float) $item->cantidad,
+                    'ingresos' => $ingresos,
+                    'ganancia' => $ganancia,
+                    'margen' => $ingresos > 0 ? round(($ganancia / $ingresos) * 100, 2) : 0,
+                ];
+            });
+
+        $gananciaPorCajero = $desgloseProductos
+            ->groupBy(fn ($item) => $item['empleado_id'] ?? 0)
+            ->map(fn ($items) => round((float) $items->sum('ganancia'), 2));
+
+        // Ventas por cajero
+        $ventasPorCajeroQuery = Venta::leftJoin('empleados', 'ventas.empleado_id', '=', 'empleados.id')
+            ->select(
+                'ventas.empleado_id',
+                DB::raw("COALESCE(CONCAT(empleados.nombre, ' ', empleados.apellido), 'Sin cajero') as cajero_nombre"),
+                DB::raw('COUNT(DISTINCT ventas.id) as total_ventas'),
+                DB::raw('SUM(ventas.total) as monto_total')
+            )
+            ->where('ventas.owner_id', $ownerId)
+            ->where('ventas.estado', 'pagada')
+            ->whereBetween('ventas.fecha', [$fechaDesdeFiltro, $fechaHastaFiltro]);
+
+        if ($almacenId) {
+            $ventasPorCajeroQuery->where('ventas.almacen_id', $almacenId);
+        }
+
+        if ($empleadoId) {
+            $ventasPorCajeroQuery->where('ventas.empleado_id', $empleadoId);
+        }
+
+        $ventasPorCajero = $ventasPorCajeroQuery
+            ->groupBy('ventas.empleado_id', 'empleados.nombre', 'empleados.apellido')
+            ->orderByDesc('monto_total')
+            ->get()
+            ->map(function ($item) use ($gananciaPorCajero) {
+                $montoTotal = (float) $item->monto_total;
+                $gananciaTotal = (float) ($gananciaPorCajero[$item->empleado_id ?? 0] ?? 0);
+
+                return [
+                    'empleado_id' => $item->empleado_id,
+                    'cajero_nombre' => $item->cajero_nombre,
+                    'total_ventas' => (int) $item->total_ventas,
+                    'monto_total' => $montoTotal,
+                    'ganancia_total' => $gananciaTotal,
+                    'margen' => $montoTotal > 0 ? round(($gananciaTotal / $montoTotal) * 100, 2) : 0,
+                ];
+            });
 
         // Total Mes
         $totalMesQuery = Venta::where('owner_id', $ownerId)
@@ -758,16 +1014,38 @@ class PosController extends Controller implements HasMiddleware
             $totalMesQuery->where('almacen_id', $almacenId);
         }
 
+        if ($empleadoId) {
+            $totalMesQuery->where('empleado_id', $empleadoId);
+        }
+
         $totalMes = $totalMesQuery->sum('total');
 
         $almacenes = Almacen::where('owner_id', $ownerId)->get(['id', 'nombre']);
 
+        $cajeros = Empleado::where('owner_id', $ownerId)
+            ->orderBy('nombre')
+            ->orderBy('apellido')
+            ->get(['id', 'nombre', 'apellido']);
+
+        $totales = [
+            'monto_total' => round((float) $ventasPorCajero->sum('monto_total'), 2),
+            'ganancia_total' => round((float) $ventasPorCajero->sum('ganancia_total'), 2),
+            'total_ventas' => (int) $ventasPorCajero->sum('total_ventas'),
+        ];
+
         return Inertia::render('Backend/Pos/Reportes', [
             'ranking' => $ranking,
-            'utilidad' => $utilidadData->utilidad_total ?? 0,
+            'utilidad' => (float) ($utilidadData->utilidad_total ?? 0),
             'totalMes' => $totalMes,
             'almacenes' => $almacenes,
             'almacenId' => $almacenId,
+            'cajeros' => $cajeros,
+            'empleadoId' => $empleadoId,
+            'ventasPorCajero' => $ventasPorCajero->values(),
+            'desgloseProductos' => $desgloseProductos->values(),
+            'totales' => $totales,
+            'fechaDesde' => $fechaDesdeStr,
+            'fechaHasta' => $fechaHastaStr,
         ]);
     }
 
@@ -775,65 +1053,78 @@ class PosController extends Controller implements HasMiddleware
     {
         $ownerId = Auth::user()->getOwnerId();
         $almacenId = $request->query('almacen_id');
-        $format = $request->query('format', 'json');
+        $empleadoId = $request->query('empleado_id');
 
-        $rankingQuery = Producto::join('detalle_ventas', 'productos.id', '=', 'detalle_ventas.producto_id')
-            ->join('ventas', 'detalle_ventas.venta_id', '=', 'ventas.id')
-            ->select('productos.nombre', DB::raw('SUM(detalle_ventas.cantidad) as total_vendidos'), DB::raw('SUM(detalle_ventas.subtotal) as total_ingresos'))
-            ->where('productos.owner_id', $ownerId)
-            ->where('ventas.estado', 'pagada');
-
-        if ($almacenId) {
-            $rankingQuery->where('ventas.almacen_id', $almacenId);
+        if ($empleadoId === 'all' || $empleadoId === '') {
+            $empleadoId = null;
         }
 
-        $ranking = $rankingQuery->groupBy('productos.id', 'productos.nombre')
-            ->orderBy('total_vendidos', 'desc')
-            ->get();
+        $fechaDesde = $request->query('fecha_desde')
+            ? Carbon::parse($request->query('fecha_desde'))->startOfDay()
+            : now()->startOfMonth();
+        $fechaHasta = $request->query('fecha_hasta')
+            ? Carbon::parse($request->query('fecha_hasta'))->endOfDay()
+            : now()->endOfDay();
+        $format = $request->query('format', 'json');
 
-        if ($format === 'csv') {
+        $query = Venta::join('detalle_ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
+            ->join('productos', 'detalle_ventas.producto_id', '=', 'productos.id')
+            ->leftJoin('empleados', 'ventas.empleado_id', '=', 'empleados.id')
+            ->select(
+                DB::raw("COALESCE(CONCAT(empleados.nombre, ' ', empleados.apellido), 'Sin cajero') as cajero"),
+                'productos.nombre as producto',
+                DB::raw('SUM(detalle_ventas.cantidad) as unidades'),
+                DB::raw('SUM(detalle_ventas.subtotal) as ingresos'),
+                DB::raw('SUM(COALESCE(detalle_ventas.ganancia, detalle_ventas.subtotal - (productos.precio_compra * detalle_ventas.cantidad))) as ganancia')
+            )
+            ->where('ventas.owner_id', $ownerId)
+            ->where('ventas.estado', 'pagada')
+            ->whereBetween('ventas.fecha', [$fechaDesde->startOfDay()->toDateTimeString(), $fechaHasta->endOfDay()->toDateTimeString()]);
+
+        if ($almacenId) {
+            $query->where('ventas.almacen_id', $almacenId);
+        }
+
+        if ($empleadoId) {
+            $query->where('ventas.empleado_id', $empleadoId);
+        }
+
+        $data = $query
+            ->groupBy('empleados.nombre', 'empleados.apellido', 'productos.id', 'productos.nombre')
+            ->orderByDesc('ganancia')
+            ->get()
+            ->map(function ($item) {
+                $ingresos = (float) $item->ingresos;
+                $ganancia = (float) $item->ganancia;
+
+                return [
+                    'Cajero' => $item->cajero,
+                    'Producto' => $item->producto,
+                    'Unidades Vendidas' => (float) $item->unidades,
+                    'Ingresos Totales' => $ingresos,
+                    'Ganancia' => $ganancia,
+                    'Margen %' => $ingresos > 0 ? round(($ganancia / $ingresos) * 100, 2) : 0,
+                ];
+            });
+
+        if (in_array($format, ['csv', 'excel'], true)) {
             $headers = [
                 'Content-Type' => 'text/csv; charset=utf-8',
                 'Content-Disposition' => 'attachment; filename="reportes_pos.csv"',
             ];
-            $data = $ranking->map(function ($item) {
-                return [
-                    'Producto' => $item->nombre,
-                    'Unidades Vendidas' => $item->total_vendidos,
-                    'Ingresos Totales' => $item->total_ingresos,
-                ];
-            });
 
-            $csvContent = "Producto,Unidades Vendidas,Ingresos Totales\n";
+            $csvContent = "Cajero,Producto,Unidades Vendidas,Ingresos Totales,Ganancia,Margen %\n";
             foreach ($data as $row) {
-                $csvContent .= "{$row['Producto']},{$row['Unidades Vendidas']},{$row['Ingresos Totales']}\n";
+                $csvContent .= implode(',', array_map(
+                    fn ($value) => '"'.str_replace('"', '""', (string) $value).'"',
+                    $row
+                ))."\n";
             }
 
             return response($csvContent, 200, $headers);
         }
 
-        if ($format === 'excel') {
-            $headers = [
-                'Content-Type' => 'application/vnd.ms-excel',
-                'Content-Disposition' => 'attachment; filename="reportes_pos.xlsx"',
-            ];
-            $data = $ranking->map(function ($item) {
-                return [
-                    'Producto' => $item->nombre,
-                    'Unidades Vendidas' => $item->total_vendidos,
-                    'Ingresos Totales' => $item->total_ingresos,
-                ];
-            });
-
-            $csvContent = "Producto,Unidades Vendidas,Ingresos Totales\n";
-            foreach ($data as $row) {
-                $csvContent .= "{$row['Producto']},{$row['Unidades Vendidas']},{$row['Ingresos Totales']}\n";
-            }
-
-            return response($csvContent, 200, $headers);
-        }
-
-        return response()->json($ranking);
+        return response()->json($data);
     }
 
     public function importarReportes(Request $request)

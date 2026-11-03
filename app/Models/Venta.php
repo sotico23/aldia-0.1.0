@@ -35,6 +35,10 @@ class Venta extends Model
         'estado',
         'notas',
         'incluye_iva',
+        'has_delivery',
+        'delivery_rate_id',
+        'delivery_cost',
+        'delivery_distance_km',
         'tipo_descuento',
         'valor_descuento',
         'monto_descuento',
@@ -60,6 +64,9 @@ class Venta extends Model
             'tipo_dte' => 'string',
             'total' => 'decimal:2',
             'incluye_iva' => 'boolean',
+            'has_delivery' => 'boolean',
+            'delivery_cost' => 'decimal:2',
+            'delivery_distance_km' => 'decimal:2',
             'valor_descuento' => 'decimal:2',
             'monto_descuento' => 'decimal:2',
             'descuento' => 'decimal:2',
@@ -70,6 +77,11 @@ class Venta extends Model
     public function cliente(): BelongsTo
     {
         return $this->belongsTo(Cliente::class);
+    }
+
+    public function empleado(): BelongsTo
+    {
+        return $this->belongsTo(Empleado::class, 'empleado_id');
     }
 
     public function detalleVentas(): HasMany
@@ -90,6 +102,11 @@ class Venta extends Model
     public function entrega(): HasOne
     {
         return $this->hasOne(Entrega::class);
+    }
+
+    public function deliveryRate(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryRate::class);
     }
 
     public function cupon(): BelongsTo
