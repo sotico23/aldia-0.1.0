@@ -7,9 +7,13 @@ use App\Http\Controllers\Controller;
 use App\Models\PublicProfile;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
@@ -49,6 +53,21 @@ class UsuarioRolController extends Controller
         $roles = $systemQuery->get()->concat($customRoles);
 
         $permissions = Permission::orderBy('name')->get();
+
+        $transferUsers = $usuarios
+            ->map(fn (User $visibleUser) => [
+                'id' => $visibleUser->id,
+                'name' => $visibleUser->name,
+                'email' => $visibleUser->email,
+            ])
+            ->push([
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ])
+            ->unique('id')
+            ->sortBy('name')
+            ->values();
 
         // Map assignments
         $asignaciones = $usuarios->flatMap(function ($user) {
@@ -106,6 +125,8 @@ class UsuarioRolController extends Controller
                 : [],
             'is_master' => $isMaster,
             'user_level' => $userLevel,
+            'current_user_id' => $user->id,
+            'transfer_users' => $transferUsers,
             'masterData' => $masterData,
         ]);
     }
@@ -409,6 +430,191 @@ class UsuarioRolController extends Controller
         }
 
         return redirect()->route('usuarios-roles.index')->with('success', 'Asignación eliminada.');
+    }
+
+    public function destroyUser(Request $request, User $user): RedirectResponse
+    {
+        /** @var User $currentUser */
+        $currentUser = $request->user();
+
+        abort_unless(
+            $currentUser->can('admin.usuarios.delete'),
+            403,
+            'No tienes permiso para eliminar usuarios.'
+        );
+
+        if ($user->is($currentUser)) {
+            return back()->with('error', 'No puedes eliminar tu propia cuenta.');
+        }
+
+        if ($this->isTenantOwner($user)) {
+            return back()->with('error', 'No puedes eliminar al propietario del negocio. Transfiere la propiedad antes de continuar.');
+        }
+
+        if ($user->hasRole('Master') && ! User::role('Master')->where('id', '!=', $user->id)->exists()) {
+            return back()->with('error', 'No puedes eliminar al último usuario Master de la plataforma.');
+        }
+
+        $currentUserLevel = $currentUser->highestRoleLevel();
+        $ownerId = $currentUser->getOwnerId();
+
+        if ($currentUserLevel > 0 && $user->highestRoleLevel() <= $currentUserLevel) {
+            abort(403, 'No tienes permiso para eliminar a un usuario de este nivel.');
+        }
+
+        if (! $currentUser->hasRole('Master') && $user->getOwnerId() !== $ownerId) {
+            abort(403, 'No puedes eliminar usuarios de otro negocio.');
+        }
+
+        if (! $currentUser->hasRole('Master') && ! User::visibles()->whereKey($user->id)->exists()) {
+            abort(403, 'No tienes permiso para eliminar a este usuario.');
+        }
+
+        $validated = $request->validate([
+            'delete_sales' => ['sometimes', 'boolean'],
+            'delete_activity_logs' => ['sometimes', 'boolean'],
+            'delete_access_assignments' => ['sometimes', 'boolean'],
+            'delete_profile_sessions' => ['sometimes', 'boolean'],
+            'transfer_to_user_id' => ['nullable', 'integer', 'exists:users,id'],
+        ]);
+
+        $transferTo = null;
+
+        if (! empty($validated['transfer_to_user_id'])) {
+            $transferTo = User::query()->findOrFail($validated['transfer_to_user_id']);
+
+            if ($transferTo->is($user)) {
+                return back()->withErrors([
+                    'transfer_to_user_id' => 'No puedes reasignar los datos al usuario que estás eliminando.',
+                ]);
+            }
+
+            if (! $currentUser->hasRole('Master') && $transferTo->getOwnerId() !== $ownerId) {
+                abort(403, 'No puedes reasignar datos a un usuario de otro negocio.');
+            }
+        }
+
+        $deleteSales = $request->boolean('delete_sales');
+        $deleteActivityLogs = $request->boolean('delete_activity_logs');
+
+        try {
+            DB::transaction(function () use ($user, $transferTo, $deleteSales, $deleteActivityLogs): void {
+                if ($deleteSales) {
+                    $salesQuery = DB::table('ventas')->where('user_id', $user->id);
+
+                    if ($transferTo) {
+                        $salesQuery->update(['user_id' => $transferTo->id]);
+                    } else {
+                        $salesQuery->delete();
+                    }
+                }
+
+                if ($deleteActivityLogs) {
+                    $this->deleteOrTransferActivityLogs($user, $transferTo);
+                }
+
+                // Las asignaciones de acceso y las sesiones siempre se limpian para
+                // no dejar registros huérfanos al eliminar la cuenta.
+                $user->roles()->detach();
+                $user->permissions()->detach();
+
+                if (Schema::hasTable('sessions')) {
+                    DB::table('sessions')->where('user_id', $user->id)->delete();
+                }
+
+                if (Schema::hasTable('personal_access_tokens')) {
+                    DB::table('personal_access_tokens')
+                        ->where('tokenable_type', $user->getMorphClass())
+                        ->where('tokenable_id', $user->id)
+                        ->delete();
+                }
+
+                if (Schema::hasTable('password_reset_tokens')) {
+                    DB::table('password_reset_tokens')
+                        ->where('email', $user->email)
+                        ->delete();
+                }
+
+                if (method_exists($user, 'forceDelete')) {
+                    $user->forceDelete();
+                } else {
+                    $user->delete();
+                }
+            });
+        } catch (QueryException $e) {
+            Log::error('No se pudo eliminar un usuario', [
+                'user_id' => $user->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'No se pudo eliminar el usuario porque tiene datos relacionados protegidos. Revisa las dependencias e inténtalo nuevamente.');
+        }
+
+        app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        return redirect()
+            ->route('usuarios-roles.index')
+            ->with('success', "Usuario {$user->name} eliminado permanentemente.");
+    }
+
+    private function isTenantOwner(User $user): bool
+    {
+        return $user->owner_id === null
+            && $user->creator_id === null
+            && $user->getOwnerId() === $user->id;
+    }
+
+    private function deleteOrTransferActivityLogs(User $user, ?User $transferTo): void
+    {
+        foreach (['activity_logs', 'activity_log'] as $table) {
+            if (! Schema::hasTable($table)) {
+                continue;
+            }
+
+            $hasUserColumn = Schema::hasColumn($table, 'user_id');
+            $hasCauserColumn = Schema::hasColumn($table, 'causer_id');
+            $hasCauserTypeColumn = Schema::hasColumn($table, 'causer_type');
+
+            if (! $hasUserColumn && ! $hasCauserColumn) {
+                continue;
+            }
+
+            $query = DB::table($table)->where(function ($query) use ($user, $hasUserColumn, $hasCauserColumn, $hasCauserTypeColumn): void {
+                if ($hasUserColumn) {
+                    $query->orWhere('user_id', $user->id);
+                }
+
+                if ($hasCauserColumn) {
+                    $query->orWhere(function ($query) use ($user, $hasCauserTypeColumn): void {
+                        $query->where('causer_id', $user->id);
+
+                        if ($hasCauserTypeColumn) {
+                            $query->where('causer_type', $user->getMorphClass());
+                        }
+                    });
+                }
+            });
+
+            if ($transferTo) {
+                $updates = [];
+
+                if ($hasUserColumn) {
+                    $updates['user_id'] = $transferTo->id;
+                }
+
+                if ($hasCauserColumn) {
+                    $updates['causer_id'] = $transferTo->id;
+                }
+
+                if ($hasCauserTypeColumn) {
+                    $updates['causer_type'] = $transferTo->getMorphClass();
+                }
+
+                $query->update($updates);
+            } else {
+                $query->delete();
+            }
+        }
     }
 
     public function updateUser(Request $request, User $user): RedirectResponse

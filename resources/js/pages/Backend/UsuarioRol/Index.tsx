@@ -142,6 +142,12 @@ interface MasterData {
     new_users_30days_count: number;
 }
 
+interface TransferUser {
+    id: number;
+    name: string;
+    email: string;
+}
+
 interface Props {
     usuarios: User[];
     roles: Role[];
@@ -164,6 +170,8 @@ interface Props {
     publicProfiles: PublicProfile[];
     is_master: boolean;
     user_level: number;
+    current_user_id: number;
+    transfer_users: TransferUser[];
     masterData: MasterData | null;
 }
 
@@ -299,6 +307,8 @@ export default function Index({
     publicProfiles,
     is_master,
     user_level,
+    current_user_id,
+    transfer_users,
     masterData,
 }: Props) {
     const { currency } = useCountry();
@@ -337,6 +347,8 @@ export default function Index({
     const [isPasswordResetOpen, setIsPasswordResetOpen] = useState(false);
     const [banningUser, setBanningUser] = useState<User | null>(null);
     const [isBanConfirmOpen, setIsBanConfirmOpen] = useState(false);
+    const [deletingUser, setDeletingUser] = useState<User | null>(null);
+    const [isDeleteUserOpen, setIsDeleteUserOpen] = useState(false);
     const searchRef = useRef<HTMLInputElement>(null);
     const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
@@ -346,6 +358,14 @@ export default function Index({
         email: '',
         password: '',
         password_confirmation: '',
+    });
+
+    const deleteUserForm = useForm({
+        delete_sales: true,
+        delete_activity_logs: true,
+        delete_access_assignments: true,
+        delete_profile_sessions: true,
+        transfer_to_user_id: '',
     });
 
     const totalPermisosCount = useMemo(
@@ -572,6 +592,34 @@ export default function Index({
                 preserveScroll: true,
             });
         }
+    };
+
+    const openDeleteUserModal = (user: User) => {
+        setDeletingUser(user);
+        deleteUserForm.reset();
+        deleteUserForm.clearErrors();
+        setIsDeleteUserOpen(true);
+    };
+
+    const closeDeleteUserModal = () => {
+        setIsDeleteUserOpen(false);
+        setDeletingUser(null);
+        deleteUserForm.reset();
+        deleteUserForm.clearErrors();
+    };
+
+    const handleDeleteUser = () => {
+        if (!deletingUser) return;
+
+        deleteUserForm.delete(
+            route('usuarios-roles.user.destroy', deletingUser.id),
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    closeDeleteUserModal();
+                },
+            },
+        );
     };
 
     const handleToggleStatus = (
@@ -1134,7 +1182,7 @@ export default function Index({
                                                             </div>
                                                         )}
                                                         <Separator className="my-2" />
-                                                        <div className="flex gap-1.5">
+                                                        <div className="flex flex-wrap gap-1.5">
                                                             {canEdit && (
                                                                 <TooltipProvider>
                                                                     <Tooltip>
@@ -1233,6 +1281,38 @@ export default function Index({
                                                                     </TooltipContent>
                                                                 </Tooltip>
                                                             </TooltipProvider>
+                                                            {canDelete &&
+                                                                user.id !==
+                                                                    current_user_id && (
+                                                                    <TooltipProvider>
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger
+                                                                                asChild
+                                                                            >
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="sm"
+                                                                                    className="h-7 gap-1 text-xs text-destructive hover:text-destructive"
+                                                                                    onClick={() =>
+                                                                                        openDeleteUserModal(
+                                                                                            user,
+                                                                                        )
+                                                                                    }
+                                                                                >
+                                                                                    <Trash2 className="h-3 w-3" />{' '}
+                                                                                    Eliminar
+                                                                                </Button>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>
+                                                                                Eliminar
+                                                                                usuario
+                                                                                y
+                                                                                sus
+                                                                                datos
+                                                                            </TooltipContent>
+                                                                        </Tooltip>
+                                                                    </TooltipProvider>
+                                                                )}
                                                         </div>
                                                     </CardContent>
                                                 </Card>
@@ -1455,6 +1535,23 @@ export default function Index({
                                                                             <X className="h-4 w-4" />
                                                                         )}
                                                                     </Button>
+                                                                    {canDelete &&
+                                                                        user.id !==
+                                                                            current_user_id && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                                onClick={() =>
+                                                                                    openDeleteUserModal(
+                                                                                        user,
+                                                                                    )
+                                                                                }
+                                                                                title="Eliminar usuario"
+                                                                            >
+                                                                                <Trash2 className="h-4 w-4" />
+                                                                            </Button>
+                                                                        )}
                                                                 </div>
                                                             </td>
                                                         </tr>
@@ -2504,6 +2601,37 @@ export default function Index({
                                                             </TooltipContent>
                                                         </Tooltip>
                                                     </TooltipProvider>
+                                                    {canDelete &&
+                                                        user.id !==
+                                                            current_user_id && (
+                                                            <TooltipProvider>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger
+                                                                        asChild
+                                                                    >
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            className="h-7 gap-1 text-xs text-destructive hover:text-destructive"
+                                                                            onClick={() =>
+                                                                                openDeleteUserModal(
+                                                                                    user,
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <Trash2 className="h-3 w-3" />{' '}
+                                                                            Eliminar
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>
+                                                                        Eliminar
+                                                                        usuario
+                                                                        y sus
+                                                                        datos
+                                                                    </TooltipContent>
+                                                                </Tooltip>
+                                                            </TooltipProvider>
+                                                        )}
                                                 </div>
                                             </CardContent>
                                         </Card>
@@ -2969,6 +3097,221 @@ export default function Index({
                             {banningUser?.is_active === false
                                 ? 'Sí, Desbloquear'
                                 : 'Sí, Bloquear'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* === MODAL: ELIMINAR USUARIO === */}
+            <Dialog
+                open={isDeleteUserOpen}
+                onOpenChange={(open) => {
+                    if (open) {
+                        setIsDeleteUserOpen(true);
+                    } else {
+                        closeDeleteUserModal();
+                    }
+                }}
+            >
+                <DialogContent className="max-h-[90vh] gap-0 overflow-y-auto p-0 sm:max-w-[520px]">
+                    <div className="border-b border-destructive/20 bg-destructive/5 px-4 pt-4 pb-4 sm:px-6">
+                        <DialogHeader className="p-0">
+                            <DialogTitle className="flex items-center gap-2 text-xl font-bold text-destructive">
+                                <AlertTriangle className="h-5 w-5" />
+                                Eliminar Usuario
+                            </DialogTitle>
+                            <DialogDescription>
+                                Vas a eliminar permanentemente a{' '}
+                                <strong>{deletingUser?.name}</strong>. Esta
+                                acción no se puede deshacer.
+                            </DialogDescription>
+                        </DialogHeader>
+                    </div>
+
+                    <div className="space-y-5 px-4 py-4 sm:px-6">
+                        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs leading-relaxed text-destructive">
+                            <p className="flex items-start gap-2">
+                                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                                <span>
+                                    El usuario será borrado de forma física. Los
+                                    datos seleccionados se eliminarán o se
+                                    reasignarán al usuario archivador antes de
+                                    completar la operación.
+                                </span>
+                            </p>
+                        </div>
+
+                        <div className="space-y-3">
+                            <Label className="text-sm font-semibold">
+                                Datos relacionados a procesar
+                            </Label>
+
+                            <label
+                                htmlFor="delete-sales"
+                                className="flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors hover:bg-muted/40"
+                            >
+                                <Checkbox
+                                    id="delete-sales"
+                                    checked={deleteUserForm.data.delete_sales}
+                                    onCheckedChange={(checked) =>
+                                        deleteUserForm.setData(
+                                            'delete_sales',
+                                            checked === true,
+                                        )
+                                    }
+                                />
+                                <span>
+                                    <span className="block text-sm font-medium">
+                                        Historial de ventas
+                                    </span>
+                                    <span className="block text-xs text-muted-foreground">
+                                        Elimina o reasigna las ventas
+                                        registradas por este usuario.
+                                    </span>
+                                </span>
+                            </label>
+
+                            <label
+                                htmlFor="delete-activity-logs"
+                                className="flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors hover:bg-muted/40"
+                            >
+                                <Checkbox
+                                    id="delete-activity-logs"
+                                    checked={
+                                        deleteUserForm.data.delete_activity_logs
+                                    }
+                                    onCheckedChange={(checked) =>
+                                        deleteUserForm.setData(
+                                            'delete_activity_logs',
+                                            checked === true,
+                                        )
+                                    }
+                                />
+                                <span>
+                                    <span className="block text-sm font-medium">
+                                        Registros de actividad
+                                    </span>
+                                    <span className="block text-xs text-muted-foreground">
+                                        Elimina o reasigna los logs de auditoría
+                                        vinculados al usuario.
+                                    </span>
+                                </span>
+                            </label>
+
+                            <div className="flex items-start gap-3 rounded-xl border bg-muted/30 p-3 opacity-80">
+                                <Checkbox
+                                    id="delete-access-assignments"
+                                    checked={
+                                        deleteUserForm.data
+                                            .delete_access_assignments
+                                    }
+                                    disabled
+                                />
+                                <span>
+                                    <span className="block text-sm font-medium">
+                                        Asignaciones de roles y permisos
+                                    </span>
+                                    <span className="block text-xs text-muted-foreground">
+                                        Obligatorio: se revocan para evitar
+                                        asignaciones huérfanas al borrar la
+                                        cuenta.
+                                    </span>
+                                </span>
+                            </div>
+
+                            <div className="flex items-start gap-3 rounded-xl border bg-muted/30 p-3 opacity-80">
+                                <Checkbox
+                                    id="delete-profile-sessions"
+                                    checked={
+                                        deleteUserForm.data
+                                            .delete_profile_sessions
+                                    }
+                                    disabled
+                                />
+                                <span>
+                                    <span className="block text-sm font-medium">
+                                        Perfil y sesiones
+                                    </span>
+                                    <span className="block text-xs text-muted-foreground">
+                                        Obligatorio: cierra sesiones, revoca
+                                        tokens y elimina los datos de perfil
+                                        asociados.
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label
+                                htmlFor="delete-transfer-user"
+                                className="text-sm font-semibold"
+                            >
+                                Reasignar datos a (opcional)
+                            </Label>
+                            <select
+                                id="delete-transfer-user"
+                                value={deleteUserForm.data.transfer_to_user_id}
+                                onChange={(e) =>
+                                    deleteUserForm.setData(
+                                        'transfer_to_user_id',
+                                        e.target.value,
+                                    )
+                                }
+                                className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                            >
+                                <option value="">
+                                    No reasignar: eliminar los datos
+                                    seleccionados
+                                </option>
+                                {transfer_users
+                                    .filter(
+                                        (transferUser) =>
+                                            transferUser.id !==
+                                            deletingUser?.id,
+                                    )
+                                    .map((transferUser) => (
+                                        <option
+                                            key={transferUser.id}
+                                            value={transferUser.id}
+                                        >
+                                            {transferUser.name} (
+                                            {transferUser.email})
+                                        </option>
+                                    ))}
+                            </select>
+                            <p className="text-xs text-muted-foreground">
+                                {deleteUserForm.data.transfer_to_user_id
+                                    ? 'Las ventas y registros de actividad seleccionados se reasignarán al usuario elegido antes de eliminar la cuenta.'
+                                    : 'Si no eliges un usuario archivador, los datos seleccionados se eliminarán permanentemente.'}
+                            </p>
+                            <InputError
+                                message={
+                                    deleteUserForm.errors.transfer_to_user_id
+                                }
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter className="gap-2 border-t bg-muted/20 px-4 py-4 sm:px-6">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full rounded-xl sm:w-auto"
+                            onClick={closeDeleteUserModal}
+                            disabled={deleteUserForm.processing}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            className="w-full rounded-xl font-bold sm:w-auto"
+                            onClick={handleDeleteUser}
+                            disabled={deleteUserForm.processing}
+                        >
+                            {deleteUserForm.processing
+                                ? 'Eliminando...'
+                                : 'ELIMINAR AHORA Y BORRAR TODO'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -4152,5 +4495,7 @@ function route(name: string, params?: any) {
         return `/usuarios-roles/user/${params}/reset-password`;
     if (name === 'usuarios-roles.user.toggle-ban')
         return `/usuarios-roles/user/${params}/toggle-ban`;
+    if (name === 'usuarios-roles.user.destroy')
+        return `/usuarios-roles/user/${params}`;
     return '#';
 }
