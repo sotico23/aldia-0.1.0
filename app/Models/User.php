@@ -316,36 +316,23 @@ class User extends Authenticatable
 
     public function isOwnerAccount(): bool
     {
-        return $this->hasOwnerRole() || $this->isTenantOwner();
-    }
-
-    /**
-     * Solo el Master o un usuario con permisos de Panel Master / Control Total
-     * puede eliminar cuentas de la plataforma.
-     */
-    public function canDeletePlatformUsers(): bool
-    {
-        $roleNames = $this->getRoleNames()
-            ->map(fn (string $role): string => Str::lower($role));
-
-        if ($roleNames->intersect(['master', 'panel master', 'control total'])->isNotEmpty()) {
+        if ($this->hasOwnerRole()) {
             return true;
         }
 
-        $allowedPermissions = [
-            'panel.master',
-            'panel master',
-            'panel_master',
-            'control.total',
-            'control total',
-            'control_total',
-        ];
+        if ($this->hasAnyRole(['Master', 'Super Admin'])) {
+            return false;
+        }
 
-        return $this->getAllPermissions()
-            ->pluck('name')
-            ->map(fn (string $permission): string => Str::lower($permission))
-            ->intersect($allowedPermissions)
-            ->isNotEmpty();
+        return $this->isTenantOwner();
+    }
+
+    /**
+     * Solo el rol Master puede eliminar cuentas de la plataforma.
+     */
+    public function canDeletePlatformUsers(): bool
+    {
+        return $this->hasRole('Master');
     }
 
     public function isCliente(): bool

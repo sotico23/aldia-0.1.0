@@ -143,12 +143,6 @@ interface MasterData {
     new_users_30days_count: number;
 }
 
-interface TransferUser {
-    id: number;
-    name: string;
-    email: string;
-}
-
 interface Props {
     usuarios: User[];
     roles: Role[];
@@ -173,7 +167,6 @@ interface Props {
     can_delete_users: boolean;
     user_level: number;
     current_user_id: number;
-    transfer_users: TransferUser[];
     masterData: MasterData | null;
 }
 
@@ -311,7 +304,6 @@ export default function Index({
     can_delete_users,
     user_level,
     current_user_id,
-    transfer_users,
     masterData,
 }: Props) {
     const { currency } = useCountry();
@@ -352,6 +344,7 @@ export default function Index({
     const [isBanConfirmOpen, setIsBanConfirmOpen] = useState(false);
     const [deletingUser, setDeletingUser] = useState<User | null>(null);
     const [isDeleteUserOpen, setIsDeleteUserOpen] = useState(false);
+    const [isDeletingUser, setIsDeletingUser] = useState(false);
     const searchRef = useRef<HTMLInputElement>(null);
     const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
@@ -362,14 +355,6 @@ export default function Index({
         email: '',
         password: '',
         password_confirmation: '',
-    });
-
-    const deleteUserForm = useForm({
-        delete_sales: true,
-        delete_activity_logs: true,
-        delete_access_assignments: true,
-        delete_profile_sessions: true,
-        transfer_to_user_id: '',
     });
 
     const totalPermisosCount = useMemo(
@@ -600,33 +585,29 @@ export default function Index({
 
     const openDeleteUserModal = (user: User) => {
         setDeletingUser(user);
-        deleteUserForm.reset();
-        deleteUserForm.clearErrors();
         setIsDeleteUserOpen(true);
     };
 
     const closeDeleteUserModal = () => {
         setIsDeleteUserOpen(false);
         setDeletingUser(null);
-        deleteUserForm.reset();
-        deleteUserForm.clearErrors();
+        setIsDeletingUser(false);
     };
 
     const handleDeleteUser = () => {
-        if (!deletingUser) return;
-        if (deletingUserIsOwner && !deleteUserForm.data.transfer_to_user_id) {
-            return;
-        }
+        if (!deletingUser || isDeletingUser) return;
 
-        deleteUserForm.delete(
-            route('usuarios-roles.user.destroy', deletingUser.id),
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    closeDeleteUserModal();
-                },
+        setIsDeletingUser(true);
+
+        router.delete(route('usuarios-roles.user.destroy', deletingUser.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                closeDeleteUserModal();
             },
-        );
+            onFinish: () => {
+                setIsDeletingUser(false);
+            },
+        });
     };
 
     const handleToggleStatus = (
@@ -3136,179 +3117,21 @@ export default function Index({
                     </div>
 
                     <div className="space-y-5 px-4 py-4 sm:px-6">
-                        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs leading-relaxed text-destructive">
+                        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm leading-relaxed text-destructive">
                             <p className="flex items-start gap-2">
                                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                                 <span>
-                                    El usuario será borrado de forma física. Los
-                                    datos seleccionados se eliminarán o se
-                                    reasignarán al usuario archivador antes de
-                                    completar la operación.
-                                </span>
-                            </p>
-                        </div>
-
-                        <div className="space-y-3">
-                            <Label className="text-sm font-semibold">
-                                Datos relacionados a procesar
-                            </Label>
-
-                            <label
-                                htmlFor="delete-sales"
-                                className="flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors hover:bg-muted/40"
-                            >
-                                <Checkbox
-                                    id="delete-sales"
-                                    checked={deleteUserForm.data.delete_sales}
-                                    onCheckedChange={(checked) =>
-                                        deleteUserForm.setData(
-                                            'delete_sales',
-                                            checked === true,
-                                        )
-                                    }
-                                />
-                                <span>
-                                    <span className="block text-sm font-medium">
-                                        Historial de ventas
-                                    </span>
-                                    <span className="block text-xs text-muted-foreground">
-                                        Elimina o reasigna las ventas
-                                        registradas por este usuario.
-                                    </span>
-                                </span>
-                            </label>
-
-                            <label
-                                htmlFor="delete-activity-logs"
-                                className="flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors hover:bg-muted/40"
-                            >
-                                <Checkbox
-                                    id="delete-activity-logs"
-                                    checked={
-                                        deleteUserForm.data.delete_activity_logs
-                                    }
-                                    onCheckedChange={(checked) =>
-                                        deleteUserForm.setData(
-                                            'delete_activity_logs',
-                                            checked === true,
-                                        )
-                                    }
-                                />
-                                <span>
-                                    <span className="block text-sm font-medium">
-                                        Registros de actividad
-                                    </span>
-                                    <span className="block text-xs text-muted-foreground">
-                                        Elimina o reasigna los logs de auditoría
-                                        vinculados al usuario.
-                                    </span>
-                                </span>
-                            </label>
-
-                            <div className="flex items-start gap-3 rounded-xl border bg-muted/30 p-3 opacity-80">
-                                <Checkbox
-                                    id="delete-access-assignments"
-                                    checked={
-                                        deleteUserForm.data
-                                            .delete_access_assignments
-                                    }
-                                    disabled
-                                />
-                                <span>
-                                    <span className="block text-sm font-medium">
-                                        Asignaciones de roles y permisos
-                                    </span>
-                                    <span className="block text-xs text-muted-foreground">
-                                        Obligatorio: se revocan para evitar
-                                        asignaciones huérfanas al borrar la
-                                        cuenta.
-                                    </span>
-                                </span>
-                            </div>
-
-                            <div className="flex items-start gap-3 rounded-xl border bg-muted/30 p-3 opacity-80">
-                                <Checkbox
-                                    id="delete-profile-sessions"
-                                    checked={
-                                        deleteUserForm.data
-                                            .delete_profile_sessions
-                                    }
-                                    disabled
-                                />
-                                <span>
-                                    <span className="block text-sm font-medium">
-                                        Perfil y sesiones
-                                    </span>
-                                    <span className="block text-xs text-muted-foreground">
-                                        Obligatorio: cierra sesiones, revoca
-                                        tokens y elimina los datos de perfil
-                                        asociados.
-                                    </span>
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label
-                                htmlFor="delete-transfer-user"
-                                className="text-sm font-semibold"
-                            >
-                                {deletingUserIsOwner
-                                    ? 'Transferir Propiedad a:'
-                                    : 'Reasignar datos a (opcional)'}
-                            </Label>
-                            <select
-                                id="delete-transfer-user"
-                                value={deleteUserForm.data.transfer_to_user_id}
-                                onChange={(e) =>
-                                    deleteUserForm.setData(
-                                        'transfer_to_user_id',
-                                        e.target.value,
-                                    )
-                                }
-                                required={deletingUserIsOwner}
-                                className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm"
-                            >
-                                <option value="">
                                     {deletingUserIsOwner
-                                        ? 'Selecciona el nuevo propietario'
-                                        : 'No reasignar: eliminar los datos seleccionados'}
-                                </option>
-                                {transfer_users
-                                    .filter(
-                                        (transferUser) =>
-                                            transferUser.id !==
-                                            deletingUser?.id,
-                                    )
-                                    .map((transferUser) => (
-                                        <option
-                                            key={transferUser.id}
-                                            value={transferUser.id}
-                                        >
-                                            {transferUser.name} (
-                                            {transferUser.email})
-                                        </option>
-                                    ))}
-                            </select>
-                            <p
-                                className={
-                                    deletingUserIsOwner
-                                        ? 'text-xs font-medium text-destructive'
-                                        : 'text-xs text-muted-foreground'
-                                }
-                            >
-                                {deletingUserIsOwner
-                                    ? 'Este usuario es propietario del negocio. Debes transferir la propiedad a otro usuario antes de eliminarlo.'
-                                    : deleteUserForm.data.transfer_to_user_id
-                                      ? 'Las ventas y registros de actividad seleccionados se reasignarán al usuario elegido antes de eliminar la cuenta.'
-                                      : 'Si no eliges un usuario archivador, los datos seleccionados se eliminarán permanentemente.'}
+                                        ? 'Este usuario es el propietario del negocio. Se eliminará permanentemente su cuenta, todos los usuarios de su empresa y toda la información asociada al negocio.'
+                                        : 'Se eliminará permanentemente el usuario junto con todas sus ventas, registros de actividad, roles, permisos, sesiones y demás datos asociados.'}
+                                </span>
                             </p>
-                            <InputError
-                                message={
-                                    deleteUserForm.errors.transfer_to_user_id
-                                }
-                            />
                         </div>
+
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                            La eliminación es física e irreversible. No se
+                            transferirán datos a otro usuario.
+                        </p>
                     </div>
 
                     <DialogFooter className="gap-2 border-t bg-muted/20 px-4 py-4 sm:px-6">
@@ -3317,7 +3140,7 @@ export default function Index({
                             variant="outline"
                             className="w-full rounded-xl sm:w-auto"
                             onClick={closeDeleteUserModal}
-                            disabled={deleteUserForm.processing}
+                            disabled={isDeletingUser}
                         >
                             Cancelar
                         </Button>
@@ -3326,15 +3149,11 @@ export default function Index({
                             variant="destructive"
                             className="w-full rounded-xl font-bold sm:w-auto"
                             onClick={handleDeleteUser}
-                            disabled={
-                                deleteUserForm.processing ||
-                                (deletingUserIsOwner &&
-                                    !deleteUserForm.data.transfer_to_user_id)
-                            }
+                            disabled={isDeletingUser}
                         >
-                            {deleteUserForm.processing
+                            {isDeletingUser
                                 ? 'Eliminando...'
-                                : 'ELIMINAR AHORA Y BORRAR TODO'}
+                                : 'ELIMINAR DEFINITIVAMENTE'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

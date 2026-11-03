@@ -15,7 +15,7 @@ class EnsureCanDeleteUsers
         abort_unless(
             $user && $user->canDeletePlatformUsers(),
             403,
-            'Solo el Master o un usuario con permisos de Panel Master / Control Total puede eliminar usuarios.'
+            'Solo el Master puede eliminar usuarios.'
         );
 
         return $next($request);
