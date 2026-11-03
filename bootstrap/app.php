@@ -12,6 +12,7 @@ use App\Http\Middleware\CheckDelivery;
 use App\Http\Middleware\CheckOwnership;
 use App\Http\Middleware\CheckPermission;
 use App\Http\Middleware\CheckRole;
+use App\Http\Middleware\EnsureCanDeleteUsers;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\HandleRegionalSettings;
@@ -57,6 +58,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => CheckRole::class,
             'permission' => CheckPermission::class,
             'ownership' => CheckOwnership::class,
+            'can-delete-users' => EnsureCanDeleteUsers::class,
             'active' => CheckActive::class,
             'delivery' => CheckDelivery::class,
             'verify-n8n-api-key' => VerifyN8nApiKey::class,

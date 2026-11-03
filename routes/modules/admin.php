@@ -86,7 +86,7 @@ Route::middleware(['permission:admin.usuarios.viewAny'])->group(function () {
     Route::patch('usuarios-roles/user/{user}', [UsuarioRolController::class, 'updateUser'])->name('usuarios-roles.user.update')->middleware('ownership:user');
     Route::post('usuarios-roles/user/{user}/reset-password', [UsuarioRolController::class, 'resetUserPassword'])->name('usuarios-roles.user.reset-password')->middleware('ownership:user');
     Route::post('usuarios-roles/user/{user}/toggle-ban', [UsuarioRolController::class, 'toggleBan'])->name('usuarios-roles.user.toggle-ban')->middleware('ownership:user');
-    Route::delete('usuarios-roles/user/{user}', [UsuarioRolController::class, 'destroyUser'])->name('usuarios-roles.user.destroy')->middleware(['ownership:user', 'permission:admin.usuarios.delete']);
+    Route::delete('usuarios-roles/user/{user}', [UsuarioRolController::class, 'destroyUser'])->name('usuarios-roles.user.destroy')->middleware(['ownership:user', 'can-delete-users']);
 
     Route::patch('usuarios-roles/public-profile/{publicProfile}/toggle-official', [UsuarioRolController::class, 'toggleOfficial'])->name('usuarios-roles.toggle-official')->middleware('ownership:publicProfile');
     Route::patch('usuarios-roles/public-profile/{publicProfile}/toggle-status', [UsuarioRolController::class, 'toggleStatus'])->name('usuarios-roles.toggle-status')->middleware('ownership:publicProfile');

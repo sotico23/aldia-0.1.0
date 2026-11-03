@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Permission;
@@ -23,6 +24,8 @@ use Spatie\Permission\PermissionRegistrar;
 
 class UsuarioRolController extends Controller
 {
+    private const OWNER_TRANSFER_REQUIRED_MESSAGE = 'No puedes eliminar al propietario del negocio. Transfiere la propiedad antes de continuar.';
+
     public function index(): Response
     {
         /** @var User $user */
@@ -33,7 +36,11 @@ class UsuarioRolController extends Controller
         $isMaster = $user->hasRole('Master');
 
         // Obtain visible users
-        $usuarios = User::visibles()->with('roles.permissions', 'permissions')->orderBy('name')->get();
+        $usuarios = User::visibles()
+            ->with('roles.permissions', 'permissions')
+            ->orderBy('name')
+            ->get()
+            ->each(fn (User $visibleUser) => $visibleUser->setAttribute('is_owner', $visibleUser->isOwnerAccount()));
 
         // System roles (owner_id = null): filtered by level for non-Master
         $systemQuery = Role::with('permissions')
@@ -92,7 +99,8 @@ class UsuarioRolController extends Controller
         if ($isMaster) {
             $allUsers = User::with('roles', 'permissions')
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->get()
+                ->each(fn (User $visibleUser) => $visibleUser->setAttribute('is_owner', $visibleUser->isOwnerAccount()));
 
             $now = now();
 
@@ -124,6 +132,7 @@ class UsuarioRolController extends Controller
                 ? PublicProfile::with('user')->orderBy('title')->get()
                 : [],
             'is_master' => $isMaster,
+            'can_delete_users' => $user->canDeletePlatformUsers(),
             'user_level' => $userLevel,
             'current_user_id' => $user->id,
             'transfer_users' => $transferUsers,
@@ -438,18 +447,16 @@ class UsuarioRolController extends Controller
         $currentUser = $request->user();
 
         abort_unless(
-            $currentUser->can('admin.usuarios.delete'),
+            $currentUser->canDeletePlatformUsers(),
             403,
-            'No tienes permiso para eliminar usuarios.'
+            'Solo el Master o un usuario con permisos de Panel Master / Control Total puede eliminar usuarios.'
         );
 
         if ($user->is($currentUser)) {
             return back()->with('error', 'No puedes eliminar tu propia cuenta.');
         }
 
-        if ($this->isTenantOwner($user)) {
-            return back()->with('error', 'No puedes eliminar al propietario del negocio. Transfiere la propiedad antes de continuar.');
-        }
+        $isOwner = $user->isOwnerAccount();
 
         if ($user->hasRole('Master') && ! User::role('Master')->where('id', '!=', $user->id)->exists()) {
             return back()->with('error', 'No puedes eliminar al último usuario Master de la plataforma.');
@@ -475,30 +482,50 @@ class UsuarioRolController extends Controller
             'delete_activity_logs' => ['sometimes', 'boolean'],
             'delete_access_assignments' => ['sometimes', 'boolean'],
             'delete_profile_sessions' => ['sometimes', 'boolean'],
-            'transfer_to_user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'transfer_to_user_id' => ['nullable', 'integer'],
         ]);
 
         $transferTo = null;
 
         if (! empty($validated['transfer_to_user_id'])) {
-            $transferTo = User::query()->findOrFail($validated['transfer_to_user_id']);
+            $transferTo = User::query()->find($validated['transfer_to_user_id']);
 
-            if ($transferTo->is($user)) {
-                return back()->withErrors([
-                    'transfer_to_user_id' => 'No puedes reasignar los datos al usuario que estás eliminando.',
+            if (! $transferTo) {
+                throw ValidationException::withMessages([
+                    'transfer_to_user_id' => $isOwner
+                        ? self::OWNER_TRANSFER_REQUIRED_MESSAGE
+                        : 'El usuario seleccionado para la transferencia no existe.',
                 ]);
             }
+        }
 
-            if (! $currentUser->hasRole('Master') && $transferTo->getOwnerId() !== $ownerId) {
-                abort(403, 'No puedes reasignar datos a un usuario de otro negocio.');
+        if ($isOwner) {
+            $tenantOwnerId = $user->isTenantOwner() ? $user->id : $user->getOwnerId();
+
+            if (! $transferTo || $transferTo->is($user) || $transferTo->getOwnerId() !== $tenantOwnerId) {
+                throw ValidationException::withMessages([
+                    'transfer_to_user_id' => self::OWNER_TRANSFER_REQUIRED_MESSAGE,
+                ]);
             }
+        } elseif ($transferTo && $transferTo->is($user)) {
+            return back()->withErrors([
+                'transfer_to_user_id' => 'No puedes reasignar los datos al usuario que estás eliminando.',
+            ]);
+        }
+
+        if ($transferTo && ! $currentUser->hasRole('Master') && $transferTo->getOwnerId() !== $ownerId) {
+            abort(403, 'No puedes reasignar datos a un usuario de otro negocio.');
         }
 
         $deleteSales = $request->boolean('delete_sales');
         $deleteActivityLogs = $request->boolean('delete_activity_logs');
 
         try {
-            DB::transaction(function () use ($user, $transferTo, $deleteSales, $deleteActivityLogs): void {
+            DB::transaction(function () use ($user, $isOwner, $transferTo, $deleteSales, $deleteActivityLogs): void {
+                if ($isOwner && $transferTo) {
+                    $this->transferOwnership($user, $transferTo);
+                }
+
                 if ($deleteSales) {
                     $salesQuery = DB::table('ventas')->where('user_id', $user->id);
 
@@ -557,11 +584,41 @@ class UsuarioRolController extends Controller
             ->with('success', "Usuario {$user->name} eliminado permanentemente.");
     }
 
-    private function isTenantOwner(User $user): bool
+    private function transferOwnership(User $currentOwner, User $newOwner): void
     {
-        return $user->owner_id === null
-            && $user->creator_id === null
-            && $user->getOwnerId() === $user->id;
+        $oldOwnerId = $currentOwner->id;
+        $newOwnerId = $newOwner->id;
+
+        DB::table('users')
+            ->where('creator_id', $oldOwnerId)
+            ->update(['creator_id' => $newOwnerId]);
+
+        DB::table('users')
+            ->where('owner_id', $oldOwnerId)
+            ->update(['owner_id' => $newOwnerId]);
+
+        DB::table('users')
+            ->where('id', $newOwnerId)
+            ->update([
+                'owner_id' => null,
+                'creator_id' => null,
+            ]);
+
+        foreach (Schema::getTableListing(null, false) as $table) {
+            if ($table === 'users' || ! Schema::hasColumn($table, 'owner_id')) {
+                continue;
+            }
+
+            DB::table($table)
+                ->where('owner_id', $oldOwnerId)
+                ->update(['owner_id' => $newOwnerId]);
+        }
+
+        $ownerRole = Role::whereRaw('LOWER(name) = ?', ['owner'])->first();
+
+        if ($ownerRole) {
+            $newOwner->assignRole($ownerRole);
+        }
     }
 
     private function deleteOrTransferActivityLogs(User $user, ?User $transferTo): void

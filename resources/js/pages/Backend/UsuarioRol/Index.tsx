@@ -96,6 +96,7 @@ interface User {
     is_active?: boolean;
     banned_at?: string | null;
     owner_id?: number | null;
+    is_owner?: boolean;
     created_at?: string;
 }
 
@@ -169,6 +170,7 @@ interface Props {
     usuariosRoles: UsuarioRol[];
     publicProfiles: PublicProfile[];
     is_master: boolean;
+    can_delete_users: boolean;
     user_level: number;
     current_user_id: number;
     transfer_users: TransferUser[];
@@ -306,6 +308,7 @@ export default function Index({
     usuariosRoles,
     publicProfiles,
     is_master,
+    can_delete_users,
     user_level,
     current_user_id,
     transfer_users,
@@ -315,7 +318,7 @@ export default function Index({
     const { hasPermission } = usePermissions();
     const canCreate = hasPermission('admin.usuarios.create');
     const canEdit = hasPermission('admin.usuarios.edit');
-    const canDelete = hasPermission('admin.usuarios.delete');
+    const canDelete = can_delete_users;
     const canManageRoles = hasPermission('admin.roles.custom');
     const canSeeTiendas = user_level <= 1;
 
@@ -352,6 +355,7 @@ export default function Index({
     const searchRef = useRef<HTMLInputElement>(null);
     const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
+    const deletingUserIsOwner = deletingUser?.is_owner === true;
 
     const createUserForm = useForm({
         name: '',
@@ -610,6 +614,9 @@ export default function Index({
 
     const handleDeleteUser = () => {
         if (!deletingUser) return;
+        if (deletingUserIsOwner && !deleteUserForm.data.transfer_to_user_id) {
+            return;
+        }
 
         deleteUserForm.delete(
             route('usuarios-roles.user.destroy', deletingUser.id),
@@ -3246,7 +3253,9 @@ export default function Index({
                                 htmlFor="delete-transfer-user"
                                 className="text-sm font-semibold"
                             >
-                                Reasignar datos a (opcional)
+                                {deletingUserIsOwner
+                                    ? 'Transferir Propiedad a:'
+                                    : 'Reasignar datos a (opcional)'}
                             </Label>
                             <select
                                 id="delete-transfer-user"
@@ -3257,11 +3266,13 @@ export default function Index({
                                         e.target.value,
                                     )
                                 }
+                                required={deletingUserIsOwner}
                                 className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm"
                             >
                                 <option value="">
-                                    No reasignar: eliminar los datos
-                                    seleccionados
+                                    {deletingUserIsOwner
+                                        ? 'Selecciona el nuevo propietario'
+                                        : 'No reasignar: eliminar los datos seleccionados'}
                                 </option>
                                 {transfer_users
                                     .filter(
@@ -3279,10 +3290,18 @@ export default function Index({
                                         </option>
                                     ))}
                             </select>
-                            <p className="text-xs text-muted-foreground">
-                                {deleteUserForm.data.transfer_to_user_id
-                                    ? 'Las ventas y registros de actividad seleccionados se reasignarán al usuario elegido antes de eliminar la cuenta.'
-                                    : 'Si no eliges un usuario archivador, los datos seleccionados se eliminarán permanentemente.'}
+                            <p
+                                className={
+                                    deletingUserIsOwner
+                                        ? 'text-xs font-medium text-destructive'
+                                        : 'text-xs text-muted-foreground'
+                                }
+                            >
+                                {deletingUserIsOwner
+                                    ? 'Este usuario es propietario del negocio. Debes transferir la propiedad a otro usuario antes de eliminarlo.'
+                                    : deleteUserForm.data.transfer_to_user_id
+                                      ? 'Las ventas y registros de actividad seleccionados se reasignarán al usuario elegido antes de eliminar la cuenta.'
+                                      : 'Si no eliges un usuario archivador, los datos seleccionados se eliminarán permanentemente.'}
                             </p>
                             <InputError
                                 message={
@@ -3307,7 +3326,11 @@ export default function Index({
                             variant="destructive"
                             className="w-full rounded-xl font-bold sm:w-auto"
                             onClick={handleDeleteUser}
-                            disabled={deleteUserForm.processing}
+                            disabled={
+                                deleteUserForm.processing ||
+                                (deletingUserIsOwner &&
+                                    !deleteUserForm.data.transfer_to_user_id)
+                            }
                         >
                             {deleteUserForm.processing
                                 ? 'Eliminando...'
