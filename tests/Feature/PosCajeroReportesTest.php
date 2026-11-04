@@ -159,8 +159,9 @@ test('pos store rechaza cajeros de otro owner', function () {
 
 test('reportes filtra ventas y ganancias por cajero', function () {
     $user = User::factory()->create();
-    $user->syncRoles([]);
+    $user->syncRoles(['Administrador']);
     grantPosPermissions($user);
+    $user->givePermissionTo(Permission::firstOrCreate(['name' => 'ventas.pos-reportes.viewAny']));
 
     [$almacen, $cliente, $producto] = makePosContext($user);
     $cajeroA = makeEmpleado($user, ['nombre' => 'Ana', 'apellido' => 'Pérez']);

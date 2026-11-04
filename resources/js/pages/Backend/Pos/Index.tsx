@@ -104,6 +104,7 @@ interface Cliente {
     comuna: string | null;
     ciudad: string | null;
     region: string | null;
+    telefono?: string | null;
 }
 
 interface DeliveryRate {
@@ -168,6 +169,12 @@ function DeliveryControls({
     onDistanceChange,
     manualCost,
     onManualCostChange,
+    recipientName,
+    onRecipientNameChange,
+    phone,
+    onPhoneChange,
+    commune,
+    onCommuneChange,
     address,
     onAddressChange,
     suffix,
@@ -181,6 +188,12 @@ function DeliveryControls({
     onDistanceChange: (distanceKm: string) => void;
     manualCost: string;
     onManualCostChange: (cost: string) => void;
+    recipientName: string;
+    onRecipientNameChange: (recipientName: string) => void;
+    phone: string;
+    onPhoneChange: (phone: string) => void;
+    commune: string;
+    onCommuneChange: (commune: string) => void;
     address: string;
     onAddressChange: (address: string) => void;
     suffix: string;
@@ -304,8 +317,57 @@ function DeliveryControls({
                     )}
 
                     <div className="space-y-1">
+                        <Label htmlFor={`delivery-recipient-${suffix}`}>
+                            Nombre del cliente (envío) *
+                        </Label>
+                        <Input
+                            id={`delivery-recipient-${suffix}`}
+                            value={recipientName}
+                            onChange={(event) =>
+                                onRecipientNameChange(event.target.value)
+                            }
+                            maxLength={255}
+                            placeholder="Quién recibe el despacho"
+                            required
+                        />
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1">
+                            <Label htmlFor={`delivery-phone-${suffix}`}>
+                                Teléfono de contacto *
+                            </Label>
+                            <Input
+                                id={`delivery-phone-${suffix}`}
+                                type="tel"
+                                value={phone}
+                                onChange={(event) =>
+                                    onPhoneChange(event.target.value)
+                                }
+                                maxLength={30}
+                                placeholder="+56 9 1234 5678"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor={`delivery-commune-${suffix}`}>
+                                Comuna
+                            </Label>
+                            <Input
+                                id={`delivery-commune-${suffix}`}
+                                value={commune}
+                                onChange={(event) =>
+                                    onCommuneChange(event.target.value)
+                                }
+                                maxLength={120}
+                                placeholder="Comuna de entrega"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-1">
                         <Label htmlFor={`delivery-address-${suffix}`}>
-                            Dirección de entrega
+                            Dirección exacta de entrega *
                         </Label>
                         <Input
                             id={`delivery-address-${suffix}`}
@@ -314,6 +376,7 @@ function DeliveryControls({
                                 onAddressChange(event.target.value)
                             }
                             maxLength={255}
+                            placeholder="Calle, número, depto/casa"
                             required
                         />
                     </div>
@@ -329,6 +392,8 @@ export default function PosIndex({
     almacenes = [],
     empleados = [],
     empleado_id = null,
+    puede_seleccionar_cajero = true,
+    cajero_actual = null,
     promociones = [],
     delivery_rates = [],
     iva_tasa = 0.19,
@@ -338,6 +403,8 @@ export default function PosIndex({
     almacenes?: Almacen[];
     empleados?: Empleado[];
     empleado_id?: number | null;
+    puede_seleccionar_cajero?: boolean;
+    cajero_actual?: { id: number | null; nombre: string } | null;
     promociones?: Promocion[];
     delivery_rates?: DeliveryRate[];
     iva_tasa?: number;
@@ -365,6 +432,10 @@ export default function PosIndex({
         descuento: number;
         hasDelivery: boolean;
         deliveryCost: number;
+        deliveryRecipientName: string;
+        deliveryPhone: string;
+        deliveryAddress: string;
+        deliveryCommune: string;
         iva: number;
         total: number;
         metodoPago: string;
@@ -397,6 +468,9 @@ export default function PosIndex({
     const [deliveryRateId, setDeliveryRateId] = useState('');
     const [deliveryDistanceKm, setDeliveryDistanceKm] = useState('');
     const [manualDeliveryCost, setManualDeliveryCost] = useState('');
+    const [deliveryRecipientName, setDeliveryRecipientName] = useState('');
+    const [deliveryPhone, setDeliveryPhone] = useState('');
+    const [deliveryCommune, setDeliveryCommune] = useState('');
     const [deliveryAddress, setDeliveryAddress] = useState('');
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [metodoPago, setMetodoPago] = useState<
@@ -417,6 +491,10 @@ export default function PosIndex({
     const [empleadoId, setEmpleadoId] = useState<string>(() => {
         if (empleado_id) {
             return String(empleado_id);
+        }
+
+        if (!puede_seleccionar_cajero) {
+            return '';
         }
 
         return empleados.length > 0 ? String(empleados[0].id) : '';
@@ -442,6 +520,9 @@ export default function PosIndex({
         const cliente = clientes.find(
             (item) => String(item.id) === clienteIdSeleccionado,
         );
+        setDeliveryRecipientName(cliente?.nombre ?? '');
+        setDeliveryPhone(cliente?.telefono ?? '');
+        setDeliveryCommune(cliente?.comuna ?? '');
         setDeliveryAddress(
             cliente
                 ? [
@@ -459,6 +540,31 @@ export default function PosIndex({
     const selectedDeliveryRate = delivery_rates.find(
         (rate) => String(rate.id) === deliveryRateId,
     );
+
+    const handleDeliveryRateChange = (rateIdSeleccionado: string) => {
+        setDeliveryRateId(rateIdSeleccionado);
+        const rate = delivery_rates.find(
+            (item) => String(item.id) === rateIdSeleccionado,
+        );
+
+        if (rate?.calculation_type === 'comuna' && rate.commune) {
+            setDeliveryCommune(rate.commune);
+        }
+    };
+
+    const cajeroActualNombre = useMemo(() => {
+        if (cajero_actual?.nombre) {
+            return cajero_actual.nombre;
+        }
+
+        const actual = empleados.find(
+            (empleado) => String(empleado.id) === empleadoId,
+        );
+
+        return actual
+            ? `${actual.nombre} ${actual.apellido}`.trim()
+            : 'Cajero actual';
+    }, [cajero_actual, empleados, empleadoId]);
     const deliveryCost = useMemo(() => {
         if (!hasDelivery) return 0;
         if (!selectedDeliveryRate) return Number(manualDeliveryCost) || 0;
@@ -1006,7 +1112,10 @@ export default function PosIndex({
         delivery_rate_id: null as number | null,
         delivery_cost: 0,
         delivery_distance_km: null as number | null,
+        delivery_recipient_name: '',
+        delivery_phone: '',
         delivery_address: '',
+        delivery_commune: '',
         incluye_iva: true,
         descuento: 0,
         descuento_manual: 0,
@@ -1028,6 +1137,14 @@ export default function PosIndex({
             | 'contactar',
     ) => {
         if (cart.length === 0) return;
+        if (hasDelivery && !deliveryRecipientName.trim()) {
+            toast.error('Ingrese el nombre del cliente que recibe el despacho.');
+            return;
+        }
+        if (hasDelivery && !deliveryPhone.trim()) {
+            toast.error('Ingrese el teléfono de contacto del despacho.');
+            return;
+        }
         if (hasDelivery && !deliveryAddress.trim()) {
             toast.error('Ingrese la dirección de entrega.');
             return;
@@ -1071,7 +1188,12 @@ export default function PosIndex({
                 hasDelivery && deliveryDistanceKm
                     ? Number(deliveryDistanceKm)
                     : null,
+            delivery_recipient_name: hasDelivery
+                ? deliveryRecipientName
+                : '',
+            delivery_phone: hasDelivery ? deliveryPhone : '',
             delivery_address: hasDelivery ? deliveryAddress : '',
+            delivery_commune: hasDelivery ? deliveryCommune : '',
             incluye_iva: incluyeIva,
             descuento: descuento,
             descuento_manual: descuentoManual,
@@ -1103,6 +1225,10 @@ export default function PosIndex({
                     descuento: descuento,
                     hasDelivery,
                     deliveryCost,
+                    deliveryRecipientName,
+                    deliveryPhone,
+                    deliveryAddress,
+                    deliveryCommune,
                     iva: iva,
                     total: total,
                     metodoPago: metodo,
@@ -1126,6 +1252,9 @@ export default function PosIndex({
                 const clienteSeleccionado = clientes.find(
                     (cliente) => String(cliente.id) === clienteId,
                 );
+                setDeliveryRecipientName(clienteSeleccionado?.nombre ?? '');
+                setDeliveryPhone(clienteSeleccionado?.telefono ?? '');
+                setDeliveryCommune(clienteSeleccionado?.comuna ?? '');
                 setDeliveryAddress(
                     clienteSeleccionado
                         ? [
@@ -1388,28 +1517,43 @@ export default function PosIndex({
                                 <UserCheck className="h-3.5 w-3.5" />
                                 Cajero / Vendedor
                             </Label>
-                            <Select
-                                value={empleadoId || undefined}
-                                onValueChange={setEmpleadoId}
-                            >
-                                <SelectTrigger className="h-9">
-                                    <SelectValue placeholder="Seleccionar Cajero" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {empleados.map((empleado) => (
-                                        <SelectItem
-                                            key={empleado.id}
-                                            value={String(empleado.id)}
-                                        >
-                                            {empleado.nombre}{' '}
-                                            {empleado.apellido}
-                                            {empleado.cargo
-                                                ? ` — ${empleado.cargo}`
-                                                : ''}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            {puede_seleccionar_cajero ? (
+                                <Select
+                                    value={empleadoId || undefined}
+                                    onValueChange={setEmpleadoId}
+                                >
+                                    <SelectTrigger className="h-9">
+                                        <SelectValue placeholder="Seleccionar Cajero" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {empleados.map((empleado) => (
+                                            <SelectItem
+                                                key={empleado.id}
+                                                value={String(empleado.id)}
+                                            >
+                                                {empleado.nombre}{' '}
+                                                {empleado.apellido}
+                                                {empleado.cargo
+                                                    ? ` — ${empleado.cargo}`
+                                                    : ''}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            ) : (
+                                <div className="flex h-9 items-center gap-2 rounded-md border bg-muted/50 px-3 text-sm font-semibold">
+                                    <UserCheck className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                    <span className="truncate">
+                                        {cajeroActualNombre}
+                                    </span>
+                                    <Badge
+                                        variant="secondary"
+                                        className="ml-auto shrink-0 text-[10px]"
+                                    >
+                                        Bloqueado
+                                    </Badge>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -1748,11 +1892,17 @@ export default function PosIndex({
                                 onEnabledChange={setHasDelivery}
                                 rates={delivery_rates}
                                 rateId={deliveryRateId}
-                                onRateChange={setDeliveryRateId}
+                                onRateChange={handleDeliveryRateChange}
                                 distanceKm={deliveryDistanceKm}
                                 onDistanceChange={setDeliveryDistanceKm}
                                 manualCost={manualDeliveryCost}
                                 onManualCostChange={setManualDeliveryCost}
+                                recipientName={deliveryRecipientName}
+                                onRecipientNameChange={setDeliveryRecipientName}
+                                phone={deliveryPhone}
+                                onPhoneChange={setDeliveryPhone}
+                                commune={deliveryCommune}
+                                onCommuneChange={setDeliveryCommune}
                                 address={deliveryAddress}
                                 onAddressChange={setDeliveryAddress}
                                 suffix="desktop"
@@ -2155,28 +2305,45 @@ export default function PosIndex({
                                         <UserCheck className="h-3.5 w-3.5" />
                                         Cajero / Vendedor
                                     </Label>
-                                    <Select
-                                        value={empleadoId || undefined}
-                                        onValueChange={setEmpleadoId}
-                                    >
-                                        <SelectTrigger className="h-9">
-                                            <SelectValue placeholder="Seleccionar Cajero" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {empleados.map((empleado) => (
-                                                <SelectItem
-                                                    key={empleado.id}
-                                                    value={String(empleado.id)}
-                                                >
-                                                    {empleado.nombre}{' '}
-                                                    {empleado.apellido}
-                                                    {empleado.cargo
-                                                        ? ` — ${empleado.cargo}`
-                                                        : ''}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    {puede_seleccionar_cajero ? (
+                                        <Select
+                                            value={empleadoId || undefined}
+                                            onValueChange={setEmpleadoId}
+                                        >
+                                            <SelectTrigger className="h-9">
+                                                <SelectValue placeholder="Seleccionar Cajero" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {empleados.map((empleado) => (
+                                                    <SelectItem
+                                                        key={empleado.id}
+                                                        value={String(
+                                                            empleado.id,
+                                                        )}
+                                                    >
+                                                        {empleado.nombre}{' '}
+                                                        {empleado.apellido}
+                                                        {empleado.cargo
+                                                            ? ` — ${empleado.cargo}`
+                                                            : ''}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <div className="flex h-9 items-center gap-2 rounded-md border bg-muted/50 px-3 text-sm font-semibold">
+                                            <UserCheck className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                            <span className="truncate">
+                                                {cajeroActualNombre}
+                                            </span>
+                                            <Badge
+                                                variant="secondary"
+                                                className="ml-auto shrink-0 text-[10px]"
+                                            >
+                                                Bloqueado
+                                            </Badge>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -2498,13 +2665,21 @@ export default function PosIndex({
                                         onEnabledChange={setHasDelivery}
                                         rates={delivery_rates}
                                         rateId={deliveryRateId}
-                                        onRateChange={setDeliveryRateId}
+                                        onRateChange={handleDeliveryRateChange}
                                         distanceKm={deliveryDistanceKm}
                                         onDistanceChange={setDeliveryDistanceKm}
                                         manualCost={manualDeliveryCost}
                                         onManualCostChange={
                                             setManualDeliveryCost
                                         }
+                                        recipientName={deliveryRecipientName}
+                                        onRecipientNameChange={
+                                            setDeliveryRecipientName
+                                        }
+                                        phone={deliveryPhone}
+                                        onPhoneChange={setDeliveryPhone}
+                                        commune={deliveryCommune}
+                                        onCommuneChange={setDeliveryCommune}
                                         address={deliveryAddress}
                                         onAddressChange={setDeliveryAddress}
                                         suffix="mobile"
@@ -3068,7 +3243,18 @@ export default function PosIndex({
                                     </Button>
                                     <Button
                                         className="flex-1"
-                                        onClick={() => window.print()}
+                                        onClick={() => {
+                                            if (ultimaVenta.ventaId) {
+                                                window.open(
+                                                    `/pos/${ultimaVenta.ventaId}/ticket`,
+                                                    '_blank',
+                                                    'noopener,noreferrer',
+                                                );
+                                                return;
+                                            }
+
+                                            window.print();
+                                        }}
                                     >
                                         <Receipt className="mr-2 h-4 w-4" />
                                         Imprimir Ticket

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\BelongsToOwner;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 
 class Venta extends Model
 {
@@ -39,6 +41,10 @@ class Venta extends Model
         'delivery_rate_id',
         'delivery_cost',
         'delivery_distance_km',
+        'delivery_recipient_name',
+        'delivery_phone',
+        'delivery_address',
+        'delivery_commune',
         'tipo_descuento',
         'valor_descuento',
         'monto_descuento',
@@ -53,6 +59,59 @@ class Venta extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Limita la consulta a ventas registradas desde el terminal POS.
+     */
+    public function scopePos(Builder $query): Builder
+    {
+        return $query->where('es_pos', true);
+    }
+
+    /**
+     * Excluye ventas anuladas o canceladas de los totales operativos.
+     */
+    public function scopeVigentes(Builder $query): Builder
+    {
+        return $query->whereNotIn('estado', ['anulada', 'cancelada']);
+    }
+
+    /**
+     * Limita la consulta a las ventas de un cajero específico.
+     */
+    public function scopeDelCajero(Builder $query, int $userId): Builder
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    /**
+     * Filtra las ventas por un rango de fechas inclusivo.
+     */
+    public function scopeEntreFechas(Builder $query, Carbon|string $desde, Carbon|string $hasta): Builder
+    {
+        return $query->whereBetween('fecha', [
+            $desde instanceof Carbon ? $desde->toDateString() : $desde,
+            $hasta instanceof Carbon ? $hasta->toDateString() : $hasta,
+        ]);
+    }
+
+    /**
+     * Filtra por tipo de documento tributario.
+     */
+    public function scopeTipoDocumento(Builder $query, string $tipoDocumento): Builder
+    {
+        return $query->where('tipo_documento', $tipoDocumento);
+    }
+
+    /**
+     * Filtra por uno o más métodos de pago.
+     *
+     * @param  array<int, string>  $metodosPago
+     */
+    public function scopeMetodosPago(Builder $query, array $metodosPago): Builder
+    {
+        return $query->whereIn('metodo_pago', $metodosPago);
     }
 
     protected function casts(): array

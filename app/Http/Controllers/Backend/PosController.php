@@ -122,7 +122,7 @@ class PosController extends Controller implements HasMiddleware
             });
 
         $clientes = Cliente::where('owner_id', $ownerId)
-            ->get(['id', 'nombre', 'rut', 'direccion', 'comuna', 'ciudad', 'region']);
+            ->get(['id', 'nombre', 'rut', 'direccion', 'comuna', 'ciudad', 'region', 'telefono']);
 
         $promociones = Promocion::where('owner_id', $ownerId)
             ->where('activa', true)
@@ -143,6 +143,7 @@ class PosController extends Controller implements HasMiddleware
             ->get(['id', 'nombre', 'apellido', 'cargo', 'user_id']);
 
         $empleadoActual = $empleados->firstWhere('user_id', Auth::id());
+        $puedeSeleccionarCajero = $this->puedeSeleccionarCajero();
 
         return Inertia::render('Backend/Pos/Index', [
             'productos' => $productos,
@@ -163,9 +164,29 @@ class PosController extends Controller implements HasMiddleware
             'almacenes' => $almacenes,
             'empleados' => $empleados,
             'empleado_id' => $empleadoActual?->id,
+            'puede_seleccionar_cajero' => $puedeSeleccionarCajero,
+            'cajero_actual' => [
+                'id' => $empleadoActual?->id,
+                'nombre' => $empleadoActual
+                    ? trim("{$empleadoActual->nombre} {$empleadoActual->apellido}")
+                    : Auth::user()->name,
+            ],
             'promociones' => $promociones,
             'iva_tasa' => (float) config('taxes.iva_rate', 0.19),
         ]);
+    }
+
+    /**
+     * Determina si el usuario puede elegir a otro cajero/vendedor.
+     *
+     * Sólo los perfiles administrativos o supervisores explícitos pueden
+     * suplantar la caja. El resto queda bloqueado a su propio empleado.
+     */
+    private function puedeSeleccionarCajero(): bool
+    {
+        $user = Auth::user();
+
+        return $user->hasAnyRole(['Master', 'Super Admin', 'Administrador', 'Owner', 'Supervisor']);
     }
 
     public function store(Request $request): RedirectResponse
@@ -210,12 +231,25 @@ class PosController extends Controller implements HasMiddleware
                 'max:100000000',
             ],
             'delivery_distance_km' => ['nullable', 'numeric', 'min:0.01', 'max:100000'],
+            'delivery_recipient_name' => [
+                Rule::requiredIf(fn () => $request->boolean('has_delivery')),
+                'nullable',
+                'string',
+                'max:255',
+            ],
+            'delivery_phone' => [
+                Rule::requiredIf(fn () => $request->boolean('has_delivery')),
+                'nullable',
+                'string',
+                'max:30',
+            ],
             'delivery_address' => [
                 Rule::requiredIf(fn () => $request->boolean('has_delivery')),
                 'nullable',
                 'string',
                 'max:255',
             ],
+            'delivery_commune' => ['nullable', 'string', 'max:120'],
             'almacen_id' => ['required', Rule::exists('almacenes', 'id')->where('owner_id', $ownerId)],
             'empleado_id' => ['nullable', Rule::exists('empleados', 'id')->where('owner_id', $ownerId)->where('estado', 'activo')],
             'cupon_codigo' => 'nullable|string|max:50',
@@ -224,6 +258,17 @@ class PosController extends Controller implements HasMiddleware
         ]);
 
         $hasDelivery = (bool) ($validated['has_delivery'] ?? false);
+
+        // Bloqueo de seguridad: los cajeros no supervisores sólo pueden
+        // registrar la venta a su propio nombre, sin importar lo enviado.
+        if (! $this->puedeSeleccionarCajero()) {
+            $validated['empleado_id'] = Empleado::where('owner_id', $ownerId)
+                ->where('user_id', Auth::id())
+                ->where('estado', 'activo')
+                ->orderBy('id')
+                ->value('id');
+        }
+
         $deliveryRate = null;
 
         if ($hasDelivery && ! empty($validated['delivery_rate_id'])) {
@@ -251,6 +296,14 @@ class PosController extends Controller implements HasMiddleware
                 if ($request->cliente_id && $request->cliente_id !== '0' && $request->cliente_id !== '') {
                     $clienteId = $request->cliente_id;
                 }
+
+                $cliente = $clienteId
+                    ? Cliente::where('owner_id', $ownerId)->find($clienteId)
+                    : null;
+
+                $deliveryCommune = $hasDelivery
+                    ? ($validated['delivery_commune'] ?? $deliveryRate?->commune ?? $cliente?->comuna)
+                    : null;
                 $descuento = (float) ($validated['descuento'] ?? 0);
                 $montoCupon = 0.0;
                 $cuponId = null;
@@ -339,6 +392,10 @@ class PosController extends Controller implements HasMiddleware
                     'delivery_rate_id' => $hasDelivery ? $deliveryRate?->id : null,
                     'delivery_cost' => $deliveryCost,
                     'delivery_distance_km' => $deliveryDistanceKm,
+                    'delivery_recipient_name' => $hasDelivery ? $validated['delivery_recipient_name'] : null,
+                    'delivery_phone' => $hasDelivery ? $validated['delivery_phone'] : null,
+                    'delivery_address' => $hasDelivery ? $validated['delivery_address'] : null,
+                    'delivery_commune' => $deliveryCommune,
                     'metodo_pago' => $request->metodo_pago,
                     'tipo_documento' => $request->tipo_documento,
                     'almacen_id' => $request->almacen_id,
@@ -437,15 +494,14 @@ class PosController extends Controller implements HasMiddleware
                 }
 
                 if ($hasDelivery) {
-                    $cliente = $clienteId
-                        ? Cliente::where('owner_id', $ownerId)->find($clienteId)
-                        : null;
                     $entrega = Entrega::create([
                         'owner_id' => $ownerId,
                         'venta_id' => $venta->id,
                         'cliente_id' => $cliente?->id,
-                        'cliente' => $cliente?->nombre ?? 'Cliente POS',
+                        'cliente' => $validated['delivery_recipient_name'] ?? $cliente?->nombre ?? 'Cliente POS',
+                        'telefono' => $validated['delivery_phone'] ?? $cliente?->telefono,
                         'direccion' => $validated['delivery_address'],
+                        'comuna' => $deliveryCommune,
                         'fecha_entrega' => today(),
                         'estado' => 'pendiente',
                     ]);

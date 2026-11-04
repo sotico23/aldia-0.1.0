@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Backend\CuponController;
 use App\Http\Controllers\Backend\PosController;
+use App\Http\Controllers\Backend\PosVentasController;
 use App\Http\Controllers\Backend\VarianteController;
 use App\Http\Controllers\Backend\VentaController;
 use Illuminate\Support\Facades\Route;
@@ -22,9 +23,23 @@ Route::prefix('pos')->name('pos.')->group(function () {
     Route::post('/', [PosController::class, 'store'])
         ->middleware(['permission:ventas.pos.viewAny', 'permission:ventas.pos.create'])
         ->name('store');
+    Route::get('{venta}/ticket', [PosVentasController::class, 'ticketPdf'])
+        ->middleware('permission:ventas.pos.viewAny')
+        ->name('ticket');
     Route::post('{venta}/emitir-dte', [PosController::class, 'emitirDte'])
         ->middleware('permission:ventas.facturacion-pos.create')
         ->name('emitir-dte');
+
+    // Historial de ventas y métricas del cajero autenticado.
+    Route::get('mis-ventas', [PosVentasController::class, 'index'])
+        ->middleware('permission:ventas.pos.viewAny')
+        ->name('mis-ventas');
+    Route::get('mis-ventas/{venta}', [PosVentasController::class, 'show'])
+        ->middleware('permission:ventas.pos.viewAny')
+        ->name('mis-ventas.show');
+    Route::post('mis-ventas/{venta}/anular', [PosVentasController::class, 'anular'])
+        ->middleware('permission:ventas.pos.delete')
+        ->name('mis-ventas.anular');
 
     Route::get('cierre', [PosController::class, 'cierreCaja'])
         ->middleware('permission:ventas.cierre-caja.viewAny')
