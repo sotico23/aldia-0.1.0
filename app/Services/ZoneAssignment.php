@@ -65,6 +65,9 @@ class ZoneAssignment
             ->withoutGlobalScope(OwnerScope::class)
             ->where('owner_id', $ownerId)
             ->activa()
+            ->where('modo', 'radio')
+            ->whereNotNull('lat')
+            ->whereNotNull('lng')
             ->orderBy('radio_km', 'desc')
             ->get();
 
@@ -316,6 +319,9 @@ class ZoneAssignment
             ->withoutGlobalScope(OwnerScope::class)
             ->where('owner_id', $pedido->owner_id)
             ->activa()
+            ->where('modo', 'radio')
+            ->whereNotNull('lat')
+            ->whereNotNull('lng')
             ->orderBy('radio_km', 'desc')
             ->get();
 

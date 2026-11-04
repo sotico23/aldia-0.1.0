@@ -62,6 +62,7 @@ import {
 } from '@/components/ui/select';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
+import { comunasChile } from '@/lib/chile-communes';
 import {
     formatCurrency,
     formatDateCLP,
@@ -139,34 +140,6 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
     { title: 'Facturación', href: '/facturacion' },
 ];
-
-const comunasChile = [
-    'Santiago',
-    'Las Condes',
-    'Providencia',
-    'Maipú',
-    'Puente Alto',
-    'La Florida',
-    'Viña del Mar',
-    'Valparaíso',
-    'Concepción',
-    'Antofagasta',
-    'Temuco',
-    'Rancagua',
-    'Iquique',
-    'Puerto Montt',
-    'La Serena',
-    'Coquimbo',
-    'Chillán',
-    'Arica',
-    'Talca',
-    'Copiapó',
-    'Quillota',
-    'San Antonio',
-    'Curicó',
-    'Punta Arenas',
-    'Osorno',
-].sort();
 
 interface Stats {
     total_facturado_mes: number;

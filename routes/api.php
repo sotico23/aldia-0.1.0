@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Bot\OpenApiController;
 use App\Http\Controllers\Api\Bot\ResourceBotController;
 use App\Http\Controllers\Api\Bot\TransversalBotController;
 use App\Http\Controllers\Api\Bot\VentaBotController;
+use App\Http\Controllers\Api\ChannelController;
 use App\Http\Controllers\Api\Delivery\DeliveryOrdenController;
 use App\Http\Controllers\Api\Delivery\ZoneController;
 use App\Http\Controllers\Api\InternalAutomationController;
@@ -35,6 +36,16 @@ Route::get('/user', function (Request $request) {
 })->middleware(['auth:sanctum', 'throttle:api']);
 
 Route::group(['prefix' => 'v1'], function () {
+    Route::prefix('channels')->group(function () {
+        Route::post('resolve', [ChannelController::class, 'resolve'])
+            ->middleware(['verify-n8n-api-key:global', 'throttle:60,1'])
+            ->name('api.v1.channels.resolve');
+
+        Route::post('reply', [ChannelController::class, 'reply'])
+            ->middleware(['verify-tenant-token', 'throttle:60,1'])
+            ->name('api.v1.channels.reply');
+    });
+
     Route::post('tracking/update', [TrackingController::class, 'updateLocation'])
         ->middleware(['auth:sanctum', 'active', 'throttle:60,1']);
 

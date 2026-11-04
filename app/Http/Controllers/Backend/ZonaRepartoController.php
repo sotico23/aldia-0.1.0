@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
+use App\Models\Cliente;
 use App\Models\DeliveryAsignacion;
+use App\Models\DeliveryRate;
 use App\Models\Repartidor;
 use App\Models\Zone;
 use App\Services\ZoneAnalytics;
@@ -11,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,9 +24,9 @@ class ZonaRepartoController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:zonas-reparto.create', only: ['store']),
-            new Middleware('permission:zonas-reparto.edit', only: ['update']),
-            new Middleware('permission:zonas-reparto.delete', only: ['destroy']),
+            new Middleware('permission:delivery.zonas-reparto.create', only: ['store']),
+            new Middleware('permission:delivery.zonas-reparto.edit', only: ['update']),
+            new Middleware('permission:delivery.zonas-reparto.delete', only: ['destroy']),
         ];
     }
 
@@ -34,18 +37,39 @@ class ZonaRepartoController extends Controller implements HasMiddleware
         $rendimiento = $this->analytics->rendimiento($ownerId);
 
         $zonas = Zone::query()
+            ->with('deliveryRates:id,zone_id,commune,cost,is_active')
             ->orderBy('name')
             ->get()
             ->map(fn (Zone $zona) => [
                 'id' => $zona->id,
                 'name' => $zona->name,
-                'lat' => (float) $zona->lat,
-                'lng' => (float) $zona->lng,
-                'radio_km' => (float) $zona->radio_km,
+                'modo' => $zona->modo,
+                'lat' => $zona->lat === null ? null : (float) $zona->lat,
+                'lng' => $zona->lng === null ? null : (float) $zona->lng,
+                'radio_km' => $zona->radio_km === null ? null : (float) $zona->radio_km,
                 'capacidad_max' => (int) $zona->capacidad_max,
                 'activa' => (bool) $zona->activa,
+                'comunas' => $zona->deliveryRates
+                    ->map(fn (DeliveryRate $rate) => [
+                        'comuna' => $rate->commune,
+                        'precio' => (float) $rate->cost,
+                        'activa' => (bool) $rate->is_active,
+                    ])
+                    ->values()
+                    ->all(),
                 'uso' => collect($resumen['zonas'])->firstWhere('id', $zona->id) ?? null,
             ])
+            ->values()
+            ->all();
+
+        $comunasDisponibles = DeliveryRate::query()
+            ->where('calculation_type', 'comuna')
+            ->whereNotNull('commune')
+            ->pluck('commune')
+            ->merge(Cliente::query()->whereNotNull('comuna')->pluck('comuna'))
+            ->filter(fn (?string $comuna) => filled($comuna))
+            ->unique(fn (string $comuna) => mb_strtolower(trim($comuna)))
+            ->sort()
             ->values()
             ->all();
 
@@ -86,6 +110,7 @@ class ZonaRepartoController extends Controller implements HasMiddleware
         return Inertia::render('Backend/ZonaReparto/Index', [
             'owner_id' => $ownerId,
             'zonas' => $zonas,
+            'comunas_disponibles' => $comunasDisponibles,
             'repartidores' => $repartidores,
             'resumen' => $resumen,
             'rendimiento' => $rendimiento,
@@ -95,16 +120,19 @@ class ZonaRepartoController extends Controller implements HasMiddleware
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'lat' => ['required', 'numeric', 'between:-90,90'],
-            'lng' => ['required', 'numeric', 'between:-180,180'],
-            'radio_km' => ['required', 'numeric', 'min:0.1', 'max:500'],
-            'capacidad_max' => ['required', 'integer', 'min:1', 'max:999'],
-            'activa' => ['sometimes', 'boolean'],
-        ]);
+        $validated = $this->validatedData($request);
 
-        Zone::create([...$validated, 'activa' => $request->boolean('activa')]);
+        DB::transaction(function () use ($validated, $request): void {
+            $comunas = $validated['comunas'];
+            unset($validated['comunas']);
+
+            $zona = Zone::create([
+                ...$validated,
+                'owner_id' => $request->user()->getOwnerId(),
+            ]);
+
+            $this->syncComunas($zona, $comunas);
+        });
 
         $this->olvidarResumen($request);
 
@@ -113,16 +141,15 @@ class ZonaRepartoController extends Controller implements HasMiddleware
 
     public function update(Request $request, Zone $zona): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'lat' => ['required', 'numeric', 'between:-90,90'],
-            'lng' => ['required', 'numeric', 'between:-180,180'],
-            'radio_km' => ['required', 'numeric', 'min:0.1', 'max:500'],
-            'capacidad_max' => ['required', 'integer', 'min:1', 'max:999'],
-            'activa' => ['sometimes', 'boolean'],
-        ]);
+        $validated = $this->validatedData($request);
 
-        $zona->update([...$validated, 'activa' => $request->boolean('activa')]);
+        DB::transaction(function () use ($validated, $zona): void {
+            $comunas = $validated['comunas'];
+            unset($validated['comunas']);
+
+            $zona->update($validated);
+            $this->syncComunas($zona, $comunas);
+        });
 
         $this->olvidarResumen($request);
 
@@ -141,5 +168,85 @@ class ZonaRepartoController extends Controller implements HasMiddleware
     private function olvidarResumen(Request $request): void
     {
         $this->analytics->olvidarResumen((int) $request->user()->getOwnerId());
+    }
+
+    /**
+     * @return array{
+     *   name: string,
+     *   modo: string,
+     *   lat: float|null,
+     *   lng: float|null,
+     *   radio_km: float|null,
+     *   capacidad_max: int,
+     *   activa: bool,
+     *   comunas: list<array{comuna: string, precio: float}>
+     * }
+     */
+    private function validatedData(Request $request): array
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'modo' => ['required', 'in:radio,comunas'],
+            'lat' => ['required_if:modo,radio', 'nullable', 'numeric', 'between:-90,90'],
+            'lng' => ['required_if:modo,radio', 'nullable', 'numeric', 'between:-180,180'],
+            'radio_km' => ['required_if:modo,radio', 'nullable', 'numeric', 'min:0.1', 'max:500'],
+            'capacidad_max' => ['required', 'integer', 'min:1', 'max:999'],
+            'activa' => ['sometimes', 'boolean'],
+            'comunas' => ['required_if:modo,comunas', 'array', 'min:1'],
+            'comunas.*.comuna' => ['required', 'string', 'max:120', 'distinct:ignore_case'],
+            'comunas.*.precio' => ['required', 'numeric', 'min:0', 'max:100000000'],
+        ]);
+
+        $data['activa'] = $request->boolean('activa');
+        $data['comunas'] = $data['modo'] === 'comunas' ? $data['comunas'] : [];
+
+        if ($data['modo'] === 'comunas') {
+            $data['lat'] = null;
+            $data['lng'] = null;
+            $data['radio_km'] = null;
+        }
+
+        return $data;
+    }
+
+    /**
+     * @param  list<array{comuna: string, precio: float}>  $comunas
+     */
+    private function syncComunas(Zone $zona, array $comunas): void
+    {
+        $tarifasExistentes = $zona->deliveryRates()
+            ->get()
+            ->keyBy(fn (DeliveryRate $rate) => mb_strtolower(trim($rate->commune)));
+        $comunasSeleccionadas = collect($comunas)
+            ->map(fn (array $comuna) => mb_strtolower(trim($comuna['comuna'])))
+            ->all();
+
+        $tarifasExistentes->each(function (DeliveryRate $rate, string $comuna) use ($comunasSeleccionadas): void {
+            if (! in_array($comuna, $comunasSeleccionadas, true)) {
+                $rate->update(['is_active' => false]);
+            }
+        });
+
+        foreach ($comunas as $comuna) {
+            $clave = mb_strtolower(trim($comuna['comuna']));
+            $tarifa = $tarifasExistentes->get($clave);
+            $datosTarifa = [
+                'commune' => trim($comuna['comuna']),
+                'calculation_type' => 'comuna',
+                'cost' => $comuna['precio'],
+                'is_active' => true,
+            ];
+
+            if ($tarifa) {
+                $tarifa->update($datosTarifa);
+
+                continue;
+            }
+
+            $zona->deliveryRates()->create([
+                ...$datosTarifa,
+                'owner_id' => $zona->owner_id,
+            ]);
+        }
     }
 }

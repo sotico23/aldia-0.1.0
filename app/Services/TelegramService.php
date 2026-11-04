@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ChannelCredential;
+use App\Models\SystemIntegration;
 use App\Models\TelegramLinkingToken;
 use App\Models\WebSetting;
 use Illuminate\Support\Carbon;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\Log;
 class TelegramService
 {
     protected ?ChannelCredential $credentials = null;
+
+    protected ?string $tokenOverride = null;
 
     public function __construct(?int $ownerId = null)
     {
@@ -29,7 +32,14 @@ class TelegramService
 
     public function getToken(): ?string
     {
-        return $this->credentials?->telegram_bot_token;
+        return $this->tokenOverride ?: $this->credentials?->telegram_bot_token;
+    }
+
+    public function withToken(string $token): static
+    {
+        $this->tokenOverride = $token;
+
+        return $this;
     }
 
     protected function getBaseUrl(): string
@@ -167,38 +177,12 @@ class TelegramService
      */
     public function generateLinkingToken(int $ownerId, string $botType = 'custom', ?int $userId = null): array
     {
-        // 1. Invalidar tokens anteriores sin usar para este owner (expiran en
-        //    el pasado para preservar auditoría y que la búsqueda del webhook
-        //    no los considere válidos nunca más).
-        $invalidated = TelegramLinkingToken::query()
-            ->where('owner_id', $ownerId)
-            ->whereNull('used_at')
-            ->where('expires_at', '>', now())
-            ->update(['expires_at' => now()->subSecond()]);
+        $globalUsername = SystemIntegration::forProvider('telegram')->value('telegram_bot_username')
+            ?: WebSetting::getSettings()?->global_telegram_bot_username
+            ?: config('services.telegram.default_bot_username');
 
-        if ($invalidated > 0) {
-            Log::info('Telegram: tokens previos invalidados', [
-                'owner_id' => $ownerId,
-                'count' => $invalidated,
-            ]);
-        }
-
-        // 2. Crear el nuevo token con vigencia de 15 minutos.
-        $token = TelegramLinkingToken::generateToken();
-        $expiresAt = now()->addMinutes(15);
-
-        TelegramLinkingToken::create([
-            'owner_id' => $ownerId,
-            'user_id' => $userId,
-            'token' => $token,
-            'bot_type' => $botType,
-            'expires_at' => $expiresAt,
-        ]);
-
-        // 3. Resolver el username del bot para construir el deep link.
         if ($botType === 'global' || $botType === 'oficial') {
-            $botUsername = WebSetting::getSettings()?->global_telegram_bot_username
-                ?? config('services.telegram.default_bot_username');
+            $botUsername = $globalUsername;
 
             if (! $botUsername) {
                 Log::warning('Telegram: no global bot configured for linking', [
@@ -216,8 +200,7 @@ class TelegramService
 
             // Fallback al bot oficial si el tenant no tiene bot personalizado.
             if (! $botUsername) {
-                $botUsername = WebSetting::getSettings()?->global_telegram_bot_username
-                    ?? config('services.telegram.default_bot_username');
+                $botUsername = $globalUsername;
 
                 if (! $botUsername) {
                     Log::warning('Telegram: no bot configured for linking', [
@@ -234,12 +217,47 @@ class TelegramService
             }
         }
 
+        $botScope = $botType === 'global' || $botType === 'oficial'
+            ? ChannelConfigService::SCOPE_GLOBAL
+            : 'tenant:'.$ownerId;
+
+        $invalidated = TelegramLinkingToken::query()
+            ->where('owner_id', $ownerId)
+            ->where('channel', ChannelConfigService::CHANNEL_TELEGRAM)
+            ->where(function ($query) use ($botScope) {
+                $query->where('bot_scope', $botScope)
+                    ->orWhereNull('bot_scope');
+            })
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now())
+            ->update(['expires_at' => now()->subSecond()]);
+
+        if ($invalidated > 0) {
+            Log::info('Telegram: tokens previos invalidados', [
+                'owner_id' => $ownerId,
+                'count' => $invalidated,
+            ]);
+        }
+
+        $token = TelegramLinkingToken::generateToken();
+        $expiresAt = now()->addMinutes(15);
+
+        TelegramLinkingToken::create([
+            'owner_id' => $ownerId,
+            'user_id' => $userId,
+            'token' => $token,
+            'channel' => ChannelConfigService::CHANNEL_TELEGRAM,
+            'bot_scope' => $botScope,
+            'bot_type' => $botType,
+            'expires_at' => $expiresAt,
+        ]);
+
         $telegramUrl = 'https://t.me/'.ltrim($botUsername, '@')."?start={$token}";
 
         Log::info('Telegram linking token generated', [
             'owner_id' => $ownerId,
             'user_id' => $userId,
-            'token' => $token,
+            'bot_scope' => $botScope,
             'bot_type' => $botType,
             'bot_username' => $botUsername,
             'expires_at' => $expiresAt->toIso8601String(),

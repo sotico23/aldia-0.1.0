@@ -13,6 +13,12 @@ import {
     AlertTriangle,
 } from 'lucide-react';
 import React, { Fragment, useState, useRef } from 'react';
+import {
+    exportarArqueoCsv,
+    exportarArqueoPdf,
+    exportarCierresCaja,
+    importarCierresCaja,
+} from '@/actions/App/Http/Controllers/Backend/PosController';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -57,7 +63,6 @@ import { useCountry } from '@/hooks/use-country';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import { formatCurrency, getLocalDateString } from '@/lib/utils';
-
 interface Arqueo {
     efectivo: number;
     tarjeta: number;
@@ -91,7 +96,10 @@ interface Arqueo {
 export default function CierreCaja({ arqueo }: { arqueo: Arqueo }) {
     const { currency } = useCountry();
     const { hasPermission } = usePermissions();
-    const canAccess = hasPermission('ventas.pos.viewAny');
+    const canAccess = hasPermission('ventas.cierre-caja.viewAny');
+    const canCloseShift = hasPermission('ventas.cierre-caja.edit');
+    const canImport = hasPermission('ventas.cierre-caja.import');
+    const canExport = hasPermission('ventas.cierre-caja.export');
     const [fechaDesde, setFechaDesde] = useState(arqueo.fecha_desde);
     const [fechaHasta, setFechaHasta] = useState(arqueo.fecha_hasta);
     const [filtroMetodo, setFiltroMetodo] = useState<string>('todos');
@@ -161,8 +169,6 @@ export default function CierreCaja({ arqueo }: { arqueo: Arqueo }) {
 
     const handleFileChange = (
         e: React.ChangeEvent<HTMLInputElement>,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        type: 'csv' | 'excel',
     ) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -170,7 +176,7 @@ export default function CierreCaja({ arqueo }: { arqueo: Arqueo }) {
         const formData = new FormData();
         formData.append('file', file);
 
-        router.post('/pos/cierre/importar', formData, {
+        router.post(importarCierresCaja.url(), formData, {
             forceFormData: true,
             onSuccess: () => {
                 e.target.value = '';
@@ -257,14 +263,18 @@ export default function CierreCaja({ arqueo }: { arqueo: Arqueo }) {
 
     const exportarPdf = () => {
         window.open(
-            `/pos/cierre/pdf?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`,
+            exportarArqueoPdf.url({
+                query: { fecha_desde: fechaDesde, fecha_hasta: fechaHasta },
+            }),
             '_blank',
         );
     };
 
     const exportarCsv = () => {
         window.open(
-            `/pos/cierre/csv?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`,
+            exportarArqueoCsv.url({
+                query: { fecha_desde: fechaDesde, fecha_hasta: fechaHasta },
+            }),
             '_blank',
         );
     };
@@ -369,7 +379,7 @@ export default function CierreCaja({ arqueo }: { arqueo: Arqueo }) {
                         >
                             <RefreshCw className="mr-2 h-4 w-4" /> Refrescar
                         </Button>
-                        <DropdownMenu>
+                        {(canImport || canExport) && <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
                                     variant="outline"
@@ -381,32 +391,55 @@ export default function CierreCaja({ arqueo }: { arqueo: Arqueo }) {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem onClick={exportarPdf}>
-                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                    Exportar PDF
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={exportarCsv}>
-                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                    Exportar Excel/CSV
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={handleImportCSV}>
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    Importar CSV
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleImportExcel}>
-                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                    Importar Excel
-                                </DropdownMenuItem>
+                                {canExport && (
+                                    <>
+                                        <DropdownMenuItem onClick={exportarPdf}>
+                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                            Exportar PDF
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={exportarCsv}>
+                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                            Exportar Excel/CSV
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={() =>
+                                                window.open(
+                                                    exportarCierresCaja.url({
+                                                        query: {
+                                                            format: 'excel',
+                                                        },
+                                                    }),
+                                                    '_blank',
+                                                )
+                                            }
+                                        >
+                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                            Exportar cierres históricos
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
+                                {canImport && canExport && <DropdownMenuSeparator />}
+                                {canImport && (
+                                    <>
+                                        <DropdownMenuItem onClick={handleImportCSV}>
+                                            <Upload className="mr-2 h-4 w-4" />
+                                            Importar CSV
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={handleImportExcel}>
+                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                            Importar Excel
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
                             </DropdownMenuContent>
-                        </DropdownMenu>
-                        <Button
+                        </DropdownMenu>}
+                        {canCloseShift && <Button
                             size="sm"
                             className="bg-gradient-to-r from-red-600 to-red-700 px-6 font-bold text-white shadow-lg shadow-red-600/30 hover:from-red-700 hover:to-red-800"
                             onClick={() => setShowCierreModal(true)}
                         >
                             <Lock className="mr-2 h-4 w-4" /> CERRAR TURNO
-                        </Button>
+                        </Button>}
                     </div>
                 </div>
 
@@ -967,14 +1000,14 @@ export default function CierreCaja({ arqueo }: { arqueo: Arqueo }) {
                 type="file"
                 accept=".csv"
                 className="hidden"
-                onChange={(e) => handleFileChange(e, 'csv')}
+                onChange={handleFileChange}
             />
             <input
                 ref={excelInputRef}
                 type="file"
                 accept=".xlsx,.xls"
                 className="hidden"
-                onChange={(e) => handleFileChange(e, 'excel')}
+                onChange={handleFileChange}
             />
 
             <Dialog open={showCierreModal} onOpenChange={setShowCierreModal}>

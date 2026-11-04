@@ -28,6 +28,12 @@ class RaffleController extends Controller implements HasMiddleware
             new Middleware('permission:rifas.rifas.delete', only: ['destroy']),
             new Middleware('permission:rifas.rifas.export', only: ['exportCsv', 'exportExcel']),
             new Middleware('permission:rifas.rifas.import', only: ['importCsv', 'importExcel']),
+            new Middleware('permission:rifas.rifas.export', only: ['exportParticipants']),
+            new Middleware('permission:rifas.sorteos.create', only: ['draw']),
+            new Middleware('permission:rifas.sorteos.viewAny', only: ['drawsIndex', 'drawRoom']),
+            new Middleware('permission:rifas.rifas.create', only: ['storePrize']),
+            new Middleware('permission:rifas.rifas.edit', only: ['updatePrize']),
+            new Middleware('permission:rifas.rifas.delete', only: ['destroyPrize']),
         ];
     }
 

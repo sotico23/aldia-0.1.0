@@ -25,13 +25,18 @@ class TelegramLinkingToken extends Model
         'owner_id',
         'user_id',
         'token',
+        'channel',
+        'bot_scope',
         'telegram_chat_id',
+        'external_id',
+        'metadata',
         'bot_type',
         'expires_at',
         'used_at',
     ];
 
     protected $casts = [
+        'metadata' => 'array',
         'expires_at' => 'datetime',
         'used_at' => 'datetime',
     ];

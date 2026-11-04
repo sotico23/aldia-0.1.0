@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\BelongsToOwner;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DeliveryRate extends Model
 {
@@ -12,6 +13,7 @@ class DeliveryRate extends Model
 
     protected $fillable = [
         'owner_id',
+        'zone_id',
         'calculation_type',
         'commune',
         'km_from',
@@ -28,5 +30,10 @@ class DeliveryRate extends Model
             'cost' => 'decimal:2',
             'is_active' => 'boolean',
         ];
+    }
+
+    public function zone(): BelongsTo
+    {
+        return $this->belongsTo(Zone::class);
     }
 }

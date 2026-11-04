@@ -21,6 +21,7 @@ class ZoneFactory extends Factory
         return [
             'owner_id' => User::factory(),
             'name' => $this->faker->city(),
+            'modo' => 'radio',
             'lat' => $this->faker->latitude(-34, -32),
             'lng' => $this->faker->longitude(-71, -69),
             'radio_km' => 10,

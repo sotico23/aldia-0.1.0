@@ -76,9 +76,9 @@ class ZoneAnalytics
         return [
             'id' => $zona->id,
             'name' => $zona->name,
-            'lat' => (float) $zona->lat,
-            'lng' => (float) $zona->lng,
-            'radio_km' => (float) $zona->radio_km,
+            'lat' => $zona->lat === null ? null : (float) $zona->lat,
+            'lng' => $zona->lng === null ? null : (float) $zona->lng,
+            'radio_km' => $zona->radio_km === null ? null : (float) $zona->radio_km,
             'capacidad_max' => $capacidad,
             'activa' => (bool) $zona->activa,
             'pedidos_en_zona' => $enZona->count(),

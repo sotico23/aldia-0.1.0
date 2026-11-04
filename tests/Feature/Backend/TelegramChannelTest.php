@@ -3,6 +3,7 @@
 use App\Http\Controllers\Backend\TelegramCallbackController;
 use App\Http\Controllers\Webhooks\TelegramWebhookController;
 use App\Models\ChannelCredential;
+use App\Models\ChannelLink;
 use App\Models\TelegramLinkingToken;
 use App\Models\User;
 use App\Models\WebSetting;
@@ -192,6 +193,8 @@ test('generate-link generates a linking link successfully', function () {
     $this->assertDatabaseHas('telegram_linking_tokens', [
         'owner_id' => $this->user->getOwnerId(),
         'user_id' => $this->user->id,
+        'channel' => 'telegram',
+        'bot_scope' => 'tenant:'.$this->user->getOwnerId(),
     ]);
 });
 
@@ -1172,6 +1175,13 @@ test('unlink clears telegram_chat_id and telegram_linked_at', function () {
         'telegram_chat_id' => '123456789',
         'telegram_linked_at' => now(),
     ]);
+    $link = ChannelLink::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'channel' => 'telegram',
+        'bot_scope' => 'global',
+        'external_id' => '123456789',
+        'linked_at' => now(),
+    ]);
 
     $response = $this->actingAs($this->user)->postJson(route('telegram.unlink'));
 
@@ -1183,6 +1193,7 @@ test('unlink clears telegram_chat_id and telegram_linked_at', function () {
         'telegram_chat_id' => null,
         'telegram_linked_at' => null,
     ]);
+    expect($link->fresh()->revoked_at)->not->toBeNull();
 });
 
 test('unlink invalidates pending linking tokens', function () {

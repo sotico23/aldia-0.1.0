@@ -21,6 +21,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import OfficialChannels, {
+    type TelegramConfig,
+    type WhatsAppConfig,
+} from './OfficialChannels';
 
 type AccordionProps = {
     id: string;
@@ -98,6 +102,9 @@ export default function Gateways() {
     });
     const [mercadopagoSaving, setMercadopagoSaving] = useState(false);
 
+    const [telegram, setTelegram] = useState<TelegramConfig>({});
+    const [whatsapp, setWhatsapp] = useState<WhatsAppConfig>({});
+
     useEffect(() => {
         axios
             .get('/configuracion-web/gateway-settings')
@@ -106,6 +113,8 @@ export default function Gateways() {
                 setWebpay((prev) => ({ ...prev, ...d.webpay }));
                 setPaypal((prev) => ({ ...prev, ...d.paypal }));
                 setMercadopago((prev) => ({ ...prev, ...d.mercadopago }));
+                setTelegram(d.telegram ?? {});
+                setWhatsapp(d.whatsapp ?? {});
             })
             .catch(() => {
                 toast.error('Error al cargar configuración de gateways');
@@ -589,6 +598,24 @@ export default function Gateways() {
                     </Button>
                 </div>
             </Accordion>
+
+            <OfficialChannels
+                telegram={telegram}
+                whatsapp={whatsapp}
+                onUpdated={(channel, data) => {
+                    if (channel === 'telegram') {
+                        setTelegram((previous) => ({
+                            ...previous,
+                            ...data,
+                        }));
+                    } else {
+                        setWhatsapp((previous) => ({
+                            ...previous,
+                            ...data,
+                        }));
+                    }
+                }}
+            />
         </div>
     );
 }

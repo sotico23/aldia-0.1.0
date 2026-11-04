@@ -29,10 +29,6 @@ Route::middleware(['permission:admin.countries.viewAny'])->group(function () {
 
 Route::middleware(['permission:admin.web-settings.viewAny'])->group(function () {
     Route::post('configuracion-web/test-social', [WebSettingController::class, 'testSocialConnection'])->name('configuracion-web.test-social');
-    Route::post('configuracion-web/test-telegram', [WebSettingController::class, 'testTelegramConnection'])->name('configuracion-web.test-telegram');
-    Route::post('configuracion-web/test-whatsapp', [WebSettingController::class, 'testWhatsAppConnection'])->name('configuracion-web.test-whatsapp');
-    Route::post('configuracion-web/set-telegram-webhook', [WebSettingController::class, 'setTelegramWebhook'])->name('configuracion-web.set-telegram-webhook');
-    Route::post('configuracion-web/set-whatsapp-webhook', [WebSettingController::class, 'setWhatsAppWebhook'])->name('configuracion-web.set-whatsapp-webhook');
     Route::post('web-settings/telegram-login/test', [WebSettingController::class, 'testTelegramLogin'])->name('web-settings.telegram-login.test');
     Route::post('web-settings/telegram-login/disconnect', [WebSettingController::class, 'disconnectTelegramLogin'])->name('web-settings.telegram-login.disconnect');
 
@@ -44,6 +40,15 @@ Route::middleware(['permission:admin.web-settings.viewAny'])->group(function () 
         Route::put('configuracion-web/gateway-settings/webpay', [GatewaySettingsController::class, 'updateWebpay'])->name('configuracion-web.gateway-settings.webpay');
         Route::put('configuracion-web/gateway-settings/paypal', [GatewaySettingsController::class, 'updatePaypal'])->name('configuracion-web.gateway-settings.paypal');
         Route::put('configuracion-web/gateway-settings/mercadopago', [GatewaySettingsController::class, 'updateMercadopago'])->name('configuracion-web.gateway-settings.mercadopago');
+
+        Route::put('configuracion-web/gateway-settings/telegram', [GatewaySettingsController::class, 'updateTelegram'])->name('configuracion-web.gateway-settings.telegram');
+        Route::post('configuracion-web/gateway-settings/telegram/test', [GatewaySettingsController::class, 'testTelegram'])->name('configuracion-web.gateway-settings.telegram.test');
+        Route::post('configuracion-web/gateway-settings/telegram/webhook', [GatewaySettingsController::class, 'setTelegramWebhook'])->name('configuracion-web.gateway-settings.telegram.webhook');
+        Route::delete('configuracion-web/gateway-settings/telegram/webhook', [GatewaySettingsController::class, 'deleteTelegramWebhook'])->name('configuracion-web.gateway-settings.telegram.webhook.delete');
+
+        Route::put('configuracion-web/gateway-settings/whatsapp', [GatewaySettingsController::class, 'updateWhatsApp'])->name('configuracion-web.gateway-settings.whatsapp');
+        Route::post('configuracion-web/gateway-settings/whatsapp/test', [GatewaySettingsController::class, 'testWhatsApp'])->name('configuracion-web.gateway-settings.whatsapp.test');
+        Route::post('configuracion-web/gateway-settings/whatsapp/webhook', [GatewaySettingsController::class, 'setWhatsAppWebhook'])->name('configuracion-web.gateway-settings.whatsapp.webhook');
 
         Route::get('configuracion-web/marketplace-settings', [MarketplaceSettingsController::class, 'show'])->name('configuracion-web.marketplace-settings');
         Route::put('configuracion-web/marketplace-settings', [MarketplaceSettingsController::class, 'update'])->name('configuracion-web.marketplace-settings.update');

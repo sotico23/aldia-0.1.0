@@ -25,6 +25,7 @@ class PermissionHelper
         'comercial.call-center' => 'COMERCIAL:CRM & Ventas',
         'comercial.tickets' => 'COMERCIAL:CRM & Ventas',
         'comercial.campanas' => 'COMERCIAL:CRM & Ventas',
+        'comercial.mensajes-marketplace' => 'TIENDA:Mensajes Marketplace',
         'ventas.ventas' => 'COMERCIAL:CRM & Ventas',
 
         // OPERACIONES (Operaciones e Inventario)
@@ -83,9 +84,15 @@ class PermissionHelper
         'flota.entregas' => 'LOGÍSTICA:Entregas',
         'flota.cargas' => 'LOGÍSTICA:Cargas Diarias / Rutas',
         'flota.grupos-trabajo' => 'LOGÍSTICA:Grupos de Trabajo',
+        'delivery.zonas-reparto' => 'LOGÍSTICA:Zonas de Reparto',
 
         // TIENDA (Punto de Venta)
         'ventas.pos' => 'TIENDA:Terminal POS',
+        'ventas.cierre-caja' => 'TIENDA:Cierre de Caja',
+        'ventas.facturacion-pos' => 'TIENDA:Facturación POS',
+        'ventas.pos-cierre-caja' => 'TIENDA:Cierre de Caja',
+        'ventas.pos-facturacion' => 'TIENDA:Facturación POS',
+        'ventas.pos-reportes' => 'TIENDA:Reportes Ventas',
         'ventas.variantes' => 'TIENDA:Variantes / SKUs',
 
         // SERVICIOS (Citas y Reservas)
@@ -143,12 +150,27 @@ class PermissionHelper
         'FINANZAS' => ['Configuración', 'Webpay', 'PayPal', 'MercadoPago', 'Movimientos', 'Comisiones', 'SII (DTE)', 'Tesorería', 'Cupones'],
         'RRHH' => ['Empleados', 'Nómina', 'Asistencia', 'Préstamos y Adelantos', 'Reclutamiento', 'Evaluaciones'],
         'PROYECTOS' => ['Proyectos', 'Hitos y Tareas', 'Timesheets', 'Gastos Proyecto'],
-        'LOGÍSTICA' => ['Vehículos', 'Conductores', 'Entregas', 'Cargas Diarias / Rutas', 'Grupos de Trabajo'],
-        'TIENDA' => ['Terminal POS', 'Variantes / SKUs'],
+        'LOGÍSTICA' => ['Vehículos', 'Conductores', 'Entregas', 'Cargas Diarias / Rutas', 'Grupos de Trabajo', 'Zonas de Reparto'],
+        'TIENDA' => ['Terminal POS', 'Cierre de Caja', 'Facturación POS', 'Reportes Ventas', 'Mensajes Marketplace', 'Variantes / SKUs'],
         'SERVICIOS' => ['Citas', 'Servicios'],
         'EDUCACIÓN' => ['Cursos', 'Lecciones', 'Alumnos'],
         'MARKETING' => ['Email Marketing', 'Config. Correo', 'Rifas y Sorteos'],
         'SISTEMA' => ['Usuarios y Roles', 'Configuración Web', 'Países y Monedas', 'Reportes', 'Automatizaciones'],
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    private static array $resourceLabels = [
+        'pos' => 'POS',
+        'cierre-caja' => 'Cierre de Caja',
+        'facturacion-pos' => 'Facturación POS',
+        'pos-cierre-caja' => 'Cierre de Caja',
+        'pos-facturacion' => 'Facturación POS',
+        'pos-reportes' => 'Reportes Ventas',
+        'mensajes-marketplace' => 'Mensajes Marketplace',
+        'variantes' => 'Variantes / SKUs',
+        'zonas-reparto' => 'Zonas de Reparto',
     ];
 
     /**
@@ -438,6 +460,7 @@ class PermissionHelper
 
             foreach ($sortedSubgroups as $subgroup => $resources) {
                 ksort($grouped[$group][$subgroup]);
+
                 foreach ($resources as $resource => $perms) {
                     usort($grouped[$group][$subgroup][$resource], fn ($a, $b) => strcmp($a['name'], $b['name']));
                 }
@@ -473,7 +496,7 @@ class PermissionHelper
         $parts = explode('.', $permissionName);
 
         if (count($parts) >= 2) {
-            return ucwords(str_replace(['-', '_'], ' ', $parts[1]));
+            return self::$resourceLabels[$parts[1]] ?? ucwords(str_replace(['-', '_'], ' ', $parts[1]));
         }
 
         return 'General';

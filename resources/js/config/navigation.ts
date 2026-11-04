@@ -415,7 +415,7 @@ export const mainNavItems: ExtendedNavItem[] = [
             {
                 title: 'Zonas de Reparto',
                 href: buildRouteUrl('/zonas-reparto'),
-                permission: 'zonas-reparto.view',
+                permission: 'delivery.zonas-reparto.viewAny',
             },
             {
                 title: 'Repartidores',
@@ -429,7 +429,14 @@ export const mainNavItems: ExtendedNavItem[] = [
         group: 'TIENDA',
         href: '#tienda',
         icon: ShoppingCart,
-        permission: 'ventas.pos.*',
+        permission: [
+            'ventas.pos.viewAny',
+            'ventas.cierre-caja.viewAny',
+            'ventas.facturacion-pos.viewAny',
+            'ventas.pos-reportes.viewAny',
+            'comercial.mensajes-marketplace.viewAny',
+            'ventas.variantes.viewAny',
+        ],
         items: [
             {
                 title: 'Terminal POS',
@@ -439,22 +446,22 @@ export const mainNavItems: ExtendedNavItem[] = [
             {
                 title: 'Cierre de Caja',
                 href: buildRouteUrl('/pos/cierre'),
-                permission: 'ventas.pos.viewAny',
+                permission: 'ventas.cierre-caja.viewAny',
             },
             {
                 title: 'Facturación POS',
                 href: buildRouteUrl('/pos/facturacion'),
-                permission: 'ventas.pos.viewAny',
+                permission: 'ventas.facturacion-pos.viewAny',
             },
             {
                 title: 'Reportes Ventas',
                 href: buildRouteUrl('/pos/reportes'),
-                permission: 'ventas.pos.viewAny',
+                permission: 'ventas.pos-reportes.viewAny',
             },
             {
                 title: 'Mensajes Marketplace',
                 href: buildRouteUrl('/chat'),
-                permission: 'comercial.oportunidades.viewAny',
+                permission: 'comercial.mensajes-marketplace.viewAny',
             },
             {
                 title: 'Variantes / SKUs',
@@ -579,7 +586,7 @@ export const mainNavItems: ExtendedNavItem[] = [
             {
                 title: 'Sorteos',
                 href: buildRouteUrl('/raffles/draws'),
-                permission: 'rifas.rifas.viewAny',
+                permission: 'rifas.sorteos.viewAny',
             },
         ],
     },

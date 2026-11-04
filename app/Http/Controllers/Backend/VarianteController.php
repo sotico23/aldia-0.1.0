@@ -22,6 +22,8 @@ class VarianteController extends Controller implements HasMiddleware
             new Middleware('permission:ventas.variantes.create', only: ['create', 'store']),
             new Middleware('permission:ventas.variantes.edit', only: ['edit', 'update']),
             new Middleware('permission:ventas.variantes.delete', only: ['destroy']),
+            new Middleware('permission:ventas.variantes.create', only: ['skuStore']),
+            new Middleware('permission:ventas.variantes.delete', only: ['skuDestroy']),
         ];
     }
 

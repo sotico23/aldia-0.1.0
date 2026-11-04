@@ -133,8 +133,8 @@ test('rendimiento marca como entregadas las asignaciones de pedidos entregados',
 });
 
 test('el admin de zonas sirve la prop de rendimiento', function () {
-    Permission::firstOrCreate(['name' => 'zonas-reparto.view'], ['guard_name' => 'web']);
-    $this->owner->givePermissionTo('zonas-reparto.view');
+    Permission::firstOrCreate(['name' => 'delivery.zonas-reparto.viewAny'], ['guard_name' => 'web']);
+    $this->owner->givePermissionTo('delivery.zonas-reparto.viewAny');
 
     $this->actingAs($this->owner)
         ->get('/zonas-reparto')

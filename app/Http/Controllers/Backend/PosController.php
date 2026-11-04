@@ -5,6 +5,10 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PromocionStoreRequest;
 use App\Http\Requests\PromocionUpdateRequest;
+use App\Exports\CierresCajaExport;
+use App\Exports\FacturacionPosExport;
+use App\Imports\CierresCajaImport;
+use App\Imports\FacturacionPosMetadataImport;
 use App\Models\Almacen;
 use App\Models\Asiento;
 use App\Models\Categoria;
@@ -18,6 +22,7 @@ use App\Models\Empleado;
 use App\Models\Entrega;
 use App\Models\Inventario;
 use App\Models\Producto;
+use App\Models\PosCierreCaja;
 use App\Models\Promocion;
 use App\Models\SkuVariante;
 use App\Models\Tesoreria;
@@ -40,6 +45,8 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class PosController extends Controller implements HasMiddleware
 {
@@ -787,6 +794,148 @@ class PosController extends Controller implements HasMiddleware
         return Inertia::render('Backend/Pos/Facturacion', [
             'documentos' => $documentos,
         ]);
+    }
+
+    public function importarFacturacionPos(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'file' => ['required', 'file', 'mimes:csv,txt,xlsx,xls', 'max:10240'],
+        ]);
+        $import = new FacturacionPosMetadataImport((int) Auth::user()->getOwnerId());
+
+        Excel::import($import, $validated['file']);
+
+        return back()->with('success', "{$import->importedCount()} registros DTE importados.");
+    }
+
+    public function exportarFacturacionPos(Request $request): SymfonyResponse
+    {
+        $validated = $request->validate([
+            'format' => ['sometimes', Rule::in(['json', 'csv', 'excel'])],
+        ]);
+        $format = $validated['format'] ?? 'json';
+        $documentos = Venta::query()
+            ->where('owner_id', Auth::user()->getOwnerId())
+            ->where('es_pos', true)
+            ->latest('fecha')
+            ->get([
+                'id',
+                'numero',
+                'fecha',
+                'tipo_documento',
+                'folio',
+                'tipo_dte',
+                'estado',
+                'total',
+            ]);
+        $filename = 'facturacion_pos_'.now()->format('Ymd_His');
+
+        if ($format === 'json') {
+            return response()->json($documentos);
+        }
+
+        if ($format === 'excel') {
+            return Excel::download(new FacturacionPosExport($documentos), "{$filename}.xlsx");
+        }
+
+        return response()->streamDownload(function () use ($documentos): void {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['Venta ID', 'Número', 'Fecha', 'Tipo', 'Folio DTE', 'Tipo DTE', 'Estado', 'Total']);
+
+            foreach ($documentos as $venta) {
+                fputcsv($file, [
+                    $venta->id,
+                    $venta->numero,
+                    $venta->fecha?->format('Y-m-d'),
+                    $venta->tipo_documento,
+                    $venta->folio,
+                    $venta->tipo_dte,
+                    $venta->estado,
+                    $venta->total,
+                ]);
+            }
+
+            fclose($file);
+        }, "{$filename}.csv", ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    public function importarCierresCaja(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'file' => ['required', 'file', 'mimes:csv,txt,xlsx,xls', 'max:10240'],
+        ]);
+        $file = $validated['file'];
+        $import = new CierresCajaImport(
+            (int) Auth::user()->getOwnerId(),
+            (int) Auth::id(),
+            basename($file->getClientOriginalName()),
+        );
+
+        Excel::import($import, $file);
+
+        return back()->with('success', "{$import->importedCount()} cierres históricos importados.");
+    }
+
+    public function exportarCierresCaja(Request $request): SymfonyResponse
+    {
+        $validated = $request->validate([
+            'fecha_desde' => ['nullable', 'date'],
+            'fecha_hasta' => ['nullable', 'date', 'after_or_equal:fecha_desde'],
+            'format' => ['sometimes', Rule::in(['csv', 'excel'])],
+        ]);
+        $query = PosCierreCaja::query()
+            ->where('owner_id', Auth::user()->getOwnerId())
+            ->latest('fecha_desde');
+
+        if (! empty($validated['fecha_desde'])) {
+            $query->whereDate('fecha_desde', '>=', $validated['fecha_desde']);
+        }
+
+        if (! empty($validated['fecha_hasta'])) {
+            $query->whereDate('fecha_hasta', '<=', $validated['fecha_hasta']);
+        }
+
+        $cierres = $query->get();
+        $filename = 'cierres_caja_'.now()->format('Ymd_His');
+
+        if (($validated['format'] ?? 'excel') === 'excel') {
+            return Excel::download(new CierresCajaExport($cierres), "{$filename}.xlsx");
+        }
+
+        return response()->streamDownload(function () use ($cierres): void {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, [
+                'Fecha Desde',
+                'Fecha Hasta',
+                'Total Efectivo',
+                'Total Tarjeta',
+                'Total Transferencia',
+                'Total Otros',
+                'Total General',
+                'Cantidad Ventas',
+                'Referencia',
+                'Archivo Origen',
+                'Importado At',
+            ]);
+
+            foreach ($cierres as $cierre) {
+                fputcsv($file, [
+                    $cierre->fecha_desde?->format('Y-m-d'),
+                    $cierre->fecha_hasta?->format('Y-m-d'),
+                    $cierre->total_efectivo,
+                    $cierre->total_tarjeta,
+                    $cierre->total_transferencia,
+                    $cierre->total_otros,
+                    $cierre->total_general,
+                    $cierre->cantidad_ventas,
+                    $cierre->referencia,
+                    $cierre->archivo_origen,
+                    $cierre->importado_at?->toDateTimeString(),
+                ]);
+            }
+
+            fclose($file);
+        }, "{$filename}.csv", ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     public function promociones()

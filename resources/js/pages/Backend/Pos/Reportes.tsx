@@ -120,7 +120,9 @@ export default function Reportes({
     fechaHasta?: string;
 }) {
     const { hasPermission } = usePermissions();
-    const canAccess = hasPermission('ventas.pos.viewAny');
+    const canAccess = hasPermission('ventas.pos-reportes.viewAny');
+    const canImport = hasPermission('ventas.pos-reportes.import');
+    const canExport = hasPermission('ventas.pos-reportes.export');
     const csvInputRef = useRef<HTMLInputElement>(null);
     const excelInputRef = useRef<HTMLInputElement>(null);
 
@@ -318,7 +320,7 @@ export default function Reportes({
                             />
                         </div>
 
-                        <DropdownMenu>
+                        {(canImport || canExport) && <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
                                     variant="outline"
@@ -330,39 +332,47 @@ export default function Reportes({
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem onClick={handleImportCSV}>
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    Importar CSV
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleImportExcel}>
-                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                    Importar Excel
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                    onClick={() =>
-                                        window.open(
-                                            buildExportUrl('csv'),
-                                            '_blank',
-                                        )
-                                    }
-                                >
-                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                    Exportar CSV
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() =>
-                                        window.open(
-                                            buildExportUrl('excel'),
-                                            '_blank',
-                                        )
-                                    }
-                                >
-                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                    Exportar Excel
-                                </DropdownMenuItem>
+                                {canImport && (
+                                    <>
+                                        <DropdownMenuItem onClick={handleImportCSV}>
+                                            <Upload className="mr-2 h-4 w-4" />
+                                            Importar CSV
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={handleImportExcel}>
+                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                            Importar Excel
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
+                                {canImport && canExport && <DropdownMenuSeparator />}
+                                {canExport && (
+                                    <>
+                                        <DropdownMenuItem
+                                            onClick={() =>
+                                                window.open(
+                                                    buildExportUrl('csv'),
+                                                    '_blank',
+                                                )
+                                            }
+                                        >
+                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                            Exportar CSV
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={() =>
+                                                window.open(
+                                                    buildExportUrl('excel'),
+                                                    '_blank',
+                                                )
+                                            }
+                                        >
+                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                            Exportar Excel
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
                             </DropdownMenuContent>
-                        </DropdownMenu>
+                        </DropdownMenu>}
                     </div>
                 </div>
 

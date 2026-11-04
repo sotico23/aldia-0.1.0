@@ -376,6 +376,7 @@ export default function PosIndex({
         } | null;
     } | null>(null);
     const { hasPermission } = usePermissions();
+    const canEmitDte = hasPermission('ventas.facturacion-pos.create');
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const canCreate = hasPermission('ventas.pos.create');
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -3036,7 +3037,8 @@ export default function PosIndex({
                                     </p>
                                 </div>
 
-                                {ultimaVenta.tipoDocumento !== 'cotizacion' &&
+                                {canEmitDte &&
+                                    ultimaVenta.tipoDocumento !== 'cotizacion' &&
                                     ultimaVenta.ventaId && (
                                         <Button
                                             variant="default"

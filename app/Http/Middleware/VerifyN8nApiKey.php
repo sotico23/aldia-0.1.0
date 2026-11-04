@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class VerifyN8nApiKey
 {
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next, string $scope = 'any'): Response
     {
         $apiKey = $request->header('X-API-Key');
 
@@ -23,12 +23,14 @@ class VerifyN8nApiKey
         }
 
         // 1) API key del tenant (`users.n8n_api_key`).
-        $owner = User::withoutGlobalScope(OwnerScope::class)
-            ->whereNotNull('n8n_api_key')
-            ->get()
-            ->first(function ($user) use ($apiKey) {
-                return hash_equals((string) $user->n8n_api_key, (string) $apiKey);
-            });
+        $owner = $scope === 'global'
+            ? null
+            : User::withoutGlobalScope(OwnerScope::class)
+                ->whereNotNull('n8n_api_key')
+                ->get()
+                ->first(function ($user) use ($apiKey) {
+                    return hash_equals((string) $user->n8n_api_key, (string) $apiKey);
+                });
 
         if ($owner) {
             // Attach business owner to request for downstream use

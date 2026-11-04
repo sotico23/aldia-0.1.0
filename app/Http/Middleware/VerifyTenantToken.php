@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\ChannelDataToken;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
@@ -21,10 +22,16 @@ class VerifyTenantToken
             ], 401);
         }
 
-        // Constant-time comparison to prevent timing attacks
-        $user = User::whereNotNull('api_token')->get()->first(function ($u) use ($token) {
-            return hash_equals((string) $u->api_token, (string) $token);
-        });
+        $dataToken = ChannelDataToken::where('token_hash', hash('sha256', $token))->first();
+        $user = $dataToken && hash_equals((string) $dataToken->token, $token)
+            ? User::withoutGlobalScopes()->find($dataToken->owner_id)
+            : null;
+
+        if (! $user) {
+            $user = User::whereNotNull('api_token')->get()->first(function ($candidate) use ($token) {
+                return hash_equals((string) $candidate->api_token, (string) $token);
+            });
+        }
 
         if (! $user) {
             return response()->json([

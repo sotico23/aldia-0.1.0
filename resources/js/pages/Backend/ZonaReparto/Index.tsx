@@ -18,6 +18,11 @@ import {
     XAxis,
     YAxis,
 } from 'recharts';
+import {
+    destroy as destroyZona,
+    store as storeZona,
+    update as updateZona,
+} from '@/actions/App/Http/Controllers/Backend/ZonaRepartoController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +37,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import {
     Table,
@@ -43,6 +55,7 @@ import {
 } from '@/components/ui/table';
 import echo from '@/echo';
 import AppLayout from '@/layouts/app-layout';
+import { comunasChile } from '@/lib/chile-communes';
 
 const MAP_CENTER = { lat: -33.4489, lng: -70.6693 };
 
@@ -65,17 +78,19 @@ const formatoFecha = (fecha: string | null) =>
 type Zona = {
     id: number;
     name: string;
-    lat: number;
-    lng: number;
-    radio_km: number;
+    modo: 'radio' | 'comunas';
+    lat: number | null;
+    lng: number | null;
+    radio_km: number | null;
     capacidad_max: number;
     activa: boolean;
+    comunas: { comuna: string; precio: number; activa: boolean }[];
     uso?: {
         id: number;
         name: string;
-        lat: number;
-        lng: number;
-        radio_km: number;
+        lat: number | null;
+        lng: number | null;
+        radio_km: number | null;
         capacidad_max: number;
         activa: boolean;
         pedidos_en_zona: number;
@@ -125,6 +140,7 @@ type Historial = {
 type Props = {
     owner_id: number;
     zonas: Zona[];
+    comunas_disponibles: string[];
     repartidores: RepartidorMarker[];
     resumen: {
         zonas: Record<string, unknown>[];
@@ -139,11 +155,13 @@ type Props = {
 export default function Index({
     owner_id,
     zonas: zonasProp,
+    comunas_disponibles,
     repartidores: repartidoresProp,
     resumen,
     rendimiento,
     historial,
 }: Props) {
+    const mapConfigured = Boolean(import.meta.env.VITE_GOOGLE_MAPS_API_KEY);
     const { isLoaded } = useJsApiLoader({
         id: 'zonas-reparto-map',
         googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? '',
@@ -166,15 +184,14 @@ export default function Index({
     const [modalOpen, setModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [drawMode, setDrawMode] = useState(false);
-    const [modoDibujo, setModoDibujo] = useState<'nueva' | 'editar' | null>(
-        null,
-    );
     const [repartidorSeleccionado, setRepartidorSeleccionado] =
         useState<RepartidorMarker | null>(null);
     const [zonaAEliminar, setZonaAEliminar] = useState<Zona | null>(null);
 
     const { data, setData, post, put, reset, processing, errors } = useForm({
         name: '',
+        modo: 'comunas' as 'radio' | 'comunas',
+        comunas: [{ comuna: '', precio: '' }],
         lat: '',
         lng: '',
         radio_km: '',
@@ -212,25 +229,52 @@ export default function Index({
     const abrirNueva = () => {
         reset();
         setEditingId(null);
-        setModoDibujo('nueva');
+        setDrawMode(false);
+        setModalOpen(true);
+    };
+
+    const abrirNuevaEnMapa = () => {
+        reset();
+        setData({
+            name: '',
+            modo: 'radio',
+            comunas: [],
+            lat: '',
+            lng: '',
+            radio_km: '',
+            capacidad_max: '10',
+            activa: true,
+        });
+        setEditingId(null);
+        setModalOpen(false);
         setDrawMode(true);
     };
 
     const abrirEditar = (zona: Zona) => {
         setData({
             name: zona.name,
-            lat: zona.lat.toFixed(6),
-            lng: zona.lng.toFixed(6),
-            radio_km: zona.radio_km.toFixed(2),
+            modo: zona.modo,
+            comunas:
+                zona.comunas
+                    .filter((comuna) => comuna.activa)
+                    .map((comuna) => ({
+                        comuna: comuna.comuna,
+                        precio: String(comuna.precio),
+                    })) || [],
+            lat: zona.lat?.toFixed(6) ?? '',
+            lng: zona.lng?.toFixed(6) ?? '',
+            radio_km: zona.radio_km?.toFixed(2) ?? '',
             capacidad_max: String(zona.capacidad_max),
             activa: zona.activa,
         });
         setEditingId(zona.id);
-        setModoDibujo('editar');
-        setDrawMode(true);
+        setDrawMode(false);
+        setModalOpen(true);
     };
 
     const ajustarEnMapa = () => {
+        setData('modo', 'radio');
+        setModalOpen(false);
         setDrawMode(true);
     };
 
@@ -246,14 +290,13 @@ export default function Index({
 
         setData((prev) => ({
             ...prev,
+            modo: 'radio',
             lat: center.lat().toFixed(6),
             lng: center.lng().toFixed(6),
             radio_km: radioKm.toFixed(2),
         }));
         setDrawMode(false);
-        if (modoDibujo === 'nueva') {
-            setModalOpen(true);
-        }
+        setModalOpen(true);
     };
 
     const submit = (e: React.FormEvent) => {
@@ -267,24 +310,39 @@ export default function Index({
         };
 
         if (editingId) {
-            put(`/zonas-reparto/${editingId}`, options);
+            put(updateZona.url(editingId), options);
         } else {
-            post('/zonas-reparto', options);
+            post(storeZona.url(), options);
         }
     };
 
     const confirmarEliminar = () => {
         if (!zonaAEliminar) return;
 
-        router.delete(`/zonas-reparto/${zonaAEliminar.id}`, {
+        router.delete(destroyZona.url(zonaAEliminar.id), {
             preserveScroll: true,
             onSuccess: () => setZonaAEliminar(null),
         });
     };
 
-    const mapCenter = zonas[0]
-        ? { lat: zonas[0].lat, lng: zonas[0].lng }
+    const mapZones = zonas.filter(
+        (zona) =>
+            zona.modo === 'radio' && zona.lat !== null && zona.lng !== null,
+    );
+    const mapCenter = mapZones[0]
+        ? {
+              lat: mapZones[0].lat ?? MAP_CENTER.lat,
+              lng: mapZones[0].lng ?? MAP_CENTER.lng,
+          }
         : MAP_CENTER;
+    const comunaOptions = [
+        ...new Set([
+            ...comunasChile,
+            ...comunas_disponibles,
+            ...zonas.flatMap((zona) => zona.comunas.map((item) => item.comuna)),
+        ]),
+    ].sort((a, b) => a.localeCompare(b, 'es'));
+    const formErrors = errors as Record<string, string | undefined>;
 
     return (
         <AppLayout
@@ -364,8 +422,13 @@ export default function Index({
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={abrirNueva}
-                            disabled={drawMode}
+                            onClick={abrirNuevaEnMapa}
+                            disabled={drawMode || !mapConfigured}
+                            title={
+                                mapConfigured
+                                    ? undefined
+                                    : 'Configura la API key de Google Maps para dibujar zonas'
+                            }
                         >
                             <Pencil className="mr-2 h-4 w-4" />
                             Dibujar zona
@@ -393,14 +456,14 @@ export default function Index({
                                         zoomControl: true,
                                     }}
                                 >
-                                    {zonas.map((zona) => (
+                                    {mapZones.map((zona) => (
                                         <Circle
                                             key={zona.id}
                                             center={{
-                                                lat: zona.lat,
-                                                lng: zona.lng,
+                                                lat: zona.lat ?? MAP_CENTER.lat,
+                                                lng: zona.lng ?? MAP_CENTER.lng,
                                             }}
-                                            radius={zona.radio_km * 1000}
+                                            radius={(zona.radio_km ?? 0) * 1000}
                                             options={{
                                                 fillColor: zona.activa
                                                     ? '#10b981'
@@ -522,6 +585,14 @@ export default function Index({
                                         para ver zonas y repartidores en el
                                         mapa.
                                     </p>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={abrirNueva}
+                                    >
+                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                        Crear zona por comunas
+                                    </Button>
                                 </div>
                             )}
                         </div>
@@ -536,8 +607,9 @@ export default function Index({
                         <div className="space-y-3 sm:hidden">
                             {zonas.length === 0 && (
                                 <p className="py-6 text-center text-sm text-muted-foreground">
-                                    Aún no hay zonas definidas. Usa «Dibujar
-                                    zona» sobre el mapa para crear la primera.
+                                    Aún no hay zonas definidas. Usa «Nueva zona»
+                                    para configurar una zona por comunas o por
+                                    radio en el mapa.
                                 </p>
                             )}
                             {zonas.map((zona) => {
@@ -569,12 +641,23 @@ export default function Index({
                                             </Badge>
                                         </div>
                                         <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                                            <div className="rounded-md bg-muted/50 p-2">
+                                            <div className="col-span-2 rounded-md bg-muted/50 p-2">
                                                 <dt className="text-xs text-muted-foreground">
-                                                    Radio
+                                                    Cobertura
                                                 </dt>
                                                 <dd className="font-medium">
-                                                    {zona.radio_km} km
+                                                    {zona.modo === 'radio'
+                                                        ? `Radio de ${zona.radio_km ?? 0} km`
+                                                        : zona.comunas
+                                                              .filter(
+                                                                  (comuna) =>
+                                                                      comuna.activa,
+                                                              )
+                                                              .map(
+                                                                  (comuna) =>
+                                                                      `${comuna.comuna} ($${comuna.precio.toLocaleString('es-CL')})`,
+                                                              )
+                                                              .join(', ')}
                                                 </dd>
                                             </div>
                                             <div className="rounded-md bg-muted/50 p-2">
@@ -631,7 +714,7 @@ export default function Index({
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Zona</TableHead>
-                                        <TableHead>Radio</TableHead>
+                                        <TableHead>Cobertura</TableHead>
                                         <TableHead>Capacidad</TableHead>
                                         <TableHead>Uso</TableHead>
                                         <TableHead>Estado</TableHead>
@@ -654,7 +737,39 @@ export default function Index({
                                                     </span>
                                                 </TableCell>
                                                 <TableCell>
-                                                    {zona.radio_km} km
+                                                    {zona.modo === 'radio' ? (
+                                                        `${zona.radio_km ?? 0} km`
+                                                    ) : (
+                                                        <span className="flex max-w-sm flex-wrap gap-1">
+                                                            {zona.comunas
+                                                                .filter(
+                                                                    (
+                                                                        comuna,
+                                                                    ) =>
+                                                                        comuna.activa,
+                                                                )
+                                                                .map(
+                                                                    (
+                                                                        comuna,
+                                                                    ) => (
+                                                                        <Badge
+                                                                            key={
+                                                                                comuna.comuna
+                                                                            }
+                                                                            variant="secondary"
+                                                                        >
+                                                                            {
+                                                                                comuna.comuna
+                                                                            }{' '}
+                                                                            · $
+                                                                            {comuna.precio.toLocaleString(
+                                                                                'es-CL',
+                                                                            )}
+                                                                        </Badge>
+                                                                    ),
+                                                                )}
+                                                        </span>
+                                                    )}
                                                 </TableCell>
                                                 <TableCell>
                                                     {zona.capacidad_max}
@@ -716,8 +831,8 @@ export default function Index({
                                                 className="py-8 text-center text-sm text-muted-foreground"
                                             >
                                                 Aún no hay zonas definidas. Usa
-                                                «Dibujar zona» sobre el mapa
-                                                para crear la primera.
+                                                «Nueva zona» para configurar
+                                                una zona por comunas o radio.
                                             </TableCell>
                                         </TableRow>
                                     )}
@@ -1097,7 +1212,7 @@ export default function Index({
                 </Card>
 
                 <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-                    <DialogContent className="sm:max-w-md">
+                    <DialogContent className="w-full max-w-2xl max-h-[90vh] overflow-y-auto px-4 py-6 sm:px-6">
                         <DialogHeader>
                             <DialogTitle>
                                 {editingId ? 'Editar zona' : 'Nueva zona'}
@@ -1105,40 +1220,299 @@ export default function Index({
                         </DialogHeader>
                         <form onSubmit={submit} className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="name">Nombre</Label>
+                                <Label htmlFor="name">Nombre de la zona</Label>
                                 <Input
                                     id="name"
+                                    className="w-full"
                                     value={data.name}
                                     onChange={(e) =>
                                         setData('name', e.target.value)
                                     }
-                                    placeholder="Ej: Centro, Norte, Sur..."
+                                    placeholder="Ej: Santiago Centro - Express"
                                 />
-                                {errors.name && (
+                                {formErrors.name && (
                                     <p className="text-sm text-destructive">
-                                        {errors.name}
+                                        {formErrors.name}
                                     </p>
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                <div className="space-y-2">
-                                    <Label htmlFor="lat">Latitud</Label>
-                                    <Input id="lat" value={data.lat} readOnly />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="lng">Longitud</Label>
-                                    <Input id="lng" value={data.lng} readOnly />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="radio">Radio (km)</Label>
-                                    <Input
-                                        id="radio"
-                                        value={data.radio_km}
-                                        readOnly
-                                    />
-                                </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="zone-mode">Cobertura</Label>
+                                <Select
+                                    value={data.modo}
+                                    onValueChange={(value) => {
+                                        if (
+                                            value === 'radio' ||
+                                            value === 'comunas'
+                                        ) {
+                                            setData('modo', value);
+                                            if (value === 'comunas') {
+                                                if (data.comunas.length === 0) {
+                                                    setData('comunas', [
+                                                        {
+                                                            comuna: '',
+                                                            precio: '',
+                                                        },
+                                                    ]);
+                                                }
+                                                setDrawMode(false);
+                                            }
+                                        }
+                                    }}
+                                >
+                                    <SelectTrigger id="zone-mode" className="w-full">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="comunas">
+                                            Comunas y tarifas
+                                        </SelectItem>
+                                        <SelectItem
+                                            value="radio"
+                                            disabled={!mapConfigured}
+                                        >
+                                            Radio en el mapa
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {formErrors.modo && (
+                                    <p className="text-sm text-destructive">
+                                        {formErrors.modo}
+                                    </p>
+                                )}
                             </div>
+
+                            {data.modo === 'comunas' ? (
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                            <Label>
+                                                Comunas y precios de despacho
+                                            </Label>
+                                            <p className="text-xs text-muted-foreground">
+                                                Estas tarifas también quedarán
+                                                disponibles en el flujo de
+                                                despacho.
+                                            </p>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() =>
+                                                setData('comunas', [
+                                                    ...data.comunas,
+                                                    {
+                                                        comuna: '',
+                                                        precio: '',
+                                                    },
+                                                ])
+                                            }
+                                        >
+                                            Agregar comuna
+                                        </Button>
+                                    </div>
+                                    {data.comunas.map((comuna, index) => (
+                                        <div
+                                            key={index}
+                                            className="grid min-w-0 grid-cols-1 items-start gap-3 rounded-lg border p-3 sm:grid-cols-12"
+                                        >
+                                            <div className="min-w-0 space-y-2 sm:col-span-7">
+                                                <Label
+                                                    htmlFor={`commune-${index}`}
+                                                >
+                                                    Comuna
+                                                </Label>
+                                                <Input
+                                                    id={`commune-${index}`}
+                                                    className="w-full"
+                                                    list={`communes-list-${index}`}
+                                                    value={comuna.comuna}
+                                                    onChange={(event) =>
+                                                        setData(
+                                                            'comunas',
+                                                            data.comunas.map(
+                                                                (
+                                                                    current,
+                                                                    currentIndex,
+                                                                ) =>
+                                                                    currentIndex ===
+                                                                    index
+                                                                        ? {
+                                                                              ...current,
+                                                                              comuna:
+                                                                                  event
+                                                                                      .target
+                                                                                      .value,
+                                                                          }
+                                                                        : current,
+                                                            ),
+                                                        )
+                                                    }
+                                                    placeholder="Selecciona o escribe una comuna"
+                                                    required
+                                                />
+                                                <datalist
+                                                    id={`communes-list-${index}`}
+                                                >
+                                                    {comunaOptions.map(
+                                                        (option) => (
+                                                            <option
+                                                                key={option}
+                                                                value={option}
+                                                            />
+                                                        ),
+                                                    )}
+                                                </datalist>
+                                                {formErrors[
+                                                    `comunas.${index}.comuna`
+                                                ] && (
+                                                    <p className="text-sm text-destructive">
+                                                        {
+                                                            formErrors[
+                                                                `comunas.${index}.comuna`
+                                                            ]
+                                                        }
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="min-w-0 space-y-2 sm:col-span-4">
+                                                <Label
+                                                    htmlFor={`price-${index}`}
+                                                >
+                                                    Precio / tarifa
+                                                </Label>
+                                                <Input
+                                                    id={`price-${index}`}
+                                                    className="w-full"
+                                                    type="number"
+                                                    min="0"
+                                                    max="100000000"
+                                                    step="1"
+                                                    value={comuna.precio}
+                                                    onChange={(event) =>
+                                                        setData(
+                                                            'comunas',
+                                                            data.comunas.map(
+                                                                (
+                                                                    current,
+                                                                    currentIndex,
+                                                                ) =>
+                                                                    currentIndex ===
+                                                                    index
+                                                                        ? {
+                                                                              ...current,
+                                                                              precio:
+                                                                                  event
+                                                                                      .target
+                                                                                      .value,
+                                                                          }
+                                                                        : current,
+                                                            ),
+                                                        )
+                                                    }
+                                                    required
+                                                />
+                                                {formErrors[
+                                                    `comunas.${index}.precio`
+                                                ] && (
+                                                    <p className="text-sm text-destructive">
+                                                        {
+                                                            formErrors[
+                                                                `comunas.${index}.precio`
+                                                            ]
+                                                        }
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="flex justify-end sm:col-span-1 sm:justify-center">
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="w-full sm:w-auto"
+                                                    aria-label={`Quitar ${comuna.comuna || 'comuna'}`}
+                                                    disabled={
+                                                        data.comunas.length ===
+                                                        1
+                                                    }
+                                                    onClick={() =>
+                                                        setData(
+                                                            'comunas',
+                                                            data.comunas.filter(
+                                                                (
+                                                                    _,
+                                                                    itemIndex,
+                                                                ) =>
+                                                                    itemIndex !==
+                                                                    index,
+                                                            ),
+                                                        )
+                                                    }
+                                                >
+                                                    Quitar
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {formErrors.comunas && (
+                                        <p className="text-sm text-destructive">
+                                            {formErrors.comunas}
+                                        </p>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="space-y-3 rounded-lg border p-4">
+                                    {data.lat && data.lng ? (
+                                        <p className="text-sm text-muted-foreground">
+                                            Centro: {data.lat}, {data.lng} ·{' '}
+                                            {data.radio_km} km
+                                        </p>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">
+                                            Dibuja un círculo en el mapa para
+                                            fijar el centro y el radio de esta
+                                            zona.
+                                        </p>
+                                    )}
+                                    {mapConfigured ? (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={ajustarEnMapa}
+                                            disabled={drawMode}
+                                        >
+                                            <Pencil className="mr-2 h-4 w-4" />
+                                            {data.lat
+                                                ? 'Ajustar círculo en el mapa'
+                                                : 'Definir círculo en el mapa'}
+                                        </Button>
+                                    ) : (
+                                        <p className="text-sm text-amber-700 dark:text-amber-400">
+                                            El mapa no está configurado. Puedes
+                                            elegir «Comunas y tarifas» para crear
+                                            la zona sin Google Maps.
+                                        </p>
+                                    )}
+                                    {formErrors.lat && (
+                                        <p className="text-sm text-destructive">
+                                            {formErrors.lat}
+                                        </p>
+                                    )}
+                                    {formErrors.lng && (
+                                        <p className="text-sm text-destructive">
+                                            {formErrors.lng}
+                                        </p>
+                                    )}
+                                    {formErrors.radio_km && (
+                                        <p className="text-sm text-destructive">
+                                            {formErrors.radio_km}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
 
                             <div className="space-y-2">
                                 <Label htmlFor="capacidad">
@@ -1146,6 +1520,7 @@ export default function Index({
                                 </Label>
                                 <Input
                                     id="capacidad"
+                                    className="w-full"
                                     type="number"
                                     min={1}
                                     max={999}
@@ -1153,10 +1528,11 @@ export default function Index({
                                     onChange={(e) =>
                                         setData('capacidad_max', e.target.value)
                                     }
+                                    required
                                 />
-                                {errors.capacidad_max && (
+                                {formErrors.capacidad_max && (
                                     <p className="text-sm text-destructive">
-                                        {errors.capacidad_max}
+                                        {formErrors.capacidad_max}
                                     </p>
                                 )}
                             </div>
@@ -1177,37 +1553,22 @@ export default function Index({
                                 />
                             </div>
 
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <DialogFooter className="flex flex-col-reverse justify-end gap-2 sm:flex-row">
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    size="sm"
-                                    onClick={ajustarEnMapa}
-                                    disabled={drawMode}
-                                >
-                                    <Pencil className="mr-2 h-4 w-4" />
-                                    Ajustar círculo en el mapa
-                                </Button>
-                                {data.lat && (
-                                    <span className="text-xs text-muted-foreground">
-                                        Centro: {data.lat}, {data.lng} ·{' '}
-                                        {data.radio_km} km
-                                    </span>
-                                )}
-                            </div>
-
-                            <DialogFooter>
-                                <Button
-                                    type="button"
-                                    variant="outline"
+                                    className="w-full sm:w-auto"
                                     onClick={() => setModalOpen(false)}
                                 >
                                     Cancelar
                                 </Button>
                                 <Button
                                     type="submit"
+                                    className="w-full sm:w-auto"
                                     disabled={
-                                        processing || !data.lat || !data.lng
+                                        processing ||
+                                        (data.modo === 'radio' &&
+                                            (!data.lat || !data.lng))
                                     }
                                 >
                                     {editingId

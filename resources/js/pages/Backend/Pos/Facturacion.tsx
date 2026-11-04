@@ -12,6 +12,10 @@ import {
     FileJson,
 } from 'lucide-react';
 import { useRef } from 'react';
+import {
+    exportarFacturacionPos,
+    importarFacturacionPos,
+} from '@/actions/App/Http/Controllers/Backend/PosController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,7 +43,6 @@ import {
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import { formatCurrency } from '@/lib/utils';
-
 interface Documento {
     id: number;
     numero_factura: string | null;
@@ -59,7 +62,10 @@ export default function Facturacion({
     documentos: Documento[];
 }) {
     const { hasPermission } = usePermissions();
-    const canAccess = hasPermission('ventas.pos.viewAny');
+    const canAccess = hasPermission('ventas.facturacion-pos.viewAny');
+    const canCreate = hasPermission('ventas.facturacion-pos.create');
+    const canImport = hasPermission('ventas.facturacion-pos.import');
+    const canExport = hasPermission('ventas.facturacion-pos.export');
     const csvInputRef = useRef<HTMLInputElement>(null);
     const excelInputRef = useRef<HTMLInputElement>(null);
 
@@ -71,18 +77,14 @@ export default function Facturacion({
         excelInputRef.current?.click();
     };
 
-    const handleFileChange = (
-        e: React.ChangeEvent<HTMLInputElement>,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        type: 'csv' | 'excel',
-    ) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         const formData = new FormData();
         formData.append('file', file);
 
-        router.post('/pos/facturacion/importar', formData, {
+        router.post(importarFacturacionPos.url(), formData, {
             forceFormData: true,
             onSuccess: () => {
                 e.target.value = '';
@@ -139,14 +141,14 @@ export default function Facturacion({
                         >
                             <RefreshCw className="mr-2 h-4 w-4" /> Recargar SII
                         </Button>
-                        <Button
+                        {canCreate && <Button
                             size="sm"
                             className="bg-primary shadow-lg shadow-primary/20"
                         >
                             <FileText className="mr-2 h-4 w-4" /> Nueva Factura
                             Manual
-                        </Button>
-                        <DropdownMenu>
+                        </Button>}
+                        {(canImport || canExport) && <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
                                     variant="outline"
@@ -158,37 +160,55 @@ export default function Facturacion({
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem onClick={handleImportCSV}>
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    Importar CSV
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleImportExcel}>
-                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                    Importar Excel
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                    onClick={() =>
-                                        router.get(
-                                            '/pos/facturacion/exportar?format=json',
-                                        )
-                                    }
-                                >
-                                    <FileJson className="mr-2 h-4 w-4" />
-                                    Exportar JSON
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() =>
-                                        router.get(
-                                            '/pos/facturacion/exportar?format=excel',
-                                        )
-                                    }
-                                >
-                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                    Exportar Excel
-                                </DropdownMenuItem>
+                                {canImport && (
+                                    <>
+                                        <DropdownMenuItem onClick={handleImportCSV}>
+                                            <Upload className="mr-2 h-4 w-4" />
+                                            Importar CSV
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={handleImportExcel}>
+                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                            Importar Excel
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
+                                {canImport && canExport && <DropdownMenuSeparator />}
+                                {canExport && (
+                                    <>
+                                        <DropdownMenuItem
+                                            onClick={() =>
+                                                window.open(
+                                                    exportarFacturacionPos.url({
+                                                        query: {
+                                                            format: 'json',
+                                                        },
+                                                    }),
+                                                    '_blank',
+                                                )
+                                            }
+                                        >
+                                            <FileJson className="mr-2 h-4 w-4" />
+                                            Exportar JSON
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={() =>
+                                                window.open(
+                                                    exportarFacturacionPos.url({
+                                                        query: {
+                                                            format: 'excel',
+                                                        },
+                                                    }),
+                                                    '_blank',
+                                                )
+                                            }
+                                        >
+                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                            Exportar Excel
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
                             </DropdownMenuContent>
-                        </DropdownMenu>
+                        </DropdownMenu>}
                     </div>
                 </div>
 
@@ -374,14 +394,14 @@ export default function Facturacion({
                 type="file"
                 accept=".csv"
                 className="hidden"
-                onChange={(e) => handleFileChange(e, 'csv')}
+                onChange={handleFileChange}
             />
             <input
                 ref={excelInputRef}
                 type="file"
                 accept=".xlsx,.xls"
                 className="hidden"
-                onChange={(e) => handleFileChange(e, 'excel')}
+                onChange={handleFileChange}
             />
         </AppLayout>
     );

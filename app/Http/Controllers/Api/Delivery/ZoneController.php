@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Delivery\AsignarPoolRequest;
 use App\Http\Requests\Delivery\StoreZoneRequest;
 use App\Http\Requests\Delivery\UpdateZoneRequest;
+use App\Models\DeliveryRate;
 use App\Models\Pedido;
 use App\Models\Repartidor;
 use App\Models\Zone;
@@ -26,15 +27,27 @@ class ZoneController extends Controller
     {
         $pedidos = $this->analytics->pedidosEnCircuito();
 
-        $zonas = Zone::query()->orderBy('name')->get()
+        $zonas = Zone::query()
+            ->with('deliveryRates:id,zone_id,commune,cost,is_active')
+            ->orderBy('name')
+            ->get()
             ->map(fn (Zone $zona) => [
                 'id' => $zona->id,
                 'name' => $zona->name,
-                'lat' => (float) $zona->lat,
-                'lng' => (float) $zona->lng,
-                'radio_km' => (float) $zona->radio_km,
+                'modo' => $zona->modo,
+                'lat' => $zona->lat === null ? null : (float) $zona->lat,
+                'lng' => $zona->lng === null ? null : (float) $zona->lng,
+                'radio_km' => $zona->radio_km === null ? null : (float) $zona->radio_km,
                 'capacidad_max' => (int) $zona->capacidad_max,
                 'activa' => (bool) $zona->activa,
+                'comunas' => $zona->deliveryRates
+                    ->where('is_active', true)
+                    ->map(fn (DeliveryRate $rate) => [
+                        'comuna' => $rate->commune,
+                        'precio' => (float) $rate->cost,
+                    ])
+                    ->values()
+                    ->all(),
                 'uso' => $this->analytics->resumenZona($zona, $pedidos),
             ])
             ->values()
@@ -105,7 +118,12 @@ class ZoneController extends Controller
     {
         $pedidos = $this->analytics->pedidosEnCircuito();
 
-        $zonas = Zone::query()->orderBy('name')->get()
+        $zonas = Zone::query()
+            ->where('modo', 'radio')
+            ->whereNotNull('lat')
+            ->whereNotNull('lng')
+            ->orderBy('name')
+            ->get()
             ->map(fn (Zone $zona) => [
                 'type' => 'Feature',
                 'geometry' => [

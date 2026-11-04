@@ -5,7 +5,6 @@ use App\Listeners\SendChannelConfigurationToN8n;
 use App\Models\ChannelCredential;
 use App\Models\SystemIntegration;
 use App\Models\User;
-use App\Models\WebSetting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
@@ -42,23 +41,19 @@ test('updating channel credentials dispatches ChannelConfigurationUpdated event'
     });
 });
 
-test('updating global web settings dispatches ChannelConfigurationUpdated event', function () {
+test('updating official telegram settings dispatches ChannelConfigurationUpdated event', function () {
     Event::fake();
 
-    $config = WebSetting::firstOrCreate([]);
+    $response = $this->actingAs($this->user)->putJson(
+        route('configuracion-web.gateway-settings.telegram'),
+        [
+            'bot_token' => 'global_token_123',
+            'bot_username' => 'global_bot',
+            'is_active' => true,
+        ]
+    );
 
-    $response = $this->actingAs($this->user)->put(route('configuracion-web.update', $config), [
-        'app_name' => 'AlDia Test',
-        'app_title' => 'Title',
-        'timezone' => 'America/Santiago',
-        'locale' => 'es',
-        'currency' => 'CLP',
-        'currency_symbol' => '$',
-        'global_telegram_bot_token' => 'global_token_123',
-        'global_telegram_bot_username' => 'global_bot',
-    ]);
-
-    $response->assertRedirect();
+    $response->assertSuccessful();
 
     Event::assertDispatched(ChannelConfigurationUpdated::class, function ($event) {
         return $event->ownerId === $this->user->getOwnerId()

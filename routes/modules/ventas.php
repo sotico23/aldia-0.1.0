@@ -15,25 +15,71 @@ Route::middleware(['permission:ventas.ventas.viewAny'])->group(function () {
     Route::post('ventas/import-excel', [VentaController::class, 'importExcel'])->name('ventas.import_excel');
 });
 
-Route::middleware(['permission:ventas.pos.viewAny'])->group(function () {
-    Route::prefix('pos')->name('pos.')->group(function () {
-        Route::get('/', [PosController::class, 'index'])->name('index');
-        Route::post('/', [PosController::class, 'store'])->name('store');
-        Route::post('{venta}/emitir-dte', [PosController::class, 'emitirDte'])->name('emitir-dte');
-        Route::get('cierre', [PosController::class, 'cierreCaja'])->name('cierre');
-        Route::post('cierre/cerrar', [PosController::class, 'cerrarTurno'])->name('cierre.cerrar');
-        Route::get('cierre/pdf', [PosController::class, 'exportarArqueoPdf'])->name('cierre.pdf');
-        Route::get('cierre/csv', [PosController::class, 'exportarArqueoCsv'])->name('cierre.csv');
-        Route::get('facturacion', [PosController::class, 'facturacion'])->name('facturacion');
-        Route::get('promociones', [PosController::class, 'promociones'])->name('promociones');
-        Route::post('promociones', [PosController::class, 'storePromocion'])->name('promociones.store');
-        Route::patch('promociones/{promocion}/toggle', [PosController::class, 'togglePromocion'])->name('promociones.toggle');
-        Route::put('promociones/{promocion}', [PosController::class, 'updatePromocion'])->name('promociones.update');
-        Route::delete('promociones/{promocion}', [PosController::class, 'destroyPromocion'])->name('promociones.destroy');
-        Route::get('reportes', [PosController::class, 'reportes'])->name('reportes');
-        Route::get('reportes/exportar', [PosController::class, 'exportarReportes'])->name('reportes.exportar');
-        Route::post('reportes/importar', [PosController::class, 'importarReportes'])->name('reportes.importar');
-    });
+Route::prefix('pos')->name('pos.')->group(function () {
+    Route::get('/', [PosController::class, 'index'])
+        ->middleware('permission:ventas.pos.viewAny')
+        ->name('index');
+    Route::post('/', [PosController::class, 'store'])
+        ->middleware(['permission:ventas.pos.viewAny', 'permission:ventas.pos.create'])
+        ->name('store');
+    Route::post('{venta}/emitir-dte', [PosController::class, 'emitirDte'])
+        ->middleware('permission:ventas.facturacion-pos.create')
+        ->name('emitir-dte');
+
+    Route::get('cierre', [PosController::class, 'cierreCaja'])
+        ->middleware('permission:ventas.cierre-caja.viewAny')
+        ->name('cierre');
+    Route::post('cierre/cerrar', [PosController::class, 'cerrarTurno'])
+        ->middleware('permission:ventas.cierre-caja.edit')
+        ->name('cierre.cerrar');
+    Route::get('cierre/pdf', [PosController::class, 'exportarArqueoPdf'])
+        ->middleware('permission:ventas.cierre-caja.export')
+        ->name('cierre.pdf');
+    Route::get('cierre/csv', [PosController::class, 'exportarArqueoCsv'])
+        ->middleware('permission:ventas.cierre-caja.export')
+        ->name('cierre.csv');
+    Route::post('cierre/importar', [PosController::class, 'importarCierresCaja'])
+        ->middleware('permission:ventas.cierre-caja.import')
+        ->name('cierre.importar');
+    Route::get('cierre/exportar', [PosController::class, 'exportarCierresCaja'])
+        ->middleware('permission:ventas.cierre-caja.export')
+        ->name('cierre.exportar');
+
+    Route::get('facturacion', [PosController::class, 'facturacion'])
+        ->middleware('permission:ventas.facturacion-pos.viewAny')
+        ->name('facturacion');
+    Route::post('facturacion/importar', [PosController::class, 'importarFacturacionPos'])
+        ->middleware('permission:ventas.facturacion-pos.import')
+        ->name('facturacion.importar');
+    Route::get('facturacion/exportar', [PosController::class, 'exportarFacturacionPos'])
+        ->middleware('permission:ventas.facturacion-pos.export')
+        ->name('facturacion.exportar');
+
+    Route::get('promociones', [PosController::class, 'promociones'])
+        ->middleware('permission:ventas.pos.viewAny')
+        ->name('promociones');
+    Route::post('promociones', [PosController::class, 'storePromocion'])
+        ->middleware('permission:ventas.pos.create')
+        ->name('promociones.store');
+    Route::patch('promociones/{promocion}/toggle', [PosController::class, 'togglePromocion'])
+        ->middleware('permission:ventas.pos.edit')
+        ->name('promociones.toggle');
+    Route::put('promociones/{promocion}', [PosController::class, 'updatePromocion'])
+        ->middleware('permission:ventas.pos.edit')
+        ->name('promociones.update');
+    Route::delete('promociones/{promocion}', [PosController::class, 'destroyPromocion'])
+        ->middleware('permission:ventas.pos.delete')
+        ->name('promociones.destroy');
+
+    Route::get('reportes', [PosController::class, 'reportes'])
+        ->middleware('permission:ventas.pos-reportes.viewAny')
+        ->name('reportes');
+    Route::get('reportes/exportar', [PosController::class, 'exportarReportes'])
+        ->middleware('permission:ventas.pos-reportes.export')
+        ->name('reportes.exportar');
+    Route::post('reportes/importar', [PosController::class, 'importarReportes'])
+        ->middleware('permission:ventas.pos-reportes.import')
+        ->name('reportes.importar');
 });
 
 Route::middleware(['permission:ventas.variantes.viewAny'])->group(function () {

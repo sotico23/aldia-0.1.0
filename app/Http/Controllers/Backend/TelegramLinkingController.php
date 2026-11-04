@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
 use App\Models\ChannelCredential;
+use App\Models\ChannelLink;
 use App\Models\TelegramLinkingToken;
+use App\Services\ChannelConfigService;
 use App\Services\TelegramService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -95,6 +97,12 @@ class TelegramLinkingController extends Controller
                 'telegram_linked_at' => null,
             ]);
         }
+
+        ChannelLink::withoutGlobalScopes()
+            ->where('owner_id', $ownerId)
+            ->where('channel', ChannelConfigService::CHANNEL_TELEGRAM)
+            ->whereNull('revoked_at')
+            ->update(['revoked_at' => now()]);
 
         // Invalidar cualquier token activo pendiente del owner.
         $invalidated = TelegramLinkingToken::query()

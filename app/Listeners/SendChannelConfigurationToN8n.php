@@ -6,7 +6,7 @@ use App\Events\ChannelConfigurationUpdated;
 use App\Models\ChannelCredential;
 use App\Models\SystemIntegration;
 use App\Models\TelegramLinkingToken;
-use App\Models\WebSetting;
+use App\Services\ChannelConfigService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -31,7 +31,8 @@ class SendChannelConfigurationToN8n implements ShouldQueue
         $botTypeEvent = $event->botType; // 'global' or 'custom'
 
         $credentials = ChannelCredential::where('owner_id', $ownerId)->first();
-        $webSettings = WebSetting::getSettings();
+        $channelConfig = app(ChannelConfigService::class);
+        $globalTelegram = $channelConfig->globalTelegram();
 
         // Determine if official (global) or personal (custom)
         $botType = 'oficial';
@@ -40,15 +41,15 @@ class SendChannelConfigurationToN8n implements ShouldQueue
 
         if ($botTypeEvent === 'global') {
             $botType = 'oficial';
-            $botToken = $webSettings->global_telegram_bot_token ?? null;
-            $botUsername = $webSettings->global_telegram_bot_username ?? null;
+            $botToken = $globalTelegram['bot_token'];
+            $botUsername = $globalTelegram['bot_username'];
         } else {
             // botTypeEvent is 'custom'
             $effectiveBotType = $credentials?->bot_type ?? 'global';
             if ($effectiveBotType === 'global') {
                 $botType = 'oficial';
-                $botToken = $webSettings->global_telegram_bot_token ?? null;
-                $botUsername = $webSettings->global_telegram_bot_username ?? null;
+                $botToken = $globalTelegram['bot_token'];
+                $botUsername = $globalTelegram['bot_username'];
             } else {
                 $botType = 'personal';
                 $botToken = $credentials->telegram_bot_token ?? null;
@@ -89,6 +90,10 @@ class SendChannelConfigurationToN8n implements ShouldQueue
                     'owner_id' => $ownerId,
                     'user_id' => $userId,
                     'token' => $token,
+                    'channel' => ChannelConfigService::CHANNEL_TELEGRAM,
+                    'bot_scope' => $botType === 'oficial'
+                        ? ChannelConfigService::SCOPE_GLOBAL
+                        : $channelConfig->botScopeForOwner($ownerId),
                     'bot_type' => $botType === 'oficial' ? 'global' : 'custom',
                     'expires_at' => $expiresAt,
                 ]);
@@ -114,7 +119,7 @@ class SendChannelConfigurationToN8n implements ShouldQueue
         // Resolve webhook URL: tenant-specific URL takes priority, then the
         // global n8n integration values, then env config.
         $n8nIntegration = SystemIntegration::forProvider('n8n')->first();
-        $webhookUrl = $credentials->n8n_telegram_proxy_webhook_url
+        $webhookUrl = $credentials?->n8n_telegram_proxy_webhook_url
             ?: $n8nIntegration?->telegram_proxy_url
             ?: config('services.n8n.telegram_proxy_url');
 

@@ -10,6 +10,12 @@ class WhatsAppService
 {
     protected ?ChannelCredential $credentials = null;
 
+    protected ?string $accessTokenOverride = null;
+
+    protected ?string $phoneNumberIdOverride = null;
+
+    protected ?string $apiVersionOverride = null;
+
     public function __construct(?int $ownerId = null)
     {
         if ($ownerId) {
@@ -26,17 +32,29 @@ class WhatsAppService
 
     public function getAccessToken(): ?string
     {
-        return $this->credentials?->whatsapp_access_token;
+        return $this->accessTokenOverride ?: $this->credentials?->whatsapp_access_token;
     }
 
     public function getPhoneNumberId(): ?string
     {
-        return $this->credentials?->whatsapp_phone_number_id;
+        return $this->phoneNumberIdOverride ?: $this->credentials?->whatsapp_phone_number_id;
     }
 
     public function getApiVersion(): string
     {
-        return $this->credentials?->whatsapp_api_version ?? 'v22.0';
+        return $this->apiVersionOverride ?: ($this->credentials?->whatsapp_api_version ?? 'v22.0');
+    }
+
+    /**
+     * @param  array{access_token: ?string, phone_number_id: ?string, api_version: string}  $config
+     */
+    public function withConfiguration(array $config): static
+    {
+        $this->accessTokenOverride = $config['access_token'];
+        $this->phoneNumberIdOverride = $config['phone_number_id'];
+        $this->apiVersionOverride = $config['api_version'];
+
+        return $this;
     }
 
     public function validateCredentials(?string $accessToken = null, ?string $phoneNumberId = null): array
@@ -121,6 +139,13 @@ class WhatsAppService
             return [
                 'success' => false,
                 'message' => 'WhatsApp Phone Number ID no configurado.',
+            ];
+        }
+
+        if (! $this->getAccessToken()) {
+            return [
+                'success' => false,
+                'message' => 'WhatsApp Access Token no configurado.',
             ];
         }
 

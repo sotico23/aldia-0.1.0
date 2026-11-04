@@ -49,6 +49,7 @@ use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\StatusPageController;
 use App\Http\Controllers\Webhooks\MercadoPagoWebhookController;
 use App\Http\Controllers\Webhooks\PaypalWebhookController;
+use App\Http\Controllers\Webhooks\ScopedChannelWebhookController;
 use App\Http\Controllers\Webhooks\TelegramWebhookController;
 use App\Http\Controllers\Webhooks\WhatsAppWebhookController;
 use App\Http\Controllers\WelcomeController;
@@ -237,12 +238,13 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/pedidos-recibidos/{pedido}/estado', [PedidoRecibidoController::class, 'actualizarEstado'])->name('pedidos-recibidos.estado');
         Route::post('/pedidos-recibidos/{pedido}/venta', [PedidoRecibidoController::class, 'generarVenta'])->name('pedidos-recibidos.generar-venta');
 
-        // Chat de Pedidos (Marketplace) - Vista
-        Route::get('/conversaciones-pedidos/{conversacion}/chat', [ConversacionPedidoController::class, 'show'])->name('conversaciones-pedidos.show');
+    });
 
-        // Chat de Pedidos - API
+    // Chat de pedidos del marketplace
+    Route::middleware(['permission:comercial.mensajes-marketplace.viewAny'])->group(function () {
+        Route::get('/conversaciones-pedidos/{conversacion}/chat', [ConversacionPedidoController::class, 'show'])->name('conversaciones-pedidos.show');
         Route::get('/conversaciones-pedidos/{conversacion}/mensajes', [ConversacionPedidoController::class, 'getMensajes'])->name('conversaciones-pedidos.mensajes');
-        Route::post('/conversaciones-pedidos/{conversacion}/mensajes', [ConversacionPedidoController::class, 'enviarMensaje'])->name('conversaciones-pedidos.enviar')->middleware('throttle:messages');
+        Route::post('/conversaciones-pedidos/{conversacion}/mensajes', [ConversacionPedidoController::class, 'enviarMensaje'])->name('conversaciones-pedidos.enviar')->middleware(['permission:comercial.mensajes-marketplace.create', 'throttle:messages']);
     });
 
     Route::prefix('afiliados')->name('afiliados.')->group(function () {
@@ -250,19 +252,19 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/red', [AffiliateController::class, 'network'])->name('red');
     });
 
-    // Marketplace Chat (requiere al menos poder ver oportunidades)
-    Route::middleware(['permission:comercial.oportunidades.viewAny'])->group(function () {
+    // Marketplace Chat
+    Route::middleware(['permission:comercial.mensajes-marketplace.viewAny'])->group(function () {
         Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
         Route::get('/chat/{conversation}', [ChatController::class, 'show'])->name('chat.show');
-        Route::post('/chat/{conversation}/messages', [ChatController::class, 'sendMessage'])->name('chat.send')->middleware('throttle:messages');
+        Route::post('/chat/{conversation}/messages', [ChatController::class, 'sendMessage'])->name('chat.send')->middleware(['permission:comercial.mensajes-marketplace.create', 'throttle:messages']);
     });
 
     // Communication API unificada
-    Route::prefix('communication')->name('communication.')->middleware(['permission:comercial.oportunidades.viewAny'])->group(function () {
+    Route::prefix('communication')->name('communication.')->middleware(['permission:comercial.mensajes-marketplace.viewAny'])->group(function () {
         Route::get('/inbox', [CommunicationController::class, 'inbox'])->name('inbox');
         Route::get('/{type}/{id}/messages', [CommunicationController::class, 'messages'])->name('messages');
-        Route::post('/{type}/{id}/messages', [CommunicationController::class, 'send'])->name('send')->middleware('throttle:messages');
-        Route::post('/{type}/{id}/read', [CommunicationController::class, 'markRead'])->name('read');
+        Route::post('/{type}/{id}/messages', [CommunicationController::class, 'send'])->name('send')->middleware(['permission:comercial.mensajes-marketplace.create', 'throttle:messages']);
+        Route::post('/{type}/{id}/read', [CommunicationController::class, 'markRead'])->name('read')->middleware('permission:comercial.mensajes-marketplace.edit');
     });
 
     // Citas y Reservas
@@ -402,6 +404,15 @@ Route::prefix('webhooks')->name('webhooks.')->middleware('throttle:60,1')->group
     Route::post('mercadopago', [MercadoPagoWebhookController::class, 'handle'])->name('mercadopago');
     Route::post('whatsapp', [WhatsAppWebhookController::class, 'handle'])->name('whatsapp');
     Route::post('telegram', [TelegramWebhookController::class, 'handle'])->name('telegram');
+
+    Route::post('telegram/global', [ScopedChannelWebhookController::class, 'globalTelegram'])
+        ->name('telegram.global');
+    Route::post('telegram/tenant/{key}', [ScopedChannelWebhookController::class, 'tenantTelegram'])
+        ->name('telegram.tenant');
+    Route::match(['get', 'post'], 'whatsapp/global', [ScopedChannelWebhookController::class, 'globalWhatsApp'])
+        ->name('whatsapp.global');
+    Route::match(['get', 'post'], 'whatsapp/tenant/{key}', [ScopedChannelWebhookController::class, 'tenantWhatsApp'])
+        ->name('whatsapp.tenant');
 });
 
 // Alias del webhook de Telegram sin prefijo /api (compatibilidad con flujos n8n existentes)

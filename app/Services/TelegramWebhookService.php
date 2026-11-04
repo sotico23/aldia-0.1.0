@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ChannelCredential;
+use App\Models\ChannelLink;
 use App\Models\SystemIntegration;
 use App\Models\TelegramLinkingToken;
 use App\Models\WebSetting;
@@ -11,10 +12,13 @@ use Illuminate\Support\Facades\Log;
 
 class TelegramWebhookService
 {
-    public function processWebhook(array $update): array
-    {
+    public function processWebhook(
+        array $update,
+        ?array $channelConfig = null,
+        ?string $botScope = null
+    ): array {
         try {
-            return $this->processUpdate($update);
+            return $this->processUpdate($update, $channelConfig, $botScope);
         } catch (\Throwable $e) {
             Log::error('TelegramWebhookService: unexpected error', [
                 'error' => $e->getMessage(),
@@ -25,8 +29,11 @@ class TelegramWebhookService
         }
     }
 
-    private function processUpdate(array $update): array
-    {
+    private function processUpdate(
+        array $update,
+        ?array $channelConfig = null,
+        ?string $botScope = null
+    ): array {
         $update = $this->unwrapUpdate($update);
 
         $message = $update['message']
@@ -52,13 +59,18 @@ class TelegramWebhookService
         $token = $this->extractFlatToken($update) ?? $this->extractStartToken($text);
 
         if ($token) {
-            return $this->linkAccount($token, $chatIdStr);
+            return $this->linkAccount($token, $chatIdStr, $channelConfig, $botScope);
         }
 
         if ($text === '/start') {
-            $credential = ChannelCredential::where('telegram_chat_id', $chatIdStr)->first();
+            $link = $botScope
+                ? app(ChannelConfigService::class)->activeTelegramLink($botScope, $chatIdStr)
+                : null;
+            $credential = $botScope
+                ? ($link ? ChannelCredential::where('owner_id', $link['owner_id'])->first() : null)
+                : ChannelCredential::where('telegram_chat_id', $chatIdStr)->first();
 
-            $botToken = $credential?->telegram_bot_token
+            $botToken = $channelConfig['bot_token'] ?? $credential?->telegram_bot_token
                 ?: (WebSetting::getSettings()?->global_telegram_bot_token
                 ?: config('services.telegram.bot_token'));
 
@@ -73,17 +85,24 @@ class TelegramWebhookService
             return ['status' => 'missing_token'];
         }
 
-        $credential = ChannelCredential::where('telegram_chat_id', $chatIdStr)->first();
+        $link = $botScope
+            ? app(ChannelConfigService::class)->activeTelegramLink($botScope, $chatIdStr)
+            : null;
+        $credential = $botScope
+            ? ($link ? ChannelCredential::where('owner_id', $link['owner_id'])->first() : null)
+            : ChannelCredential::where('telegram_chat_id', $chatIdStr)->first();
         $isLinked = false;
-        $tenantId = null;
+        $tenantId = $link['owner_id'] ?? $channelConfig['owner_id'] ?? null;
 
-        if ($credential && $credential->owner_id) {
+        if ($link && $tenantId) {
+            $isLinked = true;
+        } elseif ($credential && $credential->owner_id && ! $botScope) {
             $isLinked = true;
             $tenantId = $credential->owner_id;
         }
 
         if ($isLinked && config('services.llm.enabled') && $text !== '') {
-            $botToken = $credential?->telegram_bot_token
+            $botToken = $channelConfig['bot_token'] ?? $credential?->telegram_bot_token
                 ?: (WebSetting::getSettings()?->global_telegram_bot_token
                 ?: config('services.telegram.bot_token'));
 
@@ -107,7 +126,16 @@ class TelegramWebhookService
             }
         }
 
-        $payload = $this->buildPayload($isLinked, $tenantId, $credential, $chatIdStr, $text, $update);
+        $payload = $this->buildPayload(
+            $isLinked,
+            $tenantId,
+            $credential,
+            $chatIdStr,
+            $text,
+            $update,
+            $channelConfig,
+            $botScope
+        );
 
         Log::info('TelegramWebhookService: forwarding message to n8n as proxy', [
             'chat_id' => $chatIdStr,
@@ -206,17 +234,20 @@ class TelegramWebhookService
         return null;
     }
 
-    private function linkAccount(string $token, string $chatId): array
-    {
+    private function linkAccount(
+        string $token,
+        string $chatId,
+        ?array $channelConfig = null,
+        ?string $botScope = null
+    ): array {
         $linkingToken = TelegramLinkingToken::where('token', $token)->first();
 
         if (! $linkingToken) {
             Log::warning('TelegramWebhookService: token de vinculación no encontrado', [
-                'token' => $token,
                 'chat_id' => $chatId,
             ]);
 
-            $this->sendInvalidTokenMessage($chatId);
+            $this->sendInvalidTokenMessage($chatId, $channelConfig);
 
             return [
                 'status' => 'invalid',
@@ -224,11 +255,28 @@ class TelegramWebhookService
             ];
         }
 
+        if (
+            $botScope !== null
+            && (
+                $linkingToken->bot_scope !== $botScope
+                || (
+                    str_starts_with($botScope, 'tenant:')
+                    && (int) $linkingToken->owner_id !== (int) ($channelConfig['owner_id'] ?? 0)
+                )
+            )
+        ) {
+            $this->sendInvalidTokenMessage($chatId, $channelConfig);
+
+            return [
+                'status' => 'invalid',
+                'message' => 'El token de vinculación no corresponde a este bot.',
+            ];
+        }
+
         // Idempotencia: Telegram reenvía el mismo /start varias veces.
         // Si el token ya fue usado con el MISMO chat_id, responder como exitoso.
         if ($linkingToken->isUsed() && $linkingToken->telegram_chat_id === $chatId) {
             Log::info('TelegramWebhookService: token reutilizado por el mismo chat_id (idempotente)', [
-                'token' => $token,
                 'chat_id' => $chatId,
             ]);
 
@@ -241,13 +289,12 @@ class TelegramWebhookService
         // Validar si expiró o si fue consumido por otro chat
         if ($linkingToken->isExpired() || $linkingToken->isUsed()) {
             Log::warning('TelegramWebhookService: token expirado o ya consumido por otro usuario', [
-                'token' => $token,
                 'chat_id' => $chatId,
                 'used_at' => $linkingToken->used_at,
                 'expires_at' => $linkingToken->expires_at,
             ]);
 
-            $this->sendInvalidTokenMessage($chatId);
+            $this->sendInvalidTokenMessage($chatId, $channelConfig);
 
             return [
                 'status' => 'expired',
@@ -260,16 +307,21 @@ class TelegramWebhookService
         // Evitar el "robo" del chat en un entorno multi-tenant: si el chat ya
         // está vinculado a OTRO owner, se rechaza la vinculación aunque el
         // token sea válido (el dueño original debe desvincular primero).
-        $chatOwner = ChannelCredential::where('telegram_chat_id', $chatId)->first();
+        $chatLink = $botScope
+            ? app(ChannelConfigService::class)->activeTelegramLink($botScope, $chatId)
+            : null;
+        $chatOwner = $chatLink
+            ? ChannelCredential::where('owner_id', $chatLink['owner_id'])->first()
+            : ($botScope === null ? ChannelCredential::where('telegram_chat_id', $chatId)->first() : null);
 
-        if ($chatOwner && $chatOwner->owner_id !== $linkingToken->owner_id) {
+        if ($chatOwner && (int) $chatOwner->owner_id !== (int) $linkingToken->owner_id) {
             Log::warning('TelegramWebhookService: chat ya vinculado a otro owner, se rechaza la vinculación', [
                 'chat_id' => $chatId,
                 'owner_id' => $linkingToken->owner_id,
                 'existing_owner_id' => $chatOwner->owner_id,
             ]);
 
-            $botToken = $chatOwner->telegram_bot_token
+            $botToken = $channelConfig['bot_token'] ?? $chatOwner->telegram_bot_token
                 ?: (WebSetting::getSettings()?->global_telegram_bot_token
                 ?: config('services.telegram.bot_token'));
 
@@ -297,10 +349,29 @@ class TelegramWebhookService
         $linkingToken->update([
             'used_at' => now(),
             'telegram_chat_id' => $chatId,
+            'external_id' => $chatId,
+            'channel' => ChannelConfigService::CHANNEL_TELEGRAM,
+            'bot_scope' => $botScope ?? $linkingToken->bot_scope,
         ]);
 
+        if ($botScope !== null) {
+            ChannelLink::updateOrCreate(
+                [
+                    'channel' => ChannelConfigService::CHANNEL_TELEGRAM,
+                    'bot_scope' => $botScope,
+                    'external_id' => $chatId,
+                ],
+                [
+                    'owner_id' => $linkingToken->owner_id,
+                    'linked_by_user_id' => $linkingToken->user_id,
+                    'linked_at' => now(),
+                    'revoked_at' => null,
+                ]
+            );
+        }
+
         // 3. Enviar confirmación al usuario vía Telegram API
-        $botToken = $credential?->telegram_bot_token
+        $botToken = $channelConfig['bot_token'] ?? $credential?->telegram_bot_token
             ?: (WebSetting::getSettings()?->global_telegram_bot_token
             ?: config('services.telegram.bot_token'));
 
@@ -312,7 +383,6 @@ class TelegramWebhookService
             'owner_id' => $linkingToken->owner_id,
             'user_id' => $linkingToken->user_id,
             'chat_id' => $chatId,
-            'token' => $token,
         ]);
 
         return [
@@ -321,9 +391,9 @@ class TelegramWebhookService
         ];
     }
 
-    private function sendInvalidTokenMessage(string $chatId): void
+    private function sendInvalidTokenMessage(string $chatId, ?array $channelConfig = null): void
     {
-        $botToken = WebSetting::getSettings()?->global_telegram_bot_token
+        $botToken = $channelConfig['bot_token'] ?? WebSetting::getSettings()?->global_telegram_bot_token
             ?: config('services.telegram.bot_token');
 
         if ($botToken) {
@@ -346,7 +416,9 @@ class TelegramWebhookService
         ?ChannelCredential $credential,
         string $chatId,
         string $text,
-        array $update
+        array $update,
+        ?array $channelConfig = null,
+        ?string $botScope = null
     ): array {
         $webSettings = WebSetting::getSettings();
 
@@ -354,15 +426,17 @@ class TelegramWebhookService
             $credential = ChannelCredential::where('owner_id', $tenantId)->first();
         }
 
-        $botToken = $credential?->telegram_bot_token
+        $botToken = $channelConfig['bot_token'] ?? $credential?->telegram_bot_token
             ?: ($webSettings?->global_telegram_bot_token
             ?: config('services.telegram.bot_token'));
 
-        $botUsername = $credential?->telegram_bot_username
+        $botUsername = $channelConfig['bot_username'] ?? $credential?->telegram_bot_username
             ?: ($webSettings?->global_telegram_bot_username
             ?: config('services.telegram.bot_username'));
 
-        $botType = $credential?->bot_type ?? 'oficial';
+        $botType = ($channelConfig['mode'] ?? null) === ChannelConfigService::MODE_CUSTOM
+            ? 'custom'
+            : ($credential?->bot_type ?? 'oficial');
 
         $linkingToken = null;
         if (! $isLinked && $tenantId) {
@@ -370,6 +444,8 @@ class TelegramWebhookService
             TelegramLinkingToken::create([
                 'owner_id' => $tenantId,
                 'token' => $linkingToken,
+                'channel' => ChannelConfigService::CHANNEL_TELEGRAM,
+                'bot_scope' => $botScope,
                 'expires_at' => now()->addMinutes(15),
                 'bot_type' => $botType === 'personal' ? 'custom' : 'global',
             ]);
