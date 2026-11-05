@@ -14,6 +14,10 @@ class Producto extends Model
 {
     use BelongsToOwner, HasFactory;
 
+    protected $attributes = [
+        'comision_cajero_por_unidad' => 0,
+    ];
+
     protected $fillable = [
         'user_id',
         'owner_id',
@@ -26,6 +30,7 @@ class Producto extends Model
         'categoria_id',
         'precio_compra',
         'precio_venta',
+        'comision_cajero_por_unidad',
         'stock_minimo',
         'envase_retornable',
         'envase_producto_id',
@@ -59,6 +64,7 @@ class Producto extends Model
         return [
             'precio_compra' => 'decimal:2',
             'precio_venta' => 'decimal:2',
+            'comision_cajero_por_unidad' => 'decimal:2',
             'activo' => 'boolean',
             'envase_retornable' => 'boolean',
             'medida_pesable' => 'boolean',
@@ -165,11 +171,18 @@ class Producto extends Model
 
     public function getMargenGananciaAttribute(): float
     {
-        if ($this->precio_compra == 0) {
-            return 0;
+        $precioVenta = (float) $this->precio_venta;
+
+        if ($precioVenta <= 0) {
+            return 0.0;
         }
 
-        return (($this->precio_venta - $this->precio_compra) / $this->precio_compra) * 100;
+        return (($precioVenta - (float) $this->precio_compra) / $precioVenta) * 100;
+    }
+
+    public function getMargenAbsolutoAttribute(): float
+    {
+        return (float) $this->precio_venta - (float) $this->precio_compra;
     }
 
     public function productoVariantes(): HasMany

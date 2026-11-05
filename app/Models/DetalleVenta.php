@@ -14,6 +14,10 @@ class DetalleVenta extends Model
 
     protected $table = 'detalle_ventas';
 
+    protected $attributes = [
+        'comision_cajero' => 0,
+    ];
+
     protected $fillable = [
         'venta_id',
         'producto_id',
@@ -23,6 +27,7 @@ class DetalleVenta extends Model
         'sku_variante_id',
         'subtotal',
         'ganancia',
+        'comision_cajero',
         'subtotal_metrica',
         'cantidad_retornada',
         'descuento_unitario',
@@ -36,6 +41,7 @@ class DetalleVenta extends Model
             'costo_unitario' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'ganancia' => 'decimal:2',
+            'comision_cajero' => 'decimal:2',
             'subtotal_metrica' => 'decimal:2',
             'cantidad_retornada' => 'integer',
             'descuento_unitario' => 'decimal:2',

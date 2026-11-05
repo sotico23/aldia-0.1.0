@@ -105,6 +105,7 @@ interface DesgloseMetodo {
 interface Metricas {
     dia: { total: number; cantidad: number };
     mes: { total: number; cantidad: number };
+    ganancia_cajero: { dia: number; periodo: number };
     ticket_promedio: number;
     metodo_predominante: DesgloseMetodo | null;
     desglose_metodos: DesgloseMetodo[];
@@ -144,6 +145,7 @@ interface ItemDetalle {
     precio_unitario: number;
     descuento_unitario: number;
     subtotal: number;
+    comision_cajero: number;
     cantidad_retornada: number;
 }
 
@@ -341,13 +343,16 @@ function TicketContenido({
                             <th className="px-3 py-2 text-right font-semibold">
                                 Total
                             </th>
+                            <th className="px-3 py-2 text-right font-semibold text-emerald-700 print:hidden">
+                                Comisión
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
                         {detalle.items.length === 0 ? (
                             <tr>
                                 <td
-                                    colSpan={4}
+                                    colSpan={5}
                                     className="px-3 py-6 text-center text-muted-foreground"
                                 >
                                     Esta venta no tiene productos registrados.
@@ -387,6 +392,12 @@ function TicketContenido({
                                     <td className="px-3 py-2 text-right font-bold">
                                         {formatCurrency(
                                             item.subtotal,
+                                            currencyCode,
+                                        )}
+                                    </td>
+                                    <td className="px-3 py-2 text-right font-semibold text-emerald-700 print:hidden">
+                                        {formatCurrency(
+                                            item.comision_cajero,
                                             currencyCode,
                                         )}
                                     </td>
@@ -443,6 +454,18 @@ function TicketContenido({
                     <span>Total</span>
                     <span className="text-emerald-600">
                         {formatCurrency(detalle.total, currencyCode)}
+                    </span>
+                </div>
+                <div className="flex justify-between rounded-md bg-emerald-50 px-3 py-2 font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 print:hidden">
+                    <span>Comisión del cajero</span>
+                    <span>
+                        {formatCurrency(
+                            detalle.items.reduce(
+                                (total, item) => total + item.comision_cajero,
+                                0,
+                            ),
+                            currencyCode,
+                        )}
                     </span>
                 </div>
             </div>
@@ -617,6 +640,11 @@ export default function MisVentas({
         (acumulado, metodo) => acumulado + metodo.total,
         0,
     );
+    const tituloGanancia = puede_ver_todos
+        ? filtros.cajero_id === null
+            ? 'Ganancia de Cajeros'
+            : 'Ganancia del Cajero'
+        : 'Mi Ganancia';
 
     return (
         <AppLayout
@@ -677,7 +705,7 @@ export default function MisVentas({
                 </div>
 
                 <div
-                    className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+                    className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
                     aria-busy={cargando}
                 >
                     <KpiCard
@@ -709,6 +737,26 @@ export default function MisVentas({
                         detalle="Promedio por documento hoy"
                         icono={ReceiptText}
                         acento="bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400"
+                    />
+                    <KpiCard
+                        titulo={`${tituloGanancia} de Hoy`}
+                        valor={formatCurrency(
+                            metricas.ganancia_cajero.dia,
+                            currency.code,
+                        )}
+                        detalle="Comisiones de documentos vigentes emitidos hoy"
+                        icono={Wallet}
+                        acento="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
+                    />
+                    <KpiCard
+                        titulo={`${tituloGanancia} del Período`}
+                        valor={formatCurrency(
+                            metricas.ganancia_cajero.periodo,
+                            currency.code,
+                        )}
+                        detalle={`${filtros.fecha_desde} a ${filtros.fecha_hasta}`}
+                        icono={TrendingUp}
+                        acento="bg-teal-50 text-teal-600 dark:bg-teal-950/40 dark:text-teal-400"
                     />
                     <Card className="overflow-hidden border-border/60 shadow-sm">
                         <CardContent className="p-5">
@@ -1028,8 +1076,7 @@ export default function MisVentas({
                                                 tabIndex={0}
                                                 onKeyDown={(event) => {
                                                     if (
-                                                        event.key ===
-                                                            'Enter' ||
+                                                        event.key === 'Enter' ||
                                                         event.key === ' '
                                                     ) {
                                                         event.preventDefault();
@@ -1120,7 +1167,9 @@ export default function MisVentas({
                                                             size="icon"
                                                             className="size-8"
                                                             aria-label={`Ver detalle de ${venta.documento}`}
-                                                            onClick={(event) => {
+                                                            onClick={(
+                                                                event,
+                                                            ) => {
                                                                 event.stopPropagation();
                                                                 abrirDetalle(
                                                                     venta,
@@ -1135,7 +1184,9 @@ export default function MisVentas({
                                                             size="icon"
                                                             className="size-8"
                                                             aria-label={`Reimprimir ${venta.documento}`}
-                                                            onClick={(event) => {
+                                                            onClick={(
+                                                                event,
+                                                            ) => {
                                                                 event.stopPropagation();
                                                                 abrirDetalle(
                                                                     venta,

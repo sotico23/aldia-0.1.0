@@ -22,6 +22,8 @@ import {
     Hash,
     XCircle,
     Calendar,
+    TrendingUp,
+    Wallet,
 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
@@ -96,6 +98,7 @@ interface Producto {
     categoria_id: number | null;
     precio_compra: number;
     precio_venta: number;
+    comision_cajero_por_unidad: number;
     stock_minimo: number;
     fecha_vencimiento: string | null;
     unidad_medida: 'unidad' | 'kg' | 'lt';
@@ -311,6 +314,7 @@ export default function Index({
         categoria_id: '' as string,
         precio_compra: 0,
         precio_venta: 0,
+        comision_cajero_por_unidad: 0,
         stock_minimo: 0,
         fecha_vencimiento: '',
         stock: 0,
@@ -336,6 +340,13 @@ export default function Index({
             selectedVariantIds.includes(v.id),
         );
     }, [selectedVariantIds, variantesDisponibles]);
+
+    const margenAbsoluto =
+        Number(data.precio_venta) - Number(data.precio_compra);
+    const margenPorcentual =
+        Number(data.precio_venta) > 0
+            ? (margenAbsoluto / Number(data.precio_venta)) * 100
+            : 0;
 
     const currentSkuSignature =
         data.tiene_variantes && selectedVariantIds.length > 0
@@ -754,6 +765,8 @@ export default function Index({
             categoria_id: producto.categoria_id?.toString() || '',
             precio_compra: producto.precio_compra,
             precio_venta: producto.precio_venta,
+            comision_cajero_por_unidad:
+                Number(producto.comision_cajero_por_unidad) || 0,
             stock_minimo: producto.stock_minimo,
             fecha_vencimiento: (producto as any).fecha_vencimiento || '',
             stock: producto.inventario?.cantidad || 0,
@@ -1830,7 +1843,7 @@ export default function Index({
                                             />
                                         </div>
 
-                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                             <div className="space-y-2 rounded-2xl border border-primary/10 bg-primary/5 p-4 transition-all hover:bg-primary/10">
                                                 <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-primary uppercase">
                                                     <ArrowDownZA className="h-3 w-3" />{' '}
@@ -1876,6 +1889,50 @@ export default function Index({
                                                     }
                                                     className="h-10 border-none bg-background text-lg font-black text-green-600 shadow-inner focus-visible:ring-green-500/20"
                                                 />
+                                            </div>
+                                            <div className="space-y-2 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 p-4">
+                                                <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-emerald-700 uppercase">
+                                                    <TrendingUp className="h-3 w-3" />
+                                                    Margen de Ganancia
+                                                </Label>
+                                                <p className="h-10 truncate text-lg font-black text-emerald-700">
+                                                    {formatCurrency(
+                                                        margenAbsoluto,
+                                                    )}
+                                                </p>
+                                                <p className="text-xs font-semibold text-muted-foreground">
+                                                    {margenPorcentual.toFixed(
+                                                        2,
+                                                    )}
+                                                    % sobre precio de venta
+                                                </p>
+                                            </div>
+                                            <div className="space-y-2 rounded-2xl border border-violet-500/10 bg-violet-500/5 p-4 transition-all hover:bg-violet-500/10">
+                                                <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-violet-700 uppercase">
+                                                    <Wallet className="h-3 w-3" />
+                                                    Comisión Cajero / Unidad
+                                                </Label>
+                                                <Input
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    value={
+                                                        data.comision_cajero_por_unidad
+                                                    }
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'comision_cajero_por_unidad',
+                                                            parseFloat(
+                                                                e.target.value,
+                                                            ) || 0,
+                                                        )
+                                                    }
+                                                    className="h-10 border-none bg-background text-lg font-black text-violet-700 shadow-inner focus-visible:ring-violet-500/20"
+                                                />
+                                                <p className="text-xs text-muted-foreground">
+                                                    Incentivo fijo por cada
+                                                    unidad vendida.
+                                                </p>
                                             </div>
                                             <div className="space-y-2 rounded-2xl border border-amber-500/10 bg-amber-500/5 p-4 transition-all hover:bg-amber-500/10">
                                                 <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-amber-600 uppercase">

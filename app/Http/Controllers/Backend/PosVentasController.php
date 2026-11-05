@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Asiento;
+use App\Models\DetalleVenta;
 use App\Models\Empleado;
 use App\Models\Tesoreria;
 use App\Models\Venta;
@@ -183,6 +184,7 @@ class PosVentasController extends Controller
                     'precio_unitario' => (float) $detalle->precio_unitario,
                     'descuento_unitario' => (float) $detalle->descuento_unitario,
                     'subtotal' => (float) $detalle->subtotal,
+                    'comision_cajero' => (float) $detalle->comision_cajero,
                     'cantidad_retornada' => (int) ($detalle->cantidad_retornada ?? 0),
                 ])->values(),
                 'puede_anular' => $this->puedeAnularVenta($venta),
@@ -242,7 +244,7 @@ class PosVentasController extends Controller
         try {
             DB::transaction(function () use ($venta, $validated) {
                 $motivo = trim((string) ($validated['motivo'] ?? ''));
-                $nota = "Anulada el ".now()->format('d/m/Y H:i').' por '.Auth::user()->name;
+                $nota = 'Anulada el '.now()->format('d/m/Y H:i').' por '.Auth::user()->name;
 
                 if ($motivo !== '') {
                     $nota .= ": {$motivo}";
@@ -404,6 +406,7 @@ class PosVentasController extends Controller
      * @return array{
      *     dia: array{total: float, cantidad: int},
      *     mes: array{total: float, cantidad: int},
+     *     ganancia_cajero: array{dia: float, periodo: float},
      *     ticket_promedio: float,
      *     metodo_predominante: array{clave: string, etiqueta: string, total: float, cantidad: int, porcentaje: float}|null,
      *     desglose_metodos: array<int, array{clave: string, etiqueta: string, total: float, cantidad: int, porcentaje: float}>
@@ -428,6 +431,21 @@ class PosVentasController extends Controller
 
         $desglose = $this->calcularDesgloseMetodos($base, $filtros);
         $predominante = $desglose[0] ?? null;
+        $gananciaCajeroDia = DetalleVenta::query()
+            ->whereIn(
+                'venta_id',
+                (clone $base)->whereDate('fecha', $hoy->toDateString())->select('ventas.id')
+            )
+            ->sum('comision_cajero');
+        $gananciaCajeroPeriodo = DetalleVenta::query()
+            ->whereIn(
+                'venta_id',
+                (clone $base)->entreFechas(
+                    $filtros['fecha_desde'],
+                    $filtros['fecha_hasta']
+                )->select('ventas.id')
+            )
+            ->sum('comision_cajero');
 
         $cantidadDia = (int) ($dia->cantidad ?? 0);
         $totalDia = (float) ($dia->total ?? 0);
@@ -440,6 +458,10 @@ class PosVentasController extends Controller
             'mes' => [
                 'total' => (float) ($mes->total ?? 0),
                 'cantidad' => (int) ($mes->cantidad ?? 0),
+            ],
+            'ganancia_cajero' => [
+                'dia' => (float) $gananciaCajeroDia,
+                'periodo' => (float) $gananciaCajeroPeriodo,
             ],
             'ticket_promedio' => $cantidadDia > 0 ? round($totalDia / $cantidadDia, 2) : 0.0,
             'metodo_predominante' => $predominante,

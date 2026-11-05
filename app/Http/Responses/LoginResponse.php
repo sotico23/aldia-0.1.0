@@ -22,6 +22,10 @@ class LoginResponse implements LoginResponseContract
             return redirect()->route('cliente.dashboard');
         }
 
+        if ($user && $user->esCajero()) {
+            return redirect()->route('cajero.dashboard');
+        }
+
         return $request->wantsJson()
             ? response()->json(['two_factor' => false])
             : redirect()->intended(Fortify::redirects('login'));

@@ -251,6 +251,7 @@ class ProductoController extends Controller implements HasMiddleware
             'categoria_id' => 'nullable|exists:categorias,id',
             'precio_compra' => 'required|integer|min:0',
             'precio_venta' => 'required|integer|min:0',
+            'comision_cajero_por_unidad' => 'nullable|numeric|min:0',
             'stock_minimo' => 'required|integer|min:0',
             'fecha_vencimiento' => 'nullable|date',
             'stock' => 'required|integer|min:0',
@@ -458,6 +459,7 @@ class ProductoController extends Controller implements HasMiddleware
             'categoria_id' => 'nullable|exists:categorias,id',
             'precio_compra' => 'nullable|numeric|min:0',
             'precio_venta' => 'nullable|numeric|min:0',
+            'comision_cajero_por_unidad' => 'nullable|numeric|min:0',
             'stock_minimo' => 'nullable|numeric|min:0',
             'fecha_vencimiento' => 'nullable|date',
             'stock' => 'nullable|numeric|min:0',
@@ -525,7 +527,7 @@ class ProductoController extends Controller implements HasMiddleware
 
         $updateData = array_intersect_key($validated, array_flip([
             'codigo', 'nombre', 'descripcion', 'categoria_id', 'precio_compra',
-            'precio_venta', 'stock_minimo', 'fecha_vencimiento', 'activo', 'unidad_medida',
+            'precio_venta', 'comision_cajero_por_unidad', 'stock_minimo', 'fecha_vencimiento', 'activo', 'unidad_medida',
             'envase_retornable', 'envase_producto_id', 'tipo_envase', 'medida_pesable',
             'tipo_medida', 'cantidad_medida', 'mostrar_en_perfil',
             'contenido_por_unidad', 'peso_base',

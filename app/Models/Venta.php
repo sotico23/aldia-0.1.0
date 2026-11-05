@@ -90,10 +90,12 @@ class Venta extends Model
      */
     public function scopeEntreFechas(Builder $query, Carbon|string $desde, Carbon|string $hasta): Builder
     {
-        return $query->whereBetween('fecha', [
-            $desde instanceof Carbon ? $desde->toDateString() : $desde,
-            $hasta instanceof Carbon ? $hasta->toDateString() : $hasta,
-        ]);
+        $fechaDesde = $desde instanceof Carbon ? $desde->toDateString() : $desde;
+        $fechaHasta = $hasta instanceof Carbon ? $hasta->toDateString() : $hasta;
+
+        return $query
+            ->whereDate('fecha', '>=', $fechaDesde)
+            ->whereDate('fecha', '<=', $fechaHasta);
     }
 
     /**

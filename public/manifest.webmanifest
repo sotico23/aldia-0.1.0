@@ -1,0 +1,26 @@
+{
+    "id": "/",
+    "name": "RedCliente",
+    "short_name": "RedCliente",
+    "description": "Gestiona tu negocio con RedCliente.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "any",
+    "theme_color": "#b91c1c",
+    "background_color": "#ffffff",
+    "icons": [
+        {
+            "src": "/icons/pwa-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icons/pwa-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

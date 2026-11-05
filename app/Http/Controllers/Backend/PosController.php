@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Backend;
 
+use App\Exports\CierresCajaExport;
+use App\Exports\FacturacionPosExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PromocionStoreRequest;
 use App\Http\Requests\PromocionUpdateRequest;
-use App\Exports\CierresCajaExport;
-use App\Exports\FacturacionPosExport;
 use App\Imports\CierresCajaImport;
 use App\Imports\FacturacionPosMetadataImport;
 use App\Models\Almacen;
@@ -21,14 +21,14 @@ use App\Models\DetalleVenta;
 use App\Models\Empleado;
 use App\Models\Entrega;
 use App\Models\Inventario;
-use App\Models\Producto;
 use App\Models\PosCierreCaja;
+use App\Models\Producto;
 use App\Models\Promocion;
 use App\Models\SkuVariante;
 use App\Models\Tesoreria;
 use App\Models\Venta;
-use App\Services\Inventory\SalesInventoryService;
 use App\Services\DeliveryStatsService;
+use App\Services\Inventory\SalesInventoryService;
 use App\Services\Sii\FacturacionSiiService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -483,6 +483,10 @@ class PosController extends Controller implements HasMiddleware
                         'descuento_unitario' => $descuentoUnitario ?: null,
                         'subtotal' => (int) round($precioUnitario * $item['cantidad']),
                         'ganancia' => $ganancia,
+                        'comision_cajero' => round(
+                            (float) $producto->comision_cajero_por_unidad * (float) $item['cantidad'],
+                            2
+                        ),
                         'subtotal_metrica' => 0,
                         'cantidad_retornada' => $item['cantidad_retornada'] ?? null,
                     ]);

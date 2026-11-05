@@ -102,6 +102,56 @@ test('un cajero sólo ve sus propias ventas y métricas', function () {
     expect($ventaAjena->id)->not->toBeIn([$ventaEfectivo->id, $ventaTarjeta->id]);
 });
 
+test('las métricas y el detalle muestran sólo las comisiones de las ventas vigentes del cajero', function () {
+    $owner = User::factory()->create();
+    $cajero = crearCajeroMisVentas($owner);
+    $otroCajero = crearCajeroMisVentas($owner);
+    otorgarPermisosMisVentas($cajero);
+    $this->actingAs($cajero);
+
+    $ownerId = $owner->getOwnerId();
+    $producto = Producto::factory()->create([
+        'owner_id' => $ownerId,
+        'categoria_id' => null,
+    ]);
+
+    $ventaHoy = crearVentaPosMisVentas($cajero, $ownerId);
+    $ventaPeriodo = crearVentaPosMisVentas($cajero, $ownerId, [
+        'fecha' => now()->subDay()->toDateString(),
+    ]);
+    $ventaAjena = crearVentaPosMisVentas($otroCajero, $ownerId);
+    $ventaAnulada = crearVentaPosMisVentas($cajero, $ownerId, [
+        'estado' => 'anulada',
+    ]);
+
+    foreach ([
+        [$ventaHoy, 150.25],
+        [$ventaPeriodo, 200],
+        [$ventaAjena, 500],
+        [$ventaAnulada, 900],
+    ] as [$venta, $comision]) {
+        DetalleVenta::create([
+            'venta_id' => $venta->id,
+            'producto_id' => $producto->id,
+            'cantidad' => 1,
+            'precio_unitario' => 1000,
+            'subtotal' => 1000,
+            'comision_cajero' => $comision,
+        ]);
+    }
+
+    $this->get(route('pos.mis-ventas', ['rango' => 'mes']))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('metricas.ganancia_cajero.dia', 150.25)
+            ->where('metricas.ganancia_cajero.periodo', 350.25)
+        );
+
+    $this->get(route('pos.mis-ventas.show', $ventaHoy))
+        ->assertSuccessful()
+        ->assertJsonPath('venta.items.0.comision_cajero', 150.25);
+});
+
 test('un supervisor puede consultar todos los cajeros o filtrar por uno', function () {
     $owner = User::factory()->create();
     $supervisor = User::factory()->create([
@@ -116,6 +166,30 @@ test('un supervisor puede consultar todos los cajeros o filtrar por uno', functi
 
     $ventaA = crearVentaPosMisVentas($cajeroA, $owner->getOwnerId());
     $ventaB = crearVentaPosMisVentas($cajeroB, $owner->getOwnerId());
+    $producto = Producto::factory()->create([
+        'owner_id' => $owner->getOwnerId(),
+        'categoria_id' => null,
+    ]);
+    $this->actingAs($supervisor);
+
+    DetalleVenta::create([
+        'owner_id' => $owner->getOwnerId(),
+        'venta_id' => $ventaA->id,
+        'producto_id' => $producto->id,
+        'cantidad' => 1,
+        'precio_unitario' => 1000,
+        'subtotal' => 1000,
+        'comision_cajero' => 10,
+    ]);
+    DetalleVenta::create([
+        'owner_id' => $owner->getOwnerId(),
+        'venta_id' => $ventaB->id,
+        'producto_id' => $producto->id,
+        'cantidad' => 1,
+        'precio_unitario' => 1000,
+        'subtotal' => 1000,
+        'comision_cajero' => 20,
+    ]);
 
     $this->actingAs($supervisor)
         ->get(route('pos.mis-ventas', ['cajero_id' => 'all']))
@@ -123,6 +197,8 @@ test('un supervisor puede consultar todos los cajeros o filtrar por uno', functi
         ->assertInertia(fn (Assert $page) => $page
             ->where('puede_ver_todos', true)
             ->where('filtros.cajero_id', null)
+            ->where('metricas.ganancia_cajero.dia', fn ($total) => (float) $total === 30.0)
+            ->where('metricas.ganancia_cajero.periodo', fn ($total) => (float) $total === 30.0)
             ->where('ventas.data', fn ($data) => $data->pluck('id')->sort()->values()->all()
                 === collect([$ventaA->id, $ventaB->id])->sort()->values()->all())
         );
@@ -132,6 +208,8 @@ test('un supervisor puede consultar todos los cajeros o filtrar por uno', functi
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page
             ->where('filtros.cajero_id', $cajeroB->id)
+            ->where('metricas.ganancia_cajero.dia', fn ($total) => (float) $total === 20.0)
+            ->where('metricas.ganancia_cajero.periodo', fn ($total) => (float) $total === 20.0)
             ->has('ventas.data', 1)
             ->where('ventas.data.0.id', $ventaB->id)
         );

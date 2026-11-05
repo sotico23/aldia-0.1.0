@@ -6,7 +6,12 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => ($appearance ?? 'system') == 'dark'])>
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <meta name="theme-color" content="#b91c1c">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="apple-mobile-web-app-title" content="RedCliente">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         {{-- Inline script to detect system dark mode preference and apply it immediately --}}
@@ -52,7 +57,8 @@
 
         <link rel="icon" href="{{ $faviconUrl }}" sizes="any">
         <link rel="icon" href="{{ $faviconSvg }}" type="image/svg+xml">
-        <link rel="apple-touch-icon" href="{{ $webSettings->app_logo ?: '/apple-touch-icon.png' }}">
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+        <link rel="manifest" href="/manifest.webmanifest">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
@@ -60,6 +66,27 @@
         @viteReactRefresh
         @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         @inertiaHead
+
+        <script nonce="{{ $cspNonce }}">
+            (() => {
+                const registerServiceWorker = () => {
+                    if (!('serviceWorker' in navigator)) {
+                        return;
+                    }
+
+                    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                        .catch((error) => {
+                            console.error('No se pudo registrar el service worker de RedCliente.', error);
+                        });
+                };
+
+                if (document.readyState === 'complete') {
+                    registerServiceWorker();
+                } else {
+                    window.addEventListener('load', registerServiceWorker, { once: true });
+                }
+            })();
+        </script>
     </head>
     <body class="font-sans antialiased">
         @inertia

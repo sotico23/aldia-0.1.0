@@ -40,6 +40,10 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
+        if ($user->esCajero()) {
+            return redirect()->route('cajero.dashboard');
+        }
+
         $ownerId = $user->getOwnerId();
         $anioActual = now()->year;
         $mesActual = now()->month;

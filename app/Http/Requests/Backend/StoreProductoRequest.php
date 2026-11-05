@@ -20,6 +20,7 @@ class StoreProductoRequest extends FormRequest
             'categoria_id' => ['nullable', 'exists:categorias,id'],
             'precio_compra' => ['nullable', 'numeric', 'min:0'],
             'precio_venta' => ['required', 'numeric', 'min:0'],
+            'comision_cajero_por_unidad' => ['nullable', 'numeric', 'min:0'],
             'stock_minimo' => ['nullable', 'integer', 'min:0'],
             'envase_retornable' => ['nullable', 'boolean'],
             'medida_pesable' => ['nullable', 'boolean'],

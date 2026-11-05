@@ -439,6 +439,11 @@ export const mainNavItems: ExtendedNavItem[] = [
         ],
         items: [
             {
+                title: 'Mi Caja',
+                href: buildRouteUrl('/mi-caja'),
+                permission: 'ventas.pos.viewAny',
+            },
+            {
                 title: 'Terminal POS',
                 href: buildRouteUrl('/pos'),
                 permission: 'ventas.pos.viewAny',

@@ -345,6 +345,22 @@ class User extends Authenticatable
         return $this->hasRole('Proveedor') && $this->proveedor()->withoutGlobalScopes()->exists();
     }
 
+    /**
+     * Determina si el usuario opera caja/POS y debe aterrizar en el dashboard
+     * individual de cajero. Se excluyen los perfiles directivos o de gestion.
+     */
+    public function esCajero(): bool
+    {
+        if ($this->hasAnyRole(['Master', 'Super Admin', 'Administrador', 'Owner', 'Supervisor'])) {
+            return false;
+        }
+
+        $operaCaja = $this->hasAnyRole(['Cajero', 'Empleado'])
+            || $this->empleado()->withoutGlobalScopes()->exists();
+
+        return $operaCaja && $this->can('ventas.pos.viewAny');
+    }
+
     public function getProveedorActual(): ?Proveedor
     {
         if ($this->hasRole('Proveedor')) {

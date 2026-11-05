@@ -114,6 +114,7 @@ test('pos store guarda el cajero y la ganancia potencial por item', function () 
     grantPosPermissions($user);
 
     [$almacen, $cliente, $producto] = makePosContext($user);
+    $producto->update(['comision_cajero_por_unidad' => 250.50]);
     $empleado = makeEmpleado($user);
 
     $venta = registrarVentaPos($user, $almacen, $cliente, $producto, $empleado, 2);
@@ -124,6 +125,7 @@ test('pos store guarda el cajero y la ganancia potencial por item', function () 
 
     expect((float) $detalle->costo_unitario)->toBe(3000.0)
         ->and((float) $detalle->ganancia)->toBe(14000.0)
+        ->and((float) $detalle->comision_cajero)->toBe(501.0)
         ->and((float) $detalle->precio_unitario)->toBe(10000.0)
         ->and((float) $detalle->cantidad)->toBe(2.0);
 });

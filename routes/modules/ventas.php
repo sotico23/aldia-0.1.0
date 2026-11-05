@@ -1,11 +1,16 @@
 <?php
 
+use App\Http\Controllers\Backend\CajeroDashboardController;
 use App\Http\Controllers\Backend\CuponController;
 use App\Http\Controllers\Backend\PosController;
 use App\Http\Controllers\Backend\PosVentasController;
 use App\Http\Controllers\Backend\VarianteController;
 use App\Http\Controllers\Backend\VentaController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('mi-caja', [CajeroDashboardController::class, 'index'])
+    ->middleware(['permission:ventas.pos.viewAny', 'throttle:dashboard'])
+    ->name('cajero.dashboard');
 
 Route::middleware(['permission:ventas.ventas.viewAny'])->group(function () {
     Route::resource('ventas', VentaController::class)->except(['create', 'show', 'edit'])->middleware('ownership:venta');
