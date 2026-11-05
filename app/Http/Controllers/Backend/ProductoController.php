@@ -245,12 +245,12 @@ class ProductoController extends Controller implements HasMiddleware
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'codigo' => 'required|string|max:50|unique:productos,codigo',
+            'codigo' => 'nullable|string|max:50|unique:productos,codigo',
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'categoria_id' => 'nullable|exists:categorias,id',
-            'precio_compra' => 'required|integer|min:0',
-            'precio_venta' => 'required|integer|min:0',
+            'precio_compra' => 'required|numeric|min:0',
+            'precio_venta' => 'required|numeric|min:0',
             'comision_cajero_por_unidad' => 'nullable|numeric|min:0',
             'stock_minimo' => 'required|integer|min:0',
             'fecha_vencimiento' => 'nullable|date',
@@ -331,6 +331,10 @@ class ProductoController extends Controller implements HasMiddleware
 
         if (! isset($data['medida_pesable'])) {
             $data['medida_pesable'] = false;
+        }
+
+        if (in_array($data['unidad_medida'], ['kg', 'lt'], true)) {
+            $data['medida_pesable'] = true;
         }
 
         if (! isset($data['tipo_medida']) || empty($data['tipo_medida'])) {
@@ -415,7 +419,7 @@ class ProductoController extends Controller implements HasMiddleware
             // Legacy System A (deprecated)
             foreach ($request->variantes_legacy as $varianteData) {
                 $child = Producto::create(array_merge($data, [
-                    'codigo' => $varianteData['codigo'] ?? $producto->codigo.'-'.strtoupper($varianteData['talla']),
+                    'codigo' => $varianteData['codigo'] ?? ($producto->codigo ? $producto->codigo.'-'.strtoupper($varianteData['talla']) : null),
                     'nombre' => $producto->nombre.' - '.strtoupper($varianteData['talla']),
                     'talla' => $varianteData['talla'],
                     'tiene_variantes' => false,
@@ -509,6 +513,10 @@ class ProductoController extends Controller implements HasMiddleware
 
         if (empty($request->envase_producto_id) || $request->envase_producto_id === 'none') {
             $request->merge(['envase_producto_id' => null]);
+        }
+
+        if (in_array($validated['unidad_medida'] ?? $producto->unidad_medida, ['kg', 'lt'], true)) {
+            $validated['medida_pesable'] = true;
         }
 
         // Validar configuración de recargas de gas (cilindros retornables)
@@ -665,7 +673,7 @@ class ProductoController extends Controller implements HasMiddleware
 
             foreach ($request->variantes_legacy as $varianteData) {
                 $childData = array_merge($updateDataFiltered, [
-                    'codigo' => $varianteData['codigo'] ?: $producto->codigo.'-'.strtoupper($varianteData['talla']),
+                    'codigo' => $varianteData['codigo'] ?: ($producto->codigo ? $producto->codigo.'-'.strtoupper($varianteData['talla']) : null),
                     'nombre' => $producto->nombre.' - '.strtoupper($varianteData['talla']),
                     'talla' => $varianteData['talla'],
                     'tiene_variantes' => false,

@@ -3,6 +3,7 @@
 use App\Models\Almacen;
 use App\Models\Cliente;
 use App\Models\Cupon;
+use App\Models\CuponUsoDetalle;
 use App\Models\CuponUso;
 use App\Models\Inventario;
 use App\Models\InventoryMovement;
@@ -557,6 +558,67 @@ test('pos store with vale_producto coupon percentage applies per-product discoun
     expect((float) $uso->monto_descuento)->toBe((float) $descuentoCupon);
 
     expect($cupon->fresh()->usos_actuales)->toBe(1);
+});
+
+test('vale_producto conserva cantidades fraccionadas para productos por peso', function () {
+    $user = createPosUser();
+    $ownerId = $user->id;
+
+    $cliente = Cliente::factory()->create(['owner_id' => $ownerId]);
+    $almacen = Almacen::factory()->create(['owner_id' => $ownerId]);
+    $producto = Producto::factory()->create([
+        'owner_id' => $ownerId,
+        'categoria_id' => null,
+        'precio_venta' => 5000,
+        'unidad_medida' => 'kg',
+        'medida_pesable' => true,
+    ]);
+    Inventario::factory()->create([
+        'producto_id' => $producto->id,
+        'almacen_id' => $almacen->id,
+        'cantidad' => 100,
+        'owner_id' => $ownerId,
+    ]);
+
+    $cupon = Cupon::factory()->create([
+        'owner_id' => $ownerId,
+        'user_id' => $ownerId,
+        'codigo' => 'PESO10PCT',
+        'tipo' => 'vale_producto',
+        'valor' => 10,
+        'max_usos' => 10,
+        'fecha_inicio' => now()->subDay(),
+        'fecha_fin' => now()->addMonth(),
+        'activa' => true,
+    ]);
+    $cupon->productos()->attach($producto->id, [
+        'descuento_tipo' => 'porcentaje',
+        'descuento_valor' => 10,
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('pos.store'), [
+            'cliente_id' => $cliente->id,
+            'metodo_pago' => 'efectivo',
+            'tipo_documento' => 'boleta',
+            'items' => [[
+                'producto_id' => $producto->id,
+                'cantidad' => 0.5,
+                'precio' => 5000,
+            ]],
+            'subtotal' => 2500,
+            'iva' => 0,
+            'total' => 2500,
+            'almacen_id' => $almacen->id,
+            'cupon_codigo' => $cupon->codigo,
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    $detalleCupon = CuponUsoDetalle::query()->firstOrFail();
+
+    expect((float) $detalleCupon->cantidad)->toBe(0.5)
+        ->and((float) $detalleCupon->precio_unitario)->toBe(5000.0);
 });
 
 // ============================================================================

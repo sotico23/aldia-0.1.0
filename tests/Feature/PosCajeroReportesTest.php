@@ -130,6 +130,58 @@ test('pos store guarda el cajero y la ganancia potencial por item', function () 
         ->and((float) $detalle->cantidad)->toBe(2.0);
 });
 
+test('pos store calcula precio y comision proporcional al peso vendido', function () {
+    $user = User::factory()->create();
+    $user->syncRoles([]);
+    grantPosPermissions($user);
+
+    [$almacen, $cliente, $producto] = makePosContext($user);
+    $producto->update([
+        'precio_venta' => 5000,
+        'comision_cajero_por_unidad' => 500,
+        'unidad_medida' => 'kg',
+        'medida_pesable' => true,
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('pos.store'), [
+            'cliente_id' => $cliente->id,
+            'metodo_pago' => 'efectivo',
+            'tipo_documento' => 'boleta',
+            'items' => [[
+                'producto_id' => $producto->id,
+                'cantidad' => 0.5,
+                'precio' => 9999,
+            ]],
+            'subtotal' => 4999.5,
+            'iva' => 0,
+            'total' => 4999.5,
+            'almacen_id' => $almacen->id,
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    $venta = Venta::latest('id')->firstOrFail();
+    $detalle = $venta->detalleVentas()->firstOrFail();
+
+    expect((float) $venta->subtotal)->toBe(2500.0)
+        ->and((float) $detalle->cantidad)->toBe(0.5)
+        ->and((float) $detalle->precio_unitario)->toBe(5000.0)
+        ->and((float) $detalle->subtotal)->toBe(2500.0)
+        ->and((float) $detalle->comision_cajero)->toBe(250.0);
+
+    $this->get(route('pos.mis-ventas'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('metricas.ganancia_cajero.dia', 250)
+        );
+
+    $this->get(route('pos.mis-ventas.show', $venta))
+        ->assertSuccessful()
+        ->assertJsonPath('venta.items.0.cantidad', 0.5)
+        ->assertJsonPath('venta.items.0.comision_cajero', 250);
+});
+
 test('pos store rechaza cajeros de otro owner', function () {
     $user = User::factory()->create();
     $user->syncRoles([]);

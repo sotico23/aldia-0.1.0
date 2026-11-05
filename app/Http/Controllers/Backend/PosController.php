@@ -90,7 +90,7 @@ class PosController extends Controller implements HasMiddleware
                     'unidad_medida' => $producto->unidad_medida,
                     'peso_base' => $producto->peso_base,
                     'contenido_por_unidad' => $producto->contenido_por_unidad,
-                    'medida_pesable' => $producto->medida_pesable,
+                    'medida_pesable' => $producto->medida_pesable || in_array($producto->unidad_medida, ['kg', 'lt'], true),
                     'imagen' => $producto->imagen,
                     'tiene_variantes' => $producto->tiene_variantes,
                     'envase_retornable' => $producto->envase_retornable,
@@ -207,7 +207,7 @@ class PosController extends Controller implements HasMiddleware
             'items' => 'required|array|min:1',
             'items.*.producto_id' => ['required', Rule::exists('productos', 'id')->where('owner_id', $ownerId)],
             'items.*.sku_variante_id' => ['nullable', Rule::exists('skus', 'id')->where('owner_id', $ownerId)],
-            'items.*.cantidad' => 'required|numeric|min:0.001',
+            'items.*.cantidad' => ['required', 'numeric', 'decimal:0,3', 'min:0.001'],
             'items.*.precio' => 'required|numeric|min:0',
             'items.*.cantidad_retornada' => 'nullable|integer|min:0',
             'subtotal' => 'required|numeric',
@@ -320,10 +320,33 @@ class PosController extends Controller implements HasMiddleware
                     }
                 }
 
-                // Recalcular subtotal server-side (no confiar en el cliente)
+                $productIds = collect($request->items)->pluck('producto_id')->unique()->toArray();
+                $skuIds = collect($request->items)->pluck('sku_variante_id')->filter()->unique()->toArray();
+                $productosMap = Producto::where('owner_id', $ownerId)
+                    ->whereIn('id', $productIds)
+                    ->get()
+                    ->keyBy('id');
+                $skusMap = ! empty($skuIds)
+                    ? SkuVariante::where('owner_id', $ownerId)->whereIn('id', $skuIds)->get()->keyBy('id')
+                    : collect();
+
+                $obtenerPrecioUnitario = static function (array $item) use ($productosMap, $skusMap): float {
+                    $producto = $productosMap->get((int) $item['producto_id']);
+                    $sku = isset($item['sku_variante_id'])
+                        ? $skusMap->get((int) $item['sku_variante_id'])
+                        : null;
+
+                    if ($producto && ($producto->medida_pesable || in_array($producto->unidad_medida, ['kg', 'lt'], true))) {
+                        return (float) round((float) ($sku?->precio_venta ?? $producto->precio_venta));
+                    }
+
+                    return (float) $item['precio'];
+                };
+
+                // Recalcular subtotal desde el precio por medida vigente del producto.
                 $subtotalCalculado = 0.0;
                 foreach ($request->items as $item) {
-                    $subtotalCalculado += (float) $item['cantidad'] * (float) $item['precio'];
+                    $subtotalCalculado += round((float) $item['cantidad'] * $obtenerPrecioUnitario($item));
                 }
 
                 $incluyeIva = (bool) ($validated['incluye_iva'] ?? true);
@@ -344,7 +367,7 @@ class PosController extends Controller implements HasMiddleware
                     $items = collect($request->items)->map(fn ($item) => [
                         'producto_id' => $item['producto_id'],
                         'cantidad' => $item['cantidad'],
-                        'precio_unitario' => $item['precio'],
+                        'precio_unitario' => $obtenerPrecioUnitario($item),
                     ])->toArray();
 
                     $montoCupon = $cupon->calcularDescuentoProductos($items);
@@ -429,7 +452,7 @@ class PosController extends Controller implements HasMiddleware
                             }
                             $pivot = $productosConfig->get($productoId)->pivot;
                             $cantidad = (float) $item['cantidad'];
-                            $precioUnitario = (float) $item['precio'];
+                            $precioUnitario = $obtenerPrecioUnitario($item);
                             $descuentoItem = 0.0;
 
                             if ($pivot->descuento_tipo === 'precio_fijo' && $pivot->descuento_valor > 0) {
@@ -441,7 +464,7 @@ class PosController extends Controller implements HasMiddleware
                             CuponUsoDetalle::create([
                                 'cupon_uso_id' => $uso->id,
                                 'producto_id' => $productoId,
-                                'cantidad' => (int) $cantidad,
+                                'cantidad' => $cantidad,
                                 'precio_unitario' => $precioUnitario,
                                 'descuento_tipo' => $pivot->descuento_tipo,
                                 'descuento_valor' => $pivot->descuento_valor,
@@ -451,17 +474,12 @@ class PosController extends Controller implements HasMiddleware
                     }
                 }
 
-                $productIds = collect($request->items)->pluck('producto_id')->unique()->toArray();
-                $skuIds = collect($request->items)->pluck('sku_variante_id')->filter()->unique()->toArray();
-                $productosMap = Producto::whereIn('id', $productIds)->get()->keyBy('id');
-                $skusMap = ! empty($skuIds) ? SkuVariante::whereIn('id', $skuIds)->get()->keyBy('id') : collect();
-
                 // Crear DetalleVenta para los productos principales
                 foreach ($request->items as $item) {
                     $producto = $productosMap->get($item['producto_id']) ?? Producto::findOrFail($item['producto_id']);
                     $skuId = $item['sku_variante_id'] ?? null;
                     $sku = $skuId ? $skusMap->get($skuId) : null;
-                    $precioUnitario = (int) round($item['precio']);
+                    $precioUnitario = (int) round($obtenerPrecioUnitario($item));
                     $descuentoUnitario = isset($item['descuento']) ? (int) round($item['descuento']) : 0;
 
                     $costoUnitario = $sku && $sku->precio_compra !== null

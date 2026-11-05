@@ -157,6 +157,56 @@ interface CartItem {
     envase_retornable?: boolean;
     envase_precio?: number;
     cantidad_retornada?: number;
+    montoIngresado?: string;
+}
+
+function MontoPorMedida({
+    item,
+    onChange,
+    onBlur,
+}: {
+    item: CartItem;
+    onChange: (value: string) => void;
+    onBlur: () => void;
+}) {
+    const unidad = item.unidad_medida === 'kg' ? 'kg' : 'L';
+
+    return (
+        <div className="flex items-center justify-between gap-3 border-t bg-emerald-50/50 p-2 dark:bg-emerald-950/10">
+            <div className="min-w-0">
+                <Label
+                    htmlFor={`monto-${item.cartId}`}
+                    className="text-[10px] font-bold text-emerald-700 uppercase dark:text-emerald-400"
+                >
+                    Monto a cobrar
+                </Label>
+                <p className="text-[10px] text-muted-foreground">
+                    Equivale a {item.cantidad.toFixed(3)} {unidad} a{' '}
+                    {formatCurrency(item.precio_venta)} / {unidad}
+                </p>
+            </div>
+            <div className="flex w-36 shrink-0 items-center gap-1">
+                <span className="text-xs font-semibold text-muted-foreground">
+                    $
+                </span>
+                <Input
+                    id={`monto-${item.cartId}`}
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={
+                        item.montoIngresado ??
+                        String(Math.round(item.precio_venta * item.cantidad))
+                    }
+                    onChange={(event) => onChange(event.target.value)}
+                    onBlur={onBlur}
+                    disabled={item.precio_venta <= 0}
+                    className="h-8 text-right text-sm font-bold"
+                    aria-label={`Monto a cobrar por ${item.nombre}`}
+                />
+            </div>
+        </div>
+    );
 }
 
 function DeliveryControls({
@@ -593,7 +643,9 @@ export default function PosIndex({
                 );
                 envaseCost = pend * item.envase_precio;
             }
-            return acc + item.precio_venta * item.cantidad + envaseCost;
+            return (
+                acc + Math.round(item.precio_venta * item.cantidad) + envaseCost
+            );
         }, 0);
     }, [cart]);
 
@@ -720,6 +772,12 @@ export default function PosIndex({
                                   cantidad: parseFloat(
                                       (item.cantidad + 1).toFixed(3),
                                   ),
+                                  montoIngresado: String(
+                                      Math.round(
+                                          item.precio_venta *
+                                              (item.cantidad + 1),
+                                      ),
+                                  ),
                                   cantidad_retornada: item.envase_retornable
                                       ? Math.min(
                                             Math.floor(item.cantidad + 1),
@@ -759,6 +817,7 @@ export default function PosIndex({
                             producto.contenido_por_unidad ?? 1,
                         medida_pesable: producto.medida_pesable,
                         modoGramos: false,
+                        montoIngresado: String(Math.round(precio * step)),
                         envase_retornable: (producto as any).envase_retornable,
                         envase_precio: (producto as any).envase_precio,
                         // Para cilindros de gas (retornables con unidad_medida='unidad' y medida_pesable=false),
@@ -854,7 +913,8 @@ export default function PosIndex({
     };
 
     const esGrameable = (item: CartItem) =>
-        item.unidad_medida === 'kg' || item.unidad_medida === 'lt';
+        (item.medida_pesable ?? false) &&
+        (item.unidad_medida === 'kg' || item.unidad_medida === 'lt');
 
     const toggleModoGramos = (cartId: string) => {
         setCart((prev) =>
@@ -873,19 +933,18 @@ export default function PosIndex({
                     if (item.modoGramos) {
                         const gramos = Math.round(item.cantidad * 1000);
                         const nuevosGramos = Math.max(1, gramos + delta);
+                        const cantidad = parseFloat(
+                            (nuevosGramos / 1000).toFixed(3),
+                        );
                         return {
                             ...item,
-                            cantidad: parseFloat(
-                                (nuevosGramos / 1000).toFixed(3),
+                            cantidad,
+                            montoIngresado: String(
+                                Math.round(item.precio_venta * cantidad),
                             ),
                         };
                     }
-                    const step =
-                        (item.medida_pesable ?? false) &&
-                        (item.unidad_medida === 'kg' ||
-                            item.unidad_medida === 'lt')
-                            ? 0.1
-                            : 1;
+                    const step = esGrameable(item) ? 0.001 : 1;
                     const finalDelta = delta > 0 ? step : -step;
                     const nuevaCantidad = Math.max(
                         step,
@@ -895,6 +954,9 @@ export default function PosIndex({
                     return {
                         ...item,
                         cantidad: parseFloat(nuevaCantidad.toFixed(3)),
+                        montoIngresado: String(
+                            Math.round(item.precio_venta * nuevaCantidad),
+                        ),
                         cantidad_retornada: item.envase_retornable
                             ? Math.min(
                                   maxRetornada,
@@ -915,24 +977,26 @@ export default function PosIndex({
                 if (item.cartId === cartId) {
                     if (item.modoGramos) {
                         const nuevosGramos = Math.max(1, value || 0);
+                        const cantidad = parseFloat(
+                            (nuevosGramos / 1000).toFixed(3),
+                        );
                         return {
                             ...item,
-                            cantidad: parseFloat(
-                                (nuevosGramos / 1000).toFixed(3),
+                            cantidad,
+                            montoIngresado: String(
+                                Math.round(item.precio_venta * cantidad),
                             ),
                         };
                     }
-                    const step =
-                        (item.medida_pesable ?? false) &&
-                        (item.unidad_medida === 'kg' ||
-                            item.unidad_medida === 'lt')
-                            ? 0.1
-                            : 1;
+                    const step = esGrameable(item) ? 0.001 : 1;
                     const nuevaCantidad = Math.max(step, value || 0);
                     const maxRetornada = Math.floor(nuevaCantidad);
                     return {
                         ...item,
                         cantidad: parseFloat(nuevaCantidad.toFixed(3)),
+                        montoIngresado: String(
+                            Math.round(item.precio_venta * nuevaCantidad),
+                        ),
                         cantidad_retornada: item.envase_retornable
                             ? Math.min(
                                   maxRetornada,
@@ -946,6 +1010,48 @@ export default function PosIndex({
                 }
                 return item;
             }),
+        );
+    };
+
+    const setMontoItem = (cartId: string, value: string) => {
+        setCart((prev) =>
+            prev.map((item) => {
+                if (item.cartId !== cartId) {
+                    return item;
+                }
+
+                const monto = Number(value);
+                const cantidad =
+                    Number.isFinite(monto) && monto > 0 && item.precio_venta > 0
+                        ? Math.max(
+                              0.001,
+                              parseFloat(
+                                  (monto / item.precio_venta).toFixed(3),
+                              ),
+                          )
+                        : item.cantidad;
+
+                return {
+                    ...item,
+                    montoIngresado: value,
+                    cantidad,
+                };
+            }),
+        );
+    };
+
+    const normalizarMontoItem = (cartId: string) => {
+        setCart((prev) =>
+            prev.map((item) =>
+                item.cartId === cartId
+                    ? {
+                          ...item,
+                          montoIngresado: String(
+                              Math.round(item.precio_venta * item.cantidad),
+                          ),
+                      }
+                    : item,
+            ),
         );
     };
 
@@ -1138,7 +1244,9 @@ export default function PosIndex({
     ) => {
         if (cart.length === 0) return;
         if (hasDelivery && !deliveryRecipientName.trim()) {
-            toast.error('Ingrese el nombre del cliente que recibe el despacho.');
+            toast.error(
+                'Ingrese el nombre del cliente que recibe el despacho.',
+            );
             return;
         }
         if (hasDelivery && !deliveryPhone.trim()) {
@@ -1188,9 +1296,7 @@ export default function PosIndex({
                 hasDelivery && deliveryDistanceKm
                     ? Number(deliveryDistanceKm)
                     : null,
-            delivery_recipient_name: hasDelivery
-                ? deliveryRecipientName
-                : '',
+            delivery_recipient_name: hasDelivery ? deliveryRecipientName : '',
             delivery_phone: hasDelivery ? deliveryPhone : '',
             delivery_address: hasDelivery ? deliveryAddress : '',
             delivery_commune: hasDelivery ? deliveryCommune : '',
@@ -1670,14 +1776,14 @@ export default function PosIndex({
                                                         item.modoGramos
                                                             ? '1'
                                                             : esGrameable(item)
-                                                              ? '0.1'
+                                                              ? '0.001'
                                                               : '1'
                                                     }
                                                     min={
                                                         item.modoGramos
                                                             ? '1'
                                                             : esGrameable(item)
-                                                              ? '0.1'
+                                                              ? '0.001'
                                                               : '1'
                                                     }
                                                     value={
@@ -1766,6 +1872,17 @@ export default function PosIndex({
                                             </div>
                                         </div>
                                     </div>
+                                    {esGrameable(item) && (
+                                        <MontoPorMedida
+                                            item={item}
+                                            onChange={(value) =>
+                                                setMontoItem(item.cartId, value)
+                                            }
+                                            onBlur={() =>
+                                                normalizarMontoItem(item.cartId)
+                                            }
+                                        />
+                                    )}
                                     {item.envase_retornable && (
                                         <div className="flex items-center justify-between gap-2 border-t bg-orange-50/50 p-2 dark:bg-orange-900/10">
                                             <div className="text-[10px] leading-tight font-semibold text-muted-foreground uppercase">
@@ -2445,7 +2562,7 @@ export default function PosIndex({
                                                                     : esGrameable(
                                                                             item,
                                                                         )
-                                                                      ? '0.1'
+                                                                      ? '0.001'
                                                                       : '1'
                                                             }
                                                             min={
@@ -2454,7 +2571,7 @@ export default function PosIndex({
                                                                     : esGrameable(
                                                                             item,
                                                                         )
-                                                                      ? '0.1'
+                                                                      ? '0.001'
                                                                       : '1'
                                                             }
                                                             value={
@@ -2546,6 +2663,22 @@ export default function PosIndex({
                                                     </div>
                                                 </div>
                                             </div>
+                                            {esGrameable(item) && (
+                                                <MontoPorMedida
+                                                    item={item}
+                                                    onChange={(value) =>
+                                                        setMontoItem(
+                                                            item.cartId,
+                                                            value,
+                                                        )
+                                                    }
+                                                    onBlur={() =>
+                                                        normalizarMontoItem(
+                                                            item.cartId,
+                                                        )
+                                                    }
+                                                />
+                                            )}
                                             {item.envase_retornable && (
                                                 <div className="flex items-center justify-between gap-2 border-t bg-orange-50/50 p-2 dark:bg-orange-900/10">
                                                     <div className="text-[10px] leading-tight font-semibold text-muted-foreground uppercase">
@@ -3213,7 +3346,8 @@ export default function PosIndex({
                                 </div>
 
                                 {canEmitDte &&
-                                    ultimaVenta.tipoDocumento !== 'cotizacion' &&
+                                    ultimaVenta.tipoDocumento !==
+                                        'cotizacion' &&
                                     ultimaVenta.ventaId && (
                                         <Button
                                             variant="default"

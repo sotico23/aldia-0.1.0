@@ -22,6 +22,7 @@ class CuponUsoDetalle extends Model
     protected function casts(): array
     {
         return [
+            'cantidad' => 'float',
             'precio_unitario' => 'decimal:2',
             'descuento_valor' => 'decimal:2',
             'monto_descuento' => 'decimal:2',

@@ -71,6 +71,37 @@ test('crea producto basico sin variantes', function () {
     ]);
 });
 
+test('crea producto sin codigo sku', function () {
+    $data = defaultProductData(['nombre' => 'Producto sin codigo']);
+    unset($data['codigo']);
+
+    $this->post(route('productos.store'), $data)->assertSessionDoesntHaveErrors();
+
+    $this->assertDatabaseHas('productos', [
+        'codigo' => null,
+        'nombre' => 'Producto sin codigo',
+    ]);
+});
+
+test('crea productos por peso guardando precio y comision por kilogramo', function () {
+    $this->post(route('productos.store'), defaultProductData([
+        'codigo' => 'PRO-KG-01',
+        'nombre' => 'Producto por kilo',
+        'precio_compra' => 2750.5,
+        'precio_venta' => 5000.5,
+        'comision_cajero_por_unidad' => 500,
+        'unidad_medida' => 'kg',
+        'medida_pesable' => '0',
+    ]))->assertSessionDoesntHaveErrors();
+
+    $producto = Producto::where('codigo', 'PRO-KG-01')->firstOrFail();
+
+    expect($producto->medida_pesable)->toBeTrue()
+        ->and((float) $producto->precio_compra)->toBe(2750.5)
+        ->and((float) $producto->precio_venta)->toBe(5000.5)
+        ->and((float) $producto->comision_cajero_por_unidad)->toBe(500.0);
+});
+
 test('crea producto con variantes existentes', function () {
     $almacen = Almacen::factory()->create(['owner_id' => $this->user->id, 'activo' => true]);
 

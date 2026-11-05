@@ -16,7 +16,7 @@ class UpdateProductoRequest extends FormRequest
         $productoId = $this->route('producto')?->id ?? $this->route('producto');
 
         return [
-            'codigo' => ['sometimes', 'required', 'string', 'max:255', 'unique:productos,codigo,'.$productoId],
+            'codigo' => ['sometimes', 'nullable', 'string', 'max:255', 'unique:productos,codigo,'.$productoId],
             'nombre' => ['sometimes', 'required', 'string', 'max:255'],
             'descripcion' => ['nullable', 'string'],
             'categoria_id' => ['nullable', 'exists:categorias,id'],

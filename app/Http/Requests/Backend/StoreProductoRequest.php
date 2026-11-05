@@ -14,7 +14,7 @@ class StoreProductoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'codigo' => ['required', 'string', 'max:255', 'unique:productos,codigo'],
+            'codigo' => ['nullable', 'string', 'max:255', 'unique:productos,codigo'],
             'nombre' => ['required', 'string', 'max:255'],
             'descripcion' => ['nullable', 'string'],
             'categoria_id' => ['nullable', 'exists:categorias,id'],
@@ -35,7 +35,6 @@ class StoreProductoRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'codigo.required' => 'El código del producto es obligatorio.',
             'codigo.unique' => 'Este código ya está registrado.',
             'nombre.required' => 'El nombre del producto es obligatorio.',
             'precio_venta.required' => 'El precio de venta es obligatorio.',

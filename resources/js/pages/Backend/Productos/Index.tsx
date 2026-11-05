@@ -92,7 +92,7 @@ interface SkuRow {
 }
 interface Producto {
     id: number;
-    codigo: string;
+    codigo: string | null;
     nombre: string;
     descripcion: string | null;
     categoria_id: number | null;
@@ -112,6 +112,7 @@ interface Producto {
     envase_retornable?: boolean;
     envase_producto_id?: number | null;
     envase_producto?: Producto;
+    medida_pesable?: boolean;
     categoria?: Categoria;
     inventario?: Inventario;
     inventarios?: Inventario[];
@@ -213,7 +214,8 @@ function buildSkuRows(
     };
 
     const combinations = cartesianProduct(valueSets);
-    const skuBase = baseSku || 'SKU';
+    const skuBase =
+        (baseSku || 'SKU').trim().replace(/\s+/g, '-') || 'SKU';
 
     return combinations.map((combo, i) => {
         const labels = combo.map((c) => c.varianteNombre + ': ' + c.valor);
@@ -347,10 +349,12 @@ export default function Index({
         Number(data.precio_venta) > 0
             ? (margenAbsoluto / Number(data.precio_venta)) * 100
             : 0;
+    const productoSeVendePorMedida =
+        data.medida_pesable || data.unidad_medida !== 'unidad';
 
     const currentSkuSignature =
         data.tiene_variantes && selectedVariantIds.length > 0
-            ? `${selectedVariantIds.join(',')}|${data.codigo}`
+            ? `${selectedVariantIds.join(',')}|${data.codigo || data.nombre}`
             : null;
 
     if (currentSkuSignature !== skuSignature) {
@@ -359,7 +363,7 @@ export default function Index({
             currentSkuSignature
                 ? buildSkuRows(
                       getSelectedVariants,
-                      data.codigo,
+                      data.codigo || data.nombre,
                       data.precio_venta,
                       data.precio_compra,
                       data.stock_minimo,
@@ -375,7 +379,7 @@ export default function Index({
             currentSkuSignature
                 ? buildSkuRows(
                       getSelectedVariants,
-                      data.codigo,
+                      data.codigo || data.nombre,
                       data.precio_venta,
                       data.precio_compra,
                       data.stock_minimo,
@@ -759,7 +763,7 @@ export default function Index({
 
         setEditando(producto);
         (setData as any)({
-            codigo: producto.codigo,
+            codigo: producto.codigo || '',
             nombre: producto.nombre,
             descripcion: producto.descripcion || '',
             categoria_id: producto.categoria_id?.toString() || '',
@@ -1480,7 +1484,7 @@ export default function Index({
                                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                             <div className="space-y-2">
                                                 <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                                                    Código SKU *
+                                                    Código SKU (opcional)
                                                 </Label>
                                                 <div className="flex gap-2">
                                                     <Input
@@ -1491,7 +1495,7 @@ export default function Index({
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        required
+                                                        placeholder="Ej: PRO-001"
                                                         className="h-11 flex-1 border-none bg-muted/30 font-black focus-visible:ring-primary/20"
                                                     />
                                                 </div>
@@ -1620,12 +1624,20 @@ export default function Index({
                                                         }
                                                         onValueChange={(
                                                             v: any,
-                                                        ) =>
+                                                        ) => {
                                                             setData(
                                                                 'unidad_medida',
                                                                 v,
-                                                            )
-                                                        }
+                                                            );
+                                                            if (
+                                                                v !== 'unidad'
+                                                            ) {
+                                                                setData(
+                                                                    'medida_pesable',
+                                                                    true,
+                                                                );
+                                                            }
+                                                        }}
                                                     >
                                                         <SelectTrigger className="h-11 border-none bg-background font-bold">
                                                             <SelectValue placeholder="Seleccione..." />
@@ -1847,21 +1859,39 @@ export default function Index({
                                             <div className="space-y-2 rounded-2xl border border-primary/10 bg-primary/5 p-4 transition-all hover:bg-primary/10">
                                                 <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-primary uppercase">
                                                     <ArrowDownZA className="h-3 w-3" />{' '}
-                                                    Costo Adq.
+                                                    {productoSeVendePorMedida &&
+                                                    data.unidad_medida !==
+                                                        'unidad'
+                                                        ? `Costo por ${data.unidad_medida === 'kg' ? 'Kilo' : 'Litro'}`
+                                                        : 'Costo Adq.'}
                                                 </Label>
                                                 <Input
                                                     type="number"
-                                                    step="1"
+                                                    step={
+                                                        productoSeVendePorMedida &&
+                                                        data.unidad_medida !==
+                                                            'unidad'
+                                                            ? '0.01'
+                                                            : '1'
+                                                    }
                                                     value={data.precio_compra}
                                                     onChange={(e) =>
                                                         setData(
                                                             'precio_compra',
-                                                            Math.floor(
-                                                                parseFloat(
-                                                                    e.target
-                                                                        .value,
-                                                                ),
-                                                            ) || 0,
+                                                            productoSeVendePorMedida &&
+                                                                data.unidad_medida !==
+                                                                    'unidad'
+                                                                ? parseFloat(
+                                                                      e.target
+                                                                          .value,
+                                                                  ) || 0
+                                                                : Math.floor(
+                                                                      parseFloat(
+                                                                          e
+                                                                              .target
+                                                                              .value,
+                                                                      ),
+                                                                  ) || 0,
                                                         )
                                                     }
                                                     className="h-10 border-none bg-background text-lg font-black shadow-inner focus-visible:ring-primary/20"
@@ -1870,30 +1900,66 @@ export default function Index({
                                             <div className="space-y-2 rounded-2xl border border-green-500/10 bg-green-500/5 p-4 transition-all hover:bg-green-500/10">
                                                 <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-green-600 uppercase">
                                                     <Tag className="h-3 w-3" />{' '}
-                                                    Precio Venta
+                                                    {productoSeVendePorMedida &&
+                                                    data.unidad_medida !==
+                                                        'unidad'
+                                                        ? `Precio por ${data.unidad_medida === 'kg' ? 'Kilo' : 'Litro'}`
+                                                        : 'Precio Venta'}
                                                 </Label>
                                                 <Input
                                                     type="number"
-                                                    step="1"
+                                                    step={
+                                                        productoSeVendePorMedida &&
+                                                        data.unidad_medida !==
+                                                            'unidad'
+                                                            ? '0.01'
+                                                            : '1'
+                                                    }
                                                     value={data.precio_venta}
                                                     onChange={(e) =>
                                                         setData(
                                                             'precio_venta',
-                                                            Math.floor(
-                                                                parseFloat(
-                                                                    e.target
-                                                                        .value,
-                                                                ),
-                                                            ) || 0,
+                                                            productoSeVendePorMedida &&
+                                                                data.unidad_medida !==
+                                                                    'unidad'
+                                                                ? parseFloat(
+                                                                      e.target
+                                                                          .value,
+                                                                  ) || 0
+                                                                : Math.floor(
+                                                                      parseFloat(
+                                                                          e
+                                                                              .target
+                                                                              .value,
+                                                                      ),
+                                                                  ) || 0,
                                                         )
                                                     }
                                                     className="h-10 border-none bg-background text-lg font-black text-green-600 shadow-inner focus-visible:ring-green-500/20"
                                                 />
+                                                {productoSeVendePorMedida &&
+                                                    data.unidad_medida !==
+                                                        'unidad' && (
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Valor por{' '}
+                                                            {data.unidad_medida ===
+                                                            'kg'
+                                                                ? 'kilogramo'
+                                                                : 'litro'}
+                                                            ; el POS calcula el
+                                                            total según la
+                                                            cantidad.
+                                                        </p>
+                                                    )}
                                             </div>
                                             <div className="space-y-2 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 p-4">
                                                 <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-emerald-700 uppercase">
                                                     <TrendingUp className="h-3 w-3" />
                                                     Margen de Ganancia
+                                                    {productoSeVendePorMedida &&
+                                                        data.unidad_medida !==
+                                                            'unidad' &&
+                                                        ` / ${data.unidad_medida === 'kg' ? 'kg' : 'lt'}`}
                                                 </Label>
                                                 <p className="h-10 truncate text-lg font-black text-emerald-700">
                                                     {formatCurrency(
@@ -1910,7 +1976,15 @@ export default function Index({
                                             <div className="space-y-2 rounded-2xl border border-violet-500/10 bg-violet-500/5 p-4 transition-all hover:bg-violet-500/10">
                                                 <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-violet-700 uppercase">
                                                     <Wallet className="h-3 w-3" />
-                                                    Comisión Cajero / Unidad
+                                                    Comisión Cajero /{' '}
+                                                    {productoSeVendePorMedida &&
+                                                    data.unidad_medida !==
+                                                        'unidad'
+                                                        ? data.unidad_medida ===
+                                                          'kg'
+                                                            ? 'kg'
+                                                            : 'litro'
+                                                        : 'Unidad'}
                                                 </Label>
                                                 <Input
                                                     type="number"
@@ -1930,8 +2004,11 @@ export default function Index({
                                                     className="h-10 border-none bg-background text-lg font-black text-violet-700 shadow-inner focus-visible:ring-violet-500/20"
                                                 />
                                                 <p className="text-xs text-muted-foreground">
-                                                    Incentivo fijo por cada
-                                                    unidad vendida.
+                                                    {productoSeVendePorMedida &&
+                                                    data.unidad_medida !==
+                                                        'unidad'
+                                                        ? 'Se prorratea según la fracción de medida vendida.'
+                                                        : 'Incentivo fijo por cada unidad vendida.'}
                                                 </p>
                                             </div>
                                             <div className="space-y-2 rounded-2xl border border-amber-500/10 bg-amber-500/5 p-4 transition-all hover:bg-amber-500/10">
