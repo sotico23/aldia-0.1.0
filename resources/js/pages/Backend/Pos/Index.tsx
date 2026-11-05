@@ -1,6 +1,8 @@
 import { Head, useForm } from '@inertiajs/react';
+import type { Html5Qrcode } from 'html5-qrcode';
 import {
     Barcode,
+    Camera,
     Search,
     Trash2,
     ShoppingCart,
@@ -153,57 +155,145 @@ interface CartItem {
     peso_base?: number;
     contenido_por_unidad?: number;
     medida_pesable?: boolean;
-    modoGramos?: boolean;
     envase_retornable?: boolean;
     envase_precio?: number;
     cantidad_retornada?: number;
     montoIngresado?: string;
 }
 
+function esProductoGrameable(item: CartItem): boolean {
+    return (
+        (item.medida_pesable ?? false) &&
+        (item.unidad_medida === 'kg' || item.unidad_medida === 'lt')
+    );
+}
+
+/**
+ * Convierte el monto que arroja la balanza en la cantidad equivalente.
+ * La balanza trabaja en gramos, por eso redondeamos a 3 decimales (0,001 kg).
+ */
+function cantidadDesdeMonto(monto: number, precioPorMedida: number): number {
+    if (
+        !Number.isFinite(monto) ||
+        monto <= 0 ||
+        !Number.isFinite(precioPorMedida) ||
+        precioPorMedida <= 0
+    ) {
+        return 0;
+    }
+
+    return Math.max(0.001, Math.round((monto / precioPorMedida) * 1000) / 1000);
+}
+
+function montoDesdeCantidad(precioVenta: number, cantidad: number): number {
+    return Math.round(precioVenta * cantidad);
+}
+
+/**
+ * Para productos pesables el monto digitado por el cajero es la fuente de
+ * verdad del subtotal. Así $1.500 siempre cobra $1.500, sin importar el
+ * redondeo de los 3 decimales usados para descontar stock.
+ */
+function calcularSubtotalLinea(item: CartItem): number {
+    if (esProductoGrameable(item)) {
+        const monto = Number(item.montoIngresado);
+
+        if (
+            item.montoIngresado !== undefined &&
+            item.montoIngresado !== '' &&
+            Number.isFinite(monto) &&
+            monto > 0
+        ) {
+            return Math.round(monto);
+        }
+    }
+
+    return montoDesdeCantidad(item.precio_venta, item.cantidad);
+}
+
 function MontoPorMedida({
     item,
     onChange,
     onBlur,
+    onCommit,
+    autoFocus = false,
+    onFocus,
 }: {
     item: CartItem;
     onChange: (value: string) => void;
     onBlur: () => void;
+    onCommit?: () => void;
+    autoFocus?: boolean;
+    onFocus?: () => void;
 }) {
     const unidad = item.unidad_medida === 'kg' ? 'kg' : 'L';
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (!autoFocus) {
+            return;
+        }
+
+        inputRef.current?.focus();
+        inputRef.current?.select();
+    }, [autoFocus]);
+
+    const montoMostrado =
+        item.montoIngresado ?? String(calcularSubtotalLinea(item));
 
     return (
-        <div className="flex items-center justify-between gap-3 border-t bg-emerald-50/50 p-2 dark:bg-emerald-950/10">
-            <div className="min-w-0">
+        <div className="border-t border-emerald-200/80 bg-emerald-50/70 p-3 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+            <div className="mb-1 flex items-center justify-between gap-2">
                 <Label
                     htmlFor={`monto-${item.cartId}`}
-                    className="text-[10px] font-bold text-emerald-700 uppercase dark:text-emerald-400"
+                    className="text-[10px] font-black tracking-wide text-emerald-700 uppercase dark:text-emerald-400"
                 >
-                    Monto a cobrar
+                    Monto de balanza
                 </Label>
-                <p className="text-[10px] text-muted-foreground">
-                    Equivale a {item.cantidad.toFixed(3)} {unidad} a{' '}
+                <span className="text-[10px] font-medium text-muted-foreground">
                     {formatCurrency(item.precio_venta)} / {unidad}
-                </p>
+                </span>
             </div>
-            <div className="flex w-36 shrink-0 items-center gap-1">
-                <span className="text-xs font-semibold text-muted-foreground">
+
+            <div className="relative">
+                <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-xl font-black text-emerald-700 dark:text-emerald-400">
                     $
                 </span>
                 <Input
+                    ref={inputRef}
                     id={`monto-${item.cartId}`}
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={
-                        item.montoIngresado ??
-                        String(Math.round(item.precio_venta * item.cantidad))
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={montoMostrado}
+                    onChange={(event) =>
+                        onChange(
+                            event.target.value
+                                .replace(/\D/g, '')
+                                .replace(/^0+(?=\d)/, ''),
+                        )
                     }
-                    onChange={(event) => onChange(event.target.value)}
+                    onFocus={onFocus}
                     onBlur={onBlur}
+                    onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                            event.preventDefault();
+                            inputRef.current?.blur();
+                            onCommit?.();
+                        }
+                    }}
                     disabled={item.precio_venta <= 0}
-                    className="h-8 text-right text-sm font-bold"
-                    aria-label={`Monto a cobrar por ${item.nombre}`}
+                    className="h-12 border-emerald-300 bg-white pr-3 pl-8 text-right text-2xl font-black tabular-nums shadow-sm focus-visible:border-emerald-500 focus-visible:ring-emerald-500/30 dark:border-emerald-800 dark:bg-emerald-950/40"
+                    aria-label={`Monto de balanza para ${item.nombre}`}
+                    placeholder="0"
                 />
+            </div>
+
+            <div className="mt-1.5 flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground">Peso equivalente</span>
+                <span className="font-semibold text-foreground tabular-nums">
+                    ≈ {item.cantidad.toFixed(3)} {unidad}
+                </span>
             </div>
         </div>
     );
@@ -469,6 +559,16 @@ export default function PosIndex({
     });
     const [busqueda, setBusqueda] = useState('');
     const [scannedCode, setScannedCode] = useState('');
+    const [cameraScannerOpen, setCameraScannerOpen] = useState(false);
+    const [cameraScannerStatus, setCameraScannerStatus] = useState<
+        'starting' | 'ready' | 'error'
+    >('starting');
+    const [cameraScannerError, setCameraScannerError] = useState<string | null>(
+        null,
+    );
+    const cameraScannerRef = useRef<Html5Qrcode | null>(null);
+    const cameraScanHandledRef = useRef(false);
+    const [montoFocusId, setMontoFocusId] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const [procesando, setProcesando] = useState(false);
     const [productoSeleccionado, setProductoSeleccionado] =
@@ -643,9 +743,7 @@ export default function PosIndex({
                 );
                 envaseCost = pend * item.envase_precio;
             }
-            return (
-                acc + Math.round(item.precio_venta * item.cantidad) + envaseCost
-            );
+            return acc + calcularSubtotalLinea(item) + envaseCost;
         }, 0);
     }, [cart]);
 
@@ -735,15 +833,29 @@ export default function PosIndex({
     const buscarProductoSku = useCallback(
         (codigo: string) => {
             const codigoLimpio = codigo.trim();
-            const producto = productos.find(
-                (p) =>
-                    p.codigo === codigoLimpio || String(p.id) === codigoLimpio,
-            );
+            const producto =
+                productos.find(
+                    (p) =>
+                        p.codigo?.trim().toLocaleLowerCase() ===
+                            codigoLimpio.toLocaleLowerCase() ||
+                        String(p.id) === codigoLimpio,
+                ) ??
+                productos.find((p) =>
+                    p.skus.some(
+                        (sku) =>
+                            sku.sku.trim().toLocaleLowerCase() ===
+                            codigoLimpio.toLocaleLowerCase(),
+                    ),
+                );
+
             if (producto) {
                 if (producto.tiene_variantes && producto.skus.length > 0) {
                     const sku =
-                        producto.skus.find((s) => s.sku === codigoLimpio) ||
-                        producto.skus[0];
+                        producto.skus.find(
+                            (s) =>
+                                s.sku.trim().toLocaleLowerCase() ===
+                                codigoLimpio.toLocaleLowerCase(),
+                        ) || producto.skus[0];
                     return { producto, sku };
                 }
                 return { producto, sku: null };
@@ -757,6 +869,12 @@ export default function PosIndex({
         (producto: Producto, sku: Sku | null = null) => {
             const precio = sku?.precio_venta ?? producto.precio_venta;
             const stock = sku?.stock ?? producto.stock;
+            const esPesable =
+                (producto.medida_pesable ?? false) &&
+                (producto.unidad_medida === 'kg' ||
+                    producto.unidad_medida === 'lt');
+            const step = esPesable ? 0.1 : 1;
+            const cartId = Math.random().toString(36).substr(2, 9);
 
             setCart((prev) => {
                 const existingIndex = prev.findIndex(
@@ -765,35 +883,33 @@ export default function PosIndex({
                         item.skuId === (sku?.id ?? null),
                 );
                 if (existingIndex >= 0) {
-                    return prev.map((item, idx) =>
-                        idx === existingIndex
-                            ? {
-                                  ...item,
-                                  cantidad: parseFloat(
-                                      (item.cantidad + 1).toFixed(3),
-                                  ),
-                                  montoIngresado: String(
-                                      Math.round(
-                                          item.precio_venta *
-                                              (item.cantidad + 1),
-                                      ),
-                                  ),
-                                  cantidad_retornada: item.envase_retornable
-                                      ? Math.min(
-                                            Math.floor(item.cantidad + 1),
-                                            (item.cantidad_retornada || 0) + 1,
-                                        )
-                                      : item.cantidad_retornada,
-                              }
-                            : item,
-                    );
+                    return prev.map((item, idx) => {
+                        if (idx !== existingIndex) {
+                            return item;
+                        }
+
+                        const nuevaCantidad =
+                            Math.round((item.cantidad + step) * 1000) / 1000;
+
+                        return {
+                            ...item,
+                            cantidad: nuevaCantidad,
+                            montoIngresado: String(
+                                montoDesdeCantidad(
+                                    item.precio_venta,
+                                    nuevaCantidad,
+                                ),
+                            ),
+                            cantidad_retornada: item.envase_retornable
+                                ? Math.min(
+                                      Math.floor(nuevaCantidad),
+                                      (item.cantidad_retornada || 0) +
+                                          Math.ceil(step),
+                                  )
+                                : item.cantidad_retornada,
+                        };
+                    });
                 }
-                const step =
-                    (producto.medida_pesable ?? false) &&
-                    (producto.unidad_medida === 'kg' ||
-                        producto.unidad_medida === 'lt')
-                        ? 0.1
-                        : 1;
                 const skuDesc = sku
                     ? sku.variantes
                           .map((v) => `${v.variante}: ${v.valor}`)
@@ -802,7 +918,7 @@ export default function PosIndex({
                 return [
                     ...prev,
                     {
-                        cartId: Math.random().toString(36).substr(2, 9),
+                        cartId,
                         productoId: producto.id,
                         skuId: sku?.id ?? null,
                         nombre: producto.nombre,
@@ -816,8 +932,9 @@ export default function PosIndex({
                         contenido_por_unidad:
                             producto.contenido_por_unidad ?? 1,
                         medida_pesable: producto.medida_pesable,
-                        modoGramos: false,
-                        montoIngresado: String(Math.round(precio * step)),
+                        montoIngresado: String(
+                            montoDesdeCantidad(precio, step),
+                        ),
                         envase_retornable: (producto as any).envase_retornable,
                         envase_precio: (producto as any).envase_precio,
                         // Para cilindros de gas (retornables con unidad_medida='unidad' y medida_pesable=false),
@@ -829,6 +946,12 @@ export default function PosIndex({
                     },
                 ];
             });
+
+            // Al agregar un producto pesable, el foco pasa directo al monto de
+            // balanza para que el cajero digite lo que marca la balanza.
+            if (esPesable) {
+                setMontoFocusId(cartId);
+            }
         },
         [],
     );
@@ -850,6 +973,169 @@ export default function PosIndex({
         },
         [buscarProductoSku, agregarAlCarrito],
     );
+
+    useEffect(() => {
+        if (!cameraScannerOpen) {
+            return;
+        }
+
+        let disposed = false;
+        let scanner: Html5Qrcode | null = null;
+        let startPromise: Promise<null> | null = null;
+
+        const getCameraErrorMessage = (error: unknown): string => {
+            const errorName = error instanceof DOMException ? error.name : '';
+            const message =
+                error instanceof Error ? error.message : String(error);
+            const detail = `${errorName} ${message}`;
+
+            if (/NotAllowedError|Permission|denied/i.test(detail)) {
+                return 'Se denegó el permiso para usar la cámara. Habilítalo en la configuración del navegador e inténtalo nuevamente.';
+            }
+
+            if (
+                /NotFoundError|OverconstrainedError|device not found|camera.*not found/i.test(
+                    detail,
+                )
+            ) {
+                return 'No se encontró una cámara trasera disponible en este dispositivo.';
+            }
+
+            if (/NotReadableError/i.test(detail)) {
+                return 'No se pudo abrir la cámara porque está ocupada por otra aplicación. Ciérrala e inténtalo nuevamente.';
+            }
+
+            if (!window.isSecureContext) {
+                return 'El acceso a la cámara requiere HTTPS o un entorno local seguro como localhost.';
+            }
+
+            return `No se pudo iniciar la cámara. ${message}`;
+        };
+
+        const iniciarEscaner = async () => {
+            if (!window.isSecureContext) {
+                setCameraScannerError(
+                    'El acceso a la cámara requiere HTTPS o un entorno local seguro como localhost.',
+                );
+                setCameraScannerStatus('error');
+                return;
+            }
+
+            if (!navigator.mediaDevices?.getUserMedia) {
+                setCameraScannerError(
+                    'Este navegador no permite acceder a la cámara. Prueba con un navegador actualizado en el dispositivo.',
+                );
+                setCameraScannerStatus('error');
+                return;
+            }
+
+            try {
+                const { Html5Qrcode, Html5QrcodeSupportedFormats } =
+                    await import('html5-qrcode');
+
+                if (disposed) {
+                    return;
+                }
+
+                scanner = new Html5Qrcode('pos-barcode-camera', {
+                    formatsToSupport: [
+                        Html5QrcodeSupportedFormats.CODE_128,
+                        Html5QrcodeSupportedFormats.CODE_39,
+                        Html5QrcodeSupportedFormats.EAN_13,
+                        Html5QrcodeSupportedFormats.EAN_8,
+                        Html5QrcodeSupportedFormats.UPC_A,
+                        Html5QrcodeSupportedFormats.UPC_E,
+                        Html5QrcodeSupportedFormats.ITF,
+                        Html5QrcodeSupportedFormats.CODABAR,
+                    ],
+                    verbose: false,
+                });
+                cameraScannerRef.current = scanner;
+
+                startPromise = scanner.start(
+                    { facingMode: { exact: 'environment' } },
+                    {
+                        fps: 10,
+                        qrbox: { width: 260, height: 140 },
+                        aspectRatio: 16 / 9,
+                    },
+                    (codigoDetectado) => {
+                        if (disposed || cameraScanHandledRef.current) {
+                            return;
+                        }
+
+                        cameraScanHandledRef.current = true;
+
+                        void (async () => {
+                            try {
+                                if (scanner?.isScanning) {
+                                    await scanner.stop();
+                                }
+                            } catch (error) {
+                                console.error(
+                                    'No se pudo detener el escáner después de leer el código.',
+                                    error,
+                                );
+                            } finally {
+                                if (!disposed) {
+                                    cameraScannerRef.current = null;
+                                    setCameraScannerOpen(false);
+                                    navigator.vibrate?.(80);
+                                    procesarCodigoBarra(codigoDetectado);
+                                }
+                            }
+                        })();
+                    },
+                    () => {},
+                );
+
+                await startPromise;
+
+                if (disposed) {
+                    if (scanner.isScanning) {
+                        await scanner.stop();
+                    }
+
+                    return;
+                }
+
+                setCameraScannerStatus('ready');
+            } catch (error) {
+                if (disposed) {
+                    return;
+                }
+
+                setCameraScannerError(getCameraErrorMessage(error));
+                setCameraScannerStatus('error');
+            }
+        };
+
+        void iniciarEscaner();
+
+        return () => {
+            disposed = true;
+            const scannerToStop = scanner;
+
+            if (cameraScannerRef.current === scannerToStop) {
+                cameraScannerRef.current = null;
+            }
+
+            void (async () => {
+                try {
+                    await startPromise?.catch(() => null);
+
+                    if (scannerToStop?.isScanning) {
+                        await scannerToStop.stop();
+                    }
+                } catch (error) {
+                    console.error(
+                        'No se pudo cerrar el escáner de cámara.',
+                        error,
+                    );
+                }
+            })();
+        };
+    }, [cameraScannerOpen, procesarCodigoBarra]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -912,61 +1198,36 @@ export default function PosIndex({
         }
     };
 
-    const esGrameable = (item: CartItem) =>
-        (item.medida_pesable ?? false) &&
-        (item.unidad_medida === 'kg' || item.unidad_medida === 'lt');
-
-    const toggleModoGramos = (cartId: string) => {
-        setCart((prev) =>
-            prev.map((item) =>
-                item.cartId === cartId
-                    ? { ...item, modoGramos: !item.modoGramos }
-                    : item,
-            ),
-        );
-    };
+    const esGrameable = esProductoGrameable;
 
     const actualizarCantidad = (cartId: string, delta: number) => {
         setCart((prev) =>
             prev.map((item) => {
-                if (item.cartId === cartId) {
-                    if (item.modoGramos) {
-                        const gramos = Math.round(item.cantidad * 1000);
-                        const nuevosGramos = Math.max(1, gramos + delta);
-                        const cantidad = parseFloat(
-                            (nuevosGramos / 1000).toFixed(3),
-                        );
-                        return {
-                            ...item,
-                            cantidad,
-                            montoIngresado: String(
-                                Math.round(item.precio_venta * cantidad),
-                            ),
-                        };
-                    }
-                    const step = esGrameable(item) ? 0.001 : 1;
-                    const finalDelta = delta > 0 ? step : -step;
-                    const nuevaCantidad = Math.max(
-                        step,
-                        item.cantidad + finalDelta,
-                    );
-                    const maxRetornada = Math.floor(nuevaCantidad);
-                    return {
-                        ...item,
-                        cantidad: parseFloat(nuevaCantidad.toFixed(3)),
-                        montoIngresado: String(
-                            Math.round(item.precio_venta * nuevaCantidad),
-                        ),
-                        cantidad_retornada: item.envase_retornable
-                            ? Math.min(
-                                  maxRetornada,
-                                  (item.cantidad_retornada || 0) +
-                                      (delta > 0 ? Math.abs(finalDelta) : 0),
-                              )
-                            : item.cantidad_retornada,
-                    };
+                if (item.cartId !== cartId) {
+                    return item;
                 }
-                return item;
+
+                const step = esGrameable(item) ? 0.1 : 1;
+                const nuevaCantidad = Math.max(
+                    step,
+                    Math.round((item.cantidad + delta * step) * 1000) / 1000,
+                );
+                const maxRetornada = Math.floor(nuevaCantidad);
+
+                return {
+                    ...item,
+                    cantidad: nuevaCantidad,
+                    montoIngresado: String(
+                        montoDesdeCantidad(item.precio_venta, nuevaCantidad),
+                    ),
+                    cantidad_retornada: item.envase_retornable
+                        ? Math.min(
+                              maxRetornada,
+                              (item.cantidad_retornada || 0) +
+                                  (delta > 0 ? Math.ceil(step) : 0),
+                          )
+                        : item.cantidad_retornada,
+                };
             }),
         );
     };
@@ -974,41 +1235,33 @@ export default function PosIndex({
     const setCantidadItem = (cartId: string, value: number) => {
         setCart((prev) =>
             prev.map((item) => {
-                if (item.cartId === cartId) {
-                    if (item.modoGramos) {
-                        const nuevosGramos = Math.max(1, value || 0);
-                        const cantidad = parseFloat(
-                            (nuevosGramos / 1000).toFixed(3),
-                        );
-                        return {
-                            ...item,
-                            cantidad,
-                            montoIngresado: String(
-                                Math.round(item.precio_venta * cantidad),
-                            ),
-                        };
-                    }
-                    const step = esGrameable(item) ? 0.001 : 1;
-                    const nuevaCantidad = Math.max(step, value || 0);
-                    const maxRetornada = Math.floor(nuevaCantidad);
-                    return {
-                        ...item,
-                        cantidad: parseFloat(nuevaCantidad.toFixed(3)),
-                        montoIngresado: String(
-                            Math.round(item.precio_venta * nuevaCantidad),
-                        ),
-                        cantidad_retornada: item.envase_retornable
-                            ? Math.min(
-                                  maxRetornada,
-                                  Math.max(
-                                      item.cantidad_retornada || 0,
-                                      maxRetornada,
-                                  ),
-                              )
-                            : item.cantidad_retornada,
-                    };
+                if (item.cartId !== cartId) {
+                    return item;
                 }
-                return item;
+
+                const step = esGrameable(item) ? 0.001 : 1;
+                const nuevaCantidad = Math.max(
+                    step,
+                    Math.round((value || 0) * 1000) / 1000,
+                );
+                const maxRetornada = Math.floor(nuevaCantidad);
+
+                return {
+                    ...item,
+                    cantidad: nuevaCantidad,
+                    montoIngresado: String(
+                        montoDesdeCantidad(item.precio_venta, nuevaCantidad),
+                    ),
+                    cantidad_retornada: item.envase_retornable
+                        ? Math.min(
+                              maxRetornada,
+                              Math.max(
+                                  item.cantidad_retornada || 0,
+                                  maxRetornada,
+                              ),
+                          )
+                        : item.cantidad_retornada,
+                };
             }),
         );
     };
@@ -1021,20 +1274,12 @@ export default function PosIndex({
                 }
 
                 const monto = Number(value);
-                const cantidad =
-                    Number.isFinite(monto) && monto > 0 && item.precio_venta > 0
-                        ? Math.max(
-                              0.001,
-                              parseFloat(
-                                  (monto / item.precio_venta).toFixed(3),
-                              ),
-                          )
-                        : item.cantidad;
+                const cantidad = cantidadDesdeMonto(monto, item.precio_venta);
 
                 return {
                     ...item,
                     montoIngresado: value,
-                    cantidad,
+                    cantidad: cantidad > 0 ? cantidad : item.cantidad,
                 };
             }),
         );
@@ -1042,16 +1287,27 @@ export default function PosIndex({
 
     const normalizarMontoItem = (cartId: string) => {
         setCart((prev) =>
-            prev.map((item) =>
-                item.cartId === cartId
-                    ? {
-                          ...item,
-                          montoIngresado: String(
-                              Math.round(item.precio_venta * item.cantidad),
-                          ),
-                      }
-                    : item,
-            ),
+            prev.map((item) => {
+                if (item.cartId !== cartId) {
+                    return item;
+                }
+
+                const monto = Number(item.montoIngresado);
+                const montoFinal =
+                    Number.isFinite(monto) && monto > 0
+                        ? Math.round(monto)
+                        : calcularSubtotalLinea(item);
+                const cantidad = cantidadDesdeMonto(
+                    montoFinal,
+                    item.precio_venta,
+                );
+
+                return {
+                    ...item,
+                    montoIngresado: String(montoFinal),
+                    cantidad: cantidad > 0 ? cantidad : item.cantidad,
+                };
+            }),
         );
     };
 
@@ -1088,7 +1344,7 @@ export default function PosIndex({
         if (promociones.length === 0) return 0;
 
         const totalCarrito = cart.reduce(
-            (acc, item) => acc + item.precio_venta * item.cantidad,
+            (acc, item) => acc + calcularSubtotalLinea(item),
             0,
         );
 
@@ -1243,6 +1499,27 @@ export default function PosIndex({
             | 'contactar',
     ) => {
         if (cart.length === 0) return;
+
+        const itemPesableSinMonto = cart.find((item) => {
+            if (
+                !esProductoGrameable(item) ||
+                item.montoIngresado === undefined
+            ) {
+                return false;
+            }
+
+            const monto = Number(item.montoIngresado);
+
+            return !Number.isFinite(monto) || monto <= 0;
+        });
+
+        if (itemPesableSinMonto) {
+            toast.error(
+                `Ingrese el monto de balanza para ${itemPesableSinMonto.nombre}.`,
+            );
+            return;
+        }
+
         if (hasDelivery && !deliveryRecipientName.trim()) {
             toast.error(
                 'Ingrese el nombre del cliente que recibe el despacho.',
@@ -1410,6 +1687,21 @@ export default function PosIndex({
                                 autoFocus
                             />
                         </div>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="h-12 shrink-0 gap-2 px-3"
+                            aria-label="Abrir lector de código de barras con cámara"
+                            onClick={() => {
+                                cameraScanHandledRef.current = false;
+                                setCameraScannerError(null);
+                                setCameraScannerStatus('starting');
+                                setCameraScannerOpen(true);
+                            }}
+                        >
+                            <Camera className="h-5 w-5" />
+                            <span className="hidden sm:inline">Escanear</span>
+                        </Button>
                     </div>
 
                     <div className="flex-1 overflow-y-auto pr-2">
@@ -1708,27 +2000,49 @@ export default function PosIndex({
                                                 </div>
                                             )}
                                             <div className="text-xs text-muted-foreground">
-                                                {formatCurrency(
-                                                    item.precio_venta,
-                                                )}{' '}
-                                                x {item.cantidad}
-                                                {(item.medida_pesable ||
-                                                    (item.peso_base ?? 0) > 0 ||
-                                                    (item.contenido_por_unidad ??
-                                                        1) !== 1) && (
-                                                    <span className="ml-1 text-[10px]">
-                                                        (
-                                                        {(
-                                                            item.cantidad *
-                                                                (item.contenido_por_unidad ??
-                                                                    1) +
-                                                            item.cantidad *
-                                                                (item.peso_base ??
-                                                                    0)
-                                                        ).toFixed(3)}{' '}
-                                                        {item.unidad_medida}{' '}
-                                                        reales)
-                                                    </span>
+                                                {esGrameable(item) ? (
+                                                    <>
+                                                        {formatCurrency(
+                                                            item.precio_venta,
+                                                        )}{' '}
+                                                        / {item.unidad_medida}
+                                                        <span className="ml-1 text-[10px]">
+                                                            ·{' '}
+                                                            {item.cantidad.toFixed(
+                                                                3,
+                                                            )}{' '}
+                                                            {item.unidad_medida}
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        {formatCurrency(
+                                                            item.precio_venta,
+                                                        )}{' '}
+                                                        x {item.cantidad}
+                                                        {(item.peso_base ?? 0) >
+                                                            0 ||
+                                                        (item.contenido_por_unidad ??
+                                                            1) !== 1 ? (
+                                                            <span className="ml-1 text-[10px]">
+                                                                (
+                                                                {(
+                                                                    item.cantidad *
+                                                                        (item.contenido_por_unidad ??
+                                                                            1) +
+                                                                    item.cantidad *
+                                                                        (item.peso_base ??
+                                                                            0)
+                                                                ).toFixed(
+                                                                    3,
+                                                                )}{' '}
+                                                                {
+                                                                    item.unidad_medida
+                                                                }{' '}
+                                                                reales)
+                                                            </span>
+                                                        ) : null}
+                                                    </>
                                                 )}
                                                 {item.stock > 0 &&
                                                     item.stock <= 5 && (
@@ -1742,8 +2056,9 @@ export default function PosIndex({
                                         <div className="flex flex-col items-end justify-between text-right">
                                             <div className="font-black text-emerald-600">
                                                 {formatCurrency(
-                                                    item.precio_venta *
-                                                        item.cantidad +
+                                                    calcularSubtotalLinea(
+                                                        item,
+                                                    ) +
                                                         (item.envase_retornable &&
                                                         item.envase_precio
                                                             ? Math.max(
@@ -1756,111 +2071,71 @@ export default function PosIndex({
                                                             : 0),
                                                 )}
                                             </div>
-                                            <div className="mt-2 flex items-center gap-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 rounded-full bg-muted"
-                                                    onClick={() =>
-                                                        actualizarCantidad(
-                                                            item.cartId,
-                                                            -1,
-                                                        )
-                                                    }
-                                                >
-                                                    <Minus className="h-3 w-3" />
-                                                </Button>
-                                                <Input
-                                                    type="number"
-                                                    step={
-                                                        item.modoGramos
-                                                            ? '1'
-                                                            : esGrameable(item)
-                                                              ? '0.001'
-                                                              : '1'
-                                                    }
-                                                    min={
-                                                        item.modoGramos
-                                                            ? '1'
-                                                            : esGrameable(item)
-                                                              ? '0.001'
-                                                              : '1'
-                                                    }
-                                                    value={
-                                                        item.modoGramos
-                                                            ? Math.round(
-                                                                  item.cantidad *
-                                                                      1000,
-                                                              )
-                                                            : item.cantidad
-                                                    }
-                                                    onChange={(e) =>
-                                                        setCantidadItem(
-                                                            item.cartId,
-                                                            parseFloat(
-                                                                e.target.value,
-                                                            ) || 0,
-                                                        )
-                                                    }
-                                                    className="h-7 w-16 [appearance:textfield] text-center text-xs font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                                />
-                                                <span className="text-[8px] uppercase">
-                                                    {item.modoGramos
-                                                        ? item.unidad_medida ===
-                                                          'kg'
-                                                            ? 'g'
-                                                            : item.unidad_medida ===
+                                            <div className="mt-2 flex items-center justify-end gap-1">
+                                                {!esGrameable(item) && (
+                                                    <>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-7 w-7 rounded-full bg-muted"
+                                                            onClick={() =>
+                                                                actualizarCantidad(
+                                                                    item.cartId,
+                                                                    -1,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Minus className="h-3 w-3" />
+                                                        </Button>
+                                                        <Input
+                                                            type="number"
+                                                            step="1"
+                                                            min="1"
+                                                            value={
+                                                                item.cantidad
+                                                            }
+                                                            onChange={(e) =>
+                                                                setCantidadItem(
+                                                                    item.cartId,
+                                                                    parseFloat(
+                                                                        e.target
+                                                                            .value,
+                                                                    ) || 0,
+                                                                )
+                                                            }
+                                                            className="h-7 w-16 [appearance:textfield] text-center text-xs font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                        />
+                                                        <span className="text-[8px] uppercase">
+                                                            {item.unidad_medida ===
+                                                                'kg' ||
+                                                            item.unidad_medida ===
                                                                 'lt'
-                                                              ? 'ml'
-                                                              : 'u'
-                                                        : esGrameable(item)
-                                                          ? item.unidad_medida
-                                                          : 'u'}
-                                                </span>
-                                                {esGrameable(item) && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-7 w-7 rounded-full bg-muted text-[9px] font-bold"
-                                                        onClick={() =>
-                                                            toggleModoGramos(
-                                                                item.cartId,
-                                                            )
-                                                        }
-                                                        title={
-                                                            item.modoGramos
-                                                                ? 'Cambiar a unidad completa'
-                                                                : 'Cambiar a gramos/ml'
-                                                        }
-                                                    >
-                                                        {item.modoGramos
-                                                            ? item.unidad_medida ===
-                                                              'kg'
-                                                                ? 'kg'
-                                                                : 'L'
-                                                            : item.unidad_medida ===
-                                                                'kg'
-                                                              ? 'g'
-                                                              : 'ml'}
-                                                    </Button>
+                                                                ? item.unidad_medida
+                                                                : 'u'}
+                                                        </span>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-7 w-7 rounded-full bg-muted"
+                                                            onClick={() =>
+                                                                actualizarCantidad(
+                                                                    item.cartId,
+                                                                    1,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Plus className="h-3 w-3" />
+                                                        </Button>
+                                                    </>
                                                 )}
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-7 w-7 rounded-full bg-muted"
-                                                    onClick={() =>
-                                                        actualizarCantidad(
-                                                            item.cartId,
-                                                            1,
-                                                        )
+                                                    className={
+                                                        esGrameable(item)
+                                                            ? 'h-7 w-7 text-destructive hover:bg-destructive/10'
+                                                            : 'ml-2 h-7 w-7 text-destructive hover:bg-destructive/10'
                                                     }
-                                                >
-                                                    <Plus className="h-3 w-3" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="ml-2 h-7 w-7 text-destructive hover:bg-destructive/10"
                                                     onClick={() =>
                                                         eliminarItem(
                                                             item.cartId,
@@ -1875,11 +2150,20 @@ export default function PosIndex({
                                     {esGrameable(item) && (
                                         <MontoPorMedida
                                             item={item}
+                                            autoFocus={
+                                                montoFocusId === item.cartId
+                                            }
+                                            onFocus={() =>
+                                                setMontoFocusId(null)
+                                            }
                                             onChange={(value) =>
                                                 setMontoItem(item.cartId, value)
                                             }
                                             onBlur={() =>
                                                 normalizarMontoItem(item.cartId)
+                                            }
+                                            onCommit={() =>
+                                                inputRef.current?.focus()
                                             }
                                         />
                                     )}
@@ -2509,10 +2793,34 @@ export default function PosIndex({
                                                         </div>
                                                     )}
                                                     <div className="text-xs text-muted-foreground">
-                                                        {formatCurrency(
-                                                            item.precio_venta,
-                                                        )}{' '}
-                                                        x {item.cantidad}
+                                                        {esGrameable(item) ? (
+                                                            <>
+                                                                {formatCurrency(
+                                                                    item.precio_venta,
+                                                                )}{' '}
+                                                                /{' '}
+                                                                {
+                                                                    item.unidad_medida
+                                                                }
+                                                                <span className="ml-1 text-[10px]">
+                                                                    ·{' '}
+                                                                    {item.cantidad.toFixed(
+                                                                        3,
+                                                                    )}{' '}
+                                                                    {
+                                                                        item.unidad_medida
+                                                                    }
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                {formatCurrency(
+                                                                    item.precio_venta,
+                                                                )}{' '}
+                                                                x{' '}
+                                                                {item.cantidad}
+                                                            </>
+                                                        )}
                                                         {item.stock > 0 &&
                                                             item.stock <= 5 && (
                                                                 <span className="ml-1 text-orange-500">
@@ -2526,8 +2834,9 @@ export default function PosIndex({
                                                 <div className="flex flex-col items-end justify-between text-right">
                                                     <div className="font-black text-emerald-600">
                                                         {formatCurrency(
-                                                            item.precio_venta *
-                                                                item.cantidad +
+                                                            calcularSubtotalLinea(
+                                                                item,
+                                                            ) +
                                                                 (item.envase_retornable &&
                                                                 item.envase_precio
                                                                     ? Math.max(
@@ -2540,118 +2849,77 @@ export default function PosIndex({
                                                                     : 0),
                                                         )}
                                                     </div>
-                                                    <div className="mt-2 flex items-center gap-1">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-7 w-7 rounded-full bg-muted"
-                                                            onClick={() =>
-                                                                actualizarCantidad(
-                                                                    item.cartId,
-                                                                    -1,
-                                                                )
-                                                            }
-                                                        >
-                                                            <Minus className="h-3 w-3" />
-                                                        </Button>
-                                                        <Input
-                                                            type="number"
-                                                            step={
-                                                                item.modoGramos
-                                                                    ? '1'
-                                                                    : esGrameable(
-                                                                            item,
+                                                    <div className="mt-2 flex items-center justify-end gap-1">
+                                                        {!esGrameable(item) && (
+                                                            <>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-7 w-7 rounded-full bg-muted"
+                                                                    onClick={() =>
+                                                                        actualizarCantidad(
+                                                                            item.cartId,
+                                                                            -1,
                                                                         )
-                                                                      ? '0.001'
-                                                                      : '1'
-                                                            }
-                                                            min={
-                                                                item.modoGramos
-                                                                    ? '1'
-                                                                    : esGrameable(
-                                                                            item,
+                                                                    }
+                                                                >
+                                                                    <Minus className="h-3 w-3" />
+                                                                </Button>
+                                                                <Input
+                                                                    type="number"
+                                                                    step="1"
+                                                                    min="1"
+                                                                    value={
+                                                                        item.cantidad
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        setCantidadItem(
+                                                                            item.cartId,
+                                                                            parseFloat(
+                                                                                e
+                                                                                    .target
+                                                                                    .value,
+                                                                            ) ||
+                                                                                0,
                                                                         )
-                                                                      ? '0.001'
-                                                                      : '1'
-                                                            }
-                                                            value={
-                                                                item.modoGramos
-                                                                    ? Math.round(
-                                                                          item.cantidad *
-                                                                              1000,
-                                                                      )
-                                                                    : item.cantidad
-                                                            }
-                                                            onChange={(e) =>
-                                                                setCantidadItem(
-                                                                    item.cartId,
-                                                                    parseFloat(
-                                                                        e.target
-                                                                            .value,
-                                                                    ) || 0,
-                                                                )
-                                                            }
-                                                            className="h-7 w-16 [appearance:textfield] text-center text-xs font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                                        />
-                                                        <span className="text-[8px] uppercase">
-                                                            {item.modoGramos
-                                                                ? item.unidad_medida ===
-                                                                  'kg'
-                                                                    ? 'g'
-                                                                    : item.unidad_medida ===
+                                                                    }
+                                                                    className="h-7 w-16 [appearance:textfield] text-center text-xs font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                                />
+                                                                <span className="text-[8px] uppercase">
+                                                                    {item.unidad_medida ===
+                                                                        'kg' ||
+                                                                    item.unidad_medida ===
                                                                         'lt'
-                                                                      ? 'ml'
-                                                                      : 'u'
-                                                                : esGrameable(
-                                                                        item,
-                                                                    )
-                                                                  ? item.unidad_medida
-                                                                  : 'u'}
-                                                        </span>
-                                                        {esGrameable(item) && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-7 w-7 rounded-full bg-muted text-[9px] font-bold"
-                                                                onClick={() =>
-                                                                    toggleModoGramos(
-                                                                        item.cartId,
-                                                                    )
-                                                                }
-                                                                title={
-                                                                    item.modoGramos
-                                                                        ? 'Cambiar a unidad completa'
-                                                                        : 'Cambiar a gramos/ml'
-                                                                }
-                                                            >
-                                                                {item.modoGramos
-                                                                    ? item.unidad_medida ===
-                                                                      'kg'
-                                                                        ? 'kg'
-                                                                        : 'L'
-                                                                    : item.unidad_medida ===
-                                                                        'kg'
-                                                                      ? 'g'
-                                                                      : 'ml'}
-                                                            </Button>
+                                                                        ? item.unidad_medida
+                                                                        : 'u'}
+                                                                </span>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-7 w-7 rounded-full bg-muted"
+                                                                    onClick={() =>
+                                                                        actualizarCantidad(
+                                                                            item.cartId,
+                                                                            1,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Plus className="h-3 w-3" />
+                                                                </Button>
+                                                            </>
                                                         )}
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-7 w-7 rounded-full bg-muted"
-                                                            onClick={() =>
-                                                                actualizarCantidad(
-                                                                    item.cartId,
-                                                                    1,
+                                                            className={
+                                                                esGrameable(
+                                                                    item,
                                                                 )
+                                                                    ? 'h-7 w-7 text-destructive hover:bg-destructive/10'
+                                                                    : 'ml-2 h-7 w-7 text-destructive hover:bg-destructive/10'
                                                             }
-                                                        >
-                                                            <Plus className="h-3 w-3" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="ml-2 h-7 w-7 text-destructive hover:bg-destructive/10"
                                                             onClick={() =>
                                                                 eliminarItem(
                                                                     item.cartId,
@@ -2666,6 +2934,13 @@ export default function PosIndex({
                                             {esGrameable(item) && (
                                                 <MontoPorMedida
                                                     item={item}
+                                                    autoFocus={
+                                                        montoFocusId ===
+                                                        item.cartId
+                                                    }
+                                                    onFocus={() =>
+                                                        setMontoFocusId(null)
+                                                    }
                                                     onChange={(value) =>
                                                         setMontoItem(
                                                             item.cartId,
@@ -2676,6 +2951,9 @@ export default function PosIndex({
                                                         normalizarMontoItem(
                                                             item.cartId,
                                                         )
+                                                    }
+                                                    onCommit={() =>
+                                                        inputRef.current?.focus()
                                                     }
                                                 />
                                             )}
@@ -2998,6 +3276,57 @@ export default function PosIndex({
                 </Sheet>
 
                 <Dialog
+                    open={cameraScannerOpen}
+                    onOpenChange={setCameraScannerOpen}
+                >
+                    <DialogContent
+                        aria-describedby={undefined}
+                        className="w-[95vw] max-w-lg gap-4 p-4 sm:p-6"
+                    >
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <Camera className="h-5 w-5" />
+                                Escanear código de barras
+                            </DialogTitle>
+                        </DialogHeader>
+
+                        <div
+                            id="pos-barcode-camera"
+                            className="min-h-64 w-full overflow-hidden rounded-xl bg-black [&_video]:h-full [&_video]:w-full [&_video]:object-cover"
+                        />
+
+                        {cameraScannerError ? (
+                            <div
+                                role="alert"
+                                className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+                            >
+                                {cameraScannerError}
+                            </div>
+                        ) : (
+                            <p
+                                className="text-center text-sm text-muted-foreground"
+                                aria-live="polite"
+                            >
+                                {cameraScannerStatus === 'starting'
+                                    ? 'Iniciando cámara trasera…'
+                                    : 'Centra el código de barras dentro del recuadro.'}
+                            </p>
+                        )}
+
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full sm:w-auto"
+                                onClick={() => setCameraScannerOpen(false)}
+                            >
+                                Cerrar cámara
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog
                     open={mostrarModalPagos}
                     onOpenChange={setMostrarModalPagos}
                 >
@@ -3256,8 +3585,9 @@ export default function PosIndex({
                                             </div>
                                             <p className="font-bold">
                                                 {formatCurrency(
-                                                    item.precio_venta *
-                                                        item.cantidad +
+                                                    calcularSubtotalLinea(
+                                                        item,
+                                                    ) +
                                                         (item.envase_retornable &&
                                                         item.envase_precio
                                                             ? Math.max(

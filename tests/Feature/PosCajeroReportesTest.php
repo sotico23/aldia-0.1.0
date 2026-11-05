@@ -182,6 +182,47 @@ test('pos store calcula precio y comision proporcional al peso vendido', functio
         ->assertJsonPath('venta.items.0.comision_cajero', 250);
 });
 
+test('pos store cobra exactamente el monto de balanza convertido a kilos', function () {
+    $user = User::factory()->create();
+    $user->syncRoles([]);
+    grantPosPermissions($user);
+
+    [$almacen, $cliente, $producto] = makePosContext($user);
+    $producto->update([
+        'precio_venta' => 10000,
+        'unidad_medida' => 'kg',
+        'medida_pesable' => true,
+    ]);
+
+    // $1.500 de balanza a $10.000/kg equivalen a 0,150 kg.
+    $this->actingAs($user)
+        ->post(route('pos.store'), [
+            'cliente_id' => $cliente->id,
+            'metodo_pago' => 'efectivo',
+            'tipo_documento' => 'boleta',
+            'items' => [[
+                'producto_id' => $producto->id,
+                'cantidad' => 0.150,
+                'precio' => 10000,
+            ]],
+            'subtotal' => 1500,
+            'iva' => 0,
+            'total' => 1500,
+            'almacen_id' => $almacen->id,
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    $venta = Venta::latest('id')->firstOrFail();
+    $detalle = $venta->detalleVentas()->firstOrFail();
+
+    expect((float) $venta->subtotal)->toBe(1500.0)
+        ->and((float) $venta->total)->toBe(1500.0)
+        ->and((float) $detalle->cantidad)->toBe(0.15)
+        ->and((float) $detalle->precio_unitario)->toBe(10000.0)
+        ->and((float) $detalle->subtotal)->toBe(1500.0);
+});
+
 test('pos store rechaza cajeros de otro owner', function () {
     $user = User::factory()->create();
     $user->syncRoles([]);
