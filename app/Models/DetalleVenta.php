@@ -70,7 +70,7 @@ class DetalleVenta extends Model
 
     public function producto(): BelongsTo
     {
-        return $this->belongsTo(Producto::class);
+        return $this->belongsTo(Producto::class)->withTrashed();
     }
 
     protected function gananciaItem(): Attribute

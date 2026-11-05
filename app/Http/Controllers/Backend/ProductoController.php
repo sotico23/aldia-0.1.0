@@ -715,18 +715,8 @@ class ProductoController extends Controller implements HasMiddleware
             abort(403, 'No tienes permiso para eliminar este producto.');
         }
 
-        for ($i = 1; $i <= 5; $i++) {
-            $key = 'imagen'.($i === 1 ? '' : $i);
-            if ($producto->{ $key}) {
-                Storage::disk('public')->delete($producto->{ $key});
-            }
-        }
-        if ($producto->video) {
-            Storage::disk('public')->delete($producto->video);
-        }
-
         $producto->delete();
 
-        return redirect()->route('productos.index');
+        return to_route('productos.index')->with('success', 'Producto eliminado correctamente.');
     }
 }

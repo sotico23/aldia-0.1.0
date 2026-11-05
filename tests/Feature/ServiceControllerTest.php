@@ -208,7 +208,7 @@ test('users can delete a service and providers are detached', function () {
     $this->withoutMiddleware(VerifyCsrfToken::class)
         ->delete(route('services.destroy', $service));
 
-    $this->assertDatabaseMissing('productos', ['id' => $serviceId]);
+    $this->assertSoftDeleted('productos', ['id' => $serviceId]);
     $this->assertDatabaseMissing('service_provider', ['service_id' => $serviceId]);
 });
 
