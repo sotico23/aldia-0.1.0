@@ -47,6 +47,7 @@ import {
     SelectContent,
     SelectGroup,
     SelectItem,
+    SelectLabel,
     SelectSeparator,
     SelectTrigger,
     SelectValue,
@@ -1159,9 +1160,9 @@ export default function Index({
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectGroup>
-                                                        <SelectSeparator>
+                                                        <SelectLabel className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase bg-muted/50 border-b border-border">
                                                             Conductores
-                                                        </SelectSeparator>
+                                                        </SelectLabel>
                                                         {conductores.map(
                                                             (c) => (
                                                                 <SelectItem
@@ -1176,10 +1177,9 @@ export default function Index({
                                                         )}
                                                     </SelectGroup>
                                                     <SelectGroup>
-                                                        <SelectSeparator>
-                                                            Repartidores
-                                                            Internos
-                                                        </SelectSeparator>
+                                                        <SelectLabel className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase bg-muted/50 border-b border-border">
+                                                            Repartidores Internos
+                                                        </SelectLabel>
                                                         {repartidores
                                                             .filter(
                                                                 (r) =>
@@ -1198,10 +1198,9 @@ export default function Index({
                                                             ))}
                                                     </SelectGroup>
                                                     <SelectGroup>
-                                                        <SelectSeparator>
-                                                            Repartidores
-                                                            Freelancers
-                                                        </SelectSeparator>
+                                                        <SelectLabel className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase bg-muted/50 border-b border-border">
+                                                            Repartidores Freelancers
+                                                        </SelectLabel>
                                                         {repartidores
                                                             .filter(
                                                                 (r) =>
