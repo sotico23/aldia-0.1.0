@@ -10,7 +10,7 @@ import {
     Calendar,
     MapPin,
     User,
-    Package,
+    Package as PackageIcon,
     Info,
     Scale,
     Droplets,
@@ -19,8 +19,6 @@ import {
     Users,
     LayoutGrid,
     List,
-    Package,
-    Truck,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
@@ -564,7 +562,7 @@ export default function Index({
                             <CardContent className="p-6">
                                 <div className="flex items-center gap-4">
                                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-lg shadow-orange-500/20">
-                                        <Package className="h-6 w-6" />
+                                        <PackageIcon className="h-6 w-6" />
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-black tracking-widest text-orange-600/60 uppercase">
@@ -981,7 +979,7 @@ export default function Index({
                                         >
                                             <SelectTrigger className="h-11 border-none bg-muted/30 focus-visible:ring-primary/20">
                                                 <div className="flex items-center gap-2">
-                                                    <Package className="h-4 w-4 text-muted-foreground" />
+                                                    <PackageIcon className="h-4 w-4 text-muted-foreground" />
                                                     <SelectValue placeholder="Seleccionar Pedido" />
                                                 </div>
                                             </SelectTrigger>
@@ -1099,7 +1097,7 @@ export default function Index({
                                             }
                                         >
                                             <div className="flex items-center justify-center gap-1.5 mb-1">
-                                                <Package className="h-3 w-3" />
+                                                <PackageIcon className="h-3 w-3" />
                                                 <span>Pool</span>
                                             </div>
                                             <p className="text-[10px]">
@@ -1227,7 +1225,7 @@ export default function Index({
                                     )}
                                     {data.estado_asignacion === 'libre' && (
                                         <div className="flex items-center gap-2 pt-2 text-xs text-emerald-600 bg-emerald-50/50 rounded-lg p-3 border border-emerald-200">
-                                            <Package className="h-4 w-4" />
+                                            <PackageIcon className="h-4 w-4" />
                                             <span>
                                                 Pedido liberado a la bolsa de
                                                 ofertas. Cualquier repartidor
@@ -1631,7 +1629,7 @@ export default function Index({
                                                                     </p>
                                                                 </div>
                                                                 <div className="flex flex-col items-center justify-center rounded-lg bg-orange-500/5 p-2 text-center ring-1 ring-orange-500/10 md:rounded-xl md:p-2">
-                                                                    <Package className="mb-0.5 h-2.5 w-2.5 text-orange-500 md:h-3 md:w-3" />
+                                                                    <PackageIcon className="mb-0.5 h-2.5 w-2.5 text-orange-500 md:h-3 md:w-3" />
                                                                     <p className="text-[8px] font-black text-orange-600/60 uppercase md:text-[8px]">
                                                                         Unid
                                                                     </p>
@@ -1651,7 +1649,7 @@ export default function Index({
                                         entregaSeleccionada.productos_json && (
                                             <section>
                                                 <h3 className="mb-3 flex items-center gap-2 text-xs font-black tracking-widest text-primary/70 uppercase md:text-[10px]">
-                                                    <Package className="h-3 w-3" />{' '}
+                                                    <PackageIcon className="h-3 w-3" />{' '}
                                                     Productos a Entregar
                                                 </h3>
                                                 <div className="space-y-2 rounded-2xl border border-primary/10 bg-primary/[0.03] p-4 md:rounded-3xl md:p-6">
