@@ -21,6 +21,7 @@ class Entrega extends Model
         'vehiculo_id',
         'conductor_id',
         'repartidor_id',
+        'estado_asignacion',
         'cliente_id',
         'cliente',
         'telefono',
@@ -38,6 +39,7 @@ class Entrega extends Model
         return [
             'fecha_entrega' => 'date',
             'productos_json' => 'array',
+            'estado_asignacion' => 'string',
         ];
     }
 
@@ -74,5 +76,18 @@ class Entrega extends Model
     public function cliente(): BelongsTo
     {
         return $this->belongsTo(Cliente::class);
+    }
+
+    // ── Scopes para bolsa de ofertas (pool de repartidores) ──
+    public function scopeLibre($query)
+    {
+        return $query->where('estado_asignacion', 'libre')
+            ->whereNull('repartidor_id')
+            ->whereNull('conductor_id');
+    }
+
+    public function scopeAsignado($query)
+    {
+        return $query->where('estado_asignacion', 'asignado');
     }
 }

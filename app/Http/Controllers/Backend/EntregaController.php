@@ -146,6 +146,7 @@ class EntregaController extends Controller implements HasMiddleware
             'vehiculo_id' => 'nullable|integer|exists:vehiculos,id',
             'conductor_id' => 'nullable|integer|exists:conductores,id',
             'repartidor_id' => 'nullable|integer|exists:repartidores,id',
+            'estado_asignacion' => ['required', 'string', 'in:asignado,libre'],
             'cliente' => 'nullable|string|max:255',
             'direccion' => 'nullable|string',
             'fecha_entrega' => 'nullable|date',
@@ -154,6 +155,19 @@ class EntregaController extends Controller implements HasMiddleware
             'descripcion' => 'nullable|string',
             'productos_json' => 'nullable|string',
         ]);
+
+        // Lógica de modalidad de asignación
+        if ($validated['estado_asignacion'] === 'libre') {
+            // Bolsa de ofertas: sin asignación fija
+            $validated['repartidor_id'] = null;
+            $validated['conductor_id'] = null;
+        } elseif ($validated['estado_asignacion'] === 'asignado') {
+            // Asignado: al menos uno de repartidor_id o conductor_id debe estar presente
+            if (! $request->filled('repartidor_id') && ! $request->filled('conductor_id')) {
+                $validated['repartidor_id'] = null;
+                $validated['conductor_id'] = null;
+            }
+        }
 
         $ownerId = Auth::user()->getOwnerId();
         $validated['owner_id'] = $ownerId;
@@ -173,6 +187,7 @@ class EntregaController extends Controller implements HasMiddleware
             'vehiculo_id' => 'nullable|integer',
             'conductor_id' => 'nullable|integer',
             'repartidor_id' => 'nullable|integer|exists:repartidores,id',
+            'estado_asignacion' => ['nullable', 'string', 'in:asignado,libre'],
             'cliente' => 'nullable|string|max:255',
             'direccion' => 'nullable|string',
             'fecha_entrega' => 'nullable|date',
@@ -181,6 +196,17 @@ class EntregaController extends Controller implements HasMiddleware
             'descripcion' => 'nullable|string',
             'productos_json' => 'nullable|string',
         ]);
+
+        // Lógica de modalidad de asignación
+        if ($request->filled('estado_asignacion') && $validated['estado_asignacion'] === 'libre') {
+            $validated['repartidor_id'] = null;
+            $validated['conductor_id'] = null;
+        } elseif ($request->filled('estado_asignacion') && $validated['estado_asignacion'] === 'asignado') {
+            if (! $request->filled('repartidor_id') && ! $request->filled('conductor_id')) {
+                $validated['repartidor_id'] = null;
+                $validated['conductor_id'] = null;
+            }
+        }
 
         $estadoAnterior = $entrega->estado;
         $entrega->update($validated);

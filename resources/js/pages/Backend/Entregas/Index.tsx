@@ -19,6 +19,8 @@ import {
     Users,
     LayoutGrid,
     List,
+    Package,
+    Truck,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
@@ -81,6 +83,7 @@ interface Entrega {
     vehiculo_id: number | null;
     conductor_id: number | null;
     repartidor_id: number | null;
+    estado_asignacion: string | null;
     cliente: string | null;
     direccion: string | null;
     fecha_entrega: string | null;
@@ -205,6 +208,7 @@ export default function Index({
         vehiculo_id: '',
         conductor_id: '',
         repartidor_id: '',
+        estado_asignacion: 'asignado',
         cliente: '',
         direccion: '',
         fecha_entrega: '',
@@ -333,6 +337,7 @@ export default function Index({
             conductor_id: data.conductor_id === '' ? null : data.conductor_id,
             repartidor_id:
                 data.repartidor_id === '' ? null : data.repartidor_id,
+            estado_asignacion: data.estado_asignacion || 'asignado',
             grupo_trabajo_id:
                 data.grupo_trabajo_id === '' ? null : data.grupo_trabajo_id,
             productos_json: productosJson,
@@ -374,6 +379,7 @@ export default function Index({
             vehiculo_id: e.vehiculo_id?.toString() || '',
             conductor_id: e.conductor_id?.toString() || '',
             repartidor_id: (e as any).repartidor_id?.toString() || '',
+            estado_asignacion: (e as any).estado_asignacion || 'asignado',
             cliente: e.cliente || '',
             direccion: e.direccion || '',
             fecha_entrega: datePart,
@@ -408,6 +414,7 @@ export default function Index({
             vehiculo_id: '',
             conductor_id: '',
             repartidor_id: '',
+            estado_asignacion: 'asignado',
             cliente: '',
             direccion: '',
             fecha_entrega: '',
@@ -1045,99 +1052,190 @@ export default function Index({
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                            Repartidor / Chofer
+                                            Modalidad de Despacho
                                         </Label>
-                                        <Select
-                                            value={
-                                                data.repartidor_id ||
-                                                data.conductor_id ||
-                                                ''
+                                        <div className="grid grid-cols-3 gap-1">
+                                            <label
+                                                className={`cursor-pointer rounded-lg border p-3 text-center text-xs font-semibold transition-colors ${data.estado_asignacion === 'asignado' ? 'bg-primary/10 border-primary text-primary' : 'bg-muted border-muted text-muted-foreground hover:bg-muted/50'}`}
+                                            onClick={() =>
+                                                setData(
+                                                    'estado_asignacion',
+                                                    'asignado',
+                                                )
                                             }
-                                            onValueChange={(val) => {
-                                                const repartidor =
-                                                    repartidores.find(
-                                                        (r) =>
-                                                            r.id.toString() ===
-                                                            val,
-                                                    );
-                                                const conductor =
-                                                    conductores.find(
-                                                        (c) =>
-                                                            c.id.toString() ===
-                                                            val,
-                                                    );
-
-                                                if (repartidor) {
-                                                    setData('repartidor_id', val);
-                                                    setData('conductor_id', '');
-                                                } else if (conductor) {
-                                                    setData('conductor_id', val);
-                                                    setData('repartidor_id', '');
-                                                } else {
-                                                    setData('conductor_id', '');
-                                                    setData('repartidor_id', '');
-                                                }
-                                            }}
                                         >
-                                            <SelectTrigger className="h-11 border-none bg-muted/30 focus-visible:ring-primary/20">
-                                                <div className="flex items-center gap-2">
-                                                    <User className="h-4 w-4 text-muted-foreground" />
-                                                    <SelectValue placeholder="Asignar Repartidor / Chofer" />
-                                                </div>
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectSeparator>Conductores</SelectSeparator>
-                                                    {conductores.map((c) => (
-                                                        <SelectItem
-                                                            key={`cond-${c.id}`}
-                                                            value={c.id.toString()}
-                                                        >
-                                                            {c.nombre}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectGroup>
-                                                <SelectGroup>
-                                                    <SelectSeparator>Repartidores Internos</SelectSeparator>
-                                                    {repartidores
-                                                        .filter(
-                                                            (r) =>
-                                                                r.tipo ===
-                                                                'interno',
-                                                        )
-                                                        .map((r) => (
-                                                            <SelectItem
-                                                                key={`rep-int-${r.id}`}
-                                                                value={
-                                                                    r.id.toString()
-                                                                }
-                                                            >
-                                                            {r.nombre} (Empleado)
-                                                            </SelectItem>
-                                                        ))}
-                                                </SelectGroup>
-                                                <SelectGroup>
-                                                    <SelectSeparator>Repartidores Freelancers</SelectSeparator>
-                                                    {repartidores
-                                                        .filter(
-                                                            (r) =>
-                                                                r.tipo ===
-                                                                'freelancer',
-                                                        )
-                                                        .map((r) => (
-                                                            <SelectItem
-                                                                key={`rep-freel-${r.id}`}
-                                                                value={
-                                                                    r.id.toString()
-                                                                }
-                                                            >
-                                                            {r.nombre} (Freelancer)
-                                                            </SelectItem>
-                                                        ))}
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
+                                            <div className="flex items-center justify-center gap-1.5 mb-1">
+                                                <Truck className="h-3 w-3" />
+                                                <span>Interno</span>
+                                            </div>
+                                            <p className="text-[10px]">
+                                                Chofer / Repartidor
+                                            </p>
+                                        </label>
+                                        <label
+                                            className={`cursor-pointer rounded-lg border p-3 text-center text-xs font-semibold transition-colors ${data.estado_asignacion === 'freelancer' ? 'bg-primary/10 border-primary text-primary' : 'bg-muted border-muted text-muted-foreground hover:bg-muted/50'}`}
+                                            onClick={() =>
+                                                setData(
+                                                    'estado_asignacion',
+                                                    'freelancer',
+                                                )
+                                            }
+                                        >
+                                            <div className="flex items-center justify-center gap-1.5 mb-1">
+                                                <User className="h-3 w-3" />
+                                                <span>Freelance</span>
+                                            </div>
+                                            <p className="text-[10px]">
+                                                Repartidor Externo
+                                            </p>
+                                        </label>
+                                        <label
+                                            className={`cursor-pointer rounded-lg border p-3 text-center text-xs font-semibold transition-colors ${data.estado_asignacion === 'libre' ? 'bg-primary/10 border-primary text-primary' : 'bg-muted border-muted text-muted-foreground hover:bg-muted/50'}`}
+                                            onClick={() =>
+                                                setData(
+                                                    'estado_asignacion',
+                                                    'libre',
+                                                )
+                                            }
+                                        >
+                                            <div className="flex items-center justify-center gap-1.5 mb-1">
+                                                <Package className="h-3 w-3" />
+                                                <span>Pool</span>
+                                            </div>
+                                            <p className="text-[10px]">
+                                                Bolsa de Ofertas
+                                            </p>
+                                        </label>
                                     </div>
+                                    {data.estado_asignacion !== 'libre' && (
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
+                                                Repartidor / Chofer
+                                            </Label>
+                                            <Select
+                                                value={
+                                                    data.repartidor_id ||
+                                                    data.conductor_id ||
+                                                    ''
+                                                }
+                                                onValueChange={(val) => {
+                                                    const repartidor =
+                                                        repartidores.find(
+                                                            (r) =>
+                                                                r.id.toString() ===
+                                                                val,
+                                                        );
+                                                    const conductor =
+                                                        conductores.find(
+                                                            (c) =>
+                                                                c.id.toString() ===
+                                                                val,
+                                                        );
+
+                                                    if (repartidor) {
+                                                        setData(
+                                                            'repartidor_id',
+                                                            val,
+                                                        );
+                                                        setData('conductor_id', '');
+                                                    } else if (conductor) {
+                                                        setData(
+                                                            'conductor_id',
+                                                            val,
+                                                        );
+                                                        setData('repartidor_id', '');
+                                                    } else {
+                                                        setData(
+                                                            'conductor_id',
+                                                            '',
+                                                        );
+                                                        setData('repartidor_id', '');
+                                                    }
+                                                }}
+                                            >
+                                                <SelectTrigger className="h-11 border-none bg-muted/30 focus-visible:ring-primary/20">
+                                                    <div className="flex items-center gap-2">
+                                                        <User className="h-4 w-4 text-muted-foreground" />
+                                                        <SelectValue placeholder="Asignar Repartidor / Chofer" />
+                                                    </div>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectGroup>
+                                                        <SelectSeparator>
+                                                            Conductores
+                                                        </SelectSeparator>
+                                                        {conductores.map(
+                                                            (c) => (
+                                                                <SelectItem
+                                                                    key={`cond-${c.id}`}
+                                                                    value={
+                                                                        c.id.toString()
+                                                                    }
+                                                                >
+                                                                    {c.nombre}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectGroup>
+                                                    <SelectGroup>
+                                                        <SelectSeparator>
+                                                            Repartidores
+                                                            Internos
+                                                        </SelectSeparator>
+                                                        {repartidores
+                                                            .filter(
+                                                                (r) =>
+                                                                    r.tipo ===
+                                                                    'interno',
+                                                            )
+                                                            .map((r) => (
+                                                                <SelectItem
+                                                                    key={`rep-int-${r.id}`}
+                                                                    value={
+                                                                        r.id.toString()
+                                                                    }
+                                                                >
+                                                                    {r.nombre} (Empleado)
+                                                                </SelectItem>
+                                                            ))}
+                                                    </SelectGroup>
+                                                    <SelectGroup>
+                                                        <SelectSeparator>
+                                                            Repartidores
+                                                            Freelancers
+                                                        </SelectSeparator>
+                                                        {repartidores
+                                                            .filter(
+                                                                (r) =>
+                                                                    r.tipo ===
+                                                                    'freelancer',
+                                                            )
+                                                            .map((r) => (
+                                                                <SelectItem
+                                                                    key={`rep-freel-${r.id}`}
+                                                                    value={
+                                                                        r.id.toString()
+                                                                    }
+                                                                >
+                                                                    {r.nombre} (Freelancer)
+                                                                </SelectItem>
+                                                            ))}
+                                                    </SelectGroup>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
+                                    {data.estado_asignacion === 'libre' && (
+                                        <div className="flex items-center gap-2 pt-2 text-xs text-emerald-600 bg-emerald-50/50 rounded-lg p-3 border border-emerald-200">
+                                            <Package className="h-4 w-4" />
+                                            <span>
+                                                Pedido liberado a la bolsa de
+                                                ofertas. Cualquier repartidor
+                                                conectado podrá aceptarlo desde la
+                                                app móvil.
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
