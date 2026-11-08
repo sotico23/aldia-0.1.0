@@ -234,12 +234,28 @@ class PermissionsSeeder extends Seeder
         $roleRepartidor->save();
 
         $repartidorPermissions = [
+            // Delivery — zona de repartidores (app móvil)
             'delivery.repartos.viewAny',
             'delivery.repartos.view',
             'delivery.repartos.accept',
             'delivery.repartos.pickup',
             'delivery.repartos.deliver',
             'delivery.repartidor.mapa',
+            // Flota — entregas (panel web, gestión de despachos)
+            'flota.entregas.viewAny',
+            'flota.entregas.view',
+            'flota.entregas.create',
+            'flota.entregas.edit',
+            'flota.entregas.delete',
+            'flota.entregas.export',
+            'flota.entregas.import',
+            // Flota — vehículos y conductores (solo lectura)
+            'flota.vehiculos.viewAny',
+            'flota.vehiculos.view',
+            'flota.conductores.viewAny',
+            'flota.conductores.view',
+            'flota.grupos-trabajo.viewAny',
+            'flota.grupos-trabajo.view',
         ];
         $roleRepartidor->syncPermissions($repartidorPermissions);
 

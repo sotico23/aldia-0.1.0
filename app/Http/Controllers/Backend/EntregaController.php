@@ -59,7 +59,7 @@ class EntregaController extends Controller implements HasMiddleware
         $entregas = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
         $vehiculos = Vehiculo::where('owner_id', $ownerId)->orderBy('marca')->get();
-        $conductores = Conductor::orderBy('nombre')->get(['id', 'nombre']);
+        $conductores = Conductor::where('owner_id', $ownerId)->orderBy('nombre')->get(['id', 'nombre']);
         $clientes = Cliente::where('owner_id', $ownerId)->orderBy('nombre')->get();
 
         $ventas = Venta::where('owner_id', $ownerId)
