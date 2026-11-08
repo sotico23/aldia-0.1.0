@@ -288,7 +288,15 @@ class EmpleadoController extends Controller implements HasMiddleware
                     if ($esRepartidor) {
                         $usuarioExistente->has_explicit_role = true;
                         $usuarioExistente->save();
-                        $usuarioExistente->syncRoles([Repartidor::defaultRole()]);
+
+                        // Asegurar que el rol Spatie de repartidor exista con guard 'web'
+                        // antes de asignarlo. Evita RoleDoesNotExist -> HTTP 500.
+                        $rolRepartidor = Role::firstOrCreate(
+                            ['name' => Repartidor::defaultRole(), 'guard_name' => 'web'],
+                            ['owner_id' => null]
+                        );
+                        $usuarioExistente->syncRoles([$rolRepartidor->name]);
+
                         $this->ensureDriverProfile($usuarioExistente, (int) $ownerId);
                     } elseif ($rolId) {
                         $role = Role::findById($rolId);

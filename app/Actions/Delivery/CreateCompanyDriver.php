@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 /**
  * Crea (o vincula) un repartidor perteneciente a la empresa que lo registra.
@@ -33,7 +34,15 @@ class CreateCompanyDriver
 
             $user->has_explicit_role = true;
             $user->save();
-            $user->syncRoles([Repartidor::defaultRole()]);
+
+            // Asegurar que el rol Spatie de repartidor exista con guard 'web'
+            // antes de asignarlo. Evita RoleDoesNotExist -> HTTP 500 en
+            // entornos donde el seeder de permisos no se ha ejecutado.
+            $rolRepartidor = Role::firstOrCreate(
+                ['name' => Repartidor::defaultRole(), 'guard_name' => 'web'],
+                ['owner_id' => null]
+            );
+            $user->syncRoles([$rolRepartidor->name]);
 
             $repartidor = Repartidor::create([
                 'owner_id' => $ownerId,

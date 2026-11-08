@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Password;
+use Spatie\Permission\Models\Role;
 
 /**
  * Controlador para el registro y aprobación de repartidores Freelancer.
@@ -63,8 +64,14 @@ class DriverRegistrationController extends Controller
                 'has_explicit_role' => true,
             ]);
 
-            // Asignar el rol por defecto de repartidor via Spatie
-            $user->syncRoles([Repartidor::defaultRole()]);
+            // Asignar el rol por defecto de repartidor via Spatie.
+            // Asegurar que el rol exista con guard 'web' para evitar
+            // RoleDoesNotExist -> HTTP 500.
+            $rolRepartidor = Role::firstOrCreate(
+                ['name' => Repartidor::defaultRole(), 'guard_name' => 'web'],
+                ['owner_id' => null]
+            );
+            $user->syncRoles([$rolRepartidor->name]);
 
             // Crear perfil de repartidor en estado pendiente
             $repartidor = Repartidor::create([
