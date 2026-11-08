@@ -158,6 +158,7 @@ export default function Index({
     entregas,
     vehiculos,
     conductores,
+    repartidores = [],
     clientes,
     ventas,
     stats,
