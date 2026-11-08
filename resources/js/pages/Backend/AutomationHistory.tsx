@@ -27,7 +27,7 @@ export default function AutomationHistory({ executions }: { executions: any }) {
                 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
             error: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
             processing:
-                'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+                'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
             sent_to_n8n:
                 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
             partial_error:

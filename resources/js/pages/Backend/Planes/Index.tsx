@@ -57,8 +57,8 @@ export default function PlanesIndex({ planes }: { planes: Plan[] }) {
             cardBg: 'bg-white',
             shadow: 'shadow-sm hover:shadow-md',
             badge: 'bg-gray-100 text-gray-600',
-            button: 'bg-blue-600 hover:bg-blue-700',
-            priceColor: 'text-blue-600',
+            button: 'bg-emerald-600 hover:bg-emerald-700',
+            priceColor: 'text-emerald-600',
         };
     };
 
@@ -76,17 +76,17 @@ export default function PlanesIndex({ planes }: { planes: Plan[] }) {
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                        <Card className="border-blue-200 bg-blue-50/50">
+                        <Card className="border-emerald-200 bg-emerald-50/50">
                             <CardHeader className="pb-2">
                                 <div className="flex items-center gap-2">
-                                    <Sparkles className="h-5 w-5 text-blue-600" />
-                                    <CardTitle className="text-sm font-bold text-blue-700">
+                                    <Sparkles className="h-5 w-5 text-emerald-600" />
+                                    <CardTitle className="text-sm font-bold text-emerald-700">
                                         Prueba Activa
                                     </CardTitle>
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-sm text-blue-600/80">
+                                <p className="text-sm text-emerald-600/80">
                                     Estás disfrutando acceso completo a todas
                                     las funcionalidades. Cuando finalice tu
                                     prueba, elige un plan para continuar.

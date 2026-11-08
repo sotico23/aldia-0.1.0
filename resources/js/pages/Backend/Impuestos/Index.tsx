@@ -46,7 +46,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+const COLORS = ['#059669', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 interface Impuesto {
     id: number;

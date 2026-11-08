@@ -244,7 +244,7 @@ class GrupoTrabajoController extends Controller implements HasMiddleware
                     'user_id' => Auth::id(),
                     'nombre' => $row[1] ?? 'Sin nombre',
                     'descripcion' => $row[2] ?? null,
-                    'color' => $row[3] ?? '#3B82F6',
+                    'color' => $row[3] ?? '#059669',
                     'estado' => $row[4] ?? 'activo',
                 ]);
 

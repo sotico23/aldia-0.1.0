@@ -190,7 +190,7 @@ export default function QuienesSomos({
                             </div>
 
                             <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm transition-shadow hover:shadow-md">
-                                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+                                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
                                     <Users className="h-6 w-6" />
                                 </div>
                                 <h3 className="mb-3 text-xl font-bold text-gray-900">

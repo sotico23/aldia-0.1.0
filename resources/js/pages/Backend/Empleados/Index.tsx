@@ -86,6 +86,8 @@ interface Empleado {
     notas: string | null;
     user_id: number | null;
     user_rol_id?: number | null;
+    user_rol_name?: string | null;
+    es_repartidor?: boolean;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -181,6 +183,7 @@ export default function Index({
         estado: 'activo',
         notas: '',
         crear_usuario: false,
+        es_repartidor: false,
         password: '',
         rol_id: '',
     });
@@ -241,7 +244,7 @@ export default function Index({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (data.crear_usuario && !data.rol_id) {
+        if (data.crear_usuario && !data.es_repartidor && !data.rol_id) {
             setData('rol_id', '');
             return;
         }
@@ -312,8 +315,11 @@ export default function Index({
             estado: emp.estado,
             notas: emp.notas || '',
             crear_usuario: emp.user_id !== null,
+            es_repartidor: emp.es_repartidor ?? false,
             password: '',
-            rol_id: emp.user_rol_id?.toString() || '',
+            rol_id: emp.es_repartidor
+                ? ''
+                : emp.user_rol_id?.toString() || '',
         });
         setIsOpen(true);
     };
@@ -351,6 +357,7 @@ export default function Index({
             estado: 'activo',
             notas: '',
             crear_usuario: false,
+            es_repartidor: false,
             password: '',
             rol_id: '',
         });
@@ -370,7 +377,7 @@ export default function Index({
         const colores: Record<string, string> = {
             activo: 'bg-green-500',
             inactivo: 'bg-gray-500',
-            vacaciones: 'bg-blue-500',
+            vacaciones: 'bg-emerald-500',
             licencia: 'bg-yellow-500',
         };
         return <Badge className={colores[e] || 'bg-gray-500'}>{e}</Badge>;
@@ -537,7 +544,7 @@ export default function Index({
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                                className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                                                                 onClick={() =>
                                                                     handleView(
                                                                         emp,
@@ -611,7 +618,7 @@ export default function Index({
                                                         className="h-full w-full object-cover transition-all duration-300 group-hover:scale-105"
                                                     />
                                                 ) : (
-                                                    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-blue-500/10 to-purple-500/10">
+                                                    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-emerald-500/10 to-purple-500/10">
                                                         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary uppercase">
                                                             {emp.nombre.charAt(
                                                                 0,
@@ -683,7 +690,7 @@ export default function Index({
                                                     <div className="pt-1">
                                                         <Badge
                                                             variant="outline"
-                                                            className="w-full justify-center border-blue-200 bg-blue-50/50 py-0.5 text-[10px] text-blue-600 dark:border-blue-900 dark:bg-blue-950/20 dark:text-blue-400"
+                                                            className="w-full justify-center border-emerald-200 bg-emerald-50/50 py-0.5 text-[10px] text-emerald-600 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-400"
                                                         >
                                                             Acceso a Plataforma
                                                         </Badge>
@@ -770,7 +777,7 @@ export default function Index({
                             <div className="grid gap-6">
                                 {/* SECCIÓN 1: DATOS PERSONALES */}
                                 <section className="space-y-4">
-                                    <h3 className="border-b pb-1 text-sm font-semibold text-blue-600">
+                                    <h3 className="border-b pb-1 text-sm font-semibold text-emerald-600">
                                         Información Personal (Obligatoria)
                                     </h3>
                                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -963,7 +970,7 @@ export default function Index({
 
                                 {/* SECCIÓN 2: CONTACTO Y UBICACIÓN */}
                                 <section className="space-y-4">
-                                    <h3 className="border-b pb-1 text-sm font-semibold text-blue-600">
+                                    <h3 className="border-b pb-1 text-sm font-semibold text-emerald-600">
                                         Contacto y Residencia
                                     </h3>
                                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -1021,7 +1028,7 @@ export default function Index({
 
                                 {/* SECCIÓN 3: INFORMACIÓN LABORAL Y PREVISIÓN */}
                                 <section className="space-y-4">
-                                    <h3 className="border-b pb-1 text-sm font-semibold text-blue-600">
+                                    <h3 className="border-b pb-1 text-sm font-semibold text-emerald-600">
                                         Contrato y Previsión (AFP/Salud)
                                     </h3>
                                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -1117,7 +1124,7 @@ export default function Index({
                                             {Number(data.salario) > 0 && (
                                                 <p className="text-[11px] font-medium text-muted-foreground">
                                                     Sueldo diario:{' '}
-                                                    <span className="font-bold text-blue-600">
+                                                    <span className="font-bold text-emerald-600">
                                                         {formatCurrency(
                                                             sueldoDiario,
                                                         )}
@@ -1280,7 +1287,7 @@ export default function Index({
 
                                 {/* SECCIÓN 4: DATOS BANCARIOS */}
                                 <section className="space-y-4">
-                                    <h3 className="border-b pb-1 text-sm font-semibold text-blue-600">
+                                    <h3 className="border-b pb-1 text-sm font-semibold text-emerald-600">
                                         Datos para Depósito de Sueldo
                                     </h3>
                                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -1363,10 +1370,10 @@ export default function Index({
 
                                 {/* SECCIÓN 5: ACCESO Y OTROS */}
                                 <section className="space-y-4">
-                                    <h3 className="border-b pb-1 text-sm font-semibold text-blue-600">
+                                    <h3 className="border-b pb-1 text-sm font-semibold text-emerald-600">
                                         Acceso a Plataforma y Estado
                                     </h3>
-                                    <div className="flex items-center space-x-2 rounded-md border bg-blue-50/50 p-3">
+                                    <div className="flex items-center space-x-2 rounded-md border bg-emerald-50/50 p-3">
                                         <input
                                             type="checkbox"
                                             id="crear_usuario"
@@ -1381,10 +1388,42 @@ export default function Index({
                                         />
                                         <Label
                                             htmlFor="crear_usuario"
-                                            className="cursor-pointer text-sm font-medium text-blue-900"
+                                            className="cursor-pointer text-sm font-medium text-emerald-900"
                                         >
                                             Dar acceso a la plataforma (crear
                                             usuario de sistema)
+                                        </Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2 rounded-md border bg-emerald-50/50 p-3">
+                                        <input
+                                            type="checkbox"
+                                            id="es_repartidor"
+                                            checked={data.es_repartidor}
+                                            onChange={(e) => {
+                                                const checked =
+                                                    e.target.checked;
+                                                setData({
+                                                    ...data,
+                                                    es_repartidor: checked,
+                                                    crear_usuario: checked
+                                                        ? true
+                                                        : data.crear_usuario,
+                                                    rol_id: checked
+                                                        ? ''
+                                                        : data.rol_id,
+                                                });
+                                            }}
+                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                        />
+                                        <Label
+                                            htmlFor="es_repartidor"
+                                            className="cursor-pointer text-sm font-medium text-emerald-900"
+                                        >
+                                            Es repartidor (el rol{' '}
+                                            <span className="font-semibold">
+                                                Repartidor
+                                            </span>{' '}
+                                            se asigna automáticamente)
                                         </Label>
                                     </div>
                                     {data.crear_usuario && (
@@ -1411,43 +1450,53 @@ export default function Index({
                                                         : 'Se genera automáticamente si se deja vacío'}
                                                 </p>
                                             </div>
-                                            <div className="space-y-2">
-                                                <Label className="flex items-center gap-1 text-xs font-medium">
-                                                    <Shield className="h-3 w-3" />{' '}
-                                                    Rol de Permisos{' '}
-                                                    <span className="text-destructive">
-                                                        *
+                                            {data.es_repartidor ? (
+                                                <div className="flex items-center rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                                                    Rol asignado
+                                                    automáticamente:{' '}
+                                                    <span className="ml-1 font-semibold">
+                                                        Repartidor
                                                     </span>
-                                                </Label>
-                                                <select
-                                                    value={data.rol_id}
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            'rol_id',
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                                                    required
-                                                >
-                                                    <option value="">
-                                                        Seleccionar rol...
-                                                    </option>
-                                                    {roles.map((rol) => (
-                                                        <option
-                                                            key={rol.id}
-                                                            value={rol.id}
-                                                        >
-                                                            {rol.name}
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    <Label className="flex items-center gap-1 text-xs font-medium">
+                                                        <Shield className="h-3 w-3" />{' '}
+                                                        Rol de Permisos{' '}
+                                                        <span className="text-destructive">
+                                                            *
+                                                        </span>
+                                                    </Label>
+                                                    <select
+                                                        value={data.rol_id}
+                                                        onChange={(e) =>
+                                                            setData(
+                                                                'rol_id',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                                        required
+                                                    >
+                                                        <option value="">
+                                                            Seleccionar rol...
                                                         </option>
-                                                    ))}
-                                                </select>
-                                                {errors.rol_id && (
-                                                    <p className="text-sm text-red-500">
-                                                        {errors.rol_id}
-                                                    </p>
-                                                )}
-                                            </div>
+                                                        {roles.map((rol) => (
+                                                            <option
+                                                                key={rol.id}
+                                                                value={rol.id}
+                                                            >
+                                                                {rol.name}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    {errors.rol_id && (
+                                                        <p className="text-sm text-red-500">
+                                                            {errors.rol_id}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -1504,7 +1553,7 @@ export default function Index({
                             </Button>
                             <Button
                                 type="submit"
-                                className="bg-blue-600 hover:bg-blue-700"
+                                className="bg-emerald-600 hover:bg-emerald-700"
                             >
                                 {editando
                                     ? 'Actualizar Ficha'
@@ -1547,12 +1596,12 @@ export default function Index({
                             <img
                                 src={`/storage/${viewing.foto}`}
                                 alt={`${viewing.nombre} ${viewing.apellido}`}
-                                className="h-20 w-20 rounded-full border-4 border-blue-100 object-cover shadow-md sm:h-28 sm:w-28"
+                                className="h-20 w-20 rounded-full border-4 border-emerald-100 object-cover shadow-md sm:h-28 sm:w-28"
                             />
                         </div>
                     ) : (
                         <div className="mb-2 flex justify-center">
-                            <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-blue-100 bg-gradient-to-br from-blue-500/15 to-purple-500/15 text-2xl font-bold text-primary uppercase shadow-md sm:h-28 sm:w-28 sm:text-3xl">
+                            <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-emerald-100 bg-gradient-to-br from-emerald-500/15 to-purple-500/15 text-2xl font-bold text-primary uppercase shadow-md sm:h-28 sm:w-28 sm:text-3xl">
                                 {viewing?.nombre?.charAt(0)}
                                 {viewing?.apellido?.charAt(0)}
                             </div>
@@ -1686,7 +1735,7 @@ export default function Index({
                                 <Label className="text-[10px] font-bold text-muted-foreground uppercase">
                                     Sueldo Base
                                 </Label>
-                                <p className="font-bold text-blue-600">
+                                <p className="font-bold text-emerald-600">
                                     {viewing?.salario
                                         ? formatCurrency(viewing.salario)
                                         : '---'}

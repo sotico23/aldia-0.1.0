@@ -12,6 +12,7 @@ use App\Http\Controllers\Backend\ReporteController;
 use App\Http\Controllers\Backend\UsuarioRolController;
 use App\Http\Controllers\Backend\WebhookSettingsController;
 use App\Http\Controllers\Backend\WebSettingController;
+use App\Livewire\SystemSettingsPage;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['permission:admin.reportes.viewAny'])->group(function () {
@@ -58,6 +59,10 @@ Route::middleware(['permission:admin.web-settings.viewAny'])->group(function () 
         Route::get('configuracion-web/financial-automations', [FinancialAutomationController::class, 'show'])->name('configuracion-web.financial-automations');
         Route::put('configuracion-web/financial-automations', [FinancialAutomationController::class, 'update'])->name('configuracion-web.financial-automations.update');
     });
+
+    Route::get('configuracion-web/servidor', SystemSettingsPage::class)
+        ->name('configuracion-web.system-settings')
+        ->middleware('permission:admin.web-settings.edit');
 
     Route::resource('configuracion-web', WebSettingController::class)->only(['index', 'update']);
 });

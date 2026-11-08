@@ -1,13 +1,15 @@
 @php
     $cspNonce = $cspNonce ?? Str::random(40);
     $appearance = $appearance ?? 'system';
+    $webSettings = \App\Models\WebSetting::getSettings();
+    $theme = $webSettings->themeColors();
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => ($appearance ?? 'system') == 'dark'])>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-        <meta name="theme-color" content="#b91c1c">
+        <meta name="theme-color" content="{{ $theme['primary'] }}">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -27,12 +29,18 @@
                     }
                 }
 
-                window.appName = "{{ \App\Models\WebSetting::getSettings()->app_name ?: config('app.name', 'Laravel') }}";
+                window.appName = "{{ $webSettings->app_name ?: config('app.name', 'Laravel') }}";
             })();
         </script>
 
-        {{-- Inline style to set the HTML background color based on our theme in app.css --}}
+        {{-- Inline style to apply the institutional palette and the HTML background color --}}
         <style nonce="{{ $cspNonce }}">
+            html:root {
+                --brand-primary: {{ $theme['primary'] }};
+                --brand-secondary: {{ $theme['secondary'] }};
+                --brand-accent: {{ $theme['accent'] }};
+            }
+
             html {
                 background-color: oklch(1 0 0);
             }
@@ -43,7 +51,6 @@
         </style>
 
         @php
-            $webSettings = \App\Models\WebSetting::getSettings();
             $faviconUrl  = $webSettings->app_favicon ?: '/favicon.ico';
             $faviconSvg  = $webSettings->app_favicon ?: '/favicon.svg';
         @endphp

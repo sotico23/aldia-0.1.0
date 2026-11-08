@@ -56,8 +56,8 @@ class ProveedorDashboardController extends Controller
             'business' => [
                 'name' => $owner->dashboard_name ?: $owner->name,
                 'logo' => $owner->businessLogoUrl(),
-                'primary_color' => $owner->primary_color ?: '#4f46e5',
-                'secondary_color' => $owner->secondary_color ?: '#06b6d4',
+                'primary_color' => $owner->primary_color ?: '#059669',
+                'secondary_color' => $owner->secondary_color ?: '#10b981',
                 'phone' => $owner->telefono,
                 'email' => $owner->email,
             ],

@@ -251,7 +251,7 @@ export default function Index({
     const getEstadoBadge = (e: string) => {
         const colores: Record<string, string> = {
             planeacion: 'bg-gray-500',
-            activo: 'bg-blue-500',
+            activo: 'bg-emerald-500',
             en_pausa: 'bg-yellow-500',
             completado: 'bg-green-500',
             cancelado: 'bg-red-500',
@@ -308,7 +308,7 @@ export default function Index({
                                         }
                                         className="rounded-lg py-3"
                                     >
-                                        <Upload className="mr-2 h-4 w-4 text-blue-500" />{' '}
+                                        <Upload className="mr-2 h-4 w-4 text-emerald-500" />{' '}
                                         Importar CSV
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
@@ -317,7 +317,7 @@ export default function Index({
                                         }
                                         className="rounded-lg py-3"
                                     >
-                                        <Upload className="mr-2 h-4 w-4 text-indigo-500" />{' '}
+                                        <Upload className="mr-2 h-4 w-4 text-emerald-500" />{' '}
                                         Importar Excel
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
@@ -503,7 +503,7 @@ export default function Index({
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                                className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                                                                 onClick={() =>
                                                                     handleVer(p)
                                                                 }
@@ -619,7 +619,7 @@ export default function Index({
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
+                                                            className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50"
                                                             onClick={() =>
                                                                 handleVer(p)
                                                             }

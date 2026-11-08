@@ -65,13 +65,13 @@ export default function Show({
             {/* Hero Section */}
             <div className="relative overflow-hidden border-b border-slate-800 bg-slate-900 py-12 lg:py-20">
                 <div className="bg-grid-white/[0.02] absolute inset-0 bg-[size:32px_32px]" />
-                <div className="absolute -top-24 -left-20 h-96 w-96 rounded-full bg-blue-600/20 blur-[120px]" />
-                <div className="absolute -right-20 -bottom-24 h-96 w-96 rounded-full bg-indigo-600/20 blur-[120px]" />
+                <div className="absolute -top-24 -left-20 h-96 w-96 rounded-full bg-emerald-600/20 blur-[120px]" />
+                <div className="absolute -right-20 -bottom-24 h-96 w-96 rounded-full bg-emerald-600/20 blur-[120px]" />
 
                 <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
                         <div className="space-y-6">
-                            <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs font-bold tracking-wider text-blue-400 uppercase">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-bold tracking-wider text-emerald-400 uppercase">
                                 <Sparkles className="h-3 w-3" />
                                 Curso Destacado
                             </div>
@@ -84,7 +84,7 @@ export default function Show({
 
                             <div className="flex flex-wrap items-center gap-6 text-slate-300">
                                 <div className="flex items-center gap-2">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 bg-slate-800 font-bold text-blue-400">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 bg-slate-800 font-bold text-emerald-400">
                                         {course.instructor.name[0]}
                                     </div>
                                     <div>
@@ -113,7 +113,7 @@ export default function Show({
                                 {isEnrolled ? (
                                     <Button
                                         size="lg"
-                                        className="h-14 px-8 text-lg font-bold shadow-xl shadow-blue-500/20"
+                                        className="h-14 px-8 text-lg font-bold shadow-xl shadow-emerald-500/20"
                                         asChild
                                     >
                                         <Link href={`/mis-cursos`}>
@@ -124,7 +124,7 @@ export default function Show({
                                 ) : (
                                     <Button
                                         size="lg"
-                                        className="h-14 px-8 text-lg font-bold shadow-xl shadow-blue-500/20"
+                                        className="h-14 px-8 text-lg font-bold shadow-xl shadow-emerald-500/20"
                                         onClick={handleEnroll}
                                         disabled={processing}
                                     >
@@ -171,7 +171,7 @@ export default function Show({
                                 {!course.promo_video_url && (
                                     <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40 opacity-0 transition-opacity group-hover:opacity-100">
                                         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-xl">
-                                            <PlayCircle className="h-8 w-8 text-blue-600" />
+                                            <PlayCircle className="h-8 w-8 text-emerald-600" />
                                         </div>
                                     </div>
                                 )}
@@ -238,7 +238,7 @@ export default function Show({
                         {/* Curriculum */}
                         <section>
                             <h2 className="mb-8 flex items-center gap-3 text-3xl font-bold">
-                                <BookOpen className="h-8 w-8 text-blue-500" />
+                                <BookOpen className="h-8 w-8 text-emerald-500" />
                                 Temario del Curso
                             </h2>
                             <div className="space-y-4">
@@ -250,7 +250,7 @@ export default function Show({
                                         >
                                             <div className="flex items-center justify-between bg-slate-50 p-5 dark:bg-slate-800/50">
                                                 <div className="flex items-center gap-4">
-                                                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-sm font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                                                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-sm font-bold text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
                                                         {mIdx + 1}
                                                     </span>
                                                     <div>
@@ -276,7 +276,7 @@ export default function Show({
                                                             className="group flex items-center justify-between p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
                                                         >
                                                             <div className="flex items-center gap-3 pl-12">
-                                                                <PlayCircle className="h-4 w-4 text-slate-300 transition-colors group-hover:text-blue-500" />
+                                                                <PlayCircle className="h-4 w-4 text-slate-300 transition-colors group-hover:text-emerald-500" />
                                                                 <span className="text-sm font-medium text-slate-600 transition-colors group-hover:text-slate-900 dark:text-slate-400 dark:group-hover:text-white">
                                                                     {
                                                                         lesson.title
@@ -310,21 +310,21 @@ export default function Show({
                             </h4>
                             <div className="space-y-5">
                                 <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
-                                    <Clock className="h-5 w-5 text-blue-500" />
+                                    <Clock className="h-5 w-5 text-emerald-500" />
                                     <span>24 horas de video bajo demanda</span>
                                 </div>
                                 <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
-                                    <Globe className="h-5 w-5 text-blue-500" />
+                                    <Globe className="h-5 w-5 text-emerald-500" />
                                     <span>
                                         Acceso en dispositivos móviles y TV
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
-                                    <Award className="h-5 w-5 text-blue-500" />
+                                    <Award className="h-5 w-5 text-emerald-500" />
                                     <span>Certificado de finalización</span>
                                 </div>
                                 <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
-                                    <PlayCircle className="h-5 w-5 text-blue-500" />
+                                    <PlayCircle className="h-5 w-5 text-emerald-500" />
                                     <span>Acceso de por vida</span>
                                 </div>
                             </div>

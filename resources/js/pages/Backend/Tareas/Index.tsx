@@ -57,7 +57,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const prioridadColors: Record<string, string> = {
     baja: 'bg-gray-100 text-gray-600',
-    media: 'bg-blue-100 text-blue-600',
+    media: 'bg-emerald-100 text-emerald-600',
     alta: 'bg-orange-100 text-orange-600',
     urgente: 'bg-red-100 text-red-600',
 };
@@ -71,7 +71,7 @@ const estadoIcons: Record<string, React.ElementType> = {
 
 const estadoColors: Record<string, string> = {
     pendiente: 'text-gray-500',
-    en_progreso: 'text-blue-500',
+    en_progreso: 'text-emerald-500',
     completada: 'text-green-500',
     cancelada: 'text-red-500',
 };

@@ -256,8 +256,8 @@ export default function ClientDashboard({
         localStorage.setItem(cartKey, JSON.stringify(cart));
     }, [cart, cartKey]);
 
-    const primaryColor = business.primary_color || '#4f46e5';
-    const secondaryColor = business.secondary_color || '#06b6d4';
+    const primaryColor = business.primary_color || '#059669';
+    const secondaryColor = business.secondary_color || '#10b981';
 
     // Handle search and category filters
     const applyFilters = (searchVal: string, catId: number | 'all') => {
@@ -427,11 +427,11 @@ export default function ClientDashboard({
             pendiente:
                 'bg-amber-500/20 text-amber-600 border border-amber-500/30',
             confirmado:
-                'bg-blue-500/20 text-blue-600 border border-blue-500/30',
+                'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30',
             preparando:
                 'bg-purple-500/20 text-purple-600 border border-purple-500/30',
             enviado:
-                'bg-indigo-500/20 text-indigo-600 border border-indigo-500/30',
+                'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30',
             entregado:
                 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30',
             cancelado: 'bg-rose-500/20 text-rose-600 border border-rose-500/30',
@@ -497,7 +497,7 @@ export default function ClientDashboard({
             <Toaster position="top-right" richColors />
 
             {/* Header Banner */}
-            <div className="relative h-48 w-full overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 md:h-64">
+            <div className="relative h-48 w-full overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 md:h-64">
                 {business.cover && (
                     <img
                         src={business.cover}
@@ -516,7 +516,7 @@ export default function ClientDashboard({
                                     className="h-full w-full rounded-xl object-contain"
                                 />
                             ) : (
-                                <div className="text-brand-primary flex h-full w-full items-center justify-center rounded-xl bg-indigo-50 text-2xl font-bold">
+                                <div className="text-brand-primary flex h-full w-full items-center justify-center rounded-xl bg-emerald-50 text-2xl font-bold">
                                     {business.name
                                         .substring(0, 2)
                                         .toUpperCase()}
@@ -657,7 +657,7 @@ export default function ClientDashboard({
                                                                 className="h-full w-full object-cover transition-all group-hover:scale-105"
                                                             />
                                                         ) : (
-                                                            <div className="flex h-full w-full items-center justify-center bg-indigo-50/50 text-slate-400">
+                                                            <div className="flex h-full w-full items-center justify-center bg-emerald-50/50 text-slate-400">
                                                                 {' '}
                                                                 <ShoppingBag className="text-brand-primary h-10 w-10 opacity-40" />{' '}
                                                             </div>
@@ -685,7 +685,7 @@ export default function ClientDashboard({
                                                             {prod.codigo}{' '}
                                                         </p>{' '}
                                                         {/* OWNER */}{' '}
-                                                        <p className="text-[11px] font-bold text-indigo-600">
+                                                        <p className="text-[11px] font-bold text-emerald-600">
                                                             {' '}
                                                             Distribuido por{' '}
                                                             {business.name}{' '}
@@ -840,7 +840,7 @@ export default function ClientDashboard({
                                             pendiente:
                                                 'bg-amber-50 text-amber-700 border-amber-200',
                                             confirmada:
-                                                'bg-blue-50 text-blue-700 border-blue-200',
+                                                'bg-emerald-50 text-emerald-700 border-emerald-200',
                                             completada:
                                                 'bg-emerald-50 text-emerald-700 border-emerald-200',
                                             cancelada:
@@ -972,7 +972,7 @@ export default function ClientDashboard({
                                                         className="flex cursor-pointer flex-col justify-between gap-4 p-5 hover:bg-slate-50/50 sm:flex-row sm:items-center"
                                                     >
                                                         <div className="flex items-center gap-4">
-                                                            <div className="text-brand-primary flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 font-bold shadow-sm">
+                                                            <div className="text-brand-primary flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 font-bold shadow-sm">
                                                                 <ShoppingBag className="h-5 w-5" />
                                                             </div>
                                                             <div>
@@ -1239,7 +1239,7 @@ export default function ClientDashboard({
                                                     <span className="font-semibold text-slate-500">
                                                         {tickets.length} total
                                                     </span>
-                                                    <span className="rounded-full bg-blue-50 px-2.5 py-1 font-bold text-blue-600">
+                                                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-bold text-emerald-600">
                                                         {totalAbiertos} abiertos
                                                     </span>
                                                     <span className="rounded-full bg-green-50 px-2.5 py-1 font-bold text-green-600">
@@ -1258,7 +1258,7 @@ export default function ClientDashboard({
                                                         string
                                                     > = {
                                                         abierto:
-                                                            'bg-blue-100 text-blue-700 border-blue-300',
+                                                            'bg-emerald-100 text-emerald-700 border-emerald-300',
                                                         en_proceso:
                                                             'bg-amber-100 text-amber-700 border-amber-300',
                                                         pendiente:

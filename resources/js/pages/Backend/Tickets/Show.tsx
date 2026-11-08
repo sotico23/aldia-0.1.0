@@ -47,7 +47,7 @@ export default function Show({ ticket }: { ticket: Ticket }) {
     };
 
     const estadoColores: Record<string, string> = {
-        abierto: 'bg-blue-500',
+        abierto: 'bg-emerald-500',
         en_proceso: 'bg-yellow-500',
         resuelto: 'bg-green-500',
         cerrado: 'bg-gray-500',

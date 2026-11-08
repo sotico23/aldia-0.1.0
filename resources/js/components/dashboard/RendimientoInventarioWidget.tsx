@@ -94,10 +94,10 @@ export default function RendimientoInventarioWidget({ data }: Props) {
 
                     <Link
                         href="/inventarios"
-                        className="block rounded-xl border border-blue-100 bg-blue-50 p-3 transition-colors hover:bg-blue-100"
+                        className="block rounded-xl border border-emerald-100 bg-emerald-50 p-3 transition-colors hover:bg-emerald-100"
                     >
                         <div className="mb-1 flex items-center gap-2">
-                            <TrendingUp className="h-3.5 w-3.5 text-blue-500" />
+                            <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
                             <span className="text-[10px] font-semibold text-slate-500">
                                 Valor Stock
                             </span>
@@ -181,7 +181,7 @@ export default function RendimientoInventarioWidget({ data }: Props) {
                                         ) : m.tipo === 'salida' ? (
                                             <ArrowUp className="h-3 w-3 shrink-0 text-rose-400" />
                                         ) : (
-                                            <ArrowUp className="h-3 w-3 shrink-0 text-blue-400" />
+                                            <ArrowUp className="h-3 w-3 shrink-0 text-emerald-400" />
                                         )}
                                         <div className="min-w-0">
                                             <p className="truncate text-[11px] font-semibold text-slate-700">

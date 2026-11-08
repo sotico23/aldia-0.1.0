@@ -154,13 +154,13 @@ interface ChartMovimientos {
 }
 
 const COLORS = [
-    '#3b82f6',
+    '#059669',
     '#10b981',
     '#f59e0b',
     '#ef4444',
     '#8b5cf6',
     '#ec4899',
-    '#06b6d4',
+    '#10b981',
     '#84cc16',
 ];
 
@@ -438,7 +438,7 @@ export default function Index({
                                     <RechartsTooltip />
                                     <Bar
                                         dataKey="stock"
-                                        fill="#3b82f6"
+                                        fill="#059669"
                                         radius={[4, 4, 0, 0]}
                                     />
                                 </BarChart>
@@ -874,7 +874,7 @@ export default function Index({
                                                     </td>
                                                     <td className="px-6 py-4 text-center">
                                                         <div
-                                                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${inv.days_remaining <= 7 ? 'bg-orange-500/10 text-orange-600' : 'bg-blue-500/10 text-blue-600'}`}
+                                                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${inv.days_remaining <= 7 ? 'bg-orange-500/10 text-orange-600' : 'bg-emerald-500/10 text-emerald-600'}`}
                                                         >
                                                             <History className="h-3 w-3" />
                                                             {inv.days_remaining >
@@ -888,7 +888,7 @@ export default function Index({
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                className="h-8 w-8 text-blue-600 hover:bg-blue-100"
+                                                                className="h-8 w-8 text-emerald-600 hover:bg-emerald-100"
                                                                 onClick={(
                                                                     e,
                                                                 ) => {
@@ -1119,7 +1119,7 @@ export default function Index({
                                                             )}
                                                     </div>
                                                     <div
-                                                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${inv.days_remaining <= 7 ? 'bg-orange-500/10 text-orange-600' : 'bg-blue-500/10 text-blue-600'}`}
+                                                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${inv.days_remaining <= 7 ? 'bg-orange-500/10 text-orange-600' : 'bg-emerald-500/10 text-emerald-600'}`}
                                                     >
                                                         <History className="h-3 w-3" />
                                                         {inv.days_remaining >
@@ -1136,7 +1136,7 @@ export default function Index({
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-7 w-7 text-blue-600 hover:bg-blue-100"
+                                                            className="h-7 w-7 text-emerald-600 hover:bg-emerald-100"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setViewingItem(
@@ -1304,12 +1304,12 @@ export default function Index({
                                                     >
                                                         <stop
                                                             offset="5%"
-                                                            stopColor="#6366f1"
+                                                            stopColor="#10b981"
                                                             stopOpacity={0.8}
                                                         />
                                                         <stop
                                                             offset="95%"
-                                                            stopColor="#6366f1"
+                                                            stopColor="#10b981"
                                                             stopOpacity={0}
                                                         />
                                                     </linearGradient>
@@ -1348,14 +1348,14 @@ export default function Index({
                                                             '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
                                                     }}
                                                     itemStyle={{
-                                                        color: '#6366f1',
+                                                        color: '#10b981',
                                                         fontWeight: 'bold',
                                                     }}
                                                 />
                                                 <Area
                                                     type="monotone"
                                                     dataKey="stock"
-                                                    stroke="#6366f1"
+                                                    stroke="#10b981"
                                                     strokeWidth={3}
                                                     fillOpacity={1}
                                                     fill="url(#colorStock)"
@@ -1364,10 +1364,10 @@ export default function Index({
                                         </ResponsiveContainer>
                                     </div>
 
-                                    <div className="flex items-start gap-3 rounded-2xl border border-indigo-500/20 bg-indigo-500/10 p-4">
-                                        <AlertCircle className="h-5 w-5 shrink-0 text-indigo-500" />
+                                    <div className="flex items-start gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+                                        <AlertCircle className="h-5 w-5 shrink-0 text-emerald-500" />
                                         <div className="space-y-1">
-                                            <p className="text-[10px] font-black text-indigo-600 uppercase dark:text-indigo-400">
+                                            <p className="text-[10px] font-black text-emerald-600 uppercase dark:text-emerald-400">
                                                 Diagnóstico Logístico
                                             </p>
                                             <p className="text-xs font-medium text-muted-foreground">
@@ -1406,10 +1406,10 @@ export default function Index({
             {/* View Details Modal */}
             <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
                 <DialogContent className="max-h-[85vh] w-[95vw] max-w-md border-none p-0 shadow-2xl sm:max-w-lg">
-                    <DialogHeader className="bg-gradient-to-r from-blue-500/10 to-transparent p-3 pb-2 text-left sm:p-4">
+                    <DialogHeader className="bg-gradient-to-r from-emerald-500/10 to-transparent p-3 pb-2 text-left sm:p-4">
                         <div className="mb-1 flex items-center gap-2">
-                            <Eye className="h-4 w-4 text-blue-500" />
-                            <span className="text-[9px] font-black tracking-widest text-blue-500/70 uppercase">
+                            <Eye className="h-4 w-4 text-emerald-500" />
+                            <span className="text-[9px] font-black tracking-widest text-emerald-500/70 uppercase">
                                 Detalles del Producto
                             </span>
                         </div>
@@ -1462,7 +1462,7 @@ export default function Index({
                                     Días
                                 </p>
                                 <p
-                                    className={`text-base font-black ${(viewingItem?.days_remaining ?? 0) <= 7 ? 'text-orange-500' : 'text-blue-500'}`}
+                                    className={`text-base font-black ${(viewingItem?.days_remaining ?? 0) <= 7 ? 'text-orange-500' : 'text-emerald-500'}`}
                                 >
                                     {(viewingItem?.days_remaining ?? 0) > 365
                                         ? '∞'
@@ -1480,7 +1480,7 @@ export default function Index({
                                     : 'Óptimo'}
                             </span>
                             <span
-                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${(viewingItem?.days_remaining ?? 0) <= 7 ? 'bg-orange-500 text-white' : 'bg-blue-500 text-white'}`}
+                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${(viewingItem?.days_remaining ?? 0) <= 7 ? 'bg-orange-500 text-white' : 'bg-emerald-500 text-white'}`}
                             >
                                 {(viewingItem?.days_remaining ?? 0) > 365
                                     ? 'Estable'
@@ -1676,8 +1676,8 @@ export default function Index({
                             </div>
 
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                <div className="space-y-1.5 rounded-xl border border-blue-500/10 bg-blue-500/5 p-3">
-                                    <Label className="text-[9px] font-black tracking-widest text-blue-600 uppercase">
+                                <div className="space-y-1.5 rounded-xl border border-emerald-500/10 bg-emerald-500/5 p-3">
+                                    <Label className="text-[9px] font-black tracking-widest text-emerald-600 uppercase">
                                         Ajuste
                                     </Label>
                                     <div className="flex items-center gap-2">
@@ -1685,10 +1685,10 @@ export default function Index({
                                             type="text"
                                             value={ajuste}
                                             onChange={handleAjusteInputChange}
-                                            className="h-9 border-none bg-background text-center text-lg font-black text-blue-600 shadow-inner"
+                                            className="h-9 border-none bg-background text-center text-lg font-black text-emerald-600 shadow-inner"
                                             placeholder="+/- (ej: -288)"
                                         />
-                                        <Plus className="h-4 w-4 text-blue-500/40" />
+                                        <Plus className="h-4 w-4 text-emerald-500/40" />
                                     </div>
                                     <p className="text-[8px] leading-tight text-muted-foreground italic">
                                         Sumar/restar

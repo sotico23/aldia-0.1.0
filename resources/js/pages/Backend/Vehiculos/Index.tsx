@@ -361,7 +361,7 @@ export default function Index({
     const getEstadoBadge = (e: string) => {
         const colores: Record<string, string> = {
             disponible: 'bg-green-500 shadow-sm shadow-green-500/20',
-            en_ruta: 'bg-blue-500 shadow-sm shadow-blue-500/20',
+            en_ruta: 'bg-emerald-500 shadow-sm shadow-emerald-500/20',
             mantenimiento: 'bg-amber-500 shadow-sm shadow-amber-500/20',
             fuera_servicio: 'bg-red-500 shadow-sm shadow-red-500/20',
             requiere_atencion: 'bg-purple-500 shadow-sm shadow-purple-500/20',
@@ -584,7 +584,7 @@ export default function Index({
                                                                             type="button"
                                                                             variant="ghost"
                                                                             size="sm"
-                                                                            className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                                            className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                                                                             onClick={() =>
                                                                                 handleVer(
                                                                                     v,
@@ -1008,7 +1008,7 @@ export default function Index({
                                                                     ? 'bg-green-500'
                                                                     : e ===
                                                                         'en_ruta'
-                                                                      ? 'bg-blue-500'
+                                                                      ? 'bg-emerald-500'
                                                                       : e ===
                                                                           'mantenimiento'
                                                                         ? 'bg-amber-500'

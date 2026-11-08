@@ -725,7 +725,7 @@ export default function ChannelCredentials({
                             <Card>
                                 <CardHeader>
                                     <div className="flex items-center gap-2">
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
                                             <Send className="h-4 w-4" />
                                         </div>
                                         <CardTitle className="text-base">

@@ -184,7 +184,7 @@ export default function Variantes({ variantes, productos = [], categorias = [], 
                                 <CardHeader className="pb-3">
                                     <div className="flex items-start justify-between">
                                         <div className="flex items-center gap-2">
-                                            <Layers className="h-5 w-5 text-indigo-500" />
+                                            <Layers className="h-5 w-5 text-emerald-500" />
                                             <div>
                                                 <CardTitle className="text-lg">{v.nombre}</CardTitle>
                                                 <Badge variant="outline" className="mt-1 text-xs">{v.tipo}</Badge>

@@ -125,7 +125,7 @@ interface TendenciaMes {
 }
 
 const CHART_COLORS = [
-    '#6366f1',
+    '#10b981',
     '#f59e0b',
     '#10b981',
     '#ef4444',
@@ -679,7 +679,7 @@ export default function Rendimiento({
                             <CardTitle className="text-sm font-medium text-muted-foreground">
                                 Total Litros
                             </CardTitle>
-                            <Droplets className="h-4 w-4 text-blue-500" />
+                            <Droplets className="h-4 w-4 text-emerald-500" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
@@ -810,9 +810,9 @@ export default function Rendimiento({
                                             <Line
                                                 type="monotone"
                                                 dataKey="monto"
-                                                stroke="#6366f1"
+                                                stroke="#10b981"
                                                 strokeWidth={2}
-                                                dot={{ fill: '#6366f1', r: 4 }}
+                                                dot={{ fill: '#10b981', r: 4 }}
                                                 name="Monto"
                                             />
                                         </LineChart>
@@ -928,9 +928,9 @@ export default function Rendimiento({
                                             <Line
                                                 type="monotone"
                                                 dataKey="l"
-                                                stroke="#3b82f6"
+                                                stroke="#059669"
                                                 strokeWidth={2}
-                                                dot={{ fill: '#3b82f6', r: 4 }}
+                                                dot={{ fill: '#059669', r: 4 }}
                                                 name="L"
                                             />
                                         </LineChart>

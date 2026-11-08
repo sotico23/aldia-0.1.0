@@ -44,7 +44,7 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
                             'transition-all duration-200 focus-visible:ring-offset-0',
                             error
                                 ? 'border-red-500 bg-red-50/10 ring-1 ring-red-500 focus-visible:ring-red-200'
-                                : 'border-slate-200 hover:border-slate-300 focus-visible:ring-blue-100 dark:border-slate-800',
+                                : 'border-slate-200 hover:border-slate-300 focus-visible:ring-emerald-100 dark:border-slate-800',
                             className,
                         )}
                         aria-invalid={error ? 'true' : 'false'}

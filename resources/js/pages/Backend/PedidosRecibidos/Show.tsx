@@ -136,7 +136,7 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
             case 'pendiente':
                 return 'bg-yellow-100 text-yellow-800';
             case 'confirmado':
-                return 'bg-blue-100 text-blue-800';
+                return 'bg-emerald-100 text-emerald-800';
             case 'preparando':
                 return 'bg-orange-100 text-orange-800';
             case 'enviado':
@@ -484,7 +484,7 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center text-lg">
-                                    <Package className="mr-2 h-5 w-5 text-indigo-500" />{' '}
+                                    <Package className="mr-2 h-5 w-5 text-emerald-500" />{' '}
                                     Productos Solicitados
                                 </CardTitle>
                             </CardHeader>
@@ -572,7 +572,7 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center text-lg">
-                                    <User className="mr-2 h-5 w-5 text-indigo-500" />{' '}
+                                    <User className="mr-2 h-5 w-5 text-emerald-500" />{' '}
                                     Datos del Cliente
                                 </CardTitle>
                             </CardHeader>
@@ -629,12 +629,12 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
 
                         {/* Chat Module */}
                         <Card className="flex min-h-[400px] flex-1 flex-col">
-                            <CardHeader className="rounded-t-xl border-b bg-indigo-50 pb-4">
-                                <CardTitle className="flex items-center text-lg text-indigo-900">
-                                    <MessageSquare className="mr-2 h-5 w-5 text-indigo-600" />{' '}
+                            <CardHeader className="rounded-t-xl border-b bg-emerald-50 pb-4">
+                                <CardTitle className="flex items-center text-lg text-emerald-900">
+                                    <MessageSquare className="mr-2 h-5 w-5 text-emerald-600" />{' '}
                                     Comunicación
                                 </CardTitle>
-                                <CardDescription className="text-indigo-700">
+                                <CardDescription className="text-emerald-700">
                                     Chatea directamente con el comprador
                                 </CardDescription>
                             </CardHeader>
@@ -661,7 +661,7 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
                                                     <div
                                                         className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm shadow-sm ${
                                                             isMe
-                                                                ? 'rounded-br-none bg-indigo-600 text-white'
+                                                                ? 'rounded-br-none bg-emerald-600 text-white'
                                                                 : 'rounded-bl-none border border-gray-100 bg-white text-gray-800'
                                                         } ${m._sending ? 'animate-pulse opacity-70' : ''} ${m._error ? 'ring-2 ring-red-400' : ''}`}
                                                     >
@@ -699,7 +699,7 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
                                                                         }
                                                                         target="_blank"
                                                                         rel="noreferrer"
-                                                                        className={`flex items-center gap-2 rounded bg-black/5 p-2 transition-colors hover:bg-black/10 ${isMe ? 'text-white' : 'text-indigo-600'}`}
+                                                                        className={`flex items-center gap-2 rounded bg-black/5 p-2 transition-colors hover:bg-black/10 ${isMe ? 'text-white' : 'text-emerald-600'}`}
                                                                     >
                                                                         <FileIcon className="h-4 w-4 shrink-0" />
                                                                         <span className="truncate text-[10px] underline">
@@ -717,7 +717,7 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
                                                             !m._error && (
                                                                 <div className="mt-1 flex justify-end">
                                                                     <CheckCheck
-                                                                        className={`h-3 w-3 ${m.leido ? 'text-blue-200' : 'opacity-50'}`}
+                                                                        className={`h-3 w-3 ${m.leido ? 'text-emerald-200' : 'opacity-50'}`}
                                                                     />
                                                                 </div>
                                                             )}
@@ -805,7 +805,7 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
                                     className="flex w-full flex-col space-y-2"
                                 >
                                     {selectedFile && (
-                                        <div className="flex items-center justify-between rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-1 text-[10px] text-indigo-700">
+                                        <div className="flex items-center justify-between rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-1 text-[10px] text-emerald-700">
                                             <div className="flex items-center gap-2 truncate">
                                                 <Paperclip className="h-3 w-3" />
                                                 <span className="truncate">
@@ -817,7 +817,7 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
                                                 onClick={() =>
                                                     setSelectedFile(null)
                                                 }
-                                                className="ml-2 text-indigo-400 hover:text-indigo-600"
+                                                className="ml-2 text-emerald-400 hover:text-emerald-600"
                                             >
                                                 <X className="h-3 w-3" />
                                             </button>
@@ -834,7 +834,7 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
                                             type="button"
                                             variant="ghost"
                                             size="icon"
-                                            className="h-8 w-8 shrink-0 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600"
+                                            className="h-8 w-8 shrink-0 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"
                                             onClick={() =>
                                                 fileInputRef.current?.click()
                                             }
@@ -844,7 +844,7 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
                                         </Button>
                                         <Input
                                             placeholder="Escribe un mensaje..."
-                                            className="h-9 flex-1 text-sm focus-visible:ring-indigo-500"
+                                            className="h-9 flex-1 text-sm focus-visible:ring-emerald-500"
                                             value={nuevoMensaje}
                                             onChange={(e) => {
                                                 setNuevoMensaje(e.target.value);
@@ -855,7 +855,7 @@ export default function Show({ pedido, auth }: { pedido: Pedido; auth: any }) {
                                         <Button
                                             type="submit"
                                             size="icon"
-                                            className="h-9 w-9 shrink-0 bg-indigo-600 hover:bg-indigo-700"
+                                            className="h-9 w-9 shrink-0 bg-emerald-600 hover:bg-emerald-700"
                                             disabled={
                                                 (!nuevoMensaje.trim() &&
                                                     !selectedFile) ||

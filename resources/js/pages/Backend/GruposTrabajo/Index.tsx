@@ -124,7 +124,7 @@ export default function Index({
     } = useForm({
         nombre: '',
         descripcion: '',
-        color: '#3B82F6',
+        color: '#059669',
         estado: 'activo',
         miembros: [] as number[],
         conductores: [] as number[],
@@ -469,7 +469,7 @@ export default function Index({
                                                                     style={{
                                                                         backgroundColor:
                                                                             grupo.color ||
-                                                                            '#3b82f6',
+                                                                            '#059669',
                                                                     }}
                                                                 >
                                                                     <Users className="h-5 w-5" />
@@ -614,7 +614,7 @@ export default function Index({
                                                     style={{
                                                         backgroundColor:
                                                             grupo.color ||
-                                                            '#3b82f6',
+                                                            '#059669',
                                                     }}
                                                 >
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
@@ -678,7 +678,7 @@ export default function Index({
                                                                             c.id
                                                                         }
                                                                         variant="secondary"
-                                                                        className="bg-blue-50 text-[10px] text-blue-700"
+                                                                        className="bg-emerald-50 text-[10px] text-emerald-700"
                                                                     >
                                                                         <Truck className="mr-0.5 h-2.5 w-2.5" />
                                                                         {
@@ -730,7 +730,7 @@ export default function Index({
                                                                 )}{' '}
                                                                 Kg
                                                             </p>
-                                                            <p className="text-[9px] font-medium text-blue-600">
+                                                            <p className="text-[9px] font-medium text-emerald-600">
                                                                 {(
                                                                     grupo.total_l ||
                                                                     0
@@ -1032,7 +1032,7 @@ export default function Index({
                                             className="flex h-12 w-12 items-center justify-center rounded-2xl text-white"
                                             style={{
                                                 backgroundColor:
-                                                    grupoVer.color || '#3b82f6',
+                                                    grupoVer.color || '#059669',
                                             }}
                                         >
                                             <Users className="h-6 w-6" />
@@ -1148,8 +1148,8 @@ export default function Index({
                                             )}
                                             {grupoVer.total_ventas !==
                                                 undefined && (
-                                                <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 text-center">
-                                                    <div className="mb-1 text-xs font-bold text-blue-600 uppercase">
+                                                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 text-center">
+                                                    <div className="mb-1 text-xs font-bold text-emerald-600 uppercase">
                                                         Total
                                                     </div>
                                                     <div className="text-xl font-black text-foreground">

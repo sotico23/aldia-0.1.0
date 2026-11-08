@@ -54,18 +54,18 @@ export default function InstructorDashboard({ stats }: { stats: Stats }) {
 
                 {/* Stats Grid */}
                 <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-                    <Card className="border-none bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                    <Card className="border-none bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium text-blue-100">
+                            <CardTitle className="text-sm font-medium text-emerald-100">
                                 Cursos Activos
                             </CardTitle>
-                            <BookOpen className="h-5 w-5 text-blue-200" />
+                            <BookOpen className="h-5 w-5 text-emerald-200" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-4xl font-bold">
                                 {stats.courses}
                             </div>
-                            <p className="mt-1 text-xs text-blue-200">
+                            <p className="mt-1 text-xs text-emerald-200">
                                 Cursos publicados
                             </p>
                         </CardContent>
@@ -179,21 +179,21 @@ export default function InstructorDashboard({ stats }: { stats: Stats }) {
                             ) : (
                                 <ul className="space-y-3 text-sm text-zinc-600 dark:text-zinc-400">
                                     <li className="flex items-start gap-2">
-                                        <span className="text-blue-500">•</span>
+                                        <span className="text-emerald-500">•</span>
                                         Añade más módulos y lecciones a tus
                                         cursos
                                     </li>
                                     <li className="flex items-start gap-2">
-                                        <span className="text-blue-500">•</span>
+                                        <span className="text-emerald-500">•</span>
                                         Actualiza el precio de tus cursos según
                                         el mercado
                                     </li>
                                     <li className="flex items-start gap-2">
-                                        <span className="text-blue-500">•</span>
+                                        <span className="text-emerald-500">•</span>
                                         Revisa el progreso de tus estudiantes
                                     </li>
                                     <li className="flex items-start gap-2">
-                                        <span className="text-blue-500">•</span>
+                                        <span className="text-emerald-500">•</span>
                                         Publica cursos que estén en borrador
                                     </li>
                                 </ul>

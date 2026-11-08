@@ -47,10 +47,10 @@ const moduleStyles: Record<
     { gradient: string; border: string; icon: string; shadow: string }
 > = {
     'Gestión Comercial': {
-        gradient: 'from-blue-500/10 via-blue-500/5 to-transparent',
-        border: 'border-blue-500/20 hover:border-blue-500/40',
-        icon: 'text-blue-500 bg-blue-500/10 group-hover:bg-blue-500/20',
-        shadow: 'hover:shadow-blue-500/10',
+        gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent',
+        border: 'border-emerald-500/20 hover:border-emerald-500/40',
+        icon: 'text-emerald-500 bg-emerald-500/10 group-hover:bg-emerald-500/20',
+        shadow: 'hover:shadow-emerald-500/10',
     },
     'Operaciones e Inventario': {
         gradient: 'from-orange-500/10 via-orange-500/5 to-transparent',
@@ -71,10 +71,10 @@ const moduleStyles: Record<
         shadow: 'hover:shadow-rose-500/10',
     },
     'Pagos en Línea': {
-        gradient: 'from-indigo-500/10 via-indigo-500/5 to-transparent',
-        border: 'border-indigo-500/20 hover:border-indigo-500/40',
-        icon: 'text-indigo-500 bg-indigo-500/10 group-hover:bg-indigo-500/20',
-        shadow: 'hover:shadow-indigo-500/10',
+        gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent',
+        border: 'border-emerald-500/20 hover:border-emerald-500/40',
+        icon: 'text-emerald-500 bg-emerald-500/10 group-hover:bg-emerald-500/20',
+        shadow: 'hover:shadow-emerald-500/10',
     },
     'Gestión Humana': {
         gradient: 'from-pink-500/10 via-pink-500/5 to-transparent',
@@ -89,10 +89,10 @@ const moduleStyles: Record<
         shadow: 'hover:shadow-teal-500/10',
     },
     'Logística y Flota': {
-        gradient: 'from-cyan-500/10 via-cyan-500/5 to-transparent',
-        border: 'border-cyan-500/20 hover:border-cyan-500/40',
-        icon: 'text-cyan-500 bg-cyan-500/10 group-hover:bg-cyan-500/20',
-        shadow: 'hover:shadow-cyan-500/10',
+        gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent',
+        border: 'border-emerald-500/20 hover:border-emerald-500/40',
+        icon: 'text-emerald-500 bg-emerald-500/10 group-hover:bg-emerald-500/20',
+        shadow: 'hover:shadow-emerald-500/10',
     },
     'Punto de Venta (POS)': {
         gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent',

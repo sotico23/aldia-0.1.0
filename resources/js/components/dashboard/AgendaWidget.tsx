@@ -199,7 +199,7 @@ export default function AgendaWidget({
             <CardHeader className="flex shrink-0 flex-row items-center justify-between border-b border-slate-200 bg-white px-5 py-3">
                 <div className="flex items-center gap-4">
                     <CardTitle className="flex items-center gap-2 text-sm font-black text-slate-800">
-                        <CalendarCheck className="h-5 w-5 text-blue-600" />
+                        <CalendarCheck className="h-5 w-5 text-emerald-600" />
                         <span className="hidden sm:inline">Agenda del Día</span>
                     </CardTitle>
 
@@ -403,12 +403,12 @@ export default function AgendaWidget({
                                         className="flex flex-1 flex-col items-center border-r border-slate-200 py-2 text-center last:border-r-0"
                                     >
                                         <div
-                                            className={`mb-1 text-[10px] font-bold uppercase ${isToday ? 'text-blue-600' : 'text-slate-500'}`}
+                                            className={`mb-1 text-[10px] font-bold uppercase ${isToday ? 'text-emerald-600' : 'text-slate-500'}`}
                                         >
                                             {day}
                                         </div>
                                         <div
-                                            className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-black ${isToday ? 'bg-blue-600 text-white' : 'cursor-pointer text-slate-700 transition-colors hover:bg-slate-100'}`}
+                                            className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-black ${isToday ? 'bg-emerald-600 text-white' : 'cursor-pointer text-slate-700 transition-colors hover:bg-slate-100'}`}
                                         >
                                             {dayDate.getDate()}
                                         </div>
@@ -447,7 +447,7 @@ export default function AgendaWidget({
                                 {daysOfWeek.map((day, idx) => (
                                     <div
                                         key={`wcol-${idx}`}
-                                        className={`relative flex-1 border-r border-slate-200 last:border-r-0 ${idx === currentDayOfWeek ? 'bg-blue-50/20' : ''}`}
+                                        className={`relative flex-1 border-r border-slate-200 last:border-r-0 ${idx === currentDayOfWeek ? 'bg-emerald-50/20' : ''}`}
                                     >
                                         {agendaWeekAppointments
                                             .filter(
@@ -544,7 +544,7 @@ export default function AgendaWidget({
                                     >
                                         <div className="mt-0.5 mb-1 flex justify-center">
                                             <span
-                                                className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${day.isToday ? 'bg-blue-600 text-white' : 'text-slate-700'}`}
+                                                className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${day.isToday ? 'bg-emerald-600 text-white' : 'text-slate-700'}`}
                                             >
                                                 {day.dayNum}
                                             </span>

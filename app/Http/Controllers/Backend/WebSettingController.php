@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -101,6 +102,10 @@ class WebSettingController extends Controller implements HasMiddleware
                 'nombre_sitio' => $settings->app_name ?? 'GrowERP',
                 'logo_letra' => substr($settings->app_name ?? 'G', 0, 1),
             ],
+            'theme' => $settings->themeColors(),
+            'themePresets' => collect(WebSetting::THEME_PRESETS)
+                ->map(fn (array $preset, string $id) => ['id' => $id, ...$preset])
+                ->values(),
             'nav' => [
                 'app_brand_visible' => $settings->nav_app_brand_visible ?? true,
                 'quienes_somos_visible' => $settings->nav_quienes_somos_visible ?? true,
@@ -196,6 +201,14 @@ class WebSettingController extends Controller implements HasMiddleware
             'app_description' => 'nullable|string',
             'app_keywords' => 'nullable|string|max:500',
             'app_author' => 'nullable|string|max:255',
+            'theme_preset' => [
+                'nullable',
+                'string',
+                Rule::in([...array_keys(WebSetting::THEME_PRESETS), 'custom']),
+            ],
+            'primary_color' => ['nullable', 'string', 'regex:/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'],
+            'secondary_color' => ['nullable', 'string', 'regex:/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'],
+            'accent_color' => ['nullable', 'string', 'regex:/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'],
             'timezone' => 'required|string|max:100',
             'locale' => 'required|string|max:10',
             'currency' => 'required|string|max:10',

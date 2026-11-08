@@ -1190,7 +1190,7 @@ export default function Index({
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                                                                    className="h-8 w-8 text-emerald-600 hover:bg-emerald-50"
                                                                     onClick={() => {
                                                                         setViendo(
                                                                             p,
@@ -1612,10 +1612,10 @@ export default function Index({
                                             </div>
                                         </div>
 
-                                        <div className="space-y-4 rounded-xl border border-blue-500/10 bg-blue-50 p-4">
+                                        <div className="space-y-4 rounded-xl border border-emerald-500/10 bg-emerald-50 p-4">
                                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                                 <div className="space-y-2">
-                                                    <Label className="text-xs font-bold tracking-wider text-blue-600 uppercase">
+                                                    <Label className="text-xs font-bold tracking-wider text-emerald-600 uppercase">
                                                         Unidad de Medida *
                                                     </Label>
                                                     <Select
@@ -1659,7 +1659,7 @@ export default function Index({
 
                                                 <div className="flex items-center justify-between pt-6">
                                                     <div>
-                                                        <Label className="text-xs font-bold text-blue-600 uppercase">
+                                                        <Label className="text-xs font-bold text-emerald-600 uppercase">
                                                             ¿Es pesable /
                                                             métrico?
                                                         </Label>
@@ -1688,7 +1688,7 @@ export default function Index({
                                                 data.medida_pesable) && (
                                                 <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2">
                                                     <div className="space-y-2">
-                                                        <Label className="text-xs font-bold text-blue-600">
+                                                        <Label className="text-xs font-bold text-emerald-600">
                                                             ¿Cuántos
                                                             kilos/litros
                                                             contiene cada
@@ -2057,8 +2057,8 @@ export default function Index({
 
                                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                             {!data.tiene_variantes && (
-                                                <div className="space-y-2 rounded-2xl border border-blue-500/10 bg-blue-500/5 p-4 transition-all hover:bg-blue-500/10">
-                                                    <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-blue-600 uppercase">
+                                                <div className="space-y-2 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 p-4 transition-all hover:bg-emerald-500/10">
+                                                    <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-emerald-600 uppercase">
                                                         <Package className="h-3 w-3" />{' '}
                                                         Stock Inicial
                                                     </Label>
@@ -2077,14 +2077,14 @@ export default function Index({
                                                                 ) || 0,
                                                             )
                                                         }
-                                                        className="h-10 border-none bg-background text-lg font-black text-blue-600 shadow-inner focus-visible:ring-blue-500/20"
+                                                        className="h-10 border-none bg-background text-lg font-black text-emerald-600 shadow-inner focus-visible:ring-emerald-500/20"
                                                     />
                                                 </div>
                                             )}
                                             {/* Tiene Variantes Toggle */}
-                                            <div className="space-y-2 rounded-2xl border border-indigo-500/10 bg-indigo-500/5 p-4 transition-all hover:bg-indigo-500/10">
+                                            <div className="space-y-2 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 p-4 transition-all hover:bg-emerald-500/10">
                                                 <div className="flex items-center justify-between">
-                                                    <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-indigo-600 uppercase">
+                                                    <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-emerald-600 uppercase">
                                                         <Layers className="h-3 w-3" />{' '}
                                                         Tiene Variantes
                                                     </Label>
@@ -2109,10 +2109,10 @@ export default function Index({
 
                                         {/* Variant Configuration Section */}
                                         {data.tiene_variantes && (
-                                            <div className="space-y-6 rounded-xl border border-indigo-500/20 bg-indigo-50/50 p-4">
+                                            <div className="space-y-6 rounded-xl border border-emerald-500/20 bg-emerald-50/50 p-4">
                                                 <div className="flex items-center gap-2">
-                                                    <Layers className="h-5 w-5 text-indigo-600" />
-                                                    <h3 className="text-sm font-black tracking-wider text-indigo-700 uppercase">
+                                                    <Layers className="h-5 w-5 text-emerald-600" />
+                                                    <h3 className="text-sm font-black tracking-wider text-emerald-700 uppercase">
                                                         Configuración de
                                                         Variantes
                                                     </h3>
@@ -2122,7 +2122,7 @@ export default function Index({
                                                 {variantesDisponibles.length >
                                                     0 && (
                                                     <div className="space-y-3">
-                                                        <Label className="text-xs font-bold text-indigo-600">
+                                                        <Label className="text-xs font-bold text-emerald-600">
                                                             Seleccionar
                                                             variantes existentes
                                                         </Label>
@@ -2146,8 +2146,8 @@ export default function Index({
                                                                             }
                                                                             className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all ${
                                                                                 isSelected
-                                                                                    ? 'bg-indigo-600 text-white shadow-md'
-                                                                                    : 'border border-indigo-200 bg-white text-indigo-600 hover:border-indigo-400'
+                                                                                    ? 'bg-emerald-600 text-white shadow-md'
+                                                                                    : 'border border-emerald-200 bg-white text-emerald-600 hover:border-emerald-400'
                                                                             }`}
                                                                         >
                                                                             {vt.tipo ===
@@ -2181,9 +2181,9 @@ export default function Index({
                                                             (vt) => (
                                                                 <div
                                                                     key={vt.id}
-                                                                    className="rounded-lg border border-indigo-200 bg-white p-3"
+                                                                    className="rounded-lg border border-emerald-200 bg-white p-3"
                                                                 >
-                                                                    <p className="mb-1 text-[10px] font-bold text-indigo-600 uppercase">
+                                                                    <p className="mb-1 text-[10px] font-bold text-emerald-600 uppercase">
                                                                         {
                                                                             vt.nombre
                                                                         }
@@ -2214,8 +2214,8 @@ export default function Index({
                                                 )}
 
                                                 {/* Inline New Variant Creator */}
-                                                <div className="space-y-3 rounded-lg border border-dashed border-indigo-300 bg-white p-4">
-                                                    <Label className="text-xs font-bold text-indigo-600">
+                                                <div className="space-y-3 rounded-lg border border-dashed border-emerald-300 bg-white p-4">
+                                                    <Label className="text-xs font-bold text-emerald-600">
                                                         {variantesDisponibles.length >
                                                         0
                                                             ? 'O crear nueva variante'
@@ -2237,7 +2237,7 @@ export default function Index({
                                                                     )
                                                                 }
                                                                 placeholder="Ej: Talla"
-                                                                className="h-9 border-none bg-indigo-50/50 text-xs"
+                                                                className="h-9 border-none bg-emerald-50/50 text-xs"
                                                             />
                                                         </div>
                                                         <div>
@@ -2256,7 +2256,7 @@ export default function Index({
                                                                     )
                                                                 }
                                                             >
-                                                                <SelectTrigger className="h-9 border-none bg-indigo-50/50 text-xs">
+                                                                <SelectTrigger className="h-9 border-none bg-emerald-50/50 text-xs">
                                                                     <SelectValue />
                                                                 </SelectTrigger>
                                                                 <SelectContent>
@@ -2299,7 +2299,7 @@ export default function Index({
                                                                         addNewVariantValue())
                                                                     }
                                                                     placeholder="Agregar valor"
-                                                                    className="h-9 border-none bg-indigo-50/50 text-xs"
+                                                                    className="h-9 border-none bg-emerald-50/50 text-xs"
                                                                 />
                                                                 <Button
                                                                     type="button"
@@ -2349,7 +2349,7 @@ export default function Index({
                                                 {skuRows.length > 0 && (
                                                     <div className="space-y-3">
                                                         <div className="flex items-center justify-between">
-                                                            <Label className="text-xs font-bold text-indigo-600">
+                                                            <Label className="text-xs font-bold text-emerald-600">
                                                                 Combinaciones
                                                                 SKU generadas (
                                                                 {skuRows.length}
@@ -2368,9 +2368,9 @@ export default function Index({
                                                                 Regenerar
                                                             </Button>
                                                         </div>
-                                                        <div className="overflow-x-auto rounded-lg border border-indigo-200">
+                                                        <div className="overflow-x-auto rounded-lg border border-emerald-200">
                                                             <table className="w-full text-left text-xs">
-                                                                <thead className="bg-indigo-100 text-[9px] font-bold text-indigo-700 uppercase">
+                                                                <thead className="bg-emerald-100 text-[9px] font-bold text-emerald-700 uppercase">
                                                                     <tr>
                                                                         {getSelectedVariants.map(
                                                                             (
@@ -2411,7 +2411,7 @@ export default function Index({
                                                                         </th>
                                                                     </tr>
                                                                 </thead>
-                                                                <tbody className="divide-y divide-indigo-100 bg-white">
+                                                                <tbody className="divide-y divide-emerald-100 bg-white">
                                                                     {skuRows.map(
                                                                         (
                                                                             row,
@@ -2421,7 +2421,7 @@ export default function Index({
                                                                                 key={
                                                                                     i
                                                                                 }
-                                                                                className="hover:bg-indigo-50/50"
+                                                                                className="hover:bg-emerald-50/50"
                                                                             >
                                                                                 {row.labels.map(
                                                                                     (
@@ -2432,7 +2432,7 @@ export default function Index({
                                                                                             key={
                                                                                                 j
                                                                                             }
-                                                                                            className="px-3 py-2 font-medium text-indigo-800"
+                                                                                            className="px-3 py-2 font-medium text-emerald-800"
                                                                                         >
                                                                                             {label.split(
                                                                                                 ': ',
@@ -2457,7 +2457,7 @@ export default function Index({
                                                                                                     .value,
                                                                                             )
                                                                                         }
-                                                                                        className="h-7 w-28 border-none bg-indigo-50/50 font-mono text-[10px] font-bold"
+                                                                                        className="h-7 w-28 border-none bg-emerald-50/50 font-mono text-[10px] font-bold"
                                                                                     />
                                                                                 </td>
                                                                                 <td className="px-3 py-2 text-right">
@@ -2526,7 +2526,7 @@ export default function Index({
                                                                                                     0,
                                                                                             )
                                                                                         }
-                                                                                        className="ml-auto h-7 w-16 border-none bg-blue-50/50 text-right text-[10px] font-bold"
+                                                                                        className="ml-auto h-7 w-16 border-none bg-emerald-50/50 text-right text-[10px] font-bold"
                                                                                     />
                                                                                 </td>
                                                                                 <td className="px-3 py-2 text-right">
@@ -2762,7 +2762,7 @@ export default function Index({
             <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
                 <DialogContent className="max-h-[85vh] max-w-[90vw] overflow-y-auto border-none bg-white p-0 shadow-xl md:max-w-2xl">
                     <DialogHeader className="relative overflow-hidden px-4 py-4 md:px-6 md:py-5">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900 opacity-90" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-900 opacity-90" />
                         <div className="absolute top-0 right-0 p-3 text-white opacity-15 md:p-4">
                             <Eye className="h-12 w-12 rotate-12 md:h-16 md:w-16" />
                         </div>
@@ -2787,11 +2787,11 @@ export default function Index({
                     {viendo && (
                         <div className="relative z-20 -mt-2 mb-3 flex max-h-[calc(85vh-100px)] flex-col gap-3 overflow-y-auto px-4 md:-mt-4 md:mb-4 md:gap-4 md:px-6">
                             <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
-                                <div className="rounded-lg border border-blue-200 bg-blue-50 p-2">
-                                    <p className="text-[8px] font-bold text-blue-600 uppercase">
+                                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2">
+                                    <p className="text-[8px] font-bold text-emerald-600 uppercase">
                                         SKU
                                     </p>
-                                    <p className="truncate text-xs font-semibold text-blue-800">
+                                    <p className="truncate text-xs font-semibold text-emerald-800">
                                         {viendo.codigo}
                                     </p>
                                 </div>
@@ -2804,11 +2804,11 @@ export default function Index({
                                             'Sin categoría'}
                                     </p>
                                 </div>
-                                <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-2">
-                                    <p className="text-[8px] font-bold text-indigo-600 uppercase">
+                                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2">
+                                    <p className="text-[8px] font-bold text-emerald-600 uppercase">
                                         Precio
                                     </p>
-                                    <p className="truncate text-xs font-semibold text-indigo-800">
+                                    <p className="truncate text-xs font-semibold text-emerald-800">
                                         {formatCurrency(
                                             viendo.precio_venta || 0,
                                         )}
@@ -2858,7 +2858,7 @@ export default function Index({
                                     <Card className="border-none bg-gray-50/50 shadow-sm">
                                         <CardHeader className="border-b border-gray-100 pb-2">
                                             <div className="flex items-center gap-2">
-                                                <div className="rounded-md bg-blue-100 p-1 text-blue-700">
+                                                <div className="rounded-md bg-emerald-100 p-1 text-emerald-700">
                                                     <Package className="h-3 w-3" />
                                                 </div>
                                                 <CardTitle className="text-xs font-bold text-gray-800">
@@ -2947,7 +2947,7 @@ export default function Index({
                                                                     ?.nombre ||
                                                                     'General'}
                                                             </td>
-                                                            <td className="px-4 py-2 text-right font-black text-blue-600">
+                                                            <td className="px-4 py-2 text-right font-black text-emerald-600">
                                                                 {Math.round(
                                                                     inv.cantidad,
                                                                 )}
@@ -3003,7 +3003,7 @@ export default function Index({
                                                                 <td className="px-4 py-2 text-gray-500">
                                                                     {v.codigo}
                                                                 </td>
-                                                                <td className="px-4 py-2 text-right font-black text-blue-600">
+                                                                <td className="px-4 py-2 text-right font-black text-emerald-600">
                                                                     {Math.round(
                                                                         v.inventarios?.reduce(
                                                                             (

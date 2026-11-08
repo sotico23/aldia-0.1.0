@@ -80,7 +80,13 @@ const formatoFecha = (fecha: string | null): string =>
         : '—';
 
 const formVacio = {
+    mode: 'existing' as 'existing' | 'new',
     user_id: '',
+    name: '',
+    email: '',
+    password: '',
+    telefono: '',
+    rut: '',
     estado: 'disponible',
     radio_km: '10',
     capacidad_max: '5',
@@ -100,7 +106,13 @@ export default function RepartidoresIndex({ repartidores, candidatos }: Props) {
 
     const abrirEditar = (repartidor: Repartidor) => {
         setData({
+            mode: 'existing',
             user_id: String(repartidor.user_id),
+            name: '',
+            email: '',
+            password: '',
+            telefono: '',
+            rut: '',
             estado: repartidor.estado,
             radio_km: repartidor.radio_km.toFixed(2),
             capacidad_max: String(repartidor.capacidad_max),
@@ -312,35 +324,181 @@ export default function RepartidoresIndex({ repartidores, candidatos }: Props) {
                     </DialogHeader>
                     <form onSubmit={submit} className="space-y-4">
                         {!editingId && (
-                            <div className="space-y-2">
-                                <Label htmlFor="user_id">Usuario</Label>
-                                <Select
-                                    value={data.user_id}
-                                    onValueChange={(value) =>
-                                        setData('user_id', value)
-                                    }
-                                >
-                                    <SelectTrigger id="user_id">
-                                        <SelectValue placeholder="Selecciona un usuario" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {candidatos.map((candidato) => (
-                                            <SelectItem
-                                                key={candidato.id}
-                                                value={String(candidato.id)}
-                                            >
-                                                {candidato.name} —{' '}
-                                                {candidato.email}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.user_id && (
-                                    <p className="text-sm text-red-600">
-                                        {errors.user_id}
-                                    </p>
+                            <>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Button
+                                        type="button"
+                                        variant={
+                                            data.mode === 'existing'
+                                                ? 'default'
+                                                : 'outline'
+                                        }
+                                        onClick={() =>
+                                            setData({
+                                                ...data,
+                                                mode: 'existing',
+                                                user_id: '',
+                                            })
+                                        }
+                                    >
+                                        Usuario existente
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant={
+                                            data.mode === 'new'
+                                                ? 'default'
+                                                : 'outline'
+                                        }
+                                        onClick={() =>
+                                            setData({
+                                                ...data,
+                                                mode: 'new',
+                                                user_id: '',
+                                            })
+                                        }
+                                    >
+                                        Crear nuevo
+                                    </Button>
+                                </div>
+
+                                {data.mode === 'existing' ? (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="user_id">Usuario</Label>
+                                        <Select
+                                            value={data.user_id}
+                                            onValueChange={(value) =>
+                                                setData('user_id', value)
+                                            }
+                                        >
+                                            <SelectTrigger id="user_id">
+                                                <SelectValue placeholder="Selecciona un usuario" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {candidatos.map((candidato) => (
+                                                    <SelectItem
+                                                        key={candidato.id}
+                                                        value={String(
+                                                            candidato.id,
+                                                        )}
+                                                    >
+                                                        {candidato.name} —{' '}
+                                                        {candidato.email}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {errors.user_id && (
+                                            <p className="text-sm text-red-600">
+                                                {errors.user_id}
+                                            </p>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="name">
+                                                Nombre completo *
+                                            </Label>
+                                            <Input
+                                                id="name"
+                                                value={data.name}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'name',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="Ej: Juan Pérez"
+                                            />
+                                            {errors.name && (
+                                                <p className="text-sm text-red-600">
+                                                    {errors.name}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="email">
+                                                Correo electrónico *
+                                            </Label>
+                                            <Input
+                                                id="email"
+                                                type="email"
+                                                value={data.email}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'email',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="repartidor@empresa.cl"
+                                            />
+                                            {errors.email && (
+                                                <p className="text-sm text-red-600">
+                                                    {errors.email}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="password">
+                                                    Contraseña
+                                                </Label>
+                                                <Input
+                                                    id="password"
+                                                    type="password"
+                                                    value={data.password}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'password',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="Se genera si se deja vacío"
+                                                />
+                                                {errors.password && (
+                                                    <p className="text-sm text-red-600">
+                                                        {errors.password}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="telefono">
+                                                    Teléfono
+                                                </Label>
+                                                <Input
+                                                    id="telefono"
+                                                    value={data.telefono}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'telefono',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="rut">RUT</Label>
+                                            <Input
+                                                id="rut"
+                                                value={data.rut}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'rut',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </div>
+                                        <p className="rounded-md border border-emerald-200 bg-emerald-50 p-2 text-xs text-emerald-800">
+                                            El rol <strong>Repartidor</strong> y
+                                            la empresa se asignan
+                                            automáticamente.
+                                        </p>
+                                    </div>
                                 )}
-                            </div>
+                            </>
                         )}
 
                         <div className="space-y-2">
@@ -428,7 +586,12 @@ export default function RepartidoresIndex({ repartidores, candidatos }: Props) {
                             <Button
                                 type="submit"
                                 disabled={
-                                    processing || (!editingId && !data.user_id)
+                                    processing ||
+                                    (!editingId &&
+                                        (data.mode === 'existing'
+                                            ? !data.user_id
+                                            : !data.name.trim() ||
+                                              !data.email.trim()))
                                 }
                             >
                                 {processing

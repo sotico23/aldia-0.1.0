@@ -204,7 +204,7 @@ const ESTILOS_METODO: Record<string, string> = {
     efectivo:
         'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-400',
     tarjeta:
-        'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-400',
+        'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-400',
     transferencia:
         'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900 dark:bg-violet-950/40 dark:text-violet-400',
     vale: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-400',
@@ -215,9 +215,9 @@ const ESTILOS_METODO: Record<string, string> = {
 };
 
 const ESTILOS_TIPO: Record<string, string> = {
-    boleta: 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-400',
+    boleta: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-400',
     factura:
-        'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-400',
+        'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-400',
 };
 
 function etiquetaTipo(tipo: string): string {
@@ -436,7 +436,7 @@ function TicketContenido({
                     </div>
                 )}
                 {detalle.delivery_cost > 0 && (
-                    <div className="flex justify-between text-blue-600">
+                    <div className="flex justify-between text-emerald-600">
                         <span>Despacho</span>
                         <span>
                             {formatCurrency(
@@ -726,7 +726,7 @@ export default function MisVentas({
                         )}
                         detalle={`${metricas.mes.cantidad} documento(s) en el mes`}
                         icono={TrendingUp}
-                        acento="bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+                        acento="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
                     />
                     <KpiCard
                         titulo="Ticket promedio"

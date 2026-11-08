@@ -169,7 +169,7 @@ export default function Renovaciones({ carga }: { carga: CargaDiaria }) {
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                            className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                                                             title="Ver Ticket"
                                                         >
                                                             <Eye className="h-4 w-4" />

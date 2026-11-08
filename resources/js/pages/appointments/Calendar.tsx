@@ -274,7 +274,7 @@ export default function CalendarView({
 
     const statusStyles: Record<string, string> = {
         pendiente: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-        confirmada: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+        confirmada: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
         en_curso: 'bg-violet-500/10 text-violet-600 border-violet-500/20',
         completada: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
         cancelada: 'bg-rose-500/10 text-rose-600 border-rose-500/20',
@@ -302,7 +302,7 @@ export default function CalendarView({
 
     const statusBadge = (status: string) => {
         const map: Record<string, string> = {
-            confirmada: 'bg-blue-100 text-blue-700',
+            confirmada: 'bg-emerald-100 text-emerald-700',
             completada: 'bg-green-100 text-green-700',
             cancelada: 'bg-red-100 text-red-700',
             pendiente: 'bg-amber-100 text-amber-700',
@@ -323,7 +323,7 @@ export default function CalendarView({
             case 'cancelada':
                 return 'bg-rose-500';
             case 'confirmada':
-                return 'bg-blue-500';
+                return 'bg-emerald-500';
             case 'en_curso':
                 return 'bg-violet-500';
             case 'no_show':
@@ -478,7 +478,7 @@ export default function CalendarView({
                                 />
                                 <Bar
                                     dataKey="total"
-                                    fill="#3b82f6"
+                                    fill="#059669"
                                     radius={[2, 2, 0, 0]}
                                 />
                             </BarChart>
@@ -555,7 +555,7 @@ export default function CalendarView({
                                 monthServices.slice(0, 4).map((s, i) => {
                                     const maxVal = monthServices[0]?.value || 1;
                                     const colors = [
-                                        '#3b82f6',
+                                        '#059669',
                                         '#22c55e',
                                         '#f59e0b',
                                         '#8b5cf6',
@@ -610,7 +610,7 @@ export default function CalendarView({
                                                 className="h-5 w-5 shrink-0 rounded-full object-cover sm:h-6 sm:w-6"
                                             />
                                         ) : (
-                                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-[8px] font-bold text-white sm:h-6 sm:w-6 sm:text-[10px]">
+                                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 text-[8px] font-bold text-white sm:h-6 sm:w-6 sm:text-[10px]">
                                                 {p.name.charAt(0)}
                                             </div>
                                         )}
@@ -620,7 +620,7 @@ export default function CalendarView({
                                             </p>
                                             <div className="mt-0.5 h-1 max-w-[80px] overflow-hidden rounded-full bg-slate-100 sm:max-w-none">
                                                 <div
-                                                    className="h-full rounded-full bg-blue-500"
+                                                    className="h-full rounded-full bg-emerald-500"
                                                     style={{
                                                         width: `${Math.min((p.total / (providerWorkload[0]?.total || 1)) * 100, 100)}%`,
                                                     }}
@@ -745,7 +745,7 @@ export default function CalendarView({
                                             onClick={() =>
                                                 setShowGoogleConfig(true)
                                             }
-                                            className="px-2 text-[10px] font-semibold text-blue-600 transition-colors hover:text-blue-700 sm:text-[11px]"
+                                            className="px-2 text-[10px] font-semibold text-emerald-600 transition-colors hover:text-emerald-700 sm:text-[11px]"
                                         >
                                             Configurar
                                         </button>
@@ -784,7 +784,7 @@ export default function CalendarView({
                                     </p>
                                     <a
                                         href={googleAuthUrl}
-                                        className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-blue-600 text-[10px] font-semibold text-white transition-all hover:bg-blue-700 sm:h-9 sm:text-xs"
+                                        className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 text-[10px] font-semibold text-white transition-all hover:bg-emerald-700 sm:h-9 sm:text-xs"
                                     >
                                         <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                                         Conectar con Google
@@ -1142,7 +1142,7 @@ export default function CalendarView({
                                                                                                           ? '#ef4444'
                                                                                                           : c.status ===
                                                                                                               'confirmada'
-                                                                                                            ? '#3b82f6'
+                                                                                                            ? '#059669'
                                                                                                             : '#f59e0b',
                                                                                             }}
                                                                                         >
@@ -1217,7 +1217,7 @@ export default function CalendarView({
                                                     return (
                                                         <div
                                                             key={h}
-                                                            className={`flex border-b border-slate-100 last:border-b-0 ${hasCitas ? 'bg-blue-50/30' : ''}`}
+                                                            className={`flex border-b border-slate-100 last:border-b-0 ${hasCitas ? 'bg-emerald-50/30' : ''}`}
                                                         >
                                                             <div className="h-16 w-14 shrink-0 border-r border-slate-200 pt-0.5 pr-2 text-right text-[10px] font-medium text-slate-400 sm:h-20 sm:w-16 sm:pr-3 sm:text-xs">
                                                                 {String(
@@ -1281,7 +1281,7 @@ export default function CalendarView({
                                                                                               ? '#ef4444'
                                                                                               : c.status ===
                                                                                                   'confirmada'
-                                                                                                ? '#3b82f6'
+                                                                                                ? '#059669'
                                                                                                 : '#f59e0b',
                                                                                 }}
                                                                             >
@@ -1470,8 +1470,8 @@ export default function CalendarView({
                     <div className="max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl sm:p-6">
                         <div className="flex items-start justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-100 sm:h-10 sm:w-10">
-                                    <RefreshCw className="h-4 w-4 text-blue-600 sm:h-5 sm:w-5" />
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 sm:h-10 sm:w-10">
+                                    <RefreshCw className="h-4 w-4 text-emerald-600 sm:h-5 sm:w-5" />
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-bold text-slate-900 sm:text-base">
@@ -1508,7 +1508,7 @@ export default function CalendarView({
                                             e.target.value,
                                         )
                                     }
-                                    className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs transition-all outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 sm:h-10 sm:text-sm"
+                                    className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs transition-all outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 sm:h-10 sm:text-sm"
                                 />
                                 <p className="text-[9px] text-slate-400 sm:text-[10px]">
                                     Déjalo vacío para usar el calendario
@@ -1527,7 +1527,7 @@ export default function CalendarView({
                                 <button
                                     type="submit"
                                     disabled={googleProcessing}
-                                    className="flex h-9 flex-1 items-center justify-center rounded-lg bg-blue-600 text-xs font-semibold text-white transition-all hover:bg-blue-700 disabled:bg-blue-400 sm:h-10 sm:text-sm"
+                                    className="flex h-9 flex-1 items-center justify-center rounded-lg bg-emerald-600 text-xs font-semibold text-white transition-all hover:bg-emerald-700 disabled:bg-emerald-400 sm:h-10 sm:text-sm"
                                 >
                                     {googleProcessing ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -1552,7 +1552,7 @@ export default function CalendarView({
                                             {googleAuthUrl ? (
                                                 <a
                                                     href={googleAuthUrl}
-                                                    className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-blue-600 text-[10px] font-semibold text-white transition-all hover:bg-blue-700 sm:h-10 sm:text-xs"
+                                                    className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-600 text-[10px] font-semibold text-white transition-all hover:bg-emerald-700 sm:h-10 sm:text-xs"
                                                 >
                                                     <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                                                     Reconectar
@@ -1590,7 +1590,7 @@ export default function CalendarView({
                                 ) : googleAuthUrl ? (
                                     <a
                                         href={googleAuthUrl}
-                                        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border-2 border-slate-200 bg-white text-xs font-semibold text-slate-800 shadow-sm transition-all hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 sm:h-11 sm:text-sm"
+                                        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border-2 border-slate-200 bg-white text-xs font-semibold text-slate-800 shadow-sm transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 sm:h-11 sm:text-sm"
                                     >
                                         <svg
                                             className="h-4 w-4 sm:h-5 sm:w-5"
@@ -1633,8 +1633,8 @@ export default function CalendarView({
                     <div className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl sm:p-6">
                         <div className="flex items-start justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 sm:h-10 sm:w-10">
-                                    <CalendarIcon className="h-4 w-4 text-indigo-600 sm:h-5 sm:w-5" />
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 sm:h-10 sm:w-10">
+                                    <CalendarIcon className="h-4 w-4 text-emerald-600 sm:h-5 sm:w-5" />
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-bold text-slate-900 sm:text-base">
@@ -1669,7 +1669,7 @@ export default function CalendarView({
                                     onChange={(e) =>
                                         setData('client_id', e.target.value)
                                     }
-                                    className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs transition-all outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:h-10 sm:text-sm"
+                                    className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs transition-all outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 sm:h-10 sm:text-sm"
                                     required
                                 >
                                     <option value="">
@@ -1699,7 +1699,7 @@ export default function CalendarView({
                                     onChange={(e) =>
                                         setData('producto_id', e.target.value)
                                     }
-                                    className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs transition-all outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:h-10 sm:text-sm"
+                                    className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs transition-all outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 sm:h-10 sm:text-sm"
                                     required
                                 >
                                     <option value="">
@@ -1756,7 +1756,7 @@ export default function CalendarView({
                                                 );
                                             }
                                         }}
-                                        className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs transition-all outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:h-10 sm:text-sm"
+                                        className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs transition-all outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 sm:h-10 sm:text-sm"
                                         required
                                     />
                                     {errors.start_time && (
@@ -1775,7 +1775,7 @@ export default function CalendarView({
                                         onChange={(e) =>
                                             setData('end_time', e.target.value)
                                         }
-                                        className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs transition-all outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:h-10 sm:text-sm"
+                                        className="flex h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs transition-all outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 sm:h-10 sm:text-sm"
                                         required
                                     />
                                     {errors.end_time && (
@@ -1795,7 +1795,7 @@ export default function CalendarView({
                                     onChange={(e) =>
                                         setData('notes', e.target.value)
                                     }
-                                    className="flex h-16 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs transition-all outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:h-20 sm:text-sm"
+                                    className="flex h-16 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs transition-all outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 sm:h-20 sm:text-sm"
                                     placeholder="Notas adicionales..."
                                 />
                             </div>
@@ -1814,7 +1814,7 @@ export default function CalendarView({
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="flex h-9 flex-1 items-center justify-center rounded-lg bg-indigo-600 text-xs font-semibold text-white transition-all hover:bg-indigo-700 disabled:bg-indigo-400 sm:h-10 sm:text-sm"
+                                    className="flex h-9 flex-1 items-center justify-center rounded-lg bg-emerald-600 text-xs font-semibold text-white transition-all hover:bg-emerald-700 disabled:bg-emerald-400 sm:h-10 sm:text-sm"
                                 >
                                     {processing ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />

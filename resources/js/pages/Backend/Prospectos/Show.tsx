@@ -31,7 +31,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const estadoColores: Record<string, string> = {
-    nuevo: 'bg-blue-500',
+    nuevo: 'bg-emerald-500',
     contactado: 'bg-yellow-500',
     pendiente: 'bg-orange-500',
     perdido: 'bg-red-500',

@@ -76,7 +76,7 @@ export default function Index({ courses }: { courses: Course[] }) {
                                     <Button variant="outline" size="sm" asChild>
                                         <Link
                                             href={`/cursos/${course.slug}`}
-                                            className="text-blue-600 dark:text-blue-400"
+                                            className="text-emerald-600 dark:text-emerald-400"
                                         >
                                             <Eye className="mr-1 h-3 w-3" />
                                             Ver

@@ -62,7 +62,7 @@ export default function CierreShow({ cierre }: { cierre: Cierre }) {
                 );
             case 'CERRADO':
                 return (
-                    <Badge className="bg-blue-500 text-white">Cerrado</Badge>
+                    <Badge className="bg-emerald-500 text-white">Cerrado</Badge>
                 );
             case 'AUDITADO':
                 return (

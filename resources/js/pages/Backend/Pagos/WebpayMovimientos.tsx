@@ -19,10 +19,10 @@ const pasarelaLabels: Record<string, string> = {
 };
 
 const pasarelaColors: Record<string, string> = {
-    webpay: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+    webpay: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
     mercadopago:
         'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-    paypal: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
+    paypal: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
 };
 
 export default function WebpayMovimientos({
@@ -147,7 +147,7 @@ export default function WebpayMovimientos({
             <Head title="Movimientos de Pago" />
 
             <div className="mx-auto min-h-0 w-full overflow-y-auto px-2 py-3 pb-24 sm:max-w-6xl sm:px-4 sm:py-6">
-                <div className="mb-4 flex flex-col gap-3 rounded-xl border-0 bg-gradient-to-r from-indigo-500 to-purple-600 p-3 text-white sm:mb-6 sm:flex-row sm:items-start sm:justify-between sm:gap-4 sm:rounded-[2rem] sm:p-6">
+                <div className="mb-4 flex flex-col gap-3 rounded-xl border-0 bg-gradient-to-r from-emerald-500 to-purple-600 p-3 text-white sm:mb-6 sm:flex-row sm:items-start sm:justify-between sm:gap-4 sm:rounded-[2rem] sm:p-6">
                     <div className="flex items-start gap-3 sm:gap-4">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/20 sm:h-12 sm:w-12 sm:rounded-xl">
                             <Activity className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -177,7 +177,7 @@ export default function WebpayMovimientos({
                 <div className="overflow-hidden rounded-xl border bg-white shadow-sm sm:rounded-[2rem] dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex flex-col gap-2 border-b border-slate-100 p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-0 sm:p-4 dark:border-slate-800">
                         <h2 className="flex items-center gap-1.5 text-sm font-black tracking-tight uppercase sm:gap-2 sm:text-lg">
-                            <CreditCard className="h-4 w-4 text-indigo-500 sm:h-5 sm:w-5" />
+                            <CreditCard className="h-4 w-4 text-emerald-500 sm:h-5 sm:w-5" />
                             <span className="hidden sm:inline">
                                 Todas las Transacciones
                             </span>
@@ -298,7 +298,7 @@ export default function WebpayMovimientos({
                                             href={link.url || '#'}
                                             className={`rounded-md border px-1.5 py-1 text-[10px] font-medium whitespace-nowrap sm:px-3 sm:py-1.5 sm:text-xs ${
                                                 link.active
-                                                    ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm hover:bg-indigo-700'
+                                                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm hover:bg-emerald-700'
                                                     : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
                                             } ${!link.url ? 'hidden cursor-not-allowed opacity-50' : ''}`}
                                             dangerouslySetInnerHTML={{

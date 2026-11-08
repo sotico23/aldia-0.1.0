@@ -53,7 +53,7 @@ export default function Index({ courses }: { courses: Course[] }) {
                             </div>
                             <div className="flex flex-1 flex-col p-6">
                                 <div className="mb-3 flex items-center justify-between">
-                                    <span className="inline-flex items-center rounded-lg border border-indigo-100 bg-indigo-50 px-2 py-1 text-[10px] font-bold tracking-tighter text-indigo-700 uppercase dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">
+                                    <span className="inline-flex items-center rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-bold tracking-tighter text-emerald-700 uppercase dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
                                         Desarrollo Web
                                     </span>
                                     <div className="text-sm font-bold text-slate-900 dark:text-white">
@@ -66,7 +66,7 @@ export default function Index({ courses }: { courses: Course[] }) {
                                         )}
                                     </div>
                                 </div>
-                                <h3 className="mb-2 text-xl leading-tight font-bold text-slate-900 transition-colors group-hover:text-blue-600 dark:text-white">
+                                <h3 className="mb-2 text-xl leading-tight font-bold text-slate-900 transition-colors group-hover:text-emerald-600 dark:text-white">
                                     <Link href={`/cursos/${course.slug}`}>
                                         {course.title}
                                     </Link>

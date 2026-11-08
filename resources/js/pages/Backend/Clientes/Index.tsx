@@ -506,7 +506,7 @@ export default function Index({
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             {c.tiene_acceso ? (
-                                                                <Badge className="flex w-fit items-center gap-1 rounded-full border border-blue-200 bg-blue-500/10 px-2 py-0.5 text-[9px] font-black text-blue-600 uppercase">
+                                                                <Badge className="flex w-fit items-center gap-1 rounded-full border border-emerald-200 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-black text-emerald-600 uppercase">
                                                                     <ShieldCheck className="h-2.5 w-2.5" />{' '}
                                                                     Habilitado
                                                                 </Badge>
@@ -641,7 +641,7 @@ export default function Index({
                                                             <div className="absolute top-2 left-2">
                                                                 <Badge
                                                                     variant="secondary"
-                                                                    className="flex items-center gap-1 px-2 py-0.5 text-[9px] font-black text-blue-600 uppercase"
+                                                                    className="flex items-center gap-1 px-2 py-0.5 text-[9px] font-black text-emerald-600 uppercase"
                                                                 >
                                                                     <ShieldCheck className="h-2.5 w-2.5" />
                                                                     Acceso
@@ -1148,7 +1148,7 @@ export default function Index({
                 <DialogContent className="max-h-[85vh] max-w-[90vw] overflow-y-auto border-none p-0 shadow-xl md:max-w-2xl">
                     {viendo && (
                         <>
-                            <DialogHeader className="relative overflow-hidden bg-gradient-to-br from-indigo-800 to-blue-900 px-4 py-4 md:px-6 md:py-5">
+                            <DialogHeader className="relative overflow-hidden bg-gradient-to-br from-emerald-800 to-emerald-900 px-4 py-4 md:px-6 md:py-5">
                                 <div className="absolute top-0 right-0 p-3 opacity-15 md:p-4">
                                     {viendo.imagen ? (
                                         <img

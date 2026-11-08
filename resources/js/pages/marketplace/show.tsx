@@ -782,16 +782,16 @@ export default function MarketplaceShow({
                                                     className="flex cursor-help items-center gap-1"
                                                     aria-label="Tienda verificada"
                                                 >
-                                                    <CheckCircle2 className="h-5 w-5 fill-blue-500 text-blue-500" />
+                                                    <CheckCircle2 className="h-5 w-5 fill-emerald-500 text-emerald-500" />
                                                 </span>
                                             </TooltipTrigger>
                                             <TooltipContent
                                                 side="top"
                                                 align="center"
-                                                className="border-blue-200 bg-blue-50 px-3 py-1.5 text-xs text-blue-700"
+                                                className="border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700"
                                             >
                                                 <div className="flex items-center gap-1.5">
-                                                    <CheckCircle2 className="h-3 w-3 fill-blue-500 text-blue-500" />
+                                                    <CheckCircle2 className="h-3 w-3 fill-emerald-500 text-emerald-500" />
                                                     Tienda verificada
                                                 </div>
                                             </TooltipContent>
@@ -882,7 +882,7 @@ export default function MarketplaceShow({
                                                 handleSocialShare('facebook')
                                             }
                                         >
-                                            <Facebook className="mr-2 h-4 w-4 text-blue-600" />
+                                            <Facebook className="mr-2 h-4 w-4 text-[#1877F2]" />
                                             Facebook
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
@@ -967,13 +967,13 @@ export default function MarketplaceShow({
                                                     className="flex cursor-help items-center gap-1"
                                                     aria-label="Tienda verificada"
                                                 >
-                                                    <CheckCircle2 className="h-4 w-4 fill-blue-500 text-blue-500" />
+                                                    <CheckCircle2 className="h-4 w-4 fill-emerald-500 text-emerald-500" />
                                                 </span>
                                             </TooltipTrigger>
                                             <TooltipContent
                                                 side="top"
                                                 align="center"
-                                                className="border-blue-200 bg-blue-50 px-3 py-1.5 text-xs text-blue-700"
+                                                className="border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700"
                                             >
                                                 Tienda verificada por la
                                                 plataforma
@@ -2032,7 +2032,7 @@ export default function MarketplaceShow({
                                                                                     },
                                                                                 )
                                                                             }
-                                                                            className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all ${datosCheckout.metodo_pago === 'webpay' ? 'border-indigo-500 bg-indigo-50 text-indigo-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
+                                                                            className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all ${datosCheckout.metodo_pago === 'webpay' ? 'border-emerald-500 bg-emerald-50 text-emerald-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
                                                                         >
                                                                             <CreditCard className="mb-2 h-5 w-5" />
                                                                             <span className="text-[10px] font-black tracking-tight uppercase">
@@ -2053,7 +2053,7 @@ export default function MarketplaceShow({
                                                                                     },
                                                                                 )
                                                                             }
-                                                                            className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all ${datosCheckout.metodo_pago === 'paypal' ? 'border-blue-500 bg-blue-50 text-blue-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
+                                                                            className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all ${datosCheckout.metodo_pago === 'paypal' ? 'border-emerald-500 bg-emerald-50 text-emerald-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
                                                                         >
                                                                             <CreditCard className="mb-2 h-5 w-5" />
                                                                             <span className="text-[10px] font-black tracking-tight uppercase">
@@ -2074,7 +2074,7 @@ export default function MarketplaceShow({
                                                                                     },
                                                                                 )
                                                                             }
-                                                                            className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all ${datosCheckout.metodo_pago === 'mercadopago' ? 'border-sky-500 bg-sky-50 text-sky-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
+                                                                            className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all ${datosCheckout.metodo_pago === 'mercadopago' ? 'border-emerald-500 bg-emerald-50 text-emerald-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
                                                                         >
                                                                             <CreditCard className="mb-2 h-5 w-5" />
                                                                             <span className="text-[10px] font-black tracking-tight uppercase">
@@ -2097,13 +2097,13 @@ export default function MarketplaceShow({
                                                                     'h-16 w-full rounded-2xl font-black tracking-[0.2em] uppercase transition-all hover:scale-[1.02]',
                                                                     datosCheckout.metodo_pago ===
                                                                         'webpay' &&
-                                                                        'bg-indigo-600 shadow-indigo-500/25 hover:bg-indigo-700',
+                                                                        'bg-emerald-600 shadow-emerald-500/25 hover:bg-emerald-700',
                                                                     datosCheckout.metodo_pago ===
                                                                         'paypal' &&
-                                                                        'bg-blue-600 shadow-blue-500/25 hover:bg-blue-700',
+                                                                        'bg-emerald-600 shadow-emerald-500/25 hover:bg-emerald-700',
                                                                     datosCheckout.metodo_pago ===
                                                                         'mercadopago' &&
-                                                                        'bg-sky-600 shadow-sky-500/25 hover:bg-sky-700',
+                                                                        'bg-emerald-600 shadow-emerald-500/25 hover:bg-emerald-700',
                                                                 )}
                                                             >
                                                                 {procesando

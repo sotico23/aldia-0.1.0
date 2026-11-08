@@ -257,7 +257,7 @@ const estadoColor: Record<string, string> = {
     pendiente:
         'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
     anulada: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
-    enviada: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
+    enviada: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
     default: 'bg-muted text-muted-foreground',
 };
 
@@ -325,7 +325,7 @@ export default function Index({
                             value={fmtNumLocal(kpis.clientes_total)}
                             sub={`+${kpis.clientes_nuevos} nuevos este mes`}
                             icon={Users}
-                            color="bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400"
+                            color="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400"
                         />
                         <KPI
                             title="Compras del Mes"
@@ -347,7 +347,7 @@ export default function Index({
                             value={fmtNumLocal(kpis.cotizaciones_mes)}
                             sub={`${fmtNumLocal(kpis.cotizaciones_total)} en total`}
                             icon={FileText}
-                            color="bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400"
+                            color="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400"
                         />
                         <KPI
                             title="Leads (Mes)"
@@ -361,7 +361,7 @@ export default function Index({
                             value={fmtNumLocal(kpis.oportunidades)}
                             sub="activas en pipeline"
                             icon={TrendingUp}
-                            color="bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400"
+                            color="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400"
                         />
                         <KPI
                             title="Tickets Abiertos"
@@ -492,7 +492,7 @@ export default function Index({
                         <Card className="border-none bg-card/60 shadow-md ring-1 ring-border/40">
                             <CardHeader className="pb-3">
                                 <CardTitle className="flex items-center gap-2 text-base">
-                                    <Users className="h-4 w-4 text-blue-500" />{' '}
+                                    <Users className="h-4 w-4 text-emerald-500" />{' '}
                                     Top 5 Clientes
                                 </CardTitle>
                                 <CardDescription>
@@ -511,7 +511,7 @@ export default function Index({
                                         label={c.nombre}
                                         value={c.total ?? 0}
                                         max={maxClient}
-                                        color="bg-blue-500"
+                                        color="bg-emerald-500"
                                         sub={fmtLocal(c.total ?? 0)}
                                     />
                                 ))}

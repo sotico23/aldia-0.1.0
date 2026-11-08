@@ -102,7 +102,7 @@ const ESTADOS = [
     {
         value: 'enviada',
         label: 'Enviada',
-        color: 'bg-blue-500/10 text-blue-600 border-blue-200',
+        color: 'bg-emerald-500/10 text-emerald-600 border-emerald-200',
     },
     {
         value: 'aceptada',
@@ -614,7 +614,7 @@ export default function Index({
                                                                     <Button
                                                                         variant="ghost"
                                                                         size="icon"
-                                                                        className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                                                                        className="h-8 w-8 text-emerald-600 hover:bg-emerald-50"
                                                                     >
                                                                         <Printer className="h-4 w-4" />
                                                                     </Button>
@@ -755,7 +755,7 @@ export default function Index({
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                                                                className="h-8 w-8 text-emerald-600 hover:bg-emerald-50"
                                                             >
                                                                 <Printer className="h-4 w-4" />
                                                             </Button>
@@ -1376,7 +1376,7 @@ export default function Index({
                                                     <FileCheck className="h-4 w-4" />{' '}
                                                     Condiciones de Venta
                                                 </h3>
-                                                <p className="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 text-xs leading-relaxed font-medium text-slate-600 italic">
+                                                <p className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 text-xs leading-relaxed font-medium text-slate-600 italic">
                                                     "{viendo.condiciones}"
                                                 </p>
                                             </div>

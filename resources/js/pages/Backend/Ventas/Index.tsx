@@ -739,7 +739,7 @@ export default function Index({
                                     onClick={handleExportExcel}
                                     className="gap-2"
                                 >
-                                    <Download className="h-4 w-4 text-blue-500" />
+                                    <Download className="h-4 w-4 text-emerald-500" />
                                     Exportar Excel
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
@@ -861,7 +861,7 @@ export default function Index({
                                         />
                                         <Bar
                                             dataKey="total"
-                                            fill="#6366f1"
+                                            fill="#10b981"
                                             radius={[4, 4, 0, 0]}
                                         />
                                     </BarChart>
@@ -919,10 +919,10 @@ export default function Index({
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <Card className="border-l-4 border-l-indigo-500">
+                    <Card className="border-l-4 border-l-emerald-500">
                         <CardHeader className="pb-1 sm:pb-2">
                             <CardTitle className="flex items-center gap-2 text-xs font-medium sm:text-sm">
-                                <Wallet className="h-3.5 w-3.5 text-indigo-500 sm:h-4 sm:w-4" />
+                                <Wallet className="h-3.5 w-3.5 text-emerald-500 sm:h-4 sm:w-4" />
                                 Total Ventas
                             </CardTitle>
                         </CardHeader>
@@ -945,15 +945,15 @@ export default function Index({
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="border-l-4 border-l-blue-500">
+                    <Card className="border-l-4 border-l-emerald-500">
                         <CardHeader className="pb-1 sm:pb-2">
                             <CardTitle className="flex items-center gap-2 text-xs font-medium sm:text-sm">
-                                <TrendingUp className="h-3.5 w-3.5 text-blue-500 sm:h-4 sm:w-4" />
+                                <TrendingUp className="h-3.5 w-3.5 text-emerald-500 sm:h-4 sm:w-4" />
                                 Pagadas
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-xl font-bold text-blue-600 sm:text-2xl">
+                            <div className="text-xl font-bold text-emerald-600 sm:text-2xl">
                                 {resumenVentas.pagadas}
                             </div>
                         </CardContent>
@@ -2480,7 +2480,7 @@ export default function Index({
                                                                                 )
                                                                                     .peso_base >
                                                                                     0) && (
-                                                                                <div className="mt-1 flex justify-between px-1 text-[10px] font-bold text-blue-600">
+                                                                                <div className="mt-1 flex justify-between px-1 text-[10px] font-bold text-emerald-600">
                                                                                     <span>
                                                                                         Total{' '}
                                                                                         {(
@@ -2633,7 +2633,7 @@ export default function Index({
                                                 </span>
                                                 <input
                                                     type="checkbox"
-                                                    className="h-5 w-10 cursor-pointer appearance-none rounded-full bg-gray-200 transition-colors checked:bg-indigo-600"
+                                                    className="h-5 w-10 cursor-pointer appearance-none rounded-full bg-gray-200 transition-colors checked:bg-emerald-600"
                                                     checked={data.incluye_iva}
                                                     onChange={(e) =>
                                                         setData(
@@ -2741,7 +2741,7 @@ export default function Index({
                                                 )}
                                             </span>
                                         </div>
-                                        <div className="mt-2 flex justify-between border-t border-indigo-200 pt-2 text-base font-bold text-indigo-900">
+                                        <div className="mt-2 flex justify-between border-t border-emerald-200 pt-2 text-base font-bold text-emerald-900">
                                             <span>Total Neto a Pagar:</span>
                                             <span className="text-xl">
                                                 {formatCurrency(
@@ -2802,7 +2802,7 @@ export default function Index({
                 <Dialog open={verModalOpen} onOpenChange={setVerModalOpen}>
                     <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto rounded-2xl border-none bg-white p-0 shadow-2xl md:max-w-3xl">
                         <DialogHeader className="relative overflow-hidden px-6 pt-10 pb-16 md:px-8 md:pt-10 md:pb-20">
-                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-700 via-blue-800 to-indigo-950 opacity-100" />
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-700 via-emerald-800 to-emerald-950 opacity-100" />
                             <div className="absolute top-0 right-0 p-6 text-white opacity-20 md:p-8">
                                 <Eye className="h-16 w-16 rotate-12 md:h-24 md:w-24" />
                             </div>
@@ -2814,7 +2814,7 @@ export default function Index({
                                 <DialogTitle className="text-2xl font-black tracking-tight text-white md:text-3xl lg:text-4xl">
                                     Venta #{ventaSeleccionada?.numero_factura}
                                 </DialogTitle>
-                                <DialogDescription className="text-base font-medium text-blue-100/80 md:text-lg">
+                                <DialogDescription className="text-base font-medium text-emerald-100/80 md:text-lg">
                                     Información administrativa y financiera del
                                     registro.
                                 </DialogDescription>
@@ -2830,7 +2830,7 @@ export default function Index({
                                                 label: 'Cliente',
                                                 val: ventaSeleccionada.cliente
                                                     ?.nombre,
-                                                color: 'border-blue-200 bg-blue-50 text-blue-800',
+                                                color: 'border-emerald-200 bg-emerald-50 text-emerald-800',
                                             },
                                             {
                                                 label: 'Bodega',
@@ -2863,7 +2863,7 @@ export default function Index({
                                                 val: formatCurrency(
                                                     ventaSeleccionada.total,
                                                 ),
-                                                color: 'border-indigo-200 bg-indigo-50 text-indigo-800',
+                                                color: 'border-emerald-200 bg-emerald-50 text-emerald-800',
                                             },
                                         ].map((item, idx) => (
                                             <div
@@ -2917,7 +2917,7 @@ export default function Index({
                                                                             key={
                                                                                 i
                                                                             }
-                                                                            className="group transition-colors hover:bg-blue-50/30"
+                                                                            className="group transition-colors hover:bg-emerald-50/30"
                                                                         >
                                                                             <td className="px-3 py-2 md:px-5 md:py-3">
                                                                                 <span className="font-bold text-gray-700">
@@ -2937,7 +2937,7 @@ export default function Index({
                                                                                     detalle.precio_unitario,
                                                                                 )}
                                                                             </td>
-                                                                            <td className="px-3 py-2 text-right font-bold text-indigo-600 md:px-5 md:py-3">
+                                                                            <td className="px-3 py-2 text-right font-bold text-emerald-600 md:px-5 md:py-3">
                                                                                 {formatCurrency(
                                                                                     detalle.subtotal,
                                                                                 )}
@@ -2968,29 +2968,29 @@ export default function Index({
                                         </div>
 
                                         <div className="flex flex-col gap-4">
-                                            <Card className="border-none bg-indigo-950 text-white shadow-xl">
+                                            <Card className="border-none bg-emerald-950 text-white shadow-xl">
                                                 <CardHeader className="pb-1 md:pb-2">
-                                                    <CardTitle className="text-[10px] font-extrabold tracking-widest text-blue-300 uppercase opacity-80 md:text-xs">
+                                                    <CardTitle className="text-[10px] font-extrabold tracking-widest text-emerald-300 uppercase opacity-80 md:text-xs">
                                                         Liquidación Final
                                                     </CardTitle>
                                                 </CardHeader>
                                                 <CardContent className="flex flex-col gap-2 md:gap-4">
                                                     <div className="flex items-center justify-between border-b border-white/10 pb-2 text-xs md:pb-3 md:text-sm">
-                                                        <span className="font-medium text-blue-100/60">
+                                                        <span className="font-medium text-emerald-100/60">
                                                             Subtotal
                                                         </span>
-                                                        <span className="font-mono text-blue-50">
+                                                        <span className="font-mono text-emerald-50">
                                                             {formatCurrency(
                                                                 ventaSeleccionada.subtotal,
                                                             )}
                                                         </span>
                                                     </div>
                                                     <div className="flex items-center justify-between border-b border-white/10 pb-2 text-xs md:pb-3 md:text-sm">
-                                                        <span className="font-medium text-blue-100/60">
+                                                        <span className="font-medium text-emerald-100/60">
                                                             IVA (19%)
                                                         </span>
                                                         <span
-                                                            className={`font-mono text-blue-50 ${!ventaSeleccionada.incluye_iva ? 'line-through opacity-50' : ''}`}
+                                                            className={`font-mono text-emerald-50 ${!ventaSeleccionada.incluye_iva ? 'line-through opacity-50' : ''}`}
                                                         >
                                                             {formatCurrency(
                                                                 ventaSeleccionada.iva,
@@ -3058,7 +3058,7 @@ export default function Index({
                                                                             ? ((Number(alm.pivot.cantidad_descontada || 0) / totalCantidad) * 100)
                                                                             : 0;
                                                                         return (
-                                                                            <tr key={alm.id} className="group transition-colors hover:bg-blue-50/30">
+                                                                            <tr key={alm.id} className="group transition-colors hover:bg-emerald-50/30">
                                                                                 <td className="px-3 py-2 md:px-5 md:py-3">
                                                                                     <span className="font-bold text-gray-700">
                                                                                         {alm.nombre}
@@ -3151,7 +3151,7 @@ export default function Index({
                                         <DropdownMenuTrigger asChild>
                                             <Button
                                                 variant="outline"
-                                                className="w-full font-bold shadow-sm transition-all hover:bg-indigo-50 hover:text-indigo-600 active:scale-95 sm:w-auto"
+                                                className="w-full font-bold shadow-sm transition-all hover:bg-emerald-50 hover:text-emerald-600 active:scale-95 sm:w-auto"
                                             >
                                                 <FileText className="mr-2 h-4 w-4" />
                                                 Descargar PDF

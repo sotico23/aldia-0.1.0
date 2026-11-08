@@ -37,6 +37,10 @@ class ZoneAssignment
         $pedidosPool = Pedido::query()
             ->withoutGlobalScope(OwnerScope::class)
             ->disponibleEnPool()
+            ->where(function ($q) {
+                $q->whereNull('dispatch_mode')
+                    ->orWhere('dispatch_mode', Pedido::DISPATCH_INTERNAL);
+            })
             ->whereNotNull('destino_lat')
             ->whereNotNull('destino_lng')
             ->orderBy('created_at')

@@ -92,7 +92,7 @@ export default function NotificationsIndex({
         if (data.tipo === 'cupon_limite')
             return <Tag className="h-4 w-4 text-purple-500" />;
         if (data.tipo === 'recordatorio_llamada')
-            return <Clock className="h-4 w-4 text-blue-500" />;
+            return <Clock className="h-4 w-4 text-emerald-500" />;
         if (data.type === 'like')
             return <ThumbsUp className="h-4 w-4 text-primary" />;
         if (data.type === 'heart')

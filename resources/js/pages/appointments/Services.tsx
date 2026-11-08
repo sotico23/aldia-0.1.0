@@ -58,10 +58,10 @@ import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 
 const COLORS = [
-    '#6366f1',
+    '#10b981',
     '#22c55e',
     '#f59e0b',
-    '#3b82f6',
+    '#059669',
     '#ef4444',
     '#8b5cf6',
     '#14b8a6',
@@ -242,7 +242,7 @@ export default function Services({
                     <Card className="rounded-2xl border-slate-200/70">
                         <CardHeader className="p-4 pb-2">
                             <CardTitle className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                                <BarChart3 className="h-3.5 w-3.5 text-indigo-500" />
+                                <BarChart3 className="h-3.5 w-3.5 text-emerald-500" />
                                 Total Servicios
                             </CardTitle>
                         </CardHeader>
@@ -258,7 +258,7 @@ export default function Services({
                     <Card className="rounded-2xl border-slate-200/70">
                         <CardHeader className="p-4 pb-2">
                             <CardTitle className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                                <Calendar className="h-3.5 w-3.5 text-blue-500" />
+                                <Calendar className="h-3.5 w-3.5 text-emerald-500" />
                                 Total Reservas
                             </CardTitle>
                         </CardHeader>
@@ -362,7 +362,7 @@ export default function Services({
                     <Card className="rounded-2xl border-slate-200/70">
                         <CardHeader className="px-5 py-4">
                             <CardTitle className="flex items-center gap-2 text-sm font-bold text-slate-700">
-                                <PieChartIcon className="h-4 w-4 text-indigo-500" />
+                                <PieChartIcon className="h-4 w-4 text-emerald-500" />
                                 Distribución por Categoría
                             </CardTitle>
                         </CardHeader>

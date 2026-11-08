@@ -232,7 +232,7 @@ export default function DrawRoom({ raffle }: Props) {
                                 className={
                                     raffle.status === 'active'
                                         ? 'bg-green-500'
-                                        : 'bg-blue-500'
+                                        : 'bg-emerald-500'
                                 }
                             >
                                 {raffle.status === 'active'

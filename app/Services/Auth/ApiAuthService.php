@@ -119,6 +119,7 @@ class ApiAuthService
             'business_cover_path' => $user->business_cover_path,
             'is_active' => (bool) $user->is_active,
             'roles' => $user->getRoleNames()->values()->all(),
+            'permissions' => $user->getAllPermissions()->pluck('name')->values()->all(),
             'created_at' => $user->created_at?->format('c'),
         ];
     }

@@ -69,7 +69,7 @@ const tipoLabels: Record<string, string> = {
 
 const tipoColors: Record<string, string> = {
     porcentaje: 'border-emerald-200 bg-emerald-50/20',
-    precio_fijo: 'border-blue-200 bg-blue-50/20',
+    precio_fijo: 'border-emerald-200 bg-emerald-50/20',
     combo_2x1: 'border-amber-200 bg-amber-50/20',
 };
 
@@ -196,13 +196,13 @@ export default function Promociones({ promociones, categorias, flash }: Props) {
     const getTipoIcon = (tipo: string) => {
         if (tipo === 'porcentaje') return <Percent className="mr-1 h-3 w-3" />;
         if (tipo === 'precio_fijo')
-            return <Zap className="mr-1 h-3 w-3 text-blue-500" />;
+            return <Zap className="mr-1 h-3 w-3 text-emerald-500" />;
         return <Tag className="mr-1 inline-block h-3 w-3" />;
     };
 
     const getTipoBadgeColor = (tipo: string) => {
         if (tipo === 'porcentaje') return 'bg-emerald-500';
-        if (tipo === 'precio_fijo') return 'bg-blue-500';
+        if (tipo === 'precio_fijo') return 'bg-emerald-500';
         return 'bg-amber-500';
     };
 

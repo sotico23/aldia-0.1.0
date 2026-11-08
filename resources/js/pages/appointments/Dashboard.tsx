@@ -181,7 +181,7 @@ export default function Dashboard({
                             <CardTitle className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
                                 Citas Hoy
                             </CardTitle>
-                            <CalendarIcon className="h-4 w-4 text-indigo-500" />
+                            <CalendarIcon className="h-4 w-4 text-emerald-500" />
                         </CardHeader>
                         <CardContent className="px-5 pb-4">
                             <div className="text-2xl font-black text-slate-900">
@@ -197,7 +197,7 @@ export default function Dashboard({
                             <CardTitle className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
                                 Esta Semana
                             </CardTitle>
-                            <Clock className="h-4 w-4 text-blue-500" />
+                            <Clock className="h-4 w-4 text-emerald-500" />
                         </CardHeader>
                         <CardContent className="px-5 pb-4">
                             <div className="text-2xl font-black text-slate-900">
@@ -252,7 +252,7 @@ export default function Dashboard({
                     <Card className="rounded-2xl border-slate-200/70 lg:col-span-2">
                         <CardHeader className="px-5 py-4">
                             <CardTitle className="flex items-center gap-2 text-sm font-bold text-slate-700">
-                                <BarChart3 className="h-4 w-4 text-indigo-500" />
+                                <BarChart3 className="h-4 w-4 text-emerald-500" />
                                 Citas e Ingresos (Últimos 7 días)
                             </CardTitle>
                         </CardHeader>
@@ -303,7 +303,7 @@ export default function Dashboard({
                                         yAxisId="left"
                                         dataKey="total"
                                         radius={[4, 4, 0, 0]}
-                                        fill="#6366f1"
+                                        fill="#10b981"
                                         maxBarSize={24}
                                         name="Citas"
                                     />
@@ -323,7 +323,7 @@ export default function Dashboard({
                     <Card className="rounded-2xl border-slate-200/70">
                         <CardHeader className="px-5 py-4">
                             <CardTitle className="flex items-center gap-2 text-sm font-bold text-slate-700">
-                                <PieChartIcon className="h-4 w-4 text-indigo-500" />
+                                <PieChartIcon className="h-4 w-4 text-emerald-500" />
                                 Estado
                             </CardTitle>
                         </CardHeader>
@@ -390,7 +390,7 @@ export default function Dashboard({
                     <div className="rounded-2xl border border-slate-200/70 bg-white">
                         <div className="border-b border-slate-100 px-5 py-4">
                             <h2 className="flex items-center gap-2 text-sm font-bold text-slate-700">
-                                <CalendarIcon className="h-4 w-4 text-indigo-500" />
+                                <CalendarIcon className="h-4 w-4 text-emerald-500" />
                                 Agenda del Día
                             </h2>
                         </div>
@@ -432,7 +432,7 @@ export default function Dashboard({
                                                 </p>
                                             </div>
                                             <span
-                                                className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${cita.status === 'confirmada' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}
+                                                className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${cita.status === 'confirmada' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}
                                             >
                                                 {cita.status}
                                             </span>

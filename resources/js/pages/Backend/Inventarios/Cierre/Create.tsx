@@ -721,7 +721,7 @@ export default function CierreCreate({
                                                                                     key={
                                                                                         id
                                                                                     }
-                                                                                    className="rounded bg-blue-100 px-1 text-xs text-blue-800"
+                                                                                    className="rounded bg-emerald-100 px-1 text-xs text-emerald-800"
                                                                                 >
                                                                                     {
                                                                                         data.nombre

@@ -227,7 +227,7 @@ export default function CuotasPendientes({ cuotas }: { cuotas: Cuota[] }) {
                                                         </div>
                                                     </td>
                                                     <td className="py-2">
-                                                        <span className="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+                                                        <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
                                                             {cuota.prestamo
                                                                 ?.tipo ===
                                                             'prestamo'
@@ -421,7 +421,7 @@ export default function CuotasPendientes({ cuotas }: { cuotas: Cuota[] }) {
             {/* Modal Aplicar en Nómina */}
             <Dialog open={isNominaOpen} onOpenChange={setIsNominaOpen}>
                 <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto border-none p-0 shadow-xl sm:max-w-md">
-                    <DialogHeader className="bg-gradient-to-r from-purple-600 to-indigo-700 px-4 py-3 text-white md:px-6 md:py-4">
+                    <DialogHeader className="bg-gradient-to-r from-purple-600 to-emerald-700 px-4 py-3 text-white md:px-6 md:py-4">
                         <DialogTitle className="text-lg font-black tracking-tight md:text-xl">
                             Aplicar en Nómina
                         </DialogTitle>

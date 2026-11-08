@@ -74,13 +74,13 @@ const TrialBanner = () => {
         }
 
         return (
-            <div className="bg-blue-600 px-4 py-1.5 text-center text-xs font-medium text-white">
+            <div className="bg-emerald-600 px-4 py-1.5 text-center text-xs font-medium text-white">
                 Periodo de prueba activo — te quedan{' '}
                 <strong>{daysLeft} días</strong> con acceso completo
                 {' — '}
                 <Link
                     href={planesIndex().url}
-                    className="font-semibold underline hover:text-blue-100"
+                    className="font-semibold underline hover:text-emerald-100"
                 >
                     Ver planes
                 </Link>

@@ -163,10 +163,10 @@ const TONOS_TIPS: Record<
         etiqueta: 'text-emerald-700 dark:text-emerald-300',
     },
     info: {
-        card: 'from-sky-50 via-white to-white dark:from-sky-950/40 dark:via-background dark:to-background',
-        icono: 'bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300',
-        punto: 'bg-sky-500',
-        etiqueta: 'text-sky-700 dark:text-sky-300',
+        card: 'from-emerald-50 via-white to-white dark:from-emerald-950/40 dark:via-background dark:to-background',
+        icono: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300',
+        punto: 'bg-emerald-500',
+        etiqueta: 'text-emerald-700 dark:text-emerald-300',
     },
     warning: {
         card: 'from-amber-50 via-white to-white dark:from-amber-950/40 dark:via-background dark:to-background',
@@ -186,7 +186,7 @@ const ESTILOS_METODO: Record<string, string> = {
     efectivo:
         'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300',
     tarjeta:
-        'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300',
+        'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300',
     transferencia:
         'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900 dark:bg-violet-950/40 dark:text-violet-300',
     vale: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300',
@@ -982,7 +982,7 @@ export default function CajeroDashboard({
                                             </div>
                                         )}
                                     {detalle.delivery_cost > 0 && (
-                                        <div className="flex justify-between text-blue-600">
+                                        <div className="flex justify-between text-emerald-600">
                                             <span>Despacho</span>
                                             <span>
                                                 {formatCurrency(

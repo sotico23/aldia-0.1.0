@@ -58,7 +58,7 @@ const ESTADO_BADGE: Record<string, { label: string; color: string }> = {
     anulado: { label: 'Anulado', color: 'bg-red-100 text-red-700' },
     enviado: {
         label: 'Enviado',
-        color: 'bg-blue-100 text-blue-700',
+        color: 'bg-emerald-100 text-emerald-700',
     },
 };
 

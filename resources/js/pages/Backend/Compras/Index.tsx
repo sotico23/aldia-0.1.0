@@ -345,7 +345,7 @@ export default function Index({
                                     onClick={() => csvInputRef.current?.click()}
                                     className="rounded-lg py-3"
                                 >
-                                    <Upload className="mr-2 h-4 w-4 text-blue-500" />{' '}
+                                    <Upload className="mr-2 h-4 w-4 text-emerald-500" />{' '}
                                     Importar Compras
                                 </DropdownMenuItem>
                                 <hr className="my-2" />

@@ -44,7 +44,7 @@ const etapasMap: Record<string, string> = {
 
 export default function Show({ oportunidad }: { oportunidad: Oportunidad }) {
     const colores: Record<string, string> = {
-        prospecting: 'bg-blue-500',
+        prospecting: 'bg-emerald-500',
         qualification: 'bg-yellow-500',
         proposal: 'bg-purple-500',
         negotiation: 'bg-orange-500',

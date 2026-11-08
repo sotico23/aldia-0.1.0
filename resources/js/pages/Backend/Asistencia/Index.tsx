@@ -96,13 +96,13 @@ const getEstadoStyle = (estado: string) => {
         case 'ausente':
             return 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-800';
         case 'vacaciones':
-            return 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800';
+            return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800';
         case 'licencia':
             return 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-800';
         case 'permiso':
             return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800';
         case 'teletrabajo':
-            return 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/30 dark:text-cyan-400 dark:border-cyan-800';
+            return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800';
         default:
             return 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-750';
     }
@@ -115,13 +115,13 @@ const getEstadoDotColor = (estado: string) => {
         case 'ausente':
             return 'bg-rose-500';
         case 'vacaciones':
-            return 'bg-blue-500';
+            return 'bg-emerald-500';
         case 'licencia':
             return 'bg-purple-500';
         case 'permiso':
             return 'bg-amber-500';
         case 'teletrabajo':
-            return 'bg-cyan-500';
+            return 'bg-emerald-500';
         default:
             return 'bg-gray-500';
     }
@@ -1285,7 +1285,7 @@ export default function Index({
                                                         Teletrabajo
                                                     </span>
                                                     <div className="mt-1 flex items-baseline gap-1">
-                                                        <span className="text-xl font-bold text-cyan-600">
+                                                        <span className="text-xl font-bold text-emerald-600">
                                                             {
                                                                 calculatedStats.teletrabajo
                                                             }
@@ -1599,7 +1599,7 @@ export default function Index({
                                                         Teletrabajo
                                                     </span>
                                                     <div className="mt-1 flex items-baseline gap-1">
-                                                        <span className="text-xl font-bold text-cyan-600">
+                                                        <span className="text-xl font-bold text-emerald-600">
                                                             {
                                                                 calculatedStats.teletrabajo
                                                             }
@@ -1867,7 +1867,7 @@ export default function Index({
                 <DialogContent className="flex max-h-[90vh] w-[95vw] flex-col overflow-y-auto p-0 sm:max-w-lg md:max-w-xl lg:max-w-2xl">
                     <DialogHeader className="shrink-0 p-6 pb-2">
                         <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-                            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-blue-600"></span>
+                            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-emerald-600"></span>
                             {editando
                                 ? 'Editar Registro de Asistencia'
                                 : 'Nuevo Registro de Asistencia'}
@@ -2205,7 +2205,7 @@ export default function Index({
                             </Button>
                             <Button
                                 type="submit"
-                                className="h-10 bg-blue-600 text-sm text-white hover:bg-blue-700"
+                                className="h-10 bg-emerald-600 text-sm text-white hover:bg-emerald-700"
                             >
                                 {editando
                                     ? 'Actualizar Registro'

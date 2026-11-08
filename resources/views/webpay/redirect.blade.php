@@ -6,7 +6,7 @@
     <title>Conectando con Transbank Webpay Plus...</title>
     <style nonce="{{ $cspNonce }}">
         body { font-family: system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #f8fafc; color: #334155; margin: 0; }
-        .loader { border: 4px solid #e2e8f0; border-top-color: #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        .loader { border: 4px solid #e2e8f0; border-top-color: #059669; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>

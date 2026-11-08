@@ -58,8 +58,8 @@ const estadoStyles: Record<
     },
     en_proceso: {
         label: 'En Proceso',
-        color: 'text-blue-600',
-        bg: 'bg-blue-50 border-blue-200',
+        color: 'text-emerald-600',
+        bg: 'bg-emerald-50 border-emerald-200',
         icon: Settings2,
     },
     completado: {
@@ -102,8 +102,8 @@ export default function ProduccionMrpWidget({ data }: Props) {
                             Pendientes
                         </p>
                     </div>
-                    <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-center">
-                        <p className="text-lg font-black text-blue-600">
+                    <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-center">
+                        <p className="text-lg font-black text-emerald-600">
                             {data.ordenes.enProceso}
                         </p>
                         <p className="text-[9px] font-semibold text-slate-500">
@@ -170,13 +170,13 @@ export default function ProduccionMrpWidget({ data }: Props) {
                                             <div className="ml-2 flex shrink-0 items-center gap-1.5">
                                                 <div className="h-1.5 w-12 overflow-hidden rounded-full bg-slate-200">
                                                     <div
-                                                        className="h-full rounded-full bg-blue-500"
+                                                        className="h-full rounded-full bg-emerald-500"
                                                         style={{
                                                             width: `${op.progreso}%`,
                                                         }}
                                                     />
                                                 </div>
-                                                <span className="text-[9px] font-bold text-blue-600">
+                                                <span className="text-[9px] font-bold text-emerald-600">
                                                     {op.progreso}%
                                                 </span>
                                             </div>

@@ -153,7 +153,7 @@ export default function LessonShow({
                             <div className="prose prose-zinc dark:prose-invert max-w-none">
                                 <div className="rounded-xl bg-slate-50 p-6 dark:bg-slate-800/50">
                                     <div className="mb-4 flex items-center gap-2">
-                                        <FileText className="h-5 w-5 text-blue-500" />
+                                        <FileText className="h-5 w-5 text-emerald-500" />
                                         <h3 className="font-semibold">
                                             Contenido de la Lección
                                         </h3>
@@ -254,7 +254,7 @@ export default function LessonShow({
                                                     href={`/lecciones/${l.slug}`}
                                                     className={`block rounded-lg px-3 py-2 text-sm transition-colors ${
                                                         l.id === lesson.id
-                                                            ? 'bg-blue-100 font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                                            ? 'bg-emerald-100 font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
                                                             : 'text-zinc-600 hover:bg-slate-100 dark:text-zinc-400 dark:hover:bg-slate-800'
                                                     }`}
                                                 >

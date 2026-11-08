@@ -56,7 +56,7 @@ interface Props {
 
 const statusConfig: Record<string, { label: string; color: string }> = {
     draft: { label: 'Borrador', color: 'bg-zinc-500' },
-    published: { label: 'Publicada', color: 'bg-blue-500' },
+    published: { label: 'Publicada', color: 'bg-emerald-500' },
     active: { label: 'Activa', color: 'bg-green-500' },
     completed: { label: 'Completada', color: 'bg-purple-500' },
     cancelled: { label: 'Cancelada', color: 'bg-red-500' },

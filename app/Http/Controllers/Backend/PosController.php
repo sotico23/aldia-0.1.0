@@ -173,6 +173,18 @@ class PosController extends Controller implements HasMiddleware
             ],
             'promociones' => $promociones,
             'iva_tasa' => (float) config('taxes.iva_rate', 0.19),
+            'dispatch_modes' => [
+                [
+                    'id' => 'internal',
+                    'label' => 'Repartidores Propios',
+                    'description' => 'Derivar exclusivamente a los repartidores propios de la empresa.',
+                ],
+                [
+                    'id' => 'marketplace',
+                    'label' => 'Red Abierta / Freelancers',
+                    'description' => 'Liberar el pedido al marketplace para repartidores independientes.',
+                ],
+            ],
         ]);
     }
 
@@ -250,6 +262,8 @@ class PosController extends Controller implements HasMiddleware
                 'max:255',
             ],
             'delivery_commune' => ['nullable', 'string', 'max:120'],
+            'dispatch_mode' => ['nullable', 'string', 'in:internal,marketplace'],
+            'delivery_type' => ['nullable', 'string', 'in:internal,marketplace'],
             'almacen_id' => ['required', Rule::exists('almacenes', 'id')->where('owner_id', $ownerId)],
             'empleado_id' => ['nullable', Rule::exists('empleados', 'id')->where('owner_id', $ownerId)->where('estado', 'activo')],
             'cupon_codigo' => 'nullable|string|max:50',
@@ -412,6 +426,7 @@ class PosController extends Controller implements HasMiddleware
                     'total' => (int) round($total),
                     'incluye_iva' => $incluyeIva,
                     'has_delivery' => $hasDelivery,
+                    'dispatch_mode' => $validated['dispatch_mode'] ?? $validated['delivery_type'] ?? 'internal',
                     'delivery_rate_id' => $hasDelivery ? $deliveryRate?->id : null,
                     'delivery_cost' => $deliveryCost,
                     'delivery_distance_km' => $deliveryDistanceKm,

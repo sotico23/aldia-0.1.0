@@ -136,7 +136,7 @@ new class extends Component {
         <!-- CON CLIENTES -->
         <div>
             <div class="mb-4 flex items-center gap-2">
-                <span class="rounded bg-sky-500/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase text-sky-300">CRM</span>
+                <span class="rounded bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase text-emerald-300">CRM</span>
                 <span class="text-xs font-bold tracking-wider text-gray-500 uppercase">CON CLIENTES</span>
             </div>
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">

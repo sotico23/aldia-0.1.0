@@ -86,7 +86,7 @@ const ETAPAS = [
     {
         value: 'analisis',
         label: 'Análisis',
-        color: 'bg-blue-500/10 text-blue-600',
+        color: 'bg-emerald-500/10 text-emerald-600',
         icon: List,
     },
     {

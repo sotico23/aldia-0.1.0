@@ -239,7 +239,7 @@ export default function Facturacion({
                             <div className="text-2xl font-black">
                                 {countTipo('factura')} DTE
                             </div>
-                            <div className="mt-1 flex items-center text-[10px] font-bold text-blue-600">
+                            <div className="mt-1 flex items-center text-[10px] font-bold text-emerald-600">
                                 <Monitor className="mr-1 h-3 w-3" /> Lista para
                                 Impresión
                             </div>
@@ -260,15 +260,15 @@ export default function Facturacion({
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="border-none bg-indigo-600 text-white shadow-lg shadow-indigo-500/20">
+                    <Card className="border-none bg-emerald-600 text-white shadow-lg shadow-emerald-500/20">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-xs font-bold text-indigo-200 uppercase">
+                            <CardTitle className="text-xs font-bold text-emerald-200 uppercase">
                                 TIEMPO DE RESPUESTA SII
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-black">Fast Mode</div>
-                            <div className="mt-1 flex items-center text-[10px] text-indigo-200">
+                            <div className="mt-1 flex items-center text-[10px] text-emerald-200">
                                 <Smartphone className="mr-1 h-3 w-3" />{' '}
                                 Latencia: 1.2s promedio
                             </div>

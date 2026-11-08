@@ -97,7 +97,7 @@ const PRIORIDADES = [
     {
         value: 'media',
         label: 'Media',
-        color: 'bg-blue-500/10 text-blue-600 border-blue-200',
+        color: 'bg-emerald-500/10 text-emerald-600 border-emerald-200',
     },
     {
         value: 'alta',
@@ -115,7 +115,7 @@ const ESTADOS = [
     {
         value: 'abierto',
         label: 'Abierto',
-        color: 'bg-blue-500/10 text-blue-600 border-blue-200',
+        color: 'bg-emerald-500/10 text-emerald-600 border-emerald-200',
     },
     {
         value: 'en_proceso',
@@ -1031,7 +1031,7 @@ export default function Index({
                 <DialogContent className="max-w-[95vw] overflow-y-auto border-none p-0 shadow-2xl md:max-w-2xl">
                     {viendo && (
                         <>
-                            <DialogHeader className="relative overflow-hidden bg-gradient-to-br from-slate-950 to-indigo-950 p-8 text-left">
+                            <DialogHeader className="relative overflow-hidden bg-gradient-to-br from-slate-950 to-emerald-950 p-8 text-left">
                                 <div className="absolute top-0 right-0 p-8 opacity-5">
                                     <LifeBuoy className="h-32 w-32 rotate-12 text-white" />
                                 </div>
@@ -1057,7 +1057,7 @@ export default function Index({
                                     <DialogTitle className="text-3xl leading-tight font-black tracking-tight text-white">
                                         {viendo.titulo}
                                     </DialogTitle>
-                                    <DialogDescription className="font-medium text-indigo-200/60">
+                                    <DialogDescription className="font-medium text-emerald-200/60">
                                         Cronología y seguimiento de incidencia
                                         operativa
                                     </DialogDescription>

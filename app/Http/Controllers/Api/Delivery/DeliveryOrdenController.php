@@ -12,9 +12,11 @@ use App\Http\Requests\Delivery\UpdateLocationRequest;
 use App\Models\DeliveryAsignacion;
 use App\Models\DeliveryConfig;
 use App\Models\DeliveryPosition;
+use App\Models\DriverOrderOffer;
 use App\Models\Pedido;
 use App\Models\Repartidor;
 use App\Models\User;
+use App\Models\Vacio;
 use App\Models\Zone;
 use App\Notifications\ActualizacionEstadoPedidoNotification;
 use App\Notifications\DeliveryPedidoAceptadoNotification;
@@ -67,7 +69,7 @@ class DeliveryOrdenController extends Controller
 
         $config = DeliveryConfig::where('owner_id', $repartidor->owner_id)->first();
 
-        $pedidoActivo = Pedido::with('conversacion')
+        $pedidoActivo = Pedido::with(['conversacion', 'items.producto'])
             ->where('repartidor_id', $request->user()->id)
             ->whereIn('estado', ['preparando', 'enviado'])
             ->latest('created_at')
@@ -76,17 +78,24 @@ class DeliveryOrdenController extends Controller
         return response()->json([
             'success' => true,
             'repartidor' => [
-                'id' => $repartidor->id,
-                'estado' => $repartidor->estado,
-                'capacidad_max' => (int) $repartidor->capacidad_max,
-                'lat' => $repartidor->lat,
-                'lng' => $repartidor->lng,
-                'radio_km' => $repartidor->radio_km,
-                'vehiculo_id' => $repartidor->vehiculo_id,
+                'id'              => $repartidor->id,
+                'owner_id'        => (int) $repartidor->owner_id,
+                'estado'          => $repartidor->estado,
+                'driver_type'     => $repartidor->driver_type,
+                'approval_status' => $repartidor->approval_status,
+                'rejected_reason' => $repartidor->rejected_reason,
+                'is_online'       => $repartidor->is_online,
+                'comision_pct'    => (float) $repartidor->comision_pct,
+                'capacidad_max'   => (int) $repartidor->capacidad_max,
+                'lat'             => $repartidor->lat,
+                'lng'             => $repartidor->lng,
+                'radio_km'        => $repartidor->radio_km,
+                'vehiculo_id'     => $repartidor->vehiculo_id,
                 'last_position_at' => $repartidor->last_position_at?->toISOString(),
+                'last_online_at'  => $repartidor->last_online_at?->toISOString(),
             ],
             'config' => $config ? [
-                'modo' => $config->modo,
+                'modo'             => $config->modo,
                 'pool_timeout_min' => $config->pool_timeout_min,
                 'pool_reenvio_min' => $config->pool_reenvio_min,
                 'pool_reenvios_max' => $config->pool_reenvios_max,
@@ -98,6 +107,7 @@ class DeliveryOrdenController extends Controller
     /**
      * POST /api/v1/delivery/availability
      * Toggle disponible/ocupado; libera el pedido activo sin recoger si aplica.
+     * Para el modelo Uber se recomienda usar /api/v1/driver/toggle-online en su lugar.
      */
     public function availability(UpdateAvailabilityRequest $request): JsonResponse
     {
@@ -122,11 +132,17 @@ class DeliveryOrdenController extends Controller
             }
         }
 
-        $repartidor->update(['estado' => $estado]);
+        // Sincronizar is_online con el nuevo estado
+        $isOnline = ($estado === 'disponible');
+        $repartidor->update([
+            'estado'    => $estado,
+            'is_online' => $isOnline,
+        ]);
 
         return response()->json([
-            'success' => true,
-            'estado' => $estado,
+            'success'         => true,
+            'estado'          => $estado,
+            'is_online'       => $isOnline,
             'pedido_liberado' => $pedidoLiberado,
         ]);
     }
@@ -134,6 +150,7 @@ class DeliveryOrdenController extends Controller
     /**
      * GET /api/v1/delivery/orders
      * Pool de pedidos dentro del radio + pedidos activos del repartidor.
+     * Solo muestra pool si el repartidor está online y disponible.
      */
     public function orders(Request $request): JsonResponse
     {
@@ -144,11 +161,36 @@ class DeliveryOrdenController extends Controller
 
         $pool = [];
 
-        if ($poolVisible && $repartidor->lat !== null && $repartidor->lng !== null) {
-            $pool = Pedido::disponibleEnPool()
+        // Solo mostrar pool si está online, disponible y aprobado
+        if ($poolVisible
+            && $repartidor->is_online
+            && $repartidor->isDisponible()
+            && $repartidor->isApproved()
+            && $repartidor->lat !== null
+            && $repartidor->lng !== null
+        ) {
+            $poolQuery = Pedido::query()
+                ->withoutGlobalScope(OwnerScope::class)
+                ->disponibleEnPool()
+                ->with(['items.producto'])
                 ->whereNotNull('destino_lat')
-                ->whereNotNull('destino_lng')
-                ->orderBy('created_at')
+                ->whereNotNull('destino_lng');
+
+            if ($repartidor->isFreelancer()) {
+                // Freelancer: ve pedidos del marketplace global + pedidos de su propia empresa
+                $poolQuery->where(function ($q) use ($repartidor) {
+                    $q->where('dispatch_mode', Pedido::DISPATCH_MARKETPLACE)
+                        ->orWhere(function ($sub) use ($repartidor) {
+                            $sub->where('owner_id', $repartidor->owner_id)
+                                ->where(fn ($w) => $w->whereNull('dispatch_mode')->orWhere('dispatch_mode', Pedido::DISPATCH_INTERNAL));
+                        });
+                });
+            } else {
+                // Empleado: solo pedidos de su empresa
+                $poolQuery->where('owner_id', $repartidor->owner_id);
+            }
+
+            $pool = $poolQuery->orderBy('created_at')
                 ->get()
                 ->filter(function (Pedido $pedido) use ($repartidor) {
                     $distancia = $repartidor->distanciaA((float) $pedido->destino_lat, (float) $pedido->destino_lng);
@@ -160,7 +202,9 @@ class DeliveryOrdenController extends Controller
                 ->all();
         }
 
-        $activos = Pedido::with('conversacion')
+        $activos = Pedido::query()
+            ->withoutGlobalScope(OwnerScope::class)
+            ->with(['conversacion', 'items.producto'])
             ->where('repartidor_id', $request->user()->id)
             ->whereIn('estado', ['preparando', 'enviado'])
             ->orderBy('created_at', 'desc')
@@ -169,9 +213,10 @@ class DeliveryOrdenController extends Controller
             ->all();
 
         return response()->json([
-            'success' => true,
-            'pool' => $pool,
+            'success'         => true,
+            'pool'            => $pool,
             'pedidos_activos' => $activos,
+            'is_online'       => $repartidor->is_online,
         ]);
     }
 
@@ -183,24 +228,39 @@ class DeliveryOrdenController extends Controller
     {
         $repartidor = $this->repartidor($request);
 
-        if (! $repartidor->isDisponible()) {
+        if (! $repartidor->isApproved()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Debes estar disponible para aceptar repartos.',
+                'message' => 'Tu perfil de repartidor aún no está aprobado para operar.',
+            ], 403);
+        }
+
+        if (! $repartidor->is_online || ! $repartidor->isDisponible()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debes estar conectado (Online) y disponible para aceptar repartos.',
             ], 409);
         }
 
-        $resultado = \DB::transaction(function () use ($pedido, $request) {
-            $bloqueado = Pedido::query()->lockForUpdate()->find($pedido->getKey());
+        $resultado = \DB::transaction(function () use ($pedido, $request, $repartidor) {
+            $bloqueado = Pedido::query()
+                ->withoutGlobalScope(OwnerScope::class)
+                ->lockForUpdate()
+                ->find($pedido->getKey());
 
             if (! $bloqueado
-                || $bloqueado->estado !== 'preparando'
+                || ! in_array($bloqueado->estado, ['preparando', 'pendiente'], true)
                 || $bloqueado->repartidor_id !== null
                 || $bloqueado->hora_aceptado !== null
                 || $bloqueado->pool_bloqueado
                 || ($bloqueado->pool_visible_at !== null && $bloqueado->pool_visible_at->isFuture())
             ) {
                 return 'no_disponible';
+            }
+
+            // Si el pedido es interno, solo repartidores vinculados a la empresa pueden tomarlo
+            if ($bloqueado->isInternal() && (int) $bloqueado->owner_id !== (int) $repartidor->owner_id) {
+                return 'no_autorizado_internal';
             }
 
             $repartidorLleno = $this->repartidorCapacidadLlena((int) $request->user()->id, (int) $bloqueado->owner_id);
@@ -214,8 +274,23 @@ class DeliveryOrdenController extends Controller
                 'hora_aceptado' => now(),
             ]);
 
+            // Si existían ofertas para este pedido en el pool, resolverlas
+            DriverOrderOffer::where('pedido_id', $bloqueado->id)
+                ->where('status', DriverOrderOffer::STATUS_PENDING)
+                ->update([
+                    'status' => DriverOrderOffer::STATUS_CANCELLED,
+                    'responded_at' => now(),
+                ]);
+
             return 'ok';
         });
+
+        if ($resultado === 'no_autorizado_internal') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Este pedido está reservado para la flota interna de la empresa.',
+            ], 403);
+        }
 
         if ($resultado === 'capacidad_llena') {
             return response()->json([
@@ -232,7 +307,7 @@ class DeliveryOrdenController extends Controller
         }
 
         $pedido->refresh();
-        $pedido->load('conversacion');
+        $pedido->load(['conversacion', 'items.producto']);
 
         DeliveryAsignacion::registrar(
             $pedido,
@@ -284,7 +359,7 @@ class DeliveryOrdenController extends Controller
             'hora_recogido' => now(),
         ]);
 
-        $pedido->load('conversacion');
+        $pedido->load(['conversacion', 'items.producto']);
         broadcast(new DeliveryOrderPoolUpdated($pedido, 'recogido'));
 
         $cliente = $pedido->cliente_id ? User::find($pedido->cliente_id) : null;
@@ -332,9 +407,46 @@ class DeliveryOrdenController extends Controller
         ]);
 
         $repartidor = $this->repartidor($request);
+
+        // Congelar costo de envío y ganancia para el histórico de ganancias.
+        $costoEnvio = $pedido->costoEnvioEfectivo();
+        $distanciaKm = $pedido->distancia_km;
+
+        if (($distanciaKm === null || (float) $distanciaKm <= 0)
+            && $repartidor->lat !== null
+            && $repartidor->lng !== null
+            && $pedido->destino_lat !== null
+            && $pedido->destino_lng !== null
+        ) {
+            $distancia = $repartidor->distanciaA(
+                (float) $pedido->destino_lat,
+                (float) $pedido->destino_lng
+            );
+            $distanciaKm = $distancia !== null ? round($distancia, 2) : null;
+        }
+
+        $pedido->update([
+            'costo_envio' => $costoEnvio,
+            'ganancia_repartidor' => $repartidor->gananciaEstimada($costoEnvio),
+            'distancia_km' => $distanciaKm,
+        ]);
+
         $repartidor->update(['estado' => 'disponible']);
 
-        $pedido->load('conversacion');
+        // Registrar envases vacíos de gas retornados por el cliente si aplica
+        $cantidadRetornada = (int) $request->input('cantidad_retornada', 0);
+        if ($cantidadRetornada > 0) {
+            Vacio::create([
+                'owner_id' => $pedido->owner_id,
+                'cliente_id' => $pedido->cliente_id,
+                'cantidad' => $cantidadRetornada,
+                'estado' => 'bueno',
+                'ubicacion' => 'Vehiculo Repartidor ' . $repartidor->id,
+                'observaciones' => "Envases retornados en entrega de Pedido #{$pedido->numero_pedido}",
+            ]);
+        }
+
+        $pedido->load(['conversacion', 'items.producto']);
         broadcast(new DeliveryOrderPoolUpdated($pedido, 'entregado'));
 
         $cliente = $pedido->cliente_id ? User::find($pedido->cliente_id) : null;
@@ -388,7 +500,45 @@ class DeliveryOrdenController extends Controller
                 ? 'Pedido retirado del pool por límite de reenvíos.'
                 : 'Pedido devuelto al pool.',
             'resultado' => $resultado,
-            'pedido' => $this->pedidoResource($pedido->fresh(), $this->repartidor($request)),
+            'pedido' => $this->pedidoResource(
+                $pedido->fresh()->load(['conversacion', 'items.producto']),
+                $this->repartidor($request)
+            ),
+        ]);
+    }
+
+    /**
+     * POST /api/v1/delivery/orders/{pedido}/cancel
+     * Cancela el pedido con registro de motivo.
+     */
+    public function cancel(Request $request, Pedido $pedido): JsonResponse
+    {
+        if ($pedido->repartidor_id !== null && (int) $pedido->repartidor_id !== (int) $request->user()->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Este reparto no está asignado a ti.',
+            ], 403);
+        }
+
+        $motivo = $request->input('motivo', 'Cancelado desde app móvil');
+
+        $pedido->update([
+            'estado' => 'cancelado',
+            'notas' => trim(($pedido->notas ?? '') . " | Cancelado: $motivo"),
+        ]);
+
+        $repartidor = $this->repartidor($request);
+        $repartidor->update(['estado' => 'disponible']);
+
+        broadcast(new DeliveryOrderPoolUpdated($pedido, 'cancelado'));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pedido cancelado.',
+            'pedido' => $this->pedidoResource(
+                $pedido->fresh()->load(['conversacion', 'items.producto']),
+                $repartidor
+            ),
         ]);
     }
 
@@ -406,10 +556,9 @@ class DeliveryOrdenController extends Controller
     /**
      * True si el repartidor ya alcanzo su capacidad maxima de pedidos activos.
      */
-    private function repartidorCapacidadLlena(int $repartidorUserId, int $ownerId): bool
+    private function repartidorCapacidadLlena(int $repartidorUserId, ?int $ownerId = null): bool
     {
         $repartidor = Repartidor::withoutGlobalScope(OwnerScope::class)
-            ->where('owner_id', $ownerId)
             ->where('user_id', $repartidorUserId)
             ->first();
 
@@ -419,7 +568,6 @@ class DeliveryOrdenController extends Controller
 
         $activos = Pedido::query()
             ->withoutGlobalScope(OwnerScope::class)
-            ->where('owner_id', $ownerId)
             ->where('repartidor_id', $repartidorUserId)
             ->whereIn('estado', ['preparando', 'enviado'])
             ->count();
@@ -457,24 +605,47 @@ class DeliveryOrdenController extends Controller
             $distancia = $repartidor->distanciaA((float) $pedido->destino_lat, (float) $pedido->destino_lng);
         }
 
+        // Calcular ganancia estimada para el repartidor (comisión sobre costo de envío)
+        $costoEnvio      = $pedido->costoEnvioEfectivo();
+        $gananciaEstimada = $repartidor ? $repartidor->gananciaEstimada($costoEnvio) : null;
+
+        $items = $pedido->items->map(function ($item) {
+            return [
+                'id'               => $item->id,
+                'producto_id'      => $item->producto_id,
+                'nombre_producto'  => $item->nombre_producto,
+                'precio_unitario'  => (float) $item->precio_unitario,
+                'cantidad'         => (float) $item->cantidad,
+                'subtotal'         => (float) $item->subtotal,
+                'envase_retornable' => (bool) ($item->producto?->envase_retornable ?? false),
+            ];
+        })->all();
+
         return [
-            'id' => $pedido->id,
-            'numero_pedido' => $pedido->numero_pedido,
-            'estado' => $pedido->estado,
-            'repartidor_id' => $pedido->repartidor_id,
-            'total' => $pedido->total,
-            'metodo_pago' => $pedido->metodo_pago,
-            'nombre_cliente' => $pedido->nombre_cliente,
-            'telefono_cliente' => $pedido->telefono_cliente,
+            'id'                => $pedido->id,
+            'numero_pedido'     => $pedido->numero_pedido,
+            'estado'            => $pedido->estado,
+            'dispatch_mode'     => $pedido->dispatch_mode ?? 'internal',
+            'delivery_type'     => $pedido->dispatch_mode ?? 'internal',
+            'repartidor_id'     => $pedido->repartidor_id,
+            'subtotal'          => (float) ($pedido->subtotal ?? 0),
+            'impuesto'          => (float) ($pedido->impuesto ?? 0),
+            'total'             => (float) $pedido->total,
+            'costo_envio'       => $costoEnvio,
+            'ganancia_estimada' => $gananciaEstimada,
+            'metodo_pago'       => $pedido->metodo_pago,
+            'nombre_cliente'    => $pedido->nombre_cliente,
+            'telefono_cliente'  => $pedido->telefono_cliente,
             'direccion_cliente' => $pedido->direccion_cliente,
-            'destino_lat' => $pedido->destino_lat,
-            'destino_lng' => $pedido->destino_lng,
-            'distancia_km' => $distancia !== null ? round($distancia, 2) : null,
-            'notas' => $pedido->notas,
-            'hora_aceptado' => $pedido->hora_aceptado?->toISOString(),
-            'hora_recogido' => $pedido->hora_recogido?->toISOString(),
-            'hora_entregado' => $pedido->hora_entregado?->toISOString(),
-            'created_at' => $pedido->created_at?->toISOString(),
+            'destino_lat'       => $pedido->destino_lat,
+            'destino_lng'       => $pedido->destino_lng,
+            'distancia_km'      => $distancia !== null ? round($distancia, 2) : null,
+            'notas'             => $pedido->notas,
+            'hora_aceptado'     => $pedido->hora_aceptado?->toISOString(),
+            'hora_recogido'     => $pedido->hora_recogido?->toISOString(),
+            'hora_entregado'    => $pedido->hora_entregado?->toISOString(),
+            'created_at'        => $pedido->created_at?->toISOString(),
+            'items'             => $items,
         ];
     }
 }

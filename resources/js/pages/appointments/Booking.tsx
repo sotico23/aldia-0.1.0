@@ -82,7 +82,7 @@ export default function Booking({
             <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4 dark:bg-slate-950">
                 <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-12 text-center shadow-xl dark:border-slate-800 dark:bg-slate-900">
                     <div
-                        className={`h-20 w-20 ${isMessage ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'} mx-auto mb-6 flex items-center justify-center rounded-full`}
+                        className={`h-20 w-20 ${isMessage ? 'bg-emerald-100 text-emerald-600' : 'bg-green-100 text-green-600'} mx-auto mb-6 flex items-center justify-center rounded-full`}
                     >
                         {isMessage ? (
                             <MessageSquare className="h-10 w-10" />
@@ -393,10 +393,10 @@ export default function Booking({
                                     onClick={() =>
                                         setData('payment_method', 'message')
                                     }
-                                    className={`flex w-full items-center gap-4 rounded-xl border-2 p-4 text-left transition-all ${data.payment_method === 'message' ? 'border-blue-500 bg-blue-50 ring-4 ring-blue-100 dark:bg-blue-950' : 'border-slate-200 hover:border-slate-300 dark:border-slate-700'}`}
+                                    className={`flex w-full items-center gap-4 rounded-xl border-2 p-4 text-left transition-all ${data.payment_method === 'message' ? 'border-emerald-500 bg-emerald-50 ring-4 ring-emerald-100 dark:bg-emerald-950' : 'border-slate-200 hover:border-slate-300 dark:border-slate-700'}`}
                                 >
-                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
-                                        <MessageSquare className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900">
+                                        <MessageSquare className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                                     </div>
                                     <div className="flex-1">
                                         <p className="font-bold text-slate-900 dark:text-white">
@@ -408,10 +408,10 @@ export default function Booking({
                                         </p>
                                     </div>
                                     <div
-                                        className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${data.payment_method === 'message' ? 'border-blue-500' : 'border-slate-300'}`}
+                                        className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${data.payment_method === 'message' ? 'border-emerald-500' : 'border-slate-300'}`}
                                     >
                                         {data.payment_method === 'message' && (
-                                            <div className="h-3 w-3 rounded-full bg-blue-500" />
+                                            <div className="h-3 w-3 rounded-full bg-emerald-500" />
                                         )}
                                     </div>
                                 </button>
@@ -422,10 +422,10 @@ export default function Booking({
                                         onClick={() =>
                                             setData('payment_method', 'webpay')
                                         }
-                                        className={`flex w-full items-center gap-4 rounded-xl border-2 p-4 text-left transition-all ${data.payment_method === 'webpay' ? 'border-indigo-500 bg-indigo-50 ring-4 ring-indigo-100 dark:bg-indigo-950' : 'border-slate-200 hover:border-slate-300 dark:border-slate-700'}`}
+                                        className={`flex w-full items-center gap-4 rounded-xl border-2 p-4 text-left transition-all ${data.payment_method === 'webpay' ? 'border-emerald-500 bg-emerald-50 ring-4 ring-emerald-100 dark:bg-emerald-950' : 'border-slate-200 hover:border-slate-300 dark:border-slate-700'}`}
                                     >
-                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900">
-                                            <Wallet className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900">
+                                            <Wallet className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                                         </div>
                                         <div className="flex-1">
                                             <p className="font-bold text-slate-900 dark:text-white">
@@ -437,11 +437,11 @@ export default function Booking({
                                             </p>
                                         </div>
                                         <div
-                                            className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${data.payment_method === 'webpay' ? 'border-indigo-500' : 'border-slate-300'}`}
+                                            className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${data.payment_method === 'webpay' ? 'border-emerald-500' : 'border-slate-300'}`}
                                         >
                                             {data.payment_method ===
                                                 'webpay' && (
-                                                <div className="h-3 w-3 rounded-full bg-indigo-500" />
+                                                <div className="h-3 w-3 rounded-full bg-emerald-500" />
                                             )}
                                         </div>
                                     </button>
@@ -453,10 +453,10 @@ export default function Booking({
                                         onClick={() =>
                                             setData('payment_method', 'paypal')
                                         }
-                                        className={`flex w-full items-center gap-4 rounded-xl border-2 p-4 text-left transition-all ${data.payment_method === 'paypal' ? 'border-blue-500 bg-blue-50 ring-4 ring-blue-100 dark:bg-blue-950' : 'border-slate-200 hover:border-slate-300 dark:border-slate-700'}`}
+                                        className={`flex w-full items-center gap-4 rounded-xl border-2 p-4 text-left transition-all ${data.payment_method === 'paypal' ? 'border-emerald-500 bg-emerald-50 ring-4 ring-emerald-100 dark:bg-emerald-950' : 'border-slate-200 hover:border-slate-300 dark:border-slate-700'}`}
                                     >
-                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
-                                            <CreditCard className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900">
+                                            <CreditCard className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                                         </div>
                                         <div className="flex-1">
                                             <p className="font-bold text-slate-900 dark:text-white">
@@ -467,11 +467,11 @@ export default function Booking({
                                             </p>
                                         </div>
                                         <div
-                                            className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${data.payment_method === 'paypal' ? 'border-blue-500' : 'border-slate-300'}`}
+                                            className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${data.payment_method === 'paypal' ? 'border-emerald-500' : 'border-slate-300'}`}
                                         >
                                             {data.payment_method ===
                                                 'paypal' && (
-                                                <div className="h-3 w-3 rounded-full bg-blue-500" />
+                                                <div className="h-3 w-3 rounded-full bg-emerald-500" />
                                             )}
                                         </div>
                                     </button>
@@ -486,10 +486,10 @@ export default function Booking({
                                                 'mercadopago',
                                             )
                                         }
-                                        className={`flex w-full items-center gap-4 rounded-xl border-2 p-4 text-left transition-all ${data.payment_method === 'mercadopago' ? 'border-sky-500 bg-sky-50 ring-4 ring-sky-100 dark:bg-sky-950' : 'border-slate-200 hover:border-slate-300 dark:border-slate-700'}`}
+                                        className={`flex w-full items-center gap-4 rounded-xl border-2 p-4 text-left transition-all ${data.payment_method === 'mercadopago' ? 'border-emerald-500 bg-emerald-50 ring-4 ring-emerald-100 dark:bg-emerald-950' : 'border-slate-200 hover:border-slate-300 dark:border-slate-700'}`}
                                     >
-                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-sky-100 dark:bg-sky-900">
-                                            <Wallet className="h-6 w-6 text-sky-600 dark:text-sky-400" />
+                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900">
+                                            <Wallet className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                                         </div>
                                         <div className="flex-1">
                                             <p className="font-bold text-slate-900 dark:text-white">
@@ -501,11 +501,11 @@ export default function Booking({
                                             </p>
                                         </div>
                                         <div
-                                            className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${data.payment_method === 'mercadopago' ? 'border-sky-500' : 'border-slate-300'}`}
+                                            className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${data.payment_method === 'mercadopago' ? 'border-emerald-500' : 'border-slate-300'}`}
                                         >
                                             {data.payment_method ===
                                                 'mercadopago' && (
-                                                <div className="h-3 w-3 rounded-full bg-sky-500" />
+                                                <div className="h-3 w-3 rounded-full bg-emerald-500" />
                                             )}
                                         </div>
                                     </button>

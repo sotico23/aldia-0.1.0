@@ -536,14 +536,14 @@ export default function CierreCaja({ arqueo }: { arqueo: Arqueo }) {
                             </p>
                         </CardContent>
                     </Card>
-                    <Card className="border-l-4 border-l-blue-500 shadow-sm">
+                    <Card className="border-l-4 border-l-emerald-500 shadow-sm">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-xs font-bold text-muted-foreground uppercase">
                                 TARJETAS (VOUCHERS)
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-black text-blue-600">
+                            <div className="text-2xl font-black text-emerald-600">
                                 {formatCurrency(arqueo.tarjeta)}
                             </div>
                             <p className="mt-1 text-[10px] text-muted-foreground">
@@ -856,7 +856,7 @@ export default function CierreCaja({ arqueo }: { arqueo: Arqueo }) {
                                                                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                                                                     : item.metodo ===
                                                                         'Tarjeta'
-                                                                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                                                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                                                                       : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
                                                             }`}
                                                         >

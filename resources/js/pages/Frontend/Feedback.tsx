@@ -60,11 +60,11 @@ export default function Feedback({
                                     className="h-10 w-10 rounded-lg object-contain"
                                 />
                             ) : (
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-2xl font-black text-white">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-purple-600 text-2xl font-black text-white">
                                     {appName.charAt(0)}
                                 </div>
                             )}
-                            <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-xl font-bold text-transparent">
+                            <span className="bg-gradient-to-r from-emerald-600 to-purple-600 bg-clip-text text-xl font-bold text-transparent">
                                 {appName}
                             </span>
                         </Link>
@@ -80,21 +80,21 @@ export default function Feedback({
                             {(nav?.quienes_somos_visible ?? true) && (
                                 <Link
                                     href="/quienes-somos"
-                                    className="text-sm font-medium text-gray-500 transition-colors hover:text-indigo-600"
+                                    className="text-sm font-medium text-gray-500 transition-colors hover:text-emerald-600"
                                 >
                                     {nav?.quienes_somos || 'Quiénes Somos'}
                                 </Link>
                             )}
                             <Link
                                 href="/feedback"
-                                className="text-sm font-semibold text-indigo-600 transition-colors"
+                                className="text-sm font-semibold text-emerald-600 transition-colors"
                             >
                                 {nav?.feedback || 'Feedback'}
                             </Link>
                             {(nav?.fundacion_visible ?? true) && (
                                 <Link
                                     href="/fundacion"
-                                    className="text-sm font-medium text-gray-500 transition-colors hover:text-indigo-600"
+                                    className="text-sm font-medium text-gray-500 transition-colors hover:text-emerald-600"
                                 >
                                     {nav?.fundacion || 'Nuestra Fundación'}
                                 </Link>
@@ -106,8 +106,8 @@ export default function Feedback({
 
             <main className="relative flex flex-grow flex-col md:flex-row">
                 {/* Visual Section */}
-                <div className="relative flex min-h-[400px] items-center justify-center overflow-hidden border-r border-indigo-800 bg-indigo-900 p-12 md:min-h-auto md:w-1/2">
-                    <div className="absolute inset-0 z-10 bg-gradient-to-br from-indigo-900/90 via-purple-900/80 to-blue-900/90 mix-blend-multiply" />
+                <div className="relative flex min-h-[400px] items-center justify-center overflow-hidden border-r border-emerald-800 bg-emerald-900 p-12 md:min-h-auto md:w-1/2">
+                    <div className="absolute inset-0 z-10 bg-gradient-to-br from-emerald-900/90 via-purple-900/80 to-emerald-900/90 mix-blend-multiply" />
 
                     <img
                         src={image || '/images/feedback_hero.png'}
@@ -117,18 +117,18 @@ export default function Feedback({
 
                     <div className="relative z-20 max-w-lg text-white">
                         <div className="mb-8 inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 p-3 backdrop-blur-md">
-                            <MessageSquare className="h-8 w-8 text-indigo-300" />
+                            <MessageSquare className="h-8 w-8 text-emerald-300" />
                         </div>
                         <h1 className="mb-6 text-5xl leading-tight font-extrabold tracking-tight">
                             {title || (
                                 <>
-                                    <span className="bg-gradient-to-r from-indigo-400 to-purple-300 bg-clip-text text-transparent">
+                                    <span className="bg-gradient-to-r from-emerald-400 to-purple-300 bg-clip-text text-transparent">
                                         moldea el futuro
                                     </span>
                                 </>
                             )}
                         </h1>
-                        <div className="text-lg leading-relaxed font-light whitespace-pre-wrap text-indigo-100/90">
+                        <div className="text-lg leading-relaxed font-light whitespace-pre-wrap text-emerald-100/90">
                             {subtitle ||
                                 'Te escuchamos. Cuéntanos qué podemos mejorar, qué te encanta y qué esperas ver en el futuro.'}
                         </div>
@@ -147,7 +147,7 @@ export default function Feedback({
                                 {auth.user ? (
                                     <>
                                         Hola{' '}
-                                        <span className="font-semibold text-indigo-600">
+                                        <span className="font-semibold text-emerald-600">
                                             {auth.user.name}
                                         </span>
                                         , ¡gracias por tomarte el tiempo!
@@ -160,20 +160,20 @@ export default function Feedback({
 
                         {auth.user ? (
                             isSubmitted ? (
-                                <div className="mt-8 rounded-2xl border border-indigo-100 bg-indigo-50 p-8 text-center">
-                                    <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                                <div className="mt-8 rounded-2xl border border-emerald-100 bg-emerald-50 p-8 text-center">
+                                    <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
                                         <Star className="h-8 w-8 fill-current" />
                                     </div>
                                     <h3 className="mb-2 text-xl font-bold text-gray-900">
                                         ¡Gracias por tu mensaje!
                                     </h3>
-                                    <p className="mb-6 text-indigo-600/80">
+                                    <p className="mb-6 text-emerald-600/80">
                                         Hemos recibido tus comentarios y los
                                         revisaremos con atención.
                                     </p>
                                     <button
                                         onClick={() => setIsSubmitted(false)}
-                                        className="text-sm font-semibold text-indigo-600 underline underline-offset-4 hover:text-indigo-700"
+                                        className="text-sm font-semibold text-emerald-600 underline underline-offset-4 hover:text-emerald-700"
                                     >
                                         Enviar otro comentario
                                     </button>
@@ -224,7 +224,7 @@ export default function Feedback({
                                             }
                                             rows={5}
                                             required
-                                            className="w-full resize-none rounded-xl border-gray-200 bg-gray-50 p-4 text-gray-900 transition-colors focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+                                            className="w-full resize-none rounded-xl border-gray-200 bg-gray-50 p-4 text-gray-900 transition-colors focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
                                             placeholder="Detalla lo que te gustaría compartir con nosotros..."
                                         />
                                     </div>
@@ -234,7 +234,7 @@ export default function Feedback({
                                         disabled={
                                             processing || !data.mensaje.trim()
                                         }
-                                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition-all hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                         Enviar feedback{' '}
                                         <Send className="ml-1 h-4 w-4" />
@@ -270,7 +270,7 @@ export default function Feedback({
                                 <div className="flex flex-col gap-3">
                                     <Link
                                         href="/login"
-                                        className="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-indigo-700"
+                                        className="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-emerald-700"
                                     >
                                         Iniciar sesión
                                     </Link>

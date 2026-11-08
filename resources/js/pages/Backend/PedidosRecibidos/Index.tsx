@@ -140,7 +140,7 @@ export default function Index({ pedidos, filtros }: Props) {
             case 'pendiente':
                 return 'bg-yellow-100 text-yellow-800';
             case 'confirmado':
-                return 'bg-blue-100 text-blue-800';
+                return 'bg-emerald-100 text-emerald-800';
             case 'preparando':
                 return 'bg-orange-100 text-orange-800';
             case 'enviado':
@@ -170,7 +170,7 @@ export default function Index({ pedidos, filtros }: Props) {
             <div className="flex h-full flex-col p-8">
                 <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="inline-block border-b-2 border-indigo-500 pb-2 text-2xl font-bold tracking-tight text-gray-900">
+                        <h1 className="inline-block border-b-2 border-emerald-500 pb-2 text-2xl font-bold tracking-tight text-gray-900">
                             Pedidos Recibidos
                         </h1>
                         <p className="mt-2 text-sm text-gray-500">
@@ -352,8 +352,8 @@ export default function Index({ pedidos, filtros }: Props) {
                     </div>
                     {pedidos.data.length === 0 ? (
                         <div className="flex flex-col items-center justify-center p-12 text-center">
-                            <div className="mb-4 rounded-full bg-indigo-50 p-4">
-                                <ShoppingBag className="h-8 w-8 text-indigo-500" />
+                            <div className="mb-4 rounded-full bg-emerald-50 p-4">
+                                <ShoppingBag className="h-8 w-8 text-emerald-500" />
                             </div>
                             <h3 className="mb-1 text-lg font-medium text-gray-900">
                                 No hay pedidos entrantes
@@ -398,8 +398,8 @@ export default function Index({ pedidos, filtros }: Props) {
                                                 >
                                                     <TableCell className="font-medium">
                                                         <div className="flex items-center space-x-2">
-                                                            <ShoppingBag className="h-4 w-4 text-indigo-500" />
-                                                            <span className="max-w-[120px] truncate font-semibold text-indigo-700">
+                                                            <ShoppingBag className="h-4 w-4 text-emerald-500" />
+                                                            <span className="max-w-[120px] truncate font-semibold text-emerald-700">
                                                                 #
                                                                 {
                                                                     pedido.numero_pedido
@@ -472,7 +472,7 @@ export default function Index({ pedidos, filtros }: Props) {
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 asChild
-                                                                className="hover:bg-indigo-50 hover:text-indigo-600"
+                                                                className="hover:bg-emerald-50 hover:text-emerald-600"
                                                             >
                                                                 <Link
                                                                     href={`/pedidos-recibidos/${pedido.id}`}
@@ -523,7 +523,7 @@ export default function Index({ pedidos, filtros }: Props) {
                                                                 size="sm"
                                                                 className={
                                                                     link.active
-                                                                        ? 'bg-indigo-600'
+                                                                        ? 'bg-emerald-600'
                                                                         : ''
                                                                 }
                                                                 asChild
@@ -553,8 +553,8 @@ export default function Index({ pedidos, filtros }: Props) {
                                             >
                                                 <div className="mb-2 flex items-center justify-between">
                                                     <div className="flex items-center space-x-2">
-                                                        <ShoppingBag className="h-5 w-5 text-indigo-500" />
-                                                        <span className="font-semibold text-indigo-700">
+                                                        <ShoppingBag className="h-5 w-5 text-emerald-500" />
+                                                        <span className="font-semibold text-emerald-700">
                                                             #
                                                             {
                                                                 pedido.numero_pedido
@@ -619,7 +619,7 @@ export default function Index({ pedidos, filtros }: Props) {
                                                         variant="ghost"
                                                         size="sm"
                                                         asChild
-                                                        className="h-8 w-8 p-0 hover:bg-indigo-50 hover:text-indigo-600"
+                                                        className="h-8 w-8 p-0 hover:bg-emerald-50 hover:text-emerald-600"
                                                     >
                                                         <Link
                                                             href={`/pedidos-recibidos/${pedido.id}`}
@@ -667,7 +667,7 @@ export default function Index({ pedidos, filtros }: Props) {
                                                                 size="sm"
                                                                 className={
                                                                     link.active
-                                                                        ? 'bg-indigo-600'
+                                                                        ? 'bg-emerald-600'
                                                                         : ''
                                                                 }
                                                                 asChild

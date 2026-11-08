@@ -574,7 +574,7 @@ class User extends Authenticatable
 
     public function getPrimaryColor(): string
     {
-        return $this->primary_color ?? '#3B82F6';
+        return $this->primary_color ?? '#059669';
     }
 
     public function getSecondaryColor(): string

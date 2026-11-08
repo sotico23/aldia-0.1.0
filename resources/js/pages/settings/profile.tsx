@@ -311,7 +311,7 @@ export default function Profile() {
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                             placeholder={placeholder}
-                            className="min-h-[50px] resize-none rounded-xl border-slate-200 bg-white shadow-sm focus-visible:ring-blue-500 dark:border-slate-800 dark:bg-slate-950"
+                            className="min-h-[50px] resize-none rounded-xl border-slate-200 bg-white shadow-sm focus-visible:ring-emerald-500 dark:border-slate-800 dark:bg-slate-950"
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                     e.preventDefault();
@@ -356,7 +356,7 @@ export default function Profile() {
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-9 gap-2 text-slate-500 transition-colors hover:text-blue-600"
+                                className="h-9 gap-2 text-slate-500 transition-colors hover:text-emerald-600"
                                 onClick={() => fileInputRef.current?.click()}
                             >
                                 <Camera className="h-4 w-4" />
@@ -368,7 +368,7 @@ export default function Profile() {
 
                         <Button
                             size="sm"
-                            className="h-9 rounded-xl bg-blue-600 px-4 font-semibold text-white shadow-sm hover:bg-blue-700"
+                            className="h-9 rounded-xl bg-emerald-600 px-4 font-semibold text-white shadow-sm hover:bg-emerald-700"
                             disabled={submitting || (!content.trim() && !image)}
                             onClick={handleSubmit}
                         >
@@ -609,7 +609,7 @@ export default function Profile() {
 
                     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
                         <div
-                            className={`relative flex h-48 items-center justify-center bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 md:h-56 ${isOwnProfile ? 'cursor-pointer' : ''}`}
+                            className={`relative flex h-48 items-center justify-center bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-600 md:h-56 ${isOwnProfile ? 'cursor-pointer' : ''}`}
                             onClick={() =>
                                 isOwnProfile && coverInputRef.current?.click()
                             }
@@ -884,7 +884,7 @@ export default function Profile() {
                                         profileUser.ciudad ||
                                         profileUser.region) && (
                                         <span className="flex items-center gap-1">
-                                            <MapPin className="h-4 w-4 text-blue-500" />
+                                            <MapPin className="h-4 w-4 text-emerald-500" />
                                             {[
                                                 profileUser.direccion,
                                                 profileUser.comuna,
@@ -986,10 +986,10 @@ export default function Profile() {
                                 <div className="border-b border-slate-100 p-4 dark:border-slate-800">
                                     <div className="flex items-center justify-between">
                                         <h3 className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
-                                            <TrendingUp className="h-5 w-5 text-blue-500" />
+                                            <TrendingUp className="h-5 w-5 text-emerald-500" />
                                             Centro de Control
                                         </h3>
-                                        <Badge className="border-none bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-500 hover:bg-blue-500/20">
+                                        <Badge className="border-none bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-500 hover:bg-emerald-500/20">
                                             REAL-TIME
                                         </Badge>
                                     </div>
@@ -997,7 +997,7 @@ export default function Profile() {
 
                                 <div className="space-y-6 p-4">
                                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                        <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 transition-all hover:border-blue-200 hover:bg-blue-50/30 dark:border-slate-800 dark:bg-slate-950/50">
+                                        <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 transition-all hover:border-emerald-200 hover:bg-emerald-50/30 dark:border-slate-800 dark:bg-slate-950/50">
                                             <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
                                                 <DollarSign className="h-3 w-3 text-emerald-500" />
                                                 Ventas
@@ -1014,15 +1014,15 @@ export default function Profile() {
                                                 +12.5% vs rec.
                                             </p>
                                         </div>
-                                        <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 transition-all hover:border-blue-200 hover:bg-blue-50/30 dark:border-slate-800 dark:bg-slate-950/50">
+                                        <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 transition-all hover:border-emerald-200 hover:bg-emerald-50/30 dark:border-slate-800 dark:bg-slate-950/50">
                                             <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                                                <Users className="h-3 w-3 text-blue-500" />
+                                                <Users className="h-3 w-3 text-emerald-500" />
                                                 Clientes
                                             </div>
                                             <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">
                                                 {stats.nuevosClientes}
                                             </p>
-                                            <p className="mt-0.5 text-[10px] font-medium text-blue-500">
+                                            <p className="mt-0.5 text-[10px] font-medium text-emerald-500">
                                                 Nuevos
                                             </p>
                                         </div>
@@ -1059,13 +1059,13 @@ export default function Profile() {
                                     </div>
 
                                     {/* Prediction Section */}
-                                    <div className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-blue-600 to-indigo-700 p-4 text-white shadow-lg shadow-blue-500/20">
+                                    <div className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-emerald-600 to-emerald-700 p-4 text-white shadow-lg shadow-emerald-500/20">
                                         <div className="absolute -top-4 -right-4 h-24 w-24 rounded-full bg-white/10 blur-2xl transition-transform group-hover:scale-150" />
                                         <div className="relative z-10 flex items-center justify-between">
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-1.5">
                                                     <Zap className="h-3 w-3 animate-pulse text-amber-300" />
-                                                    <p className="text-[10px] font-bold tracking-widest text-blue-100 uppercase">
+                                                    <p className="text-[10px] font-bold tracking-widest text-emerald-100 uppercase">
                                                         Proyección AI
                                                     </p>
                                                 </div>
@@ -1077,7 +1077,7 @@ export default function Profile() {
                                                         stats.proyeccionVentas,
                                                     )}
                                                 </h4>
-                                                <p className="text-[10px] leading-tight text-blue-100/80">
+                                                <p className="text-[10px] leading-tight text-emerald-100/80">
                                                     Estimado basado en tu
                                                     rendimiento actual del 5.1%.
                                                 </p>
@@ -1138,7 +1138,7 @@ export default function Profile() {
                                                 )
                                             }
                                             placeholder="¿Qué estás pensando?"
-                                            className="w-full rounded-lg border border-slate-200 p-3 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800"
+                                            className="w-full rounded-lg border border-slate-200 p-3 text-sm focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800"
                                             rows={3}
                                         />
                                         <input
@@ -1238,7 +1238,7 @@ export default function Profile() {
                                     </div>
                                 )}
                                 <div className="flex items-center justify-between border-t border-slate-100 px-4 py-2 text-sm text-slate-500 dark:border-slate-800">
-                                    <span className="flex items-center gap-1 font-medium text-blue-600">
+                                    <span className="flex items-center gap-1 font-medium text-emerald-600">
                                         <ThumbsUp
                                             className="h-4 w-4"
                                             fill={
@@ -1269,7 +1269,7 @@ export default function Profile() {
                                                     : post.id,
                                             )
                                         }
-                                        className={`flex flex-1 items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 ${activeCommentPost === post.id ? 'text-blue-600' : 'text-slate-600 dark:text-slate-300'}`}
+                                        className={`flex flex-1 items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 ${activeCommentPost === post.id ? 'text-emerald-600' : 'text-slate-600 dark:text-slate-300'}`}
                                     >
                                         <MessageCircle className="h-4 w-4" />
                                         Comentar
@@ -1342,7 +1342,7 @@ export default function Profile() {
                                                                     <div className="mt-1 flex items-center gap-4 px-2 text-xs font-semibold text-slate-500">
                                                                         <div className="flex items-center gap-2">
                                                                             <button
-                                                                                className="flex items-center gap-1 transition-colors hover:text-blue-600"
+                                                                                className="flex items-center gap-1 transition-colors hover:text-emerald-600"
                                                                                 onClick={() =>
                                                                                     router.post(
                                                                                         `/comentarios/${comment.id}/react`,
@@ -1360,7 +1360,7 @@ export default function Profile() {
                                                                                 {comment.likes_count &&
                                                                                 comment.likes_count >
                                                                                     0 ? (
-                                                                                    <span className="flex items-center gap-0.5 text-blue-600">
+                                                                                    <span className="flex items-center gap-0.5 text-emerald-600">
                                                                                         <ThumbsUp className="h-3 w-3" />
                                                                                         {
                                                                                             comment.likes_count
@@ -1401,7 +1401,7 @@ export default function Profile() {
                                                                             </button>
                                                                         </div>
                                                                         <button
-                                                                            className="transition-colors hover:text-blue-600 hover:underline"
+                                                                            className="transition-colors hover:text-emerald-600 hover:underline"
                                                                             onClick={() =>
                                                                                 setReplyingTo(
                                                                                     replyingTo ===
@@ -1497,7 +1497,7 @@ export default function Profile() {
                                                                                                 <div className="mt-1 flex items-center gap-4 px-2 text-[10px] font-semibold text-slate-500 sm:text-xs">
                                                                                                     <div className="flex items-center gap-2">
                                                                                                         <button
-                                                                                                            className="flex items-center gap-1 hover:text-blue-600"
+                                                                                                            className="flex items-center gap-1 hover:text-emerald-600"
                                                                                                             onClick={() =>
                                                                                                                 router.post(
                                                                                                                     `/comentarios/${reply.id}/react`,

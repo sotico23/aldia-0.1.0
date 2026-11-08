@@ -160,6 +160,8 @@ class HandleInertiaRequests extends Middleware
             return cache()->remember($cacheKey, 300, function () {
                 $settings = WebSetting::getSettings();
 
+                $theme = $settings->themeColors();
+
                 return [
                     'app_name' => $settings->app_name ?? config('app.name', 'Al Dia'),
                     'app_logo' => $settings->app_logo ?? '',
@@ -168,6 +170,10 @@ class HandleInertiaRequests extends Middleware
                     'app_description' => $settings->app_description ?? '',
                     'app_keywords' => $settings->app_keywords ?? '',
                     'app_author' => $settings->app_author ?? '',
+                    'theme_preset' => $settings->theme_preset ?? 'emerald',
+                    'primary_color' => $theme['primary'],
+                    'secondary_color' => $theme['secondary'],
+                    'accent_color' => $theme['accent'],
                 ];
             });
         } catch (\Exception $e) {
@@ -180,6 +186,10 @@ class HandleInertiaRequests extends Middleware
                 'app_description' => '',
                 'app_keywords' => '',
                 'app_author' => '',
+                'theme_preset' => 'emerald',
+                'primary_color' => '#059669',
+                'secondary_color' => '#10B981',
+                'accent_color' => '#34D399',
             ];
         }
     }

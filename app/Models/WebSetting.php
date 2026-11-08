@@ -11,6 +11,44 @@ class WebSetting extends Model
 
     protected $table = 'web_settings';
 
+    /**
+     * Institutional color presets available in the visual theme settings.
+     *
+     * @var array<string, array{label: string, primary: string, secondary: string, accent: string}>
+     */
+    public const THEME_PRESETS = [
+        'emerald' => [
+            'label' => 'Esmeralda',
+            'primary' => '#059669',
+            'secondary' => '#10B981',
+            'accent' => '#34D399',
+        ],
+        'emerald-deep' => [
+            'label' => 'Esmeralda Profunda',
+            'primary' => '#047857',
+            'secondary' => '#059669',
+            'accent' => '#10B981',
+        ],
+        'graphite' => [
+            'label' => 'Grafito Neutro',
+            'primary' => '#334155',
+            'secondary' => '#64748B',
+            'accent' => '#94A3B8',
+        ],
+        'ocean' => [
+            'label' => 'Océano',
+            'primary' => '#0284C7',
+            'secondary' => '#0EA5E9',
+            'accent' => '#7DD3FC',
+        ],
+        'violet' => [
+            'label' => 'Violeta',
+            'primary' => '#7C3AED',
+            'secondary' => '#8B5CF6',
+            'accent' => '#C4B5FD',
+        ],
+    ];
+
     protected $fillable = [
         'user_id',
         'app_name',
@@ -20,6 +58,10 @@ class WebSetting extends Model
         'app_description',
         'app_keywords',
         'app_author',
+        'theme_preset',
+        'primary_color',
+        'secondary_color',
+        'accent_color',
         'timezone',
         'locale',
         'currency',
@@ -141,6 +183,39 @@ class WebSetting extends Model
             'partial_refunds_allowed' => 'boolean',
             'financial_automations' => 'array',
         ];
+    }
+
+    /**
+     * Resolve the effective institutional palette, falling back to the
+     * selected preset when a custom color is missing or invalid.
+     *
+     * @return array{primary: string, secondary: string, accent: string}
+     */
+    public function themeColors(): array
+    {
+        $preset = self::THEME_PRESETS[$this->theme_preset] ?? self::THEME_PRESETS['emerald'];
+
+        return [
+            'primary' => $this->normalizeHexColor($this->primary_color) ?? $preset['primary'],
+            'secondary' => $this->normalizeHexColor($this->secondary_color) ?? $preset['secondary'],
+            'accent' => $this->normalizeHexColor($this->accent_color) ?? $preset['accent'],
+        ];
+    }
+
+    /**
+     * Normalize a persisted hex color, returning null when it is not valid.
+     */
+    private function normalizeHexColor(?string $color): ?string
+    {
+        if (! is_string($color)) {
+            return null;
+        }
+
+        $color = trim($color);
+
+        return preg_match('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $color) === 1
+            ? strtoupper($color)
+            : null;
     }
 
     public static function getSettings(bool $forPublicPage = false): self

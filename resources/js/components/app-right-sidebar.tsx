@@ -6,7 +6,6 @@ import {
     User,
     Key,
     Smartphone,
-    Palette,
     Store,
     ShoppingCart as CartIcon,
     Users,
@@ -56,7 +55,6 @@ import { useCountry } from '@/hooks/use-country';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
 import { logout } from '@/routes';
-import { edit as editAppearance } from '@/routes/appearance';
 import { show as showMarketplace } from '@/routes/marketplace';
 import { edit } from '@/routes/profile';
 import { edit as editPublicProfile } from '@/routes/public-profile';
@@ -91,11 +89,6 @@ export function AppRightSidebar() {
             title: 'Autenticación',
             href: showTwoFactor(),
             icon: Smartphone,
-        },
-        {
-            title: 'Apariencia',
-            href: editAppearance(),
-            icon: Palette,
         },
         {
             title: 'Notificaciones',
@@ -647,7 +640,7 @@ export function AppRightSidebar() {
                                                                 'nuevo_pedido' ? (
                                                                     <Package className="h-3 w-3 text-amber-500" />
                                                                 ) : (
-                                                                    <RefreshCw className="h-3 w-3 text-blue-500" />
+                                                                    <RefreshCw className="h-3 w-3 text-emerald-500" />
                                                                 )}
                                                                 <span className="truncate font-medium">
                                                                     {data.titulo ||

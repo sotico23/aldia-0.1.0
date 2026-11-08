@@ -19,6 +19,10 @@ class Pedido extends Model
     use HasFactory;
     use LogsPaymentStatus;
 
+    // Modalidades de despacho
+    const DISPATCH_INTERNAL = 'internal';
+    const DISPATCH_MARKETPLACE = 'marketplace';
+
     protected $fillable = [
         'owner_id',
         'business_id',
@@ -27,9 +31,13 @@ class Pedido extends Model
         'cliente_id',
         'numero_pedido',
         'estado',
+        'dispatch_mode',
+        'delivery_type',
         'subtotal',
         'impuesto',
         'total',
+        'costo_envio',
+        'ganancia_repartidor',
         'notas',
         'nombre_cliente',
         'telefono_cliente',
@@ -63,6 +71,8 @@ class Pedido extends Model
             'subtotal' => 'decimal:2',
             'impuesto' => 'decimal:2',
             'total' => 'decimal:2',
+            'costo_envio' => 'decimal:2',
+            'ganancia_repartidor' => 'decimal:2',
             'fecha_confirmacion' => 'datetime',
             'fecha_entrega' => 'datetime',
             'erp_synced_at' => 'datetime',
@@ -124,7 +134,7 @@ class Pedido extends Model
      */
     public function scopeDisponibleEnPool($query): void
     {
-        $query->where('estado', 'preparando')
+        $query->whereIn('estado', ['preparando', 'pendiente'])
             ->whereNull('repartidor_id')
             ->whereNull('hora_aceptado')
             ->where('pool_bloqueado', false)
@@ -132,5 +142,73 @@ class Pedido extends Model
                 $query->whereNull('pool_visible_at')
                     ->orWhere('pool_visible_at', '<=', now());
             });
+    }
+
+    public function scopeMarketplace($query)
+    {
+        return $query->where('dispatch_mode', self::DISPATCH_MARKETPLACE);
+    }
+
+    public function scopeInternal($query)
+    {
+        return $query->where('dispatch_mode', self::DISPATCH_INTERNAL);
+    }
+
+    public function isMarketplace(): bool
+    {
+        return ($this->dispatch_mode ?? self::DISPATCH_INTERNAL) === self::DISPATCH_MARKETPLACE;
+    }
+
+    public function isInternal(): bool
+    {
+        return ($this->dispatch_mode ?? self::DISPATCH_INTERNAL) === self::DISPATCH_INTERNAL;
+    }
+
+    /**
+     * Permite que los endpoints de delivery (aceptación, reclamo, entrega) puedan
+     * resolver pedidos entre distintos tenants (ej. repartidor freelancer tomando
+     * un pedido de marketplace de otra empresa).
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        return $this->withoutGlobalScope(OwnerScope::class)
+            ->where($field ?? $this->getRouteKeyName(), $value)
+            ->first();
+    }
+
+    /**
+     * Costo de envío efectivo del pedido.
+     *
+     * Si el pedido no trae un costo explícito (flujos antiguos o pedidos sin
+     * tarifa), se estima con la configuración de reparto para que el
+     * repartidor siempre vea una ganancia y el dashboard no muestre $0.
+     */
+    public function costoEnvioEfectivo(): float
+    {
+        $costo = (float) ($this->costo_envio ?? 0);
+
+        if ($costo > 0) {
+            return round($costo, 0);
+        }
+
+        $distancia = (float) ($this->distancia_km ?? 0);
+        $base = (float) config('delivery.costo_envio_default', 2500);
+        $porKm = (float) config('delivery.costo_por_km', 350);
+
+        return round($base + ($distancia > 0 ? $distancia * $porKm : 0), 0);
+    }
+
+    /**
+     * Ganancia que corresponde al repartidor por este pedido.
+     */
+    public function gananciaPara(Repartidor $repartidor): float
+    {
+        $ganancia = (float) ($this->ganancia_repartidor ?? 0);
+
+        if ($ganancia > 0) {
+            return $ganancia;
+        }
+
+        return $repartidor->gananciaEstimada($this->costoEnvioEfectivo());
     }
 }

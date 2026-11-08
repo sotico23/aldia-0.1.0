@@ -90,7 +90,7 @@ const ESTADOS = [
     {
         value: 'planificada',
         label: 'Planificada',
-        color: 'bg-blue-500/10 text-blue-600',
+        color: 'bg-emerald-500/10 text-emerald-600',
         icon: Calendar,
     },
     {
@@ -320,17 +320,17 @@ export default function Index({
 
                 {/* Quick Stats Grid */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <Card className="rounded-3xl border-none bg-blue-500/5 shadow-sm">
+                    <Card className="rounded-3xl border-none bg-emerald-500/5 shadow-sm">
                         <CardContent className="flex items-center justify-between p-6">
                             <div>
-                                <p className="mb-1 text-[10px] font-black tracking-widest text-blue-600/70 uppercase">
+                                <p className="mb-1 text-[10px] font-black tracking-widest text-emerald-600/70 uppercase">
                                     Inversión Total
                                 </p>
-                                <h3 className="text-2xl font-black text-blue-700">
+                                <h3 className="text-2xl font-black text-emerald-700">
                                     {formatCurrency(stats.totalPresupuesto)}
                                 </h3>
                             </div>
-                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600">
                                 <DollarSign className="h-6 w-6" />
                             </div>
                         </CardContent>
@@ -544,7 +544,7 @@ export default function Index({
                                                     <span className="font-bold text-muted-foreground">
                                                         ROI Estimado
                                                     </span>
-                                                    <span className="font-black text-blue-600">
+                                                    <span className="font-black text-emerald-600">
                                                         {cam.roi}%
                                                     </span>
                                                 </div>
@@ -640,7 +640,7 @@ export default function Index({
                                                 <td className="px-4 py-3 text-right">
                                                     {cam.conversiones}
                                                 </td>
-                                                <td className="px-4 py-3 text-right font-semibold text-blue-600">
+                                                <td className="px-4 py-3 text-right font-semibold text-emerald-600">
                                                     {cam.roi}%
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
@@ -974,7 +974,7 @@ export default function Index({
                                             ROI Calculado (%)
                                         </Label>
                                         <div className="relative">
-                                            <TrendingUp className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-blue-500" />
+                                            <TrendingUp className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-emerald-500" />
                                             <Input
                                                 type="number"
                                                 value={data.roi}
@@ -986,7 +986,7 @@ export default function Index({
                                                         ),
                                                     )
                                                 }
-                                                className="h-11 rounded-xl border-none bg-background pl-10 font-black text-blue-600 shadow-sm"
+                                                className="h-11 rounded-xl border-none bg-background pl-10 font-black text-emerald-600 shadow-sm"
                                             />
                                         </div>
                                     </div>
@@ -1074,8 +1074,8 @@ export default function Index({
                                 )}
 
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
-                                        <div className="mb-1 text-[10px] font-black text-blue-600 uppercase">
+                                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
+                                        <div className="mb-1 text-[10px] font-black text-emerald-600 uppercase">
                                             Presupuesto
                                         </div>
                                         <div className="text-xl font-black text-foreground">

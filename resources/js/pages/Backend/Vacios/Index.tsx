@@ -102,8 +102,8 @@ const estadoConfig: Record<
     },
     entregado: {
         label: 'Entregado',
-        color: 'text-blue-600',
-        bgColor: 'bg-blue-50',
+        color: 'text-emerald-600',
+        bgColor: 'bg-emerald-50',
     },
     retornado: {
         label: 'Retornado',
@@ -237,7 +237,7 @@ export default function Index({
             .reduce((s, v) => s + v.cantidad, 0);
         return [
             { name: 'Disponibles', value: disponible, color: '#22c55e' },
-            { name: 'Entregados', value: entregado, color: '#3b82f6' },
+            { name: 'Entregados', value: entregado, color: '#059669' },
             { name: 'Perdidos', value: perdido, color: '#f43f5e' },
         ].filter((d) => d.value > 0);
     }, [vacios]);
@@ -336,7 +336,7 @@ export default function Index({
                                     onClick={() => handleExport('excel')}
                                     className="gap-2 text-xs"
                                 >
-                                    <FileText className="h-3.5 w-3.5 text-blue-500" />
+                                    <FileText className="h-3.5 w-3.5 text-emerald-500" />
                                     Exportar Excel
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
@@ -387,10 +387,10 @@ export default function Index({
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
-                    <Card className="border-l-4 border-l-indigo-500">
+                    <Card className="border-l-4 border-l-emerald-500">
                         <CardHeader className="p-3 pb-1">
                             <CardTitle className="flex items-center gap-1.5 text-[11px] font-medium">
-                                <Package className="h-3 w-3 text-indigo-500" />
+                                <Package className="h-3 w-3 text-emerald-500" />
                                 Total Vacíos
                             </CardTitle>
                         </CardHeader>
@@ -413,15 +413,15 @@ export default function Index({
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="border-l-4 border-l-blue-500">
+                    <Card className="border-l-4 border-l-emerald-500">
                         <CardHeader className="p-3 pb-1">
                             <CardTitle className="flex items-center gap-1.5 text-[11px] font-medium">
-                                <TrendingUp className="h-3 w-3 text-blue-500" />
+                                <TrendingUp className="h-3 w-3 text-emerald-500" />
                                 Entregados
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-3 pt-0">
-                            <div className="text-lg font-bold text-blue-600">
+                            <div className="text-lg font-bold text-emerald-600">
                                 {getVaciosEntregados()}
                             </div>
                         </CardContent>
@@ -523,7 +523,7 @@ export default function Index({
                                         />
                                         <Bar
                                             dataKey="cantidad"
-                                            fill="#6366f1"
+                                            fill="#10b981"
                                             radius={[0, 4, 4, 0]}
                                         />
                                     </BarChart>

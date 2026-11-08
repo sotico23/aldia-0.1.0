@@ -62,7 +62,7 @@ class Prestamo extends Model
     public function getEstadoColorAttribute(): string
     {
         return match ($this->estado) {
-            'activo' => 'bg-blue-500',
+            'activo' => 'bg-emerald-500',
             'pagado' => 'bg-green-500',
             'cancelado' => 'bg-red-500',
             default => 'bg-gray-500',

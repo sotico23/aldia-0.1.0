@@ -21,7 +21,7 @@
         .summary-table .total-cell .method-label { color: #aaa; }
         .summary-table .total-cell .method-value { color: #fff; }
         .efectivo .method-value { color: #16a34a; }
-        .tarjeta .method-value { color: #2563eb; }
+        .tarjeta .method-value { color: #059669; }
         .transferencia .method-value { color: #9333ea; }
         .detail-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
         .detail-table { width: 100%; border-collapse: collapse; }

@@ -103,10 +103,10 @@ const KPICard = ({
     icon: React.ElementType;
 }) => {
     const colorClasses: Record<string, string> = {
-        indigo: 'bg-indigo-500/20 text-indigo-500',
+        indigo: 'bg-emerald-500/20 text-emerald-500',
         amber: 'bg-amber-500/20 text-amber-500',
         emerald: 'bg-emerald-500/20 text-emerald-500',
-        blue: 'bg-blue-500/20 text-blue-500',
+        blue: 'bg-emerald-500/20 text-emerald-500',
         rose: 'bg-rose-500/20 text-rose-500',
         orange: 'bg-orange-500/20 text-orange-500',
     };
@@ -115,7 +115,7 @@ const KPICard = ({
         <Link href={stat.url || '#'}>
             <div className="group relative overflow-hidden rounded-3xl border border-white/20 bg-white/10 p-6 shadow-2xl backdrop-blur-xl transition-all hover:scale-[1.02] hover:ring-2 hover:ring-primary/20 dark:border-white/10 dark:bg-zinc-900/40">
                 <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
-                <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl" />
+                <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
                 <div className="relative z-10">
                     <div className="flex items-start justify-between">
                         <div
@@ -271,7 +271,7 @@ const TopProductsChart = ({ data }: { data: TopProducto[] }) => {
         );
 
     const total = data.reduce((acc, curr) => acc + Number(curr.total_venta), 0);
-    const colors = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#f43f5e'];
+    const colors = ['#10b981', '#8b5cf6', '#a855f7', '#d946ef', '#f43f5e'];
 
     return (
         <div className="flex items-center gap-4">
@@ -550,8 +550,8 @@ export default function Dashboard({
                                     href="/ventas"
                                     className="flex items-center gap-3 rounded-xl border border-border p-3 transition-colors hover:bg-accent"
                                 >
-                                    <div className="rounded-lg bg-indigo-500/10 p-2">
-                                        <Activity className="h-4 w-4 text-indigo-500" />
+                                    <div className="rounded-lg bg-emerald-500/10 p-2">
+                                        <Activity className="h-4 w-4 text-emerald-500" />
                                     </div>
                                     <div>
                                         <p className="font-medium">
@@ -582,8 +582,8 @@ export default function Dashboard({
                                     href="/clientes"
                                     className="flex items-center gap-3 rounded-xl border border-border p-3 transition-colors hover:bg-accent"
                                 >
-                                    <div className="rounded-lg bg-blue-500/10 p-2">
-                                        <Users className="h-4 w-4 text-blue-500" />
+                                    <div className="rounded-lg bg-emerald-500/10 p-2">
+                                        <Users className="h-4 w-4 text-emerald-500" />
                                     </div>
                                     <div>
                                         <p className="font-medium">Clientes</p>

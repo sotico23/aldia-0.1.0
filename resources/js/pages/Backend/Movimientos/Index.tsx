@@ -111,7 +111,7 @@ const TIPOS = [
     {
         value: 'transferencia',
         label: 'Transferencia',
-        color: 'bg-blue-500/10 text-blue-600',
+        color: 'bg-emerald-500/10 text-emerald-600',
         icon: ArrowLeftRight,
     },
     {
@@ -336,7 +336,7 @@ export default function Index({
                                     onClick={() => csvInputRef.current?.click()}
                                     className="rounded-lg py-3"
                                 >
-                                    <Upload className="mr-2 h-4 w-4 text-blue-500" />{' '}
+                                    <Upload className="mr-2 h-4 w-4 text-emerald-500" />{' '}
                                     Importar Historial
                                 </DropdownMenuItem>
                                 <hr className="my-2" />

@@ -218,7 +218,7 @@ export default function Index({
     const getEstadoBadge = (e: string) => {
         const colores: Record<string, string> = {
             borrador: 'bg-gray-500',
-            procesada: 'bg-blue-500',
+            procesada: 'bg-emerald-500',
             pagada: 'bg-green-500',
         };
         return <Badge className={colores[e] || 'bg-gray-500'}>{e}</Badge>;

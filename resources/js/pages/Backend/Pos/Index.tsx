@@ -2309,7 +2309,7 @@ export default function PosIndex({
                                 suffix="desktop"
                             />
                             {hasDelivery && (
-                                <div className="flex justify-between text-sm font-medium text-blue-600">
+                                <div className="flex justify-between text-sm font-medium text-emerald-600">
                                     <span>Despacho</span>
                                     <span>{formatCurrency(deliveryCost)}</span>
                                 </div>
@@ -2537,7 +2537,7 @@ export default function PosIndex({
                                 <>
                                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                                         <Button
-                                            className="h-16 flex-col gap-1 bg-blue-600 shadow-lg shadow-blue-500/20 hover:bg-blue-700"
+                                            className="h-16 flex-col gap-1 bg-emerald-600 shadow-lg shadow-emerald-500/20 hover:bg-emerald-700"
                                             disabled={
                                                 cart.length === 0 ||
                                                 posForm.processing
@@ -3096,7 +3096,7 @@ export default function PosIndex({
                                         suffix="mobile"
                                     />
                                     {hasDelivery && (
-                                        <div className="flex justify-between text-sm font-medium text-blue-600">
+                                        <div className="flex justify-between text-sm font-medium text-emerald-600">
                                             <span>Despacho</span>
                                             <span>
                                                 {formatCurrency(deliveryCost)}
@@ -3226,7 +3226,7 @@ export default function PosIndex({
 
                                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                                     <Button
-                                        className="h-16 flex-col gap-1 bg-blue-600 shadow-lg shadow-blue-500/20 hover:bg-blue-700"
+                                        className="h-16 flex-col gap-1 bg-emerald-600 shadow-lg shadow-emerald-500/20 hover:bg-emerald-700"
                                         disabled={
                                             cart.length === 0 || procesando
                                         }
@@ -3357,7 +3357,7 @@ export default function PosIndex({
                             </Button>
 
                             <Button
-                                className="h-20 flex-col gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 sm:h-24"
+                                className="h-20 flex-col gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 sm:h-24"
                                 disabled={cart.length === 0 || procesando}
                                 onClick={() => {
                                     procesarPago('transferencia');
@@ -3614,7 +3614,7 @@ export default function PosIndex({
                                         </span>
                                     </div>
                                     {ultimaVenta.hasDelivery && (
-                                        <div className="flex justify-between text-blue-600">
+                                        <div className="flex justify-between text-emerald-600">
                                             <span>Despacho</span>
                                             <span>
                                                 {formatCurrency(
@@ -3681,7 +3681,7 @@ export default function PosIndex({
                                     ultimaVenta.ventaId && (
                                         <Button
                                             variant="default"
-                                            className="w-full gap-2 bg-blue-600 font-bold hover:bg-blue-700"
+                                            className="w-full gap-2 bg-emerald-600 font-bold hover:bg-emerald-700"
                                             onClick={() => {
                                                 setDteResultado(null);
                                                 setEmitirDteOpen(true);
@@ -3845,7 +3845,7 @@ export default function PosIndex({
                                         Cancelar
                                     </Button>
                                     <Button
-                                        className="flex-1 gap-2 bg-blue-600 font-bold hover:bg-blue-700"
+                                        className="flex-1 gap-2 bg-emerald-600 font-bold hover:bg-emerald-700"
                                         onClick={async () => {
                                             if (!ultimaVenta?.ventaId) return;
                                             setEmitiendoDte(true);

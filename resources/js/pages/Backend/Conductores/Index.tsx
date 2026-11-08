@@ -590,7 +590,7 @@ export default function Index({
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="sm"
-                                                                    className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                                    className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                                                                     onClick={() =>
                                                                         handleVer(
                                                                             c,
@@ -709,7 +709,7 @@ export default function Index({
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                        className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                                                         onClick={() =>
                                                             handleVer(c)
                                                         }
@@ -1064,17 +1064,17 @@ export default function Index({
                                             Desempeño y Ventas Asociadas
                                         </h3>
                                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                            <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-5">
-                                                <p className="mb-3 text-xs font-black tracking-widest text-blue-700 uppercase">
+                                            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-5">
+                                                <p className="mb-3 text-xs font-black tracking-widest text-emerald-700 uppercase">
                                                     Rendimiento de Hoy
                                                 </p>
-                                                <div className="flex flex-col gap-2 text-sm font-semibold text-blue-900">
+                                                <div className="flex flex-col gap-2 text-sm font-semibold text-emerald-900">
                                                     <div className="flex items-center justify-between rounded bg-white/60 p-2 shadow-sm">
                                                         <span>
                                                             Productos o
                                                             Cilindros:
                                                         </span>
-                                                        <span className="font-black text-blue-700">
+                                                        <span className="font-black text-emerald-700">
                                                             {conductorSeleccionado
                                                                 .estadisticas_ventas
                                                                 ?.diario
@@ -1086,7 +1086,7 @@ export default function Index({
                                                         <span>
                                                             Total en Kilos:
                                                         </span>
-                                                        <span className="font-black text-blue-700">
+                                                        <span className="font-black text-emerald-700">
                                                             {(
                                                                 conductorSeleccionado
                                                                     .estadisticas_ventas
@@ -1102,7 +1102,7 @@ export default function Index({
                                                         <span>
                                                             Total en Litros:
                                                         </span>
-                                                        <span className="font-black text-blue-700">
+                                                        <span className="font-black text-emerald-700">
                                                             {(
                                                                 conductorSeleccionado
                                                                     .estadisticas_ventas

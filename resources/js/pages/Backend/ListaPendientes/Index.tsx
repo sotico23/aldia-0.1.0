@@ -66,7 +66,7 @@ export default function Index({ pendientes }: { pendientes: Tarea[] }) {
                 );
             case 'en_progreso':
                 return (
-                    <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+                    <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
                         <Clock className="mr-1 h-3 w-3" />
                         En Progreso
                     </Badge>
@@ -154,11 +154,11 @@ export default function Index({ pendientes }: { pendientes: Tarea[] }) {
                                     <p className="text-sm text-muted-foreground">
                                         En Progreso
                                     </p>
-                                    <p className="text-2xl font-bold text-blue-600">
+                                    <p className="text-2xl font-bold text-emerald-600">
                                         {stats.enProgreso}
                                     </p>
                                 </div>
-                                <Clock className="h-8 w-8 text-blue-500" />
+                                <Clock className="h-8 w-8 text-emerald-500" />
                             </div>
                         </CardContent>
                     </Card>

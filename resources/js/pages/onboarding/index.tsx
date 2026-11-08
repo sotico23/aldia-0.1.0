@@ -47,7 +47,7 @@ export default function Onboarding({ user }: { user: any }) {
             description:
                 'Para personas naturales que venden productos o servicios de forma autónoma.',
             icon: UserIcon,
-            color: 'bg-blue-100 text-blue-600',
+            color: 'bg-emerald-100 text-emerald-600',
         },
         {
             id: 'negocio',
@@ -63,7 +63,7 @@ export default function Onboarding({ user }: { user: any }) {
             description:
                 'Para organizaciones de gran escala, múltiples sucursales y operaciones complejas.',
             icon: Building2,
-            color: 'bg-indigo-100 text-indigo-600',
+            color: 'bg-emerald-100 text-emerald-600',
         },
     ];
 

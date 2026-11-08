@@ -210,7 +210,7 @@ export default function Index({
     const getEstadoBadge = (estado: string) => {
         const colores: Record<string, string> = {
             pendiente: 'bg-yellow-500',
-            en_progreso: 'bg-blue-500',
+            en_progreso: 'bg-emerald-500',
             completado: 'bg-green-500',
             atrasado: 'bg-red-500',
             cancelado: 'bg-gray-500',

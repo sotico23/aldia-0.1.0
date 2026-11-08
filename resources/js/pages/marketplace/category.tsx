@@ -1058,7 +1058,7 @@ export default function MarketplaceCategory({
                                                 metodo_pago: 'webpay',
                                             })
                                         }
-                                        className={`flex flex-col items-center justify-center rounded-xl border p-3 transition-all ${datosCheckout.metodo_pago === 'webpay' ? 'border-indigo-500 bg-indigo-50 text-indigo-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
+                                        className={`flex flex-col items-center justify-center rounded-xl border p-3 transition-all ${datosCheckout.metodo_pago === 'webpay' ? 'border-emerald-500 bg-emerald-50 text-emerald-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
                                     >
                                         <CreditCard className="mb-1 h-4 w-4" />
                                         <span className="text-[10px] font-bold uppercase">
@@ -1076,7 +1076,7 @@ export default function MarketplaceCategory({
                                                 metodo_pago: 'paypal',
                                             })
                                         }
-                                        className={`flex flex-col items-center justify-center rounded-xl border p-3 transition-all ${datosCheckout.metodo_pago === 'paypal' ? 'border-blue-500 bg-blue-50 text-blue-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
+                                        className={`flex flex-col items-center justify-center rounded-xl border p-3 transition-all ${datosCheckout.metodo_pago === 'paypal' ? 'border-emerald-500 bg-emerald-50 text-emerald-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
                                     >
                                         <CreditCard className="mb-1 h-4 w-4" />
                                         <span className="text-[10px] font-bold uppercase">
@@ -1094,7 +1094,7 @@ export default function MarketplaceCategory({
                                                 metodo_pago: 'mercadopago',
                                             })
                                         }
-                                        className={`flex flex-col items-center justify-center rounded-xl border p-3 transition-all ${datosCheckout.metodo_pago === 'mercadopago' ? 'border-sky-500 bg-sky-50 text-sky-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
+                                        className={`flex flex-col items-center justify-center rounded-xl border p-3 transition-all ${datosCheckout.metodo_pago === 'mercadopago' ? 'border-emerald-500 bg-emerald-50 text-emerald-600 shadow-sm' : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'}`}
                                     >
                                         <CreditCard className="mb-1 h-4 w-4" />
                                         <span className="text-[10px] font-bold uppercase">
@@ -1124,11 +1124,11 @@ export default function MarketplaceCategory({
                             className={cn(
                                 'w-full transition-all',
                                 datosCheckout.metodo_pago === 'webpay' &&
-                                    'bg-indigo-600 hover:bg-indigo-700',
+                                    'bg-emerald-600 hover:bg-emerald-700',
                                 datosCheckout.metodo_pago === 'paypal' &&
-                                    'bg-blue-600 hover:bg-blue-700',
+                                    'bg-emerald-600 hover:bg-emerald-700',
                                 datosCheckout.metodo_pago === 'mercadopago' &&
-                                    'bg-sky-600 hover:bg-sky-700',
+                                    'bg-emerald-600 hover:bg-emerald-700',
                             )}
                         >
                             {procesando

@@ -60,19 +60,19 @@ const colorMap: Record<string, { card: string; icon: string; value: string }> =
             value: 'text-rose-600 dark:text-rose-400',
         },
         indigo: {
-            card: 'bg-indigo-500/8 border-indigo-500/20',
-            icon: 'text-indigo-500 bg-indigo-500/10',
-            value: 'text-indigo-600 dark:text-indigo-400',
+            card: 'bg-emerald-500/8 border-emerald-500/20',
+            icon: 'text-emerald-500 bg-emerald-500/10',
+            value: 'text-emerald-600 dark:text-emerald-400',
         },
         blue: {
-            card: 'bg-blue-500/8 border-blue-500/20',
-            icon: 'text-blue-500 bg-blue-500/10',
-            value: 'text-blue-600 dark:text-blue-400',
+            card: 'bg-emerald-500/8 border-emerald-500/20',
+            icon: 'text-emerald-500 bg-emerald-500/10',
+            value: 'text-emerald-600 dark:text-emerald-400',
         },
         cyan: {
-            card: 'bg-cyan-500/8 border-cyan-500/20',
-            icon: 'text-cyan-500 bg-cyan-500/10',
-            value: 'text-cyan-600 dark:text-cyan-400',
+            card: 'bg-emerald-500/8 border-emerald-500/20',
+            icon: 'text-emerald-500 bg-emerald-500/10',
+            value: 'text-emerald-600 dark:text-emerald-400',
         },
         violet: {
             card: 'bg-violet-500/8 border-violet-500/20',

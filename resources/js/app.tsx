@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { toast } from 'sonner';
 import '../css/app.css';
 import { initializeTheme } from './hooks/use-appearance';
+import { applyWebThemeFromPageProps } from './lib/web-theme';
 
 createInertiaApp({
     title: (title) => {
@@ -20,6 +21,8 @@ createInertiaApp({
             import.meta.glob('./pages/**/*.tsx'),
         ),
     setup({ el, App, props }) {
+        applyWebThemeFromPageProps(props.initialPage?.props);
+
         const root = createRoot(el);
 
         root.render(
@@ -31,6 +34,11 @@ createInertiaApp({
     progress: {
         color: '#4B5563',
     },
+});
+
+// Keep the institutional palette in sync after every Inertia navigation.
+router.on('success', (event) => {
+    applyWebThemeFromPageProps(event.detail.page.props);
 });
 
 // Manejo Global de Errores

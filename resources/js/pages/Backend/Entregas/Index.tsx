@@ -414,7 +414,7 @@ export default function Index({
     const getEstadoBadge = (e: string) => {
         const colores: Record<string, string> = {
             pendiente: 'bg-yellow-500',
-            en_ruta: 'bg-blue-500',
+            en_ruta: 'bg-emerald-500',
             entregado: 'bg-green-500',
             cancelado: 'bg-red-500',
         };
@@ -501,34 +501,34 @@ export default function Index({
                             activeTab === 'deliveries' ? '' : 'hidden'
                         }`}
                     >
-                        <Card className="border-none bg-gradient-to-br from-blue-500/10 to-blue-500/5 shadow-none ring-1 ring-blue-500/20">
+                        <Card className="border-none bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 shadow-none ring-1 ring-emerald-500/20">
                             <CardContent className="p-6">
                                 <div className="flex items-center gap-4">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-lg shadow-blue-500/20">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
                                         <Scale className="h-6 w-6" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black tracking-widest text-blue-600/60 uppercase">
+                                        <p className="text-[10px] font-black tracking-widest text-emerald-600/60 uppercase">
                                             Total Kilos ⚖️
                                         </p>
-                                        <h3 className="text-2xl font-black text-blue-700">
+                                        <h3 className="text-2xl font-black text-emerald-700">
                                             {stats.kg.toLocaleString()} kg
                                         </h3>
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
-                        <Card className="border-none bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 shadow-none ring-1 ring-cyan-500/20">
+                        <Card className="border-none bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 shadow-none ring-1 ring-emerald-500/20">
                             <CardContent className="p-6">
                                 <div className="flex items-center gap-4">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500 text-white shadow-lg shadow-cyan-500/20">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
                                         <Droplets className="h-6 w-6" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black tracking-widest text-cyan-600/60 uppercase">
+                                        <p className="text-[10px] font-black tracking-widest text-emerald-600/60 uppercase">
                                             Total Litros 💧
                                         </p>
-                                        <h3 className="text-2xl font-black text-cyan-700">
+                                        <h3 className="text-2xl font-black text-emerald-700">
                                             {stats.litros.toLocaleString()} L
                                         </h3>
                                     </div>
@@ -738,7 +738,7 @@ export default function Index({
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                                className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                                                                 onClick={() =>
                                                                     handleVer(e)
                                                                 }
@@ -1407,16 +1407,16 @@ export default function Index({
                                                             </div>
                                                             <div className="grid grid-cols-3 gap-2">
                                                                 <div
-                                                                    className={`flex flex-col items-center justify-center rounded-lg p-2 text-center ring-1 md:rounded-xl md:p-2 ${item.unidad_medida === 'kg' ? 'bg-blue-500/5 ring-blue-500/10' : 'bg-cyan-500/5 ring-cyan-500/10'}`}
+                                                                    className={`flex flex-col items-center justify-center rounded-lg p-2 text-center ring-1 md:rounded-xl md:p-2 ${item.unidad_medida === 'kg' ? 'bg-emerald-500/5 ring-emerald-500/10' : 'bg-emerald-500/5 ring-emerald-500/10'}`}
                                                                 >
                                                                     {item.unidad_medida ===
                                                                     'kg' ? (
-                                                                        <Scale className="mb-0.5 h-2.5 w-2.5 text-blue-500 md:h-3 md:w-3" />
+                                                                        <Scale className="mb-0.5 h-2.5 w-2.5 text-emerald-500 md:h-3 md:w-3" />
                                                                     ) : (
-                                                                        <Droplets className="mb-0.5 h-2.5 w-2.5 text-cyan-500 md:h-3 md:w-3" />
+                                                                        <Droplets className="mb-0.5 h-2.5 w-2.5 text-emerald-500 md:h-3 md:w-3" />
                                                                     )}
                                                                     <p
-                                                                        className={`text-[8px] font-black uppercase md:text-[8px] ${item.unidad_medida === 'kg' ? 'text-blue-600/60' : 'text-cyan-600/60'}`}
+                                                                        className={`text-[8px] font-black uppercase md:text-[8px] ${item.unidad_medida === 'kg' ? 'text-emerald-600/60' : 'text-emerald-600/60'}`}
                                                                     >
                                                                         {item.unidad_medida?.toUpperCase() ===
                                                                         'KG'
@@ -1424,7 +1424,7 @@ export default function Index({
                                                                             : 'Litros'}
                                                                     </p>
                                                                     <p
-                                                                        className={`text-xs font-black md:text-sm ${item.unidad_medida === 'kg' ? 'text-blue-700' : 'text-cyan-700'}`}
+                                                                        className={`text-xs font-black md:text-sm ${item.unidad_medida === 'kg' ? 'text-emerald-700' : 'text-emerald-700'}`}
                                                                     >
                                                                         {Number(
                                                                             item.subtotal_metrica,
@@ -1604,13 +1604,13 @@ export default function Index({
                                             </div>
                                             <div className="group relative flex items-center gap-3">
                                                 <div
-                                                    className={`absolute -left-5 z-10 flex h-3 w-3 items-center justify-center rounded-full shadow-sm ring-2 ring-white transition-transform group-hover:scale-125 md:-left-6 md:h-4 md:w-4 ${['en_ruta', 'entregado'].includes(entregaSeleccionada.estado) ? 'bg-blue-500' : 'bg-muted'}`}
+                                                    className={`absolute -left-5 z-10 flex h-3 w-3 items-center justify-center rounded-full shadow-sm ring-2 ring-white transition-transform group-hover:scale-125 md:-left-6 md:h-4 md:w-4 ${['en_ruta', 'entregado'].includes(entregaSeleccionada.estado) ? 'bg-emerald-500' : 'bg-muted'}`}
                                                 ></div>
                                                 <div
-                                                    className={`rounded-xl border p-2 md:rounded-2xl md:p-3 ${['en_ruta', 'entregado'].includes(entregaSeleccionada.estado) ? 'border-blue-500/10 bg-blue-50/50' : 'border-border/50 bg-muted/30'}`}
+                                                    className={`rounded-xl border p-2 md:rounded-2xl md:p-3 ${['en_ruta', 'entregado'].includes(entregaSeleccionada.estado) ? 'border-emerald-500/10 bg-emerald-50/50' : 'border-border/50 bg-muted/30'}`}
                                                 >
                                                     <p
-                                                        className={`text-[10px] font-black uppercase md:text-xs ${['en_ruta', 'entregado'].includes(entregaSeleccionada.estado) ? 'text-blue-600' : 'text-muted-foreground'}`}
+                                                        className={`text-[10px] font-black uppercase md:text-xs ${['en_ruta', 'entregado'].includes(entregaSeleccionada.estado) ? 'text-emerald-600' : 'text-muted-foreground'}`}
                                                     >
                                                         En Tránsito
                                                     </p>

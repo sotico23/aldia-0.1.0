@@ -69,7 +69,7 @@ class AppointmentController extends Controller
                 'value' => $allAppointments->where('status', $s)->count(),
                 'color' => match ($s) {
                     'pendiente' => '#f59e0b',
-                    'confirmada' => '#3b82f6',
+                    'confirmada' => '#059669',
                     'completada' => '#22c55e',
                     'cancelada' => '#ef4444',
                     default => '#6b7280',
@@ -137,7 +137,7 @@ class AppointmentController extends Controller
                 'value' => $stats[$s],
                 'color' => match ($s) {
                     'pendiente' => '#f59e0b',
-                    'confirmada' => '#3b82f6',
+                    'confirmada' => '#059669',
                     'completada' => '#22c55e',
                     'cancelada' => '#ef4444',
                     default => '#6b7280',
@@ -250,7 +250,7 @@ class AppointmentController extends Controller
                 'value' => $citasMes->where('status', $s)->count(),
                 'color' => match ($s) {
                     'pendiente' => '#f59e0b',
-                    'confirmada' => '#3b82f6',
+                    'confirmada' => '#059669',
                     'completada' => '#22c55e',
                     'cancelada' => '#ef4444',
                     default => '#6b7280',

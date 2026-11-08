@@ -317,7 +317,7 @@ export default function Index({
 
     const getTipoIcon = (tipo: string) => {
         return tipo === 'entrante' ? (
-            <PhoneIncoming className="h-4 w-4 text-blue-500" />
+            <PhoneIncoming className="h-4 w-4 text-emerald-500" />
         ) : (
             <PhoneOutgoing className="h-4 w-4 text-green-500" />
         );
@@ -392,11 +392,11 @@ export default function Index({
                             label: 'Llamadas Totales',
                             val: stats.total_llamadas,
                             icon: Phone,
-                            cardBg: 'bg-blue-500/5',
-                            labelColor: 'text-blue-600/70',
-                            valColor: 'text-blue-700',
-                            iconBg: 'bg-blue-500/10',
-                            iconColor: 'text-blue-600',
+                            cardBg: 'bg-emerald-500/5',
+                            labelColor: 'text-emerald-600/70',
+                            valColor: 'text-emerald-700',
+                            iconBg: 'bg-emerald-500/10',
+                            iconColor: 'text-emerald-600',
                         },
                         {
                             label: 'Atención Hoy',

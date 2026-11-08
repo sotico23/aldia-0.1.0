@@ -91,7 +91,7 @@ interface TotalTipo {
     total: number;
 }
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+const COLORS = ['#059669', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function Index({
     asientos,
@@ -328,7 +328,7 @@ export default function Index({
                                                 <Line
                                                     type="monotone"
                                                     dataKey="debe"
-                                                    stroke="#3b82f6"
+                                                    stroke="#059669"
                                                     strokeWidth={2}
                                                     dot={{ r: 3 }}
                                                     name="Debe"
@@ -876,13 +876,13 @@ export default function Index({
                     }}
                 >
                     <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto border-none p-0 shadow-xl sm:max-h-[85vh] sm:max-w-2xl md:max-w-3xl">
-                        <DialogHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-3 text-white md:px-6 md:py-4">
+                        <DialogHeader className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-4 py-3 text-white md:px-6 md:py-4">
                             <DialogTitle className="text-lg font-black tracking-tight md:text-xl">
                                 {editando
                                     ? 'Editar Asiento'
                                     : 'Nuevo Asiento Contable'}
                             </DialogTitle>
-                            <DialogDescription className="text-xs text-blue-100">
+                            <DialogDescription className="text-xs text-emerald-100">
                                 {editando
                                     ? 'Modifique los datos del asiento'
                                     : 'Ingrese los datos del asiento'}
@@ -1144,7 +1144,7 @@ export default function Index({
                 {/* View Modal */}
                 <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
                     <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto border-none p-0 shadow-xl sm:max-h-[85vh] md:max-w-2xl">
-                        <DialogHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-3 text-white md:px-6 md:py-4">
+                        <DialogHeader className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-4 py-3 text-white md:px-6 md:py-4">
                             <DialogTitle className="text-lg font-black tracking-tight md:text-xl">
                                 Detalle de Asiento
                             </DialogTitle>

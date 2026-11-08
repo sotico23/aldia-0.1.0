@@ -306,7 +306,7 @@ export default function Index({
 
     const getEstadoBadge = (e: string) => {
         const colores: Record<string, string> = {
-            activo: 'bg-blue-500',
+            activo: 'bg-emerald-500',
             pagado: 'bg-green-500',
             cancelado: 'bg-red-500',
             pendiente: 'bg-yellow-500',
@@ -356,8 +356,8 @@ export default function Index({
                         <Card>
                             <CardContent className="p-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="rounded-full bg-blue-100 p-2">
-                                        <CreditCard className="h-5 w-5 text-blue-600" />
+                                    <div className="rounded-full bg-emerald-100 p-2">
+                                        <CreditCard className="h-5 w-5 text-emerald-600" />
                                     </div>
                                     <div>
                                         <p className="text-xs text-muted-foreground">
@@ -662,7 +662,7 @@ export default function Index({
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                                className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                                                                 onClick={() =>
                                                                     handleVer(p)
                                                                 }
@@ -814,7 +814,7 @@ export default function Index({
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                        className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                                                         onClick={() =>
                                                             handleVer(p)
                                                         }
@@ -886,7 +886,7 @@ export default function Index({
             {/* Modal Crear/Editar */}
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto border-none p-0 shadow-xl sm:max-w-lg">
-                    <DialogHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-3 text-white md:px-6 md:py-4">
+                    <DialogHeader className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-4 py-3 text-white md:px-6 md:py-4">
                         <DialogTitle className="text-lg font-black tracking-tight md:text-xl">
                             {editando ? 'Modificar' : 'Nuevo'} Préstamo /
                             Adelanto
@@ -1053,8 +1053,8 @@ export default function Index({
                             {!editando &&
                                 data.monto_total &&
                                 data.numero_cuotas && (
-                                    <div className="rounded-lg bg-blue-50 p-3 text-sm">
-                                        <p className="font-bold text-blue-800">
+                                    <div className="rounded-lg bg-emerald-50 p-3 text-sm">
+                                        <p className="font-bold text-emerald-800">
                                             Cuota estimada:{' '}
                                             {formatCurrency(
                                                 parseFloat(
@@ -1091,8 +1091,8 @@ export default function Index({
             {/* Modal Ver Detalles */}
             <Dialog open={isVerOpen} onOpenChange={setIsVerOpen}>
                 <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto border-none bg-background p-0 shadow-2xl md:max-w-3xl">
-                    <DialogHeader className="bg-gradient-to-r from-blue-500/10 to-transparent p-6 pb-2">
-                        <DialogTitle className="text-2xl font-black tracking-tight text-blue-700">
+                    <DialogHeader className="bg-gradient-to-r from-emerald-500/10 to-transparent p-6 pb-2">
+                        <DialogTitle className="text-2xl font-black tracking-tight text-emerald-700">
                             Detalles del Préstamo
                         </DialogTitle>
                     </DialogHeader>
@@ -1100,7 +1100,7 @@ export default function Index({
                         <div className="max-h-[calc(90vh-140px)] overflow-y-auto p-6 pt-0">
                             <div className="grid gap-6">
                                 {/* Info del préstamo */}
-                                <div className="grid grid-cols-2 gap-4 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                                <div className="grid grid-cols-2 gap-4 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
                                     <div>
                                         <p className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
                                             Empleado
@@ -1444,7 +1444,7 @@ export default function Index({
             {/* Modal Aplicar en Nómina */}
             <Dialog open={isNominaOpen} onOpenChange={setIsNominaOpen}>
                 <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto border-none p-0 shadow-xl sm:max-w-md">
-                    <DialogHeader className="bg-gradient-to-r from-purple-600 to-indigo-700 px-4 py-3 text-white md:px-6 md:py-4">
+                    <DialogHeader className="bg-gradient-to-r from-purple-600 to-emerald-700 px-4 py-3 text-white md:px-6 md:py-4">
                         <DialogTitle className="text-lg font-black tracking-tight md:text-xl">
                             Aplicar Cuota en Nómina
                         </DialogTitle>

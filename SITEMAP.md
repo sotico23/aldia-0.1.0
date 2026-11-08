@@ -346,7 +346,6 @@ Middleware: `auth` (algunas requieren `verified`)
 | GET | `/settings/password` | `user-password.edit` | PasswordController@edit |
 | PUT | `/settings/password` | `user-password.update` | PasswordController@update |
 | GET | `/settings/two-factor` | `two-factor.show` | TwoFactorAuthenticationController@show |
-| GET | `/settings/appearance` | `appearance.edit` | Inertia page |
 | GET/PATCH | `/settings/public-profile` | `public-profile.edit/.update` | PublicProfileController |
 | POST | `/settings/public-profile/toggle-active` | `public-profile.toggle-active` | PublicProfileController@toggleActive |
 | GET/PATCH | `/mi-informacion` | `mi-informacion.show/.update` | UserProfileController |

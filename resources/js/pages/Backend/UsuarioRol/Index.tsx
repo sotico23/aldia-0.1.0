@@ -192,9 +192,9 @@ const LEVEL_COLORS: Record<
         label: 'Super Admin',
     },
     2: {
-        bg: 'from-blue-500 to-indigo-600',
-        text: 'text-blue-600',
-        border: 'border-blue-400/30',
+        bg: 'from-emerald-500 to-emerald-600',
+        text: 'text-emerald-600',
+        border: 'border-emerald-400/30',
         label: 'Admin',
     },
     3: {
@@ -703,8 +703,8 @@ export default function Index({
                             icon: Users,
                             label: 'Usuarios',
                             value: stats.usuarios,
-                            color: 'text-blue-600',
-                            bg: 'bg-blue-50',
+                            color: 'text-emerald-600',
+                            bg: 'bg-emerald-50',
                             masterOnly: true,
                         },
                         {
@@ -2189,17 +2189,17 @@ export default function Index({
                                                                                 profile.is_verified,
                                                                             )
                                                                         }
-                                                                        className="data-[state=checked]:border-blue-500 data-[state=checked]:bg-blue-500"
+                                                                        className="data-[state=checked]:border-emerald-500 data-[state=checked]:bg-emerald-500"
                                                                         aria-label="Verificado"
                                                                     />
                                                                 </TooltipTrigger>
                                                                 <TooltipContent
                                                                     side="top"
                                                                     align="center"
-                                                                    className="border-blue-200 bg-blue-50 px-3 py-1.5 text-xs text-blue-700"
+                                                                    className="border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700"
                                                                 >
                                                                     <div className="flex items-center gap-1.5">
-                                                                        <CheckCircle2 className="h-3 w-3 fill-blue-500 text-blue-500" />
+                                                                        <CheckCircle2 className="h-3 w-3 fill-emerald-500 text-emerald-500" />
                                                                         Verificada
                                                                     </div>
                                                                 </TooltipContent>
@@ -2256,9 +2256,9 @@ export default function Index({
                                                     {profile.is_verified && (
                                                         <Badge
                                                             variant="secondary"
-                                                            className="h-5 gap-1 border-blue-200 bg-blue-50 px-2 py-0 text-[10px] text-blue-700"
+                                                            className="h-5 gap-1 border-emerald-200 bg-emerald-50 px-2 py-0 text-[10px] text-emerald-700"
                                                         >
-                                                            <CheckCircle2 className="h-2.5 w-2.5 fill-blue-500 text-blue-500" />
+                                                            <CheckCircle2 className="h-2.5 w-2.5 fill-emerald-500 text-emerald-500" />
                                                             Verificada
                                                         </Badge>
                                                     )}
@@ -2293,13 +2293,13 @@ export default function Index({
                         <TabsContent value="master" className="mt-4 space-y-6">
                             {/* Stats: new users */}
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <Card className="border-l-4 border-l-blue-500 shadow-sm">
+                                <Card className="border-l-4 border-l-emerald-500 shadow-sm">
                                     <CardContent className="flex items-center gap-4 p-5">
-                                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50">
-                                            <CalendarDays className="h-7 w-7 text-blue-600" />
+                                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50">
+                                            <CalendarDays className="h-7 w-7 text-emerald-600" />
                                         </div>
                                         <div>
-                                            <p className="text-3xl font-bold text-blue-700">
+                                            <p className="text-3xl font-bold text-emerald-700">
                                                 {
                                                     masterData.new_users_7days_count
                                                 }

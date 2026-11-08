@@ -135,14 +135,14 @@ export default function Recommend({
                                     size="icon"
                                     onClick={() => handleShare('facebook')}
                                 >
-                                    <Facebook className="h-5 w-5 text-blue-600" />
+                                    <Facebook className="h-5 w-5 text-[#1877F2]" />
                                 </Button>
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleShare('twitter')}
                                 >
-                                    <Twitter className="h-5 w-5 text-sky-500" />
+                                    <Twitter className="h-5 w-5 text-emerald-500" />
                                 </Button>
                                 <Button
                                     variant="ghost"

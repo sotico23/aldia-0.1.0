@@ -108,7 +108,7 @@ export default function PedidoDetalle({
             case 'pendiente':
                 return 'bg-yellow-100 text-yellow-800 border-yellow-200';
             case 'confirmado':
-                return 'bg-blue-100 text-blue-800 border-blue-200';
+                return 'bg-emerald-100 text-emerald-800 border-emerald-200';
             case 'preparando':
                 return 'bg-orange-100 text-orange-800 border-orange-200';
             case 'enviado':
@@ -379,11 +379,11 @@ export default function PedidoDetalle({
                                 </span>
                                 <span className="text-gray-300">|</span>
                                 <span className="flex items-center">
-                                    <ShoppingBag className="mr-1 h-3.5 w-3.5 text-indigo-500" />
+                                    <ShoppingBag className="mr-1 h-3.5 w-3.5 text-emerald-500" />
                                     Vendedor:{' '}
                                     <Link
                                         href={`/tienda/${pedido.public_profile?.slug}`}
-                                        className="ml-1 font-medium text-indigo-600 hover:underline"
+                                        className="ml-1 font-medium text-emerald-600 hover:underline"
                                     >
                                         {pedido.public_profile?.title}
                                     </Link>
@@ -404,10 +404,10 @@ export default function PedidoDetalle({
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
                     {/* Productos */}
                     <div className="space-y-6 lg:col-span-2">
-                        <Card className="overflow-hidden border-indigo-100 shadow-sm">
-                            <CardHeader className="border-b border-indigo-50/50 bg-white pb-4">
-                                <CardTitle className="flex items-center text-lg text-indigo-900">
-                                    <Package className="mr-2 h-5 w-5 text-indigo-500" />{' '}
+                        <Card className="overflow-hidden border-emerald-100 shadow-sm">
+                            <CardHeader className="border-b border-emerald-50/50 bg-white pb-4">
+                                <CardTitle className="flex items-center text-lg text-emerald-900">
+                                    <Package className="mr-2 h-5 w-5 text-emerald-500" />{' '}
                                     Productos Comprados
                                 </CardTitle>
                             </CardHeader>
@@ -471,7 +471,7 @@ export default function PedidoDetalle({
                                     </div>
                                     <div className="flex w-64 justify-between border-t border-slate-200 pt-3 text-xl font-bold text-gray-900">
                                         <span>Total pagado:</span>
-                                        <span className="text-indigo-700">
+                                        <span className="text-emerald-700">
                                             {formatCurrency(pedido.total)}
                                         </span>
                                     </div>
@@ -482,13 +482,13 @@ export default function PedidoDetalle({
 
                     {/* Chat */}
                     <div className="flex h-full max-h-[600px] flex-col lg:col-span-1">
-                        <Card className="flex flex-1 flex-col overflow-hidden border-indigo-200 shadow-md">
-                            <CardHeader className="bg-gradient-to-r from-indigo-500 to-indigo-600 pb-4 text-white">
+                        <Card className="flex flex-1 flex-col overflow-hidden border-emerald-200 shadow-md">
+                            <CardHeader className="bg-gradient-to-r from-emerald-500 to-emerald-600 pb-4 text-white">
                                 <CardTitle className="flex items-center text-lg">
                                     <MessageSquare className="mr-2 h-5 w-5" />{' '}
                                     Chat con Vendedor
                                 </CardTitle>
-                                <CardDescription className="text-indigo-100">
+                                <CardDescription className="text-emerald-100">
                                     Contacta a{' '}
                                     {pedido.public_profile?.title || 'Vendedor'}
                                 </CardDescription>
@@ -497,7 +497,7 @@ export default function PedidoDetalle({
                                 <div className="flex-1 space-y-4 overflow-y-auto p-4">
                                     {mensajes.length === 0 ? (
                                         <div className="flex h-full flex-col items-center justify-center p-6 text-center text-sm text-gray-400">
-                                            <MessageSquare className="mb-3 h-10 w-10 text-indigo-200" />
+                                            <MessageSquare className="mb-3 h-10 w-10 text-emerald-200" />
                                             <p>
                                                 Ningún mensaje enviado aún.
                                                 Escríbele al vendedor ante dudas
@@ -526,7 +526,7 @@ export default function PedidoDetalle({
                                                     <div
                                                         className={`max-w-[90%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-sm ${
                                                             isMe
-                                                                ? 'rounded-tr-sm bg-indigo-600 text-white'
+                                                                ? 'rounded-tr-sm bg-emerald-600 text-white'
                                                                 : 'rounded-tl-sm border border-gray-100 bg-white text-gray-700'
                                                         } ${(msg as Mensaje)._sending ? 'animate-pulse opacity-70' : ''} ${(msg as Mensaje)._error ? 'ring-2 ring-red-400' : ''}`}
                                                     >
@@ -566,7 +566,7 @@ export default function PedidoDetalle({
                                                                             }
                                                                             target="_blank"
                                                                             rel="noreferrer"
-                                                                            className={`flex items-center gap-2 rounded bg-black/5 p-2 transition-colors hover:bg-black/10 ${isMe ? 'text-white' : 'text-indigo-600'}`}
+                                                                            className={`flex items-center gap-2 rounded bg-black/5 p-2 transition-colors hover:bg-black/10 ${isMe ? 'text-white' : 'text-emerald-600'}`}
                                                                         >
                                                                             <FileIcon className="h-4 w-4 shrink-0" />
                                                                             <span className="truncate text-xs underline">
@@ -586,7 +586,7 @@ export default function PedidoDetalle({
                                                                 ._error && (
                                                                 <div className="mt-1 flex justify-end">
                                                                     <CheckCheck
-                                                                        className={`h-3 w-3 ${msg.leido ? 'text-blue-200' : 'opacity-50'}`}
+                                                                        className={`h-3 w-3 ${msg.leido ? 'text-emerald-200' : 'opacity-50'}`}
                                                                     />
                                                                 </div>
                                                             )}
@@ -662,7 +662,7 @@ export default function PedidoDetalle({
                                     className="flex w-full flex-col space-y-2"
                                 >
                                     {selectedFile && (
-                                        <div className="flex items-center justify-between rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-xs text-indigo-700">
+                                        <div className="flex items-center justify-between rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700">
                                             <div className="flex items-center gap-2 truncate">
                                                 <Paperclip className="h-3 w-3" />
                                                 <span className="truncate">
@@ -674,7 +674,7 @@ export default function PedidoDetalle({
                                                 onClick={() =>
                                                     setSelectedFile(null)
                                                 }
-                                                className="ml-2 text-indigo-400 hover:text-indigo-600"
+                                                className="ml-2 text-emerald-400 hover:text-emerald-600"
                                             >
                                                 <X className="h-3.5 w-3.5" />
                                             </button>
@@ -691,7 +691,7 @@ export default function PedidoDetalle({
                                             type="button"
                                             variant="ghost"
                                             size="icon"
-                                            className="h-9 w-9 shrink-0 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600"
+                                            className="h-9 w-9 shrink-0 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"
                                             onClick={() =>
                                                 fileInputRef.current?.click()
                                             }
@@ -701,7 +701,7 @@ export default function PedidoDetalle({
                                         </Button>
                                         <Input
                                             placeholder="Escribe tu mensaje..."
-                                            className="h-10 flex-1 rounded-full border-slate-200 bg-slate-50 focus-visible:ring-indigo-500"
+                                            className="h-10 flex-1 rounded-full border-slate-200 bg-slate-50 focus-visible:ring-emerald-500"
                                             value={nuevoMensaje}
                                             onChange={(e) => {
                                                 setNuevoMensaje(e.target.value);
@@ -717,7 +717,7 @@ export default function PedidoDetalle({
                                                     !selectedFile) ||
                                                 isLoadingChat
                                             }
-                                            className="h-10 w-10 shrink-0 rounded-full bg-indigo-600 shadow-sm transition-all hover:bg-indigo-700 active:scale-95"
+                                            className="h-10 w-10 shrink-0 rounded-full bg-emerald-600 shadow-sm transition-all hover:bg-emerald-700 active:scale-95"
                                         >
                                             <Send className="h-4 w-4" />
                                         </Button>

@@ -103,7 +103,7 @@ export default function Show({ proveedor }: { proveedor: Proveedor }) {
                         {proveedor.tiene_acceso && (
                             <Badge
                                 variant="outline"
-                                className="rounded-full border-none bg-blue-500/10 px-3 py-1 text-[10px] font-black text-blue-600 uppercase"
+                                className="rounded-full border-none bg-emerald-500/10 px-3 py-1 text-[10px] font-black text-emerald-600 uppercase"
                             >
                                 <ShieldCheck className="mr-1 h-3 w-3" />
                                 Portal
@@ -217,7 +217,7 @@ export default function Show({ proveedor }: { proveedor: Proveedor }) {
                                     variant="outline"
                                     className={`rounded-full border-none px-3 py-1 text-[10px] font-black uppercase ${
                                         proveedor.tiene_acceso
-                                            ? 'bg-blue-500/10 text-blue-600'
+                                            ? 'bg-emerald-500/10 text-emerald-600'
                                             : 'bg-gray-500/10 text-gray-500'
                                     }`}
                                 >

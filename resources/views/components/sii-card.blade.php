@@ -16,8 +16,8 @@ $accentColors = [
     'orange' => ['border' => 'border-orange-500/30', 'bg' => 'bg-orange-500/10', 'text' => 'text-orange-400', 'hover' => 'hover:border-orange-500/60 hover:bg-orange-500/20'],
     'amber' => ['border' => 'border-amber-500/30', 'bg' => 'bg-amber-500/10', 'text' => 'text-amber-400', 'hover' => 'hover:border-amber-500/60 hover:bg-amber-500/20'],
     'violet' => ['border' => 'border-violet-500/30', 'bg' => 'bg-violet-500/10', 'text' => 'text-violet-400', 'hover' => 'hover:border-violet-500/60 hover:bg-violet-500/20'],
-    'cyan' => ['border' => 'border-cyan-500/30', 'bg' => 'bg-cyan-500/10', 'text' => 'text-cyan-400', 'hover' => 'hover:border-cyan-500/60 hover:bg-cyan-500/20'],
-    'sky' => ['border' => 'border-sky-500/30', 'bg' => 'bg-sky-500/10', 'text' => 'text-sky-400', 'hover' => 'hover:border-sky-500/60 hover:bg-sky-500/20'],
+    'cyan' => ['border' => 'border-emerald-500/30', 'bg' => 'bg-emerald-500/10', 'text' => 'text-emerald-400', 'hover' => 'hover:border-emerald-500/60 hover:bg-emerald-500/20'],
+    'sky' => ['border' => 'border-emerald-500/30', 'bg' => 'bg-emerald-500/10', 'text' => 'text-emerald-400', 'hover' => 'hover:border-emerald-500/60 hover:bg-emerald-500/20'],
 ];
 
 $colors = $accentColors[$accent] ?? $accentColors['emerald'];

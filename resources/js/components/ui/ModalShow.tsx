@@ -16,13 +16,13 @@ import { Label } from '@/components/ui/label';
 type ColorScheme = 'blue' | 'purple' | 'green' | 'amber' | 'orange' | 'rose' | 'teal' | 'slate';
 
 const colorSchemes: Record<ColorScheme, string> = {
-    blue: 'from-blue-700 via-indigo-800 to-blue-950',
-    purple: 'from-purple-700 via-violet-800 to-indigo-950',
+    blue: 'from-emerald-700 via-emerald-800 to-emerald-950',
+    purple: 'from-purple-700 via-violet-800 to-emerald-950',
     green: 'from-green-700 via-emerald-800 to-teal-950',
     amber: 'from-amber-700 via-orange-800 to-yellow-950',
     orange: 'from-orange-700 via-red-800 to-yellow-950',
     rose: 'from-rose-700 via-pink-800 to-red-950',
-    teal: 'from-teal-700 via-cyan-800 to-blue-950',
+    teal: 'from-teal-700 via-emerald-800 to-emerald-950',
     slate: 'from-slate-700 via-gray-800 to-zinc-950',
 };
 
@@ -93,7 +93,7 @@ export function ModalShow<T extends Record<string, any>>({
                                     key={idx}
                                     className={`rounded-xl border p-4 transition-all duration-300 hover:shadow-md ${
                                         stat.colorScheme === 'blue'
-                                            ? 'border-blue-200 bg-blue-50 text-blue-800'
+                                            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
                                             : stat.colorScheme === 'purple'
                                             ? 'border-purple-200 bg-purple-50 text-purple-800'
                                             : stat.colorScheme === 'green'

@@ -56,7 +56,7 @@ const estadoColores: Record<string, string> = {
     pendiente:
         'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
     confirmado:
-        'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+        'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
     preparando:
         'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
     enviado:
@@ -246,9 +246,9 @@ export default function MisPedidos({ compras, ventas }: Props) {
                 {compras.length > 0 && (
                     <div className="mt-8">
                         <Card className="overflow-hidden border-slate-200 dark:border-slate-800">
-                            <CardHeader className="bg-blue-50/50 dark:bg-blue-900/20">
+                            <CardHeader className="bg-emerald-50/50 dark:bg-emerald-900/20">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/50">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50">
                                         <ShoppingBag className="h-5 w-5" />
                                     </div>
                                     <div>

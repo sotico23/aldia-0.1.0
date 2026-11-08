@@ -10,6 +10,12 @@ use App\Http\Controllers\Api\Bot\VentaBotController;
 use App\Http\Controllers\Api\ChannelController;
 use App\Http\Controllers\Api\Delivery\DeliveryOrdenController;
 use App\Http\Controllers\Api\Delivery\ZoneController;
+use App\Http\Controllers\Api\Driver\DriverDocumentsController;
+use App\Http\Controllers\Api\Driver\DriverEarningsController;
+use App\Http\Controllers\Api\Driver\DriverMarketplaceController;
+use App\Http\Controllers\Api\Driver\DriverOnlineController;
+use App\Http\Controllers\Api\Driver\DriverRegistrationController;
+use App\Http\Controllers\Api\Pos\PosApiController;
 use App\Http\Controllers\Api\InternalAutomationController;
 use App\Http\Controllers\Api\InternalAutomationSendController;
 use App\Http\Controllers\Api\TenantDataController;
@@ -172,6 +178,59 @@ Route::prefix('v1/delivery')
         Route::post('orders/{pedido}/pickup', [DeliveryOrdenController::class, 'pickup']);
         Route::post('orders/{pedido}/delivered', [DeliveryOrdenController::class, 'delivered']);
         Route::post('orders/{pedido}/reject', [DeliveryOrdenController::class, 'reject']);
+        Route::post('orders/{pedido}/cancel', [DeliveryOrdenController::class, 'cancel']);
+    });
+
+// API de Repartidor — modelo Uber/Rappi (Online/Offline + Ofertas)
+// /register y /status son públicos (el freelancer no tiene token aún al registrarse)
+Route::prefix('v1/driver')->group(function () {
+    // Registro público de freelancers (sin auth)
+    Route::post('register', [DriverRegistrationController::class, 'register'])
+        ->middleware('throttle:10,1')
+        ->name('api.v1.driver.register');
+
+    // Consulta de estado de aprobación (con auth, para freelancers en espera)
+    Route::get('status', [DriverRegistrationController::class, 'status'])
+        ->middleware(['auth:sanctum', 'active'])
+        ->name('api.v1.driver.status');
+
+    // Legajo y ganancias: disponibles también para freelancers pendientes
+    // (solo requieren token y usuario activo, no perfil aprobado).
+    Route::middleware(['auth:sanctum', 'active', 'throttle:delivery'])->group(function () {
+        Route::get('earnings', [DriverEarningsController::class, 'index'])
+            ->name('api.v1.driver.earnings');
+        Route::get('documents', [DriverDocumentsController::class, 'index'])
+            ->name('api.v1.driver.documents.index');
+        Route::post('documents', [DriverDocumentsController::class, 'store'])
+            ->name('api.v1.driver.documents.store');
+    });
+
+    // Endpoints protegidos — requieren rol Repartidor y perfil aprobado
+    Route::middleware(['auth:sanctum', 'delivery', 'throttle:delivery'])->group(function () {
+        Route::post('toggle-online', [DriverOnlineController::class, 'toggle'])
+            ->name('api.v1.driver.toggle-online');
+        Route::get('offers', [DriverOnlineController::class, 'offers'])
+            ->name('api.v1.driver.offers');
+        Route::post('offers/{offer}/respond', [DriverOnlineController::class, 'respond'])
+            ->name('api.v1.driver.offers.respond');
+
+        // Bandeja global / Marketplace de pedidos abiertos para freelancers
+        Route::get('marketplace/orders', [DriverMarketplaceController::class, 'orders'])
+            ->name('api.v1.driver.marketplace.orders');
+        Route::post('marketplace/orders/{pedido}/claim', [DriverMarketplaceController::class, 'claim'])
+            ->name('api.v1.driver.marketplace.orders.claim');
+    });
+});
+
+// Punto de Venta (POS Móvil) e Inventario
+Route::prefix('v1/pos')
+    ->middleware(['auth:sanctum', 'active', 'throttle:60,1'])
+    ->group(function () {
+        Route::get('catalog', [PosApiController::class, 'catalog']);
+        Route::get('stock', [PosApiController::class, 'stock']);
+        Route::post('sales', [PosApiController::class, 'storeSale']);
+        Route::get('caja/status', [PosApiController::class, 'cajaStatus']);
+        Route::post('caja/cerrar', [PosApiController::class, 'cerrarCaja']);
     });
 
 // Zonas de reparto — administración y analítica por tenant

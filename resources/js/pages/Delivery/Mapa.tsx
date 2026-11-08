@@ -274,9 +274,9 @@ export default function MapaRepartidor({
                                                         1000
                                                     }
                                                     options={{
-                                                        fillColor: '#3b82f6',
+                                                        fillColor: '#059669',
                                                         fillOpacity: 0.1,
-                                                        strokeColor: '#3b82f6',
+                                                        strokeColor: '#059669',
                                                         strokeOpacity: 0.6,
                                                         strokeWeight: 2,
                                                     }}
@@ -288,7 +288,7 @@ export default function MapaRepartidor({
                                                     }}
                                                     icon={{
                                                         path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
-                                                        fillColor: '#3b82f6',
+                                                        fillColor: '#059669',
                                                         fillOpacity: 1,
                                                         strokeWeight: 2,
                                                         strokeColor: '#ffffff',

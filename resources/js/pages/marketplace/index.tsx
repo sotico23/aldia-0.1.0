@@ -76,7 +76,7 @@ export default function MarketplaceIndex({ profiles }: Props) {
                                 href={`/tienda/${store.slug}`}
                                 className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md hover:ring-primary dark:bg-slate-900 dark:ring-slate-800 dark:hover:ring-primary"
                             >
-                                <div className="relative h-24 overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-indigo-50 group-hover:to-purple-50 dark:from-slate-800 dark:to-slate-800/80 dark:group-hover:from-indigo-950/50 dark:group-hover:to-purple-900/50">
+                                <div className="relative h-24 overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-emerald-50 group-hover:to-purple-50 dark:from-slate-800 dark:to-slate-800/80 dark:group-hover:from-emerald-950/50 dark:group-hover:to-purple-900/50">
                                     {store.user.cover_photo_url ? (
                                         <img
                                             src={store.user.cover_photo_url}

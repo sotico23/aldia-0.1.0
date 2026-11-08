@@ -131,7 +131,7 @@ export function ConfirmModal({
     const buttonStyles = {
         danger: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
         warning: 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500',
-        info: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500',
+        info: 'bg-emerald-600 hover:bg-emerald-700 focus:ring-emerald-500',
     };
 
     return (

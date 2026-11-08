@@ -244,7 +244,7 @@ export default function CierreIndex({
                 );
             case 'CERRADO':
                 return (
-                    <Badge className="bg-blue-500 text-white">Cerrado</Badge>
+                    <Badge className="bg-emerald-500 text-white">Cerrado</Badge>
                 );
             case 'AUDITADO':
                 return (
@@ -357,8 +357,8 @@ export default function CierreIndex({
                     <Card className="border-none shadow-lg">
                         <CardContent className="p-4">
                             <div className="flex items-center gap-3">
-                                <div className="rounded-full bg-blue-500/10 p-2">
-                                    <ClipboardCheck className="h-5 w-5 text-blue-500" />
+                                <div className="rounded-full bg-emerald-500/10 p-2">
+                                    <ClipboardCheck className="h-5 w-5 text-emerald-500" />
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">

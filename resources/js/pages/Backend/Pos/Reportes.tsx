@@ -410,18 +410,18 @@ export default function Reportes({
                             </p>
                         </CardContent>
                     </Card>
-                    <Card className="border-blue-100 bg-blue-50">
+                    <Card className="border-emerald-100 bg-emerald-50">
                         <CardHeader className="pb-1">
-                            <CardTitle className="flex items-center justify-between text-[10px] font-bold text-blue-700 uppercase">
+                            <CardTitle className="flex items-center justify-between text-[10px] font-bold text-emerald-700 uppercase">
                                 Tickets Emitidos
                                 <Package className="h-3 w-3" />
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-black text-blue-900">
+                            <div className="text-2xl font-black text-emerald-900">
                                 {ranking.length > 0 ? 'Real Data' : '0'} Unid.
                             </div>
-                            <p className="mt-1 text-[10px] font-medium text-blue-700">
+                            <p className="mt-1 text-[10px] font-medium text-emerald-700">
                                 Volumen de despacho POS
                             </p>
                         </CardContent>

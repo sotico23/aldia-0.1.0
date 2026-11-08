@@ -66,10 +66,10 @@ const getPlanStyles = (plan: Plan, index: number) => {
             boton: 'bg-gray-600 hover:bg-gray-700',
         },
         {
-            color: 'bg-blue-50',
-            borderColor: 'border-blue-200',
-            textoPrecio: 'text-blue-600',
-            boton: 'bg-blue-600 hover:bg-blue-700',
+            color: 'bg-emerald-50',
+            borderColor: 'border-emerald-200',
+            textoPrecio: 'text-emerald-600',
+            boton: 'bg-emerald-600 hover:bg-emerald-700',
         },
         {
             color: 'bg-amber-50',
@@ -275,11 +275,11 @@ export default function WelcomeNew({
                             {promociones.map((promo, idx) => {
                                 const colors = [
                                     'from-amber-100 to-orange-100 text-amber-600',
-                                    'from-blue-100 to-indigo-100 text-blue-600',
+                                    'from-emerald-100 to-emerald-100 text-emerald-600',
                                     'from-emerald-100 to-teal-100 text-emerald-600',
                                     'from-purple-100 to-pink-100 text-purple-600',
                                     'from-rose-100 to-orange-100 text-rose-600',
-                                    'from-cyan-100 to-blue-100 text-cyan-600',
+                                    'from-emerald-100 to-emerald-100 text-emerald-600',
                                 ];
                                 const color = colors[idx % colors.length];
 

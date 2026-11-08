@@ -26,7 +26,7 @@ interface CalendarioWidgetProps {
 
 const statusStyles: Record<string, string> = {
     pendiente: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-    confirmada: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+    confirmada: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
     en_curso: 'bg-violet-500/10 text-violet-600 border-violet-500/20',
     completada: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
     cancelada: 'bg-rose-500/10 text-rose-600 border-rose-500/20',
@@ -191,7 +191,7 @@ export default function CalendarioWidget({ citas }: CalendarioWidgetProps) {
                                                       ? 'bg-rose-400'
                                                       : c.status ===
                                                           'confirmada'
-                                                        ? 'bg-blue-500'
+                                                        ? 'bg-emerald-500'
                                                         : c.status ===
                                                             'en_curso'
                                                           ? 'bg-violet-500'
@@ -236,7 +236,7 @@ export default function CalendarioWidget({ citas }: CalendarioWidgetProps) {
                                                 : c.status === 'cancelada'
                                                   ? 'bg-rose-400'
                                                   : c.status === 'confirmada'
-                                                    ? 'bg-blue-500'
+                                                    ? 'bg-emerald-500'
                                                     : c.status === 'en_curso'
                                                       ? 'bg-violet-500'
                                                       : 'bg-amber-500'

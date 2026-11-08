@@ -114,9 +114,9 @@ export default function ChatInbox({
 
                 <div className="space-y-6">
                     <Card className="overflow-hidden border-slate-200 shadow-sm dark:border-slate-800">
-                        <CardHeader className="bg-blue-50/50 dark:bg-blue-900/20">
+                        <CardHeader className="bg-emerald-50/50 dark:bg-emerald-900/20">
                             <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/50">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50">
                                     <ShoppingBag className="h-5 w-5" />
                                 </div>
                                 <div>
@@ -149,7 +149,7 @@ export default function ChatInbox({
                                                 className="group block transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
                                             >
                                                 <div className="flex items-center gap-4 p-4">
-                                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/50">
+                                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50">
                                                         <Package className="h-6 w-6" />
                                                     </div>
                                                     <div className="min-w-0 flex-1">
@@ -179,7 +179,7 @@ export default function ChatInbox({
                                                                     ?.title
                                                             }{' '}
                                                             -
-                                                            <span className="font-medium text-blue-600">
+                                                            <span className="font-medium text-emerald-600">
                                                                 $
                                                                 {Number(
                                                                     pedido.total,

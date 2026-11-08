@@ -876,7 +876,7 @@ export default function Index({
                                             </TooltipProvider>
                                         </Label>
                                     </div>
-                                    <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
+                                    <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
                                         <input
                                             type="checkbox"
                                             id="mostrar-en-perfil"
@@ -892,13 +892,13 @@ export default function Index({
                                         />
                                         <Label
                                             htmlFor="mostrar-en-perfil"
-                                            className="flex items-center gap-1 font-medium text-blue-800"
+                                            className="flex items-center gap-1 font-medium text-emerald-800"
                                         >
                                             Mostrar en perfil público de tienda
                                             <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <HelpCircle className="h-3.5 w-3.5 cursor-help text-blue-400" />
+                                                        <HelpCircle className="h-3.5 w-3.5 cursor-help text-emerald-400" />
                                                     </TooltipTrigger>
                                                     <TooltipContent>
                                                         <p className="max-w-xs border-none bg-white font-normal text-slate-900">
@@ -1004,7 +1004,7 @@ export default function Index({
                     <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden border-none bg-white p-0 shadow-2xl">
                         <DialogHeader className="relative overflow-hidden px-8 pt-10 pb-20">
                             {/* Fondo decorativo con gradiente */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-purple-700 via-violet-800 to-indigo-950 opacity-100" />
+                            <div className="absolute inset-0 bg-gradient-to-br from-purple-700 via-violet-800 to-emerald-950 opacity-100" />
                             <div className="absolute top-0 right-0 p-8 text-white opacity-20">
                                 <Eye className="h-24 w-24 rotate-12" />
                             </div>
@@ -1048,7 +1048,7 @@ export default function Index({
                                                 ? 'SÍ'
                                                 : 'NO',
                                             color: viendo.mostrar_en_perfil
-                                                ? 'border-blue-200 bg-blue-50 text-blue-800'
+                                                ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
                                                 : 'border-gray-200 bg-gray-50 text-gray-800',
                                         },
                                     ].map((item, idx) => (

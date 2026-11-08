@@ -52,7 +52,7 @@ export default function Create({
                 <Card className="rounded-2xl border-slate-200/70">
                     <CardHeader className="border-b border-slate-100 px-6 py-5">
                         <CardTitle className="flex items-center gap-3 text-lg font-black text-slate-900">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
                                 <Calendar className="h-5 w-5" />
                             </div>
                             Nueva Cita
@@ -69,7 +69,7 @@ export default function Create({
                                     onChange={(e) =>
                                         setData('client_id', e.target.value)
                                     }
-                                    className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                                    className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                                     required
                                 >
                                     <option value="">
@@ -99,7 +99,7 @@ export default function Create({
                                     onChange={(e) =>
                                         setData('producto_id', e.target.value)
                                     }
-                                    className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                                    className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                                     required
                                 >
                                     <option value="">
@@ -195,7 +195,7 @@ export default function Create({
                                     onChange={(e) =>
                                         setData('notes', e.target.value)
                                     }
-                                    className="flex h-20 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                                    className="flex h-20 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                                     placeholder="Notas adicionales..."
                                 />
                             </div>
@@ -214,7 +214,7 @@ export default function Create({
                                 <Button
                                     type="submit"
                                     disabled={processing}
-                                    className="h-11 flex-1 rounded-xl bg-indigo-600 font-bold text-white hover:bg-indigo-700"
+                                    className="h-11 flex-1 rounded-xl bg-emerald-600 font-bold text-white hover:bg-emerald-700"
                                 >
                                     {processing ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />

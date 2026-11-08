@@ -38,6 +38,7 @@ class Venta extends Model
         'notas',
         'incluye_iva',
         'has_delivery',
+        'dispatch_mode',
         'delivery_rate_id',
         'delivery_cost',
         'delivery_distance_km',

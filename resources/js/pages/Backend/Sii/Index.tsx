@@ -65,7 +65,7 @@ const tipoDocLabel: Record<number, string> = {
 
 const estadoDteColor: Record<string, string> = {
     borrador: 'bg-gray-100 text-gray-700',
-    firmado: 'bg-blue-100 text-blue-700',
+    firmado: 'bg-emerald-100 text-emerald-700',
     enviado: 'bg-yellow-100 text-yellow-700',
     aceptado: 'bg-green-100 text-green-700',
     rechazado: 'bg-red-100 text-red-700',
@@ -166,7 +166,7 @@ export default function SiiIndex({
                         <StatCard
                             label="Folios Disponibles"
                             value={foliosDisponibles}
-                            icon={<Hash className="h-5 w-5 text-blue-500" />}
+                            icon={<Hash className="h-5 w-5 text-emerald-500" />}
                             sub="en todos los CAFs activos"
                         />
                         <StatCard
@@ -286,7 +286,7 @@ export default function SiiIndex({
                                                     <td className="px-3 py-2 font-mono">
                                                         {caf.folio_hasta}
                                                     </td>
-                                                    <td className="px-3 py-2 font-mono font-semibold text-blue-600">
+                                                    <td className="px-3 py-2 font-mono font-semibold text-emerald-600">
                                                         {caf.folio_siguiente}
                                                     </td>
                                                     <td className="px-3 py-2 text-muted-foreground">
@@ -352,7 +352,7 @@ export default function SiiIndex({
                                                         <span className="text-muted-foreground">
                                                             Siguiente
                                                         </span>
-                                                        <span className="font-mono font-semibold text-blue-600">
+                                                        <span className="font-mono font-semibold text-emerald-600">
                                                             {
                                                                 caf.folio_siguiente
                                                             }

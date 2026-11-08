@@ -123,8 +123,8 @@ export default function ObservabilityDashboard({
                     <MetricCard
                         title="Ejecuciones Hoy"
                         value={metrics.today_executions}
-                        icon={<ListChecks className="h-4 w-4 text-blue-600" />}
-                        color="bg-blue-100 dark:bg-blue-900/30"
+                        icon={<ListChecks className="h-4 w-4 text-emerald-600" />}
+                        color="bg-emerald-100 dark:bg-emerald-900/30"
                     />
                     <MetricCard
                         title="Fallidas Hoy"
@@ -182,8 +182,8 @@ export default function ObservabilityDashboard({
                                 : 'N/A'
                         }
                         unit="s"
-                        icon={<Clock className="h-4 w-4 text-cyan-600" />}
-                        color="bg-cyan-100 dark:bg-cyan-900/30"
+                        icon={<Clock className="h-4 w-4 text-emerald-600" />}
+                        color="bg-emerald-100 dark:bg-emerald-900/30"
                     />
                 </div>
 

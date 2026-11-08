@@ -356,7 +356,7 @@ export default function Index({
                                     onClick={() => csvInputRef.current?.click()}
                                     className="rounded-lg py-3"
                                 >
-                                    <Upload className="mr-2 h-4 w-4 text-blue-500" />{' '}
+                                    <Upload className="mr-2 h-4 w-4 text-emerald-500" />{' '}
                                     Importar Proveedores
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
@@ -462,7 +462,7 @@ export default function Index({
                                                 {p.tiene_acceso && (
                                                     <Badge
                                                         variant="outline"
-                                                        className="shrink-0 rounded-full border-none bg-blue-500/10 px-2 py-0.5 text-[9px] font-black text-blue-600 uppercase"
+                                                        className="shrink-0 rounded-full border-none bg-emerald-500/10 px-2 py-0.5 text-[9px] font-black text-emerald-600 uppercase"
                                                     >
                                                         <ShieldCheck className="mr-0.5 h-2.5 w-2.5" />
                                                         Portal
@@ -1052,7 +1052,7 @@ export default function Index({
                 <DialogContent className="max-h-[85vh] max-w-[90vw] overflow-y-auto border-none p-0 shadow-xl md:max-w-2xl">
                     {viendo && (
                         <>
-                            <DialogHeader className="relative overflow-hidden bg-gradient-to-br from-indigo-800 to-blue-900 px-4 py-4 md:px-6 md:py-5">
+                            <DialogHeader className="relative overflow-hidden bg-gradient-to-br from-emerald-800 to-emerald-900 px-4 py-4 md:px-6 md:py-5">
                                 <div className="absolute top-0 right-0 p-3 opacity-15 md:p-4">
                                     <Building2 className="h-12 w-12 rotate-12 text-white md:h-16 md:w-16" />
                                 </div>
@@ -1166,7 +1166,7 @@ export default function Index({
                                                     variant="outline"
                                                     className={`rounded-full border-none px-2 py-0.5 text-[9px] font-bold uppercase ${
                                                         viendo.tiene_acceso
-                                                            ? 'bg-blue-500/10 text-blue-600'
+                                                            ? 'bg-emerald-500/10 text-emerald-600'
                                                             : 'bg-gray-500/10 text-gray-500'
                                                     }`}
                                                 >

@@ -71,15 +71,15 @@ export default function WebpayConfig({ config }: { config: any }) {
             <Head title="Configuración de Webpay Plus" />
 
             <div className="mx-auto max-w-6xl px-4 py-8">
-                <div className="mb-8 flex items-start gap-6 rounded-[2rem] border border-indigo-100 bg-indigo-50 p-8 dark:border-indigo-900/30 dark:bg-indigo-950/20">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-100 dark:bg-indigo-900/50">
-                        <CreditCard className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+                <div className="mb-8 flex items-start gap-6 rounded-[2rem] border border-emerald-100 bg-emerald-50 p-8 dark:border-emerald-900/30 dark:bg-emerald-950/20">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-900/50">
+                        <CreditCard className="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div>
-                        <h1 className="mb-2 text-2xl font-black tracking-tight text-indigo-900 dark:text-indigo-100">
+                        <h1 className="mb-2 text-2xl font-black tracking-tight text-emerald-900 dark:text-emerald-100">
                             Webpay Plus (Transbank)
                         </h1>
-                        <p className="max-w-2xl text-sm font-medium text-indigo-700/80 dark:text-indigo-300/80">
+                        <p className="max-w-2xl text-sm font-medium text-emerald-700/80 dark:text-emerald-300/80">
                             Configura tu cuenta de Transbank para recibir pagos
                             directamente en tu tienda.
                             <strong>
@@ -99,7 +99,7 @@ export default function WebpayConfig({ config }: { config: any }) {
                         >
                             <div className="border-b p-8 dark:border-slate-800">
                                 <h2 className="flex items-center gap-2 text-lg font-black tracking-tight uppercase">
-                                    <ShieldCheck className="h-5 w-5 text-indigo-500" />
+                                    <ShieldCheck className="h-5 w-5 text-emerald-500" />
                                     Credenciales de Integración
                                 </h2>
                                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -203,7 +203,7 @@ export default function WebpayConfig({ config }: { config: any }) {
                                                 )
                                             }
                                         />
-                                        <Label className="text-xs font-black tracking-widest text-indigo-600 uppercase">
+                                        <Label className="text-xs font-black tracking-widest text-emerald-600 uppercase">
                                             Real
                                         </Label>
                                     </div>

@@ -462,7 +462,7 @@ export default function Index({
     const getEstadoBadge = (e: string) => {
         const colores: Record<string, string> = {
             pendiente: 'bg-yellow-500',
-            en_ruta: 'bg-blue-500',
+            en_ruta: 'bg-emerald-500',
             cerrado: 'bg-green-500',
         };
         return (
@@ -710,7 +710,7 @@ export default function Index({
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                                className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                                                                 onClick={() =>
                                                                     handleVer(c)
                                                                 }
@@ -828,7 +828,7 @@ export default function Index({
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                        className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                                                         onClick={() =>
                                                             handleVer(c)
                                                         }
@@ -883,7 +883,7 @@ export default function Index({
             {/* Modal Crear/Editar */}
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto border-none p-0 shadow-xl sm:max-w-2xl">
-                    <DialogHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-3 text-white md:px-6 md:py-4">
+                    <DialogHeader className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-4 py-3 text-white md:px-6 md:py-4">
                         <DialogTitle className="text-lg font-black tracking-tight md:text-xl">
                             {editando ? 'Modificar' : 'Nueva'} Carga Diaria /
                             Ruta
@@ -1139,8 +1139,8 @@ export default function Index({
             {/* Modal Ver Detalles */}
             <Dialog open={isVerOpen} onOpenChange={setIsVerOpen}>
                 <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto border-none bg-background p-0 shadow-2xl md:max-w-2xl">
-                    <DialogHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-blue-500/10 to-transparent p-6 pb-2">
-                        <DialogTitle className="text-2xl font-black tracking-tight text-blue-700">
+                    <DialogHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-emerald-500/10 to-transparent p-6 pb-2">
+                        <DialogTitle className="text-2xl font-black tracking-tight text-emerald-700">
                             Detalles de la Carga Diaria
                         </DialogTitle>
                         <div className="flex gap-2">
@@ -1177,7 +1177,7 @@ export default function Index({
                         <div className="max-h-[calc(90vh-140px)] overflow-y-auto p-6 pt-0">
                             <div className="grid gap-6">
                                 {/* Info Base */}
-                                <div className="grid grid-cols-2 gap-4 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                                <div className="grid grid-cols-2 gap-4 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
                                     <div>
                                         <p className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
                                             Fecha
@@ -1301,7 +1301,7 @@ export default function Index({
                                                                             className={`font-bold ${
                                                                                 resto >
                                                                                 0
-                                                                                    ? 'text-blue-600'
+                                                                                    ? 'text-emerald-600'
                                                                                     : resto <
                                                                                         0
                                                                                       ? 'text-red-500'
@@ -1522,7 +1522,7 @@ export default function Index({
                                                             </span>
                                                         </label>
                                                         {resto > 0 && (
-                                                            <span className="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+                                                            <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
                                                                 Renueva: {resto}
                                                             </span>
                                                         )}
@@ -1629,7 +1629,7 @@ export default function Index({
             {/* Modal Recargar / Registrar Llenos/Vacíos/Faltantes */}
             <Dialog open={isRecargarOpen} onOpenChange={setIsRecargarOpen}>
                 <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto border-none bg-background p-0 shadow-2xl md:max-w-4xl">
-                    <DialogHeader className="bg-gradient-to-r from-emerald-500/10 to-blue-500/10 p-6 pb-2">
+                    <DialogHeader className="bg-gradient-to-r from-emerald-500/10 to-emerald-500/10 p-6 pb-2">
                         <DialogTitle className="flex items-center gap-2 text-2xl font-black tracking-tight text-emerald-700">
                             <RefreshCw className="h-6 w-6" />
                             Recarga de Vehículo
@@ -1906,7 +1906,7 @@ export default function Index({
                                                         {totalDevuelto}
                                                     </span>
                                                     {diferencia > 0 ? (
-                                                        <span className="font-bold text-blue-600">
+                                                        <span className="font-bold text-emerald-600">
                                                             Pendiente:{' '}
                                                             {diferencia}
                                                         </span>

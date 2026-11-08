@@ -138,7 +138,7 @@ export const BulkActions: React.FC<BulkActionsProps> = ({
                                 onClick={() => handleExport('csv')}
                                 className="cursor-pointer rounded-lg py-2.5 focus:bg-primary/5 focus:text-primary"
                             >
-                                <FileText className="mr-2 h-4 w-4 text-blue-500" />
+                                <FileText className="mr-2 h-4 w-4 text-emerald-500" />
                                 <span className="font-medium">
                                     Exportar a CSV
                                 </span>
@@ -173,7 +173,7 @@ export const BulkActions: React.FC<BulkActionsProps> = ({
                                 onClick={() => excelInputRef.current?.click()}
                                 className="cursor-pointer rounded-lg py-2.5 focus:bg-primary/5 focus:text-primary"
                             >
-                                <FileSpreadsheet className="mr-2 h-4 w-4 text-indigo-500" />
+                                <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-500" />
                                 <span className="font-medium">
                                     Importar Excel (XLSX)
                                 </span>

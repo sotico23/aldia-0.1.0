@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Repartidor;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -227,7 +228,7 @@ class PermissionsSeeder extends Seeder
         $roleUsuario->syncPermissions($usuarioPermissions);
 
         // 7. Repartidor (Level 3) — zona de reparto B2C
-        $roleRepartidor = Role::firstOrCreate(['name' => 'Repartidor'], ['owner_id' => null]);
+        $roleRepartidor = Role::firstOrCreate(['name' => Repartidor::defaultRole()], ['owner_id' => null]);
         $roleRepartidor->level = 3;
         $roleRepartidor->owner_id = null;
         $roleRepartidor->save();

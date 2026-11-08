@@ -611,7 +611,7 @@ export default function Edit({
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                className="mt-2 w-full border border-dashed border-blue-200 py-4 text-xs text-blue-600 dark:border-blue-900/50 dark:text-blue-400"
+                                                className="mt-2 w-full border border-dashed border-emerald-200 py-4 text-xs text-emerald-600 dark:border-emerald-900/50 dark:text-emerald-400"
                                                 onClick={() => {
                                                     setActiveModuleId(
                                                         module.id,
@@ -699,7 +699,7 @@ export default function Edit({
                                             Variables disponibles:
                                         </p>
                                         <code className="block space-x-1">
-                                            <span className="inline-block rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                            <span className="inline-block rounded bg-emerald-100 px-1.5 py-0.5 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                                                 {'{student_name}'}
                                             </span>
                                             <span className="mx-0.5 text-slate-400">
@@ -708,7 +708,7 @@ export default function Edit({
                                             <span>Nombre del alumno</span>
                                         </code>
                                         <code className="mt-0.5 block space-x-1">
-                                            <span className="inline-block rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                            <span className="inline-block rounded bg-emerald-100 px-1.5 py-0.5 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                                                 {'{course_title}'}
                                             </span>
                                             <span className="mx-0.5 text-slate-400">
@@ -717,7 +717,7 @@ export default function Edit({
                                             <span>Título del curso</span>
                                         </code>
                                         <code className="mt-0.5 block space-x-1">
-                                            <span className="inline-block rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                            <span className="inline-block rounded bg-emerald-100 px-1.5 py-0.5 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                                                 {'{instructor_name}'}
                                             </span>
                                             <span className="mx-0.5 text-slate-400">
@@ -726,7 +726,7 @@ export default function Edit({
                                             <span>Nombre del instructor</span>
                                         </code>
                                         <code className="mt-0.5 block space-x-1">
-                                            <span className="inline-block rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                            <span className="inline-block rounded bg-emerald-100 px-1.5 py-0.5 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                                                 {'{date}'}
                                             </span>
                                             <span className="mx-0.5 text-slate-400">
@@ -735,7 +735,7 @@ export default function Edit({
                                             <span>Fecha de emisión</span>
                                         </code>
                                         <code className="mt-0.5 block space-x-1">
-                                            <span className="inline-block rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                            <span className="inline-block rounded bg-emerald-100 px-1.5 py-0.5 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                                                 {'{certificate_number}'}
                                             </span>
                                             <span className="mx-0.5 text-slate-400">
@@ -746,7 +746,7 @@ export default function Edit({
                                             </span>
                                         </code>
                                         <code className="mt-0.5 block space-x-1">
-                                            <span className="inline-block rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                            <span className="inline-block rounded bg-emerald-100 px-1.5 py-0.5 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                                                 {'{institution_name}'}
                                             </span>
                                             <span className="mx-0.5 text-slate-400">
@@ -817,14 +817,14 @@ export default function Edit({
                             </div>
                         </div>
 
-                        <div className="rounded-2xl border border-blue-100 bg-blue-50 p-6 dark:border-blue-800 dark:bg-blue-900/20">
+                        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6 dark:border-emerald-800 dark:bg-emerald-900/20">
                             <div className="flex items-start gap-4">
-                                <HelpCircle className="h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
+                                <HelpCircle className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                                 <div>
-                                    <h4 className="mb-1 text-sm font-bold text-blue-900 dark:text-blue-100">
+                                    <h4 className="mb-1 text-sm font-bold text-emerald-900 dark:text-emerald-100">
                                         Consejo:
                                     </h4>
-                                    <p className="text-xs leading-relaxed text-blue-700 dark:text-blue-300">
+                                    <p className="text-xs leading-relaxed text-emerald-700 dark:text-emerald-300">
                                         Organiza tus lecciones de forma lógica.
                                         Los cursos con módulos claros tienen un
                                         40% más de tasa de finalización.

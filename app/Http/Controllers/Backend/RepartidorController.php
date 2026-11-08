@@ -2,16 +2,18 @@
 
 namespace App\Http\Controllers\Backend;
 
+use App\Actions\Delivery\CreateCompanyDriver;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Backend\StoreRepartidorRequest;
 use App\Models\Pedido;
 use App\Models\Repartidor;
 use App\Models\User;
 use App\Scopes\OwnerScope;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -65,7 +67,7 @@ class RepartidorController extends Controller implements HasMiddleware
         $candidatos = User::query()
             ->where(function ($query) use ($ownerId) {
                 $query->where('creator_id', $ownerId)
-                    ->orWhereHas('roles', fn ($roles) => $roles->where('name', 'Repartidor'));
+                    ->orWhereHas('roles', fn ($roles) => $roles->where('name', Repartidor::defaultRole()));
             })
             ->whereNotIn('id', $vinculados)
             ->orderBy('name')
@@ -85,34 +87,42 @@ class RepartidorController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreRepartidorRequest $request, CreateCompanyDriver $createDriver): RedirectResponse|JsonResponse
     {
-        $ownerId = (int) $request->user()->getOwnerId();
+        $result = $createDriver->handle($request->validated(), $request->user());
 
-        $validated = $request->validate([
-            'user_id' => ['required', 'integer', 'exists:users,id', Rule::unique('repartidores', 'user_id')],
-            'estado' => ['required', 'in:disponible,ocupado,offline'],
-            'radio_km' => ['required', 'numeric', 'min:0.1', 'max:500'],
-            'capacidad_max' => ['required', 'integer', 'min:1', 'max:999'],
-        ]);
+        /** @var User $user */
+        $user = $result['user'];
+        $repartidor = $result['repartidor'];
 
-        $user = User::findOrFail($validated['user_id']);
+        $payload = [
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'creator_id' => $user->creator_id,
+                'owner_id' => $user->owner_id,
+                'roles' => $user->getRoleNames()->values(),
+            ],
+            'repartidor' => [
+                'id' => $repartidor->id,
+                'owner_id' => $repartidor->owner_id,
+                'user_id' => $repartidor->user_id,
+                'driver_type' => $repartidor->driver_type,
+                'approval_status' => $repartidor->approval_status,
+                'estado' => $repartidor->estado,
+                'radio_km' => $repartidor->radio_km,
+                'capacidad_max' => $repartidor->capacidad_max,
+            ],
+        ];
 
-        if ($user->getOwnerId() !== $ownerId && (int) $user->creator_id !== $ownerId) {
-            abort(403, 'No puedes vincular un usuario de otra empresa.');
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Repartidor creado correctamente.',
+                'data' => $payload,
+            ], 201);
         }
-
-        $user->has_explicit_role = true;
-        $user->save();
-        $user->syncRoles(['Repartidor']);
-
-        Repartidor::create([
-            'owner_id' => $ownerId,
-            'user_id' => $user->id,
-            'estado' => $validated['estado'],
-            'radio_km' => $validated['radio_km'],
-            'capacidad_max' => $validated['capacidad_max'],
-        ]);
 
         return back()->with('success', 'Repartidor creado correctamente.');
     }

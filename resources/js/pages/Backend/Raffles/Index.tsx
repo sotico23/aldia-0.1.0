@@ -105,7 +105,7 @@ interface PrizeFormData {
 
 const statusColors: Record<string, string> = {
     draft: 'bg-gray-100 text-gray-800',
-    published: 'bg-blue-100 text-blue-800',
+    published: 'bg-emerald-100 text-emerald-800',
     active: 'bg-green-100 text-green-800',
     completed: 'bg-purple-100 text-purple-800',
     cancelled: 'bg-red-100 text-red-800',
@@ -137,7 +137,7 @@ function ImageUploadButton({
 
     return (
         <div
-            className="relative h-32 w-full cursor-pointer overflow-hidden rounded-lg border-2 border-dashed transition-colors hover:border-blue-400"
+            className="relative h-32 w-full cursor-pointer overflow-hidden rounded-lg border-2 border-dashed transition-colors hover:border-emerald-400"
             onClick={() => inputRef.current?.click()}
         >
             {image ? (

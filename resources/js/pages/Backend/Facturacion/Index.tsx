@@ -481,21 +481,21 @@ export default function Index({
                     {stats && (
                         <>
                             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                                <Card className="border-l-4 border-l-blue-500 shadow-sm">
+                                <Card className="border-l-4 border-l-emerald-500 shadow-sm">
                                     <CardContent className="p-4">
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                                                     Facturado este Mes
                                                 </p>
-                                                <p className="mt-1 text-2xl font-black text-blue-600">
+                                                <p className="mt-1 text-2xl font-black text-emerald-600">
                                                     {formatCurrency(
                                                         stats.total_facturado_mes,
                                                     )}
                                                 </p>
                                             </div>
-                                            <div className="rounded-full bg-blue-100 p-3">
-                                                <DollarSign className="h-5 w-5 text-blue-600" />
+                                            <div className="rounded-full bg-emerald-100 p-3">
+                                                <DollarSign className="h-5 w-5 text-emerald-600" />
                                             </div>
                                         </div>
                                     </CardContent>
@@ -602,7 +602,7 @@ export default function Index({
                                                     <Line
                                                         type="monotone"
                                                         dataKey="total"
-                                                        stroke="#3B82F6"
+                                                        stroke="#059669"
                                                         strokeWidth={2}
                                                         dot={{ r: 3 }}
                                                     />
@@ -924,7 +924,7 @@ export default function Index({
                                                                         <Button
                                                                             variant="ghost"
                                                                             size="sm"
-                                                                            className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                                            className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                                                                             onClick={() => {
                                                                                 setFacturaSeleccionada(
                                                                                     factura,
@@ -1074,7 +1074,7 @@ export default function Index({
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-8 w-8 p-0 text-blue-600"
+                                                        className="h-8 w-8 p-0 text-emerald-600"
                                                         onClick={() => {
                                                             setFacturaSeleccionada(
                                                                 factura,
@@ -1771,7 +1771,7 @@ function VerFacturaDialog({
                     {/* Header: SII Box and Company Info */}
                     <div className="mb-8 flex flex-wrap justify-between gap-4">
                         <div className="w-full sm:w-3/5">
-                            <h1 className="text-xl font-black text-blue-900 uppercase">
+                            <h1 className="text-xl font-black text-emerald-900 uppercase">
                                 {factura.emisor?.razon_social ||
                                     factura.emisor?.name ||
                                     'NOMBRE EMPRESA'}
@@ -1879,17 +1879,17 @@ function VerFacturaDialog({
                     <div className="mb-6">
                         <table className="w-full border-collapse">
                             <thead>
-                                <tr className="bg-blue-900 text-[9px] font-bold text-white uppercase">
-                                    <th className="w-[8%] border border-blue-900 p-2 text-center">
+                                <tr className="bg-emerald-900 text-[9px] font-bold text-white uppercase">
+                                    <th className="w-[8%] border border-emerald-900 p-2 text-center">
                                         Cant.
                                     </th>
-                                    <th className="border border-blue-900 p-2 text-left">
+                                    <th className="border border-emerald-900 p-2 text-left">
                                         Descripción
                                     </th>
-                                    <th className="w-[15%] border border-blue-900 p-2 text-right">
+                                    <th className="w-[15%] border border-emerald-900 p-2 text-right">
                                         P. Unitario
                                     </th>
-                                    <th className="w-[15%] border border-blue-900 p-2 text-right">
+                                    <th className="w-[15%] border border-emerald-900 p-2 text-right">
                                         Total
                                     </th>
                                 </tr>
@@ -1991,7 +1991,7 @@ function VerFacturaDialog({
                                         <td className="border border-gray-300 p-2 text-right font-black">
                                             TOTAL
                                         </td>
-                                        <td className="border border-gray-300 p-2 text-right font-black text-blue-900">
+                                        <td className="border border-gray-300 p-2 text-right font-black text-emerald-900">
                                             {formatCurrency(factura.total)}
                                         </td>
                                     </tr>
@@ -2650,7 +2650,7 @@ function EditarFacturaDialog({
                                 <span className="text-lg font-black uppercase">
                                     Total a Pagar:
                                 </span>
-                                <span className="text-3xl font-black text-blue-800">
+                                <span className="text-3xl font-black text-emerald-800">
                                     {formatCurrency(total)}
                                 </span>
                             </div>
@@ -2669,7 +2669,7 @@ function EditarFacturaDialog({
                         <Button
                             type="submit"
                             disabled={processing || data.detalles.length === 0}
-                            className="min-w-[150px] bg-blue-600 font-bold uppercase hover:bg-blue-700"
+                            className="min-w-[150px] bg-emerald-600 font-bold uppercase hover:bg-emerald-700"
                         >
                             {processing ? 'Guardando...' : 'Guardar Cambios'}
                         </Button>

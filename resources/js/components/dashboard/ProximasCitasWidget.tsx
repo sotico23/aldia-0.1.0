@@ -20,7 +20,7 @@ interface ProximasCitasWidgetProps {
 
 const statusColors: Record<string, string> = {
     pendiente: 'bg-amber-500/10 text-amber-600',
-    confirmada: 'bg-blue-500/10 text-blue-600',
+    confirmada: 'bg-emerald-500/10 text-emerald-600',
     en_curso: 'bg-emerald-500/10 text-emerald-600',
     completada: 'bg-green-500/10 text-green-600',
     cancelada: 'bg-rose-500/10 text-rose-600',

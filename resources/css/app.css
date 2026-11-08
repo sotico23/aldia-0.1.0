@@ -68,33 +68,37 @@
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
+    /* Paleta institucional dinámica de RedCliente (por defecto emerald-600) */
+    --brand-primary: #059669;
+    --brand-secondary: #10b981;
+    --brand-accent: #34d399;
+    --primary: var(--brand-primary);
     --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
+    --secondary: color-mix(in oklab, var(--brand-secondary) 16%, white);
+    --secondary-foreground: color-mix(in oklab, var(--brand-primary) 70%, black);
     --muted: oklch(0.97 0 0);
     --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
+    --accent: color-mix(in oklab, var(--brand-accent) 20%, white);
+    --accent-foreground: color-mix(in oklab, var(--brand-primary) 70%, black);
     --destructive: oklch(0.577 0.245 27.325);
     --destructive-foreground: oklch(0.577 0.245 27.325);
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
-    --ring: oklch(0.87 0 0);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
+    --ring: color-mix(in oklab, var(--brand-primary) 55%, white);
+    --chart-1: var(--brand-primary);
+    --chart-2: var(--brand-secondary);
+    --chart-3: var(--brand-accent);
+    --chart-4: color-mix(in oklab, var(--brand-primary) 78%, black);
+    --chart-5: color-mix(in oklab, var(--brand-primary) 58%, black);
     --radius: 0.625rem;
     --sidebar: oklch(0.985 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary: var(--brand-primary);
     --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-accent: color-mix(in oklab, var(--brand-secondary) 16%, white);
+    --sidebar-accent-foreground: color-mix(in oklab, var(--brand-primary) 70%, black);
     --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.87 0 0);
+    --sidebar-ring: color-mix(in oklab, var(--brand-primary) 55%, white);
 }
 
 .dark {
@@ -104,32 +108,35 @@
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.145 0 0);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.985 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
+    --brand-primary: #10b981;
+    --brand-secondary: #34d399;
+    --brand-accent: #6ee7b7;
+    --primary: color-mix(in oklab, var(--brand-primary) 88%, white);
+    --primary-foreground: oklch(0.145 0 0);
+    --secondary: color-mix(in oklab, var(--brand-secondary) 22%, black);
+    --secondary-foreground: color-mix(in oklab, var(--brand-accent) 78%, white);
     --muted: oklch(0.269 0 0);
     --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
+    --accent: color-mix(in oklab, var(--brand-accent) 22%, black);
+    --accent-foreground: color-mix(in oklab, var(--brand-accent) 82%, white);
     --destructive: oklch(0.396 0.141 25.723);
     --destructive-foreground: oklch(0.637 0.237 25.331);
     --border: oklch(0.269 0 0);
     --input: oklch(0.269 0 0);
-    --ring: oklch(0.439 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
+    --ring: var(--brand-primary);
+    --chart-1: var(--brand-primary);
+    --chart-2: var(--brand-secondary);
+    --chart-3: var(--brand-accent);
+    --chart-4: color-mix(in oklab, var(--brand-primary) 70%, white);
+    --chart-5: color-mix(in oklab, var(--brand-primary) 50%, white);
     --sidebar: oklch(0.205 0 0);
     --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.985 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: color-mix(in oklab, var(--brand-primary) 88%, white);
+    --sidebar-primary-foreground: oklch(0.145 0 0);
+    --sidebar-accent: color-mix(in oklab, var(--brand-secondary) 22%, black);
+    --sidebar-accent-foreground: color-mix(in oklab, var(--brand-accent) 82%, white);
     --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: oklch(0.439 0 0);
+    --sidebar-ring: var(--brand-primary);
 }
 
 @layer base {
@@ -177,8 +184,8 @@
     cursor: se-resize;
 }
 .react-resizable-handle-se::after {
-    border-right: 2px solid hsl(var(--primary));
-    border-bottom: 2px solid hsl(var(--primary));
+    border-right: 2px solid var(--primary);
+    border-bottom: 2px solid var(--primary);
 }
 .react-resizable-handle-sw {
     left: 0;
@@ -186,8 +193,8 @@
     cursor: sw-resize;
 }
 .react-resizable-handle-sw::after {
-    border-left: 2px solid hsl(var(--primary));
-    border-bottom: 2px solid hsl(var(--primary));
+    border-left: 2px solid var(--primary);
+    border-bottom: 2px solid var(--primary);
     left: 3px;
     bottom: 3px;
     right: auto;
@@ -198,8 +205,8 @@
     cursor: ne-resize;
 }
 .react-resizable-handle-ne::after {
-    border-right: 2px solid hsl(var(--primary));
-    border-top: 2px solid hsl(var(--primary));
+    border-right: 2px solid var(--primary);
+    border-top: 2px solid var(--primary);
     top: 3px;
     bottom: auto;
 }
@@ -209,8 +216,8 @@
     cursor: nw-resize;
 }
 .react-resizable-handle-nw::after {
-    border-left: 2px solid hsl(var(--primary));
-    border-top: 2px solid hsl(var(--primary));
+    border-left: 2px solid var(--primary);
+    border-top: 2px solid var(--primary);
     left: 3px;
     top: 3px;
     bottom: auto;
@@ -225,7 +232,7 @@
     cursor: e-resize;
 }
 .react-resizable-handle-e::after {
-    border-right: 2px solid hsl(var(--primary));
+    border-right: 2px solid var(--primary);
     right: 3px;
     bottom: 50%;
     margin-bottom: -3.5px;
@@ -239,7 +246,7 @@
     cursor: w-resize;
 }
 .react-resizable-handle-w::after {
-    border-left: 2px solid hsl(var(--primary));
+    border-left: 2px solid var(--primary);
     left: 3px;
     bottom: 50%;
     margin-bottom: -3.5px;
@@ -254,7 +261,7 @@
     cursor: n-resize;
 }
 .react-resizable-handle-n::after {
-    border-top: 2px solid hsl(var(--primary));
+    border-top: 2px solid var(--primary);
     left: 50%;
     top: 3px;
     margin-left: -3.5px;
@@ -270,7 +277,7 @@
     cursor: s-resize;
 }
 .react-resizable-handle-s::after {
-    border-bottom: 2px solid hsl(var(--primary));
+    border-bottom: 2px solid var(--primary);
     left: 50%;
     bottom: 3px;
     margin-left: -3.5px;
@@ -279,8 +286,8 @@
 
 /* React Grid Layout - Drag placeholder */
 .react-grid-placeholder {
-    background: hsl(var(--primary) / 0.15) !important;
-    border: 2px dashed hsl(var(--primary) / 0.4) !important;
+    background: color-mix(in oklch, var(--primary) 15%, transparent) !important;
+    border: 2px dashed color-mix(in oklch, var(--primary) 40%, transparent) !important;
     border-radius: var(--radius) !important;
     opacity: 1 !important;
 }

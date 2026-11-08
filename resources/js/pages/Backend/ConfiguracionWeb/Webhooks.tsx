@@ -154,7 +154,7 @@ function WebhookCard({
                                 >
                                     <div className="flex items-center gap-2">
                                         <span
-                                            className={`h-1.5 w-1.5 rounded-full ${log.status === 'processed' ? 'bg-green-500' : log.status === 'failed' ? 'bg-red-500' : log.status === 'duplicate' ? 'bg-amber-500' : 'bg-blue-500'}`}
+                                            className={`h-1.5 w-1.5 rounded-full ${log.status === 'processed' ? 'bg-green-500' : log.status === 'failed' ? 'bg-red-500' : log.status === 'duplicate' ? 'bg-amber-500' : 'bg-emerald-500'}`}
                                         />
                                         <span className="font-medium">
                                             {log.event_type || log.event_id}

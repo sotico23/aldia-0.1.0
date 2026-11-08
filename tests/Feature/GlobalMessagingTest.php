@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Models\WebSetting;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('flash messages are shared with the frontend on the home page', function () {
@@ -53,6 +54,7 @@ test('validation errors are available in the shared props', function () {
 
     // Simulating a failed validation redirect
     $this->actingAs($user)
+        ->withoutMiddleware(ValidateCsrfToken::class)
         ->from('/configuracion-web')
         ->put("/configuracion-web/{$setting->id}", []) // Missing required fields triggers validation
         ->assertRedirect('/configuracion-web');

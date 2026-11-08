@@ -37,7 +37,7 @@ const statusStyles: Record<string, string> = {
     pendiente:
         'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-800',
     confirmada:
-        'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-800',
+        'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-800',
     completada:
         'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-800',
     cancelada:
@@ -107,7 +107,7 @@ export default function Index({
             label: 'Total Citas',
             value: stats.total,
             icon: CalendarIcon,
-            color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/20',
+            color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20',
         },
         {
             label: 'Pendientes',
@@ -119,7 +119,7 @@ export default function Index({
             label: 'Hoy',
             value: todayCount,
             icon: Clock,
-            color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/20',
+            color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20',
         },
         {
             label: 'Completadas',
@@ -219,7 +219,7 @@ export default function Index({
                             <p className="text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
                                 Tasa Conversión
                             </p>
-                            <p className="text-xl font-black text-blue-600">
+                            <p className="text-xl font-black text-emerald-600">
                                 {tasaConversion}%
                             </p>
                         </CardContent>
@@ -253,7 +253,7 @@ export default function Index({
                         <Card className="rounded-2xl border-slate-200/70 dark:border-slate-800">
                             <CardHeader className="flex flex-row items-center justify-between px-5 py-4">
                                 <CardTitle className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
-                                    <BarChart3 className="h-4 w-4 text-indigo-500" />
+                                    <BarChart3 className="h-4 w-4 text-emerald-500" />
                                     Citas por Día (Últimos 30 días)
                                 </CardTitle>
                             </CardHeader>
@@ -305,7 +305,7 @@ export default function Index({
                                         <Bar
                                             dataKey="total"
                                             radius={[4, 4, 0, 0]}
-                                            fill="#6366f1"
+                                            fill="#10b981"
                                             maxBarSize={20}
                                         />
                                     </BarChart>
@@ -382,7 +382,7 @@ export default function Index({
                         <Card className="rounded-2xl border-slate-200/70 dark:border-slate-800">
                             <CardHeader className="flex flex-row items-center justify-between px-5 py-4">
                                 <CardTitle className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
-                                    <PieChartIcon className="h-4 w-4 text-indigo-500" />
+                                    <PieChartIcon className="h-4 w-4 text-emerald-500" />
                                     Distribución
                                 </CardTitle>
                             </CardHeader>

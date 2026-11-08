@@ -98,15 +98,15 @@ export default function PayPalConfig({ config }: { config: any }) {
             <Head title="Configuración de PayPal" />
 
             <div className="mx-auto max-w-6xl px-4 py-8">
-                <div className="mb-8 flex items-start gap-6 rounded-[2rem] border border-blue-100 bg-blue-50 p-8 dark:border-blue-900/30 dark:bg-blue-950/20">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-900/50">
-                        <CreditCard className="h-7 w-7 text-blue-600 dark:text-blue-400" />
+                <div className="mb-8 flex items-start gap-6 rounded-[2rem] border border-emerald-100 bg-emerald-50 p-8 dark:border-emerald-900/30 dark:bg-emerald-950/20">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-900/50">
+                        <CreditCard className="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div>
-                        <h1 className="mb-2 text-2xl font-black tracking-tight text-blue-900 dark:text-blue-100">
+                        <h1 className="mb-2 text-2xl font-black tracking-tight text-emerald-900 dark:text-emerald-100">
                             PayPal Checkout
                         </h1>
-                        <p className="max-w-2xl text-sm font-medium text-blue-700/80 dark:text-blue-300/80">
+                        <p className="max-w-2xl text-sm font-medium text-emerald-700/80 dark:text-emerald-300/80">
                             Acepta pagos de todo el mundo mediante PayPal.
                             <strong>
                                 {' '}
@@ -126,7 +126,7 @@ export default function PayPalConfig({ config }: { config: any }) {
                             <div className="flex items-center justify-between border-b p-8 dark:border-slate-800">
                                 <div>
                                     <h2 className="flex items-center gap-2 text-lg font-black tracking-tight uppercase">
-                                        <ShieldCheck className="h-5 w-5 text-blue-500" />
+                                        <ShieldCheck className="h-5 w-5 text-emerald-500" />
                                         Credenciales de PayPal
                                     </h2>
                                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -235,7 +235,7 @@ export default function PayPalConfig({ config }: { config: any }) {
                                                 )
                                             }
                                         />
-                                        <Label className="text-xs font-black tracking-widest text-blue-600 uppercase">
+                                        <Label className="text-xs font-black tracking-widest text-emerald-600 uppercase">
                                             Live
                                         </Label>
                                     </div>
@@ -251,9 +251,9 @@ export default function PayPalConfig({ config }: { config: any }) {
                                     className="h-14 gap-2 rounded-2xl border-2 px-8 font-black tracking-[0.1em] uppercase transition-all hover:bg-white"
                                 >
                                     {testing ? (
-                                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" />
+                                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-600" />
                                     ) : (
-                                        <ShieldCheck className="h-5 w-5 text-blue-600" />
+                                        <ShieldCheck className="h-5 w-5 text-emerald-600" />
                                     )}
                                     {testing
                                         ? 'Probando...'
@@ -263,7 +263,7 @@ export default function PayPalConfig({ config }: { config: any }) {
                                 <Button
                                     type="submit"
                                     disabled={processing || testing}
-                                    className="h-14 gap-2 rounded-2xl bg-blue-600 px-8 font-black tracking-[0.1em] text-white uppercase shadow-lg transition-all hover:scale-105 hover:bg-blue-700"
+                                    className="h-14 gap-2 rounded-2xl bg-emerald-600 px-8 font-black tracking-[0.1em] text-white uppercase shadow-lg transition-all hover:scale-105 hover:bg-emerald-700"
                                 >
                                     <Save className="h-5 w-5" />
                                     {processing

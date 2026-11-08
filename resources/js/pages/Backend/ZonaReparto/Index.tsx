@@ -491,7 +491,7 @@ export default function Index({
                                             }
                                             icon={{
                                                 path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
-                                                fillColor: '#3b82f6',
+                                                fillColor: '#059669',
                                                 fillOpacity: 1,
                                                 strokeWeight: 2,
                                                 strokeColor: '#ffffff',
@@ -934,7 +934,7 @@ export default function Index({
                                             />
                                             <Bar
                                                 dataKey="asignaciones"
-                                                fill="#6366f1"
+                                                fill="#10b981"
                                                 radius={[4, 4, 0, 0]}
                                             />
                                         </BarChart>

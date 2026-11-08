@@ -47,9 +47,11 @@ class ApiTokenService
      */
     public const DEFAULT_READ_ABILITIES = [
         self::ABILITY_AGENT_READ,
+        self::ABILITY_AGENT_WRITE,
         self::ABILITY_CATALOG_READ,
         self::ABILITY_REPORTS_READ,
         self::ABILITY_DELIVERY_READ,
+        self::ABILITY_DELIVERY_WRITE,
     ];
 
     /**

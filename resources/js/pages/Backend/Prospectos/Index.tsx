@@ -86,7 +86,7 @@ const ESTADOS = [
     {
         value: 'nuevo',
         label: 'Nuevo',
-        color: 'bg-blue-500/10 text-blue-600 border-blue-200',
+        color: 'bg-emerald-500/10 text-emerald-600 border-emerald-200',
         icon: Plus,
     },
     {
@@ -605,7 +605,7 @@ export default function Index({
                                                             {p.email && (
                                                                 <a
                                                                     href={`mailto:${p.email}`}
-                                                                    className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-blue-50 text-blue-500 transition-colors hover:bg-blue-100"
+                                                                    className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-emerald-50 text-emerald-500 transition-colors hover:bg-emerald-100"
                                                                 >
                                                                     <Mail className="h-3 w-3" />
                                                                 </a>

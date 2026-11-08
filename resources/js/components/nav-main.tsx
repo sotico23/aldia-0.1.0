@@ -20,18 +20,18 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import type { NavItem } from '@/types';
 
 const groupColors: Record<string, string> = {
-    COMERCIAL: '#3b82f6',
-    OPERACIONES: '#f97316',
-    FACTURACIÓN: '#f43f5e',
-    FINANZAS: '#6366f1',
-    RRHH: '#ec4899',
-    PROYECTOS: '#14b8a6',
-    LOGÍSTICA: '#06b6d4',
+    COMERCIAL: '#059669',
+    OPERACIONES: '#10b981',
+    FACTURACIÓN: '#047857',
+    FINANZAS: '#34d399',
+    RRHH: '#059669',
+    PROYECTOS: '#10b981',
+    LOGÍSTICA: '#047857',
     TIENDA: '#10b981',
-    SERVICIOS: '#8b5cf6',
-    EDUCACIÓN: '#a855f7',
-    MARKETING: '#d946ef',
-    SISTEMA: '#6b7280',
+    SERVICIOS: '#059669',
+    EDUCACIÓN: '#34d399',
+    MARKETING: '#047857',
+    SISTEMA: '#059669',
 };
 
 function hasActiveDescendant(

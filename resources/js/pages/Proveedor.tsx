@@ -98,7 +98,7 @@ const estadoBadge = (estado: string) => {
             class: 'bg-yellow-100 text-yellow-800',
         },
         aprobado: { label: 'Aprobada', class: 'bg-green-100 text-green-800' },
-        completado: { label: 'Completada', class: 'bg-blue-100 text-blue-800' },
+        completado: { label: 'Completada', class: 'bg-emerald-100 text-emerald-800' },
         cancelado: { label: 'Cancelada', class: 'bg-red-100 text-red-800' },
         anulado: { label: 'Anulada', class: 'bg-red-100 text-red-800' },
     };
@@ -195,7 +195,7 @@ export default function ProveedorDashboard({
 
     const isActive = (tab: string) =>
         activeTab === tab
-            ? 'border-b-2 border-indigo-600 text-indigo-600 font-medium'
+            ? 'border-b-2 border-emerald-600 text-emerald-600 font-medium'
             : 'text-gray-500 hover:text-gray-700 border-b-2 border-transparent';
 
     return (
@@ -214,7 +214,7 @@ export default function ProveedorDashboard({
                                     className="h-8 w-auto"
                                 />
                             ) : (
-                                <Building className="h-6 w-6 text-indigo-600" />
+                                <Building className="h-6 w-6 text-emerald-600" />
                             )}
                             <div>
                                 <h1 className="text-lg font-bold text-gray-900">
@@ -347,7 +347,7 @@ export default function ProveedorDashboard({
                                                                     href={`/proveedor/compras/${compra.id}/pdf`}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
-                                                                    className="text-indigo-600 hover:text-indigo-800"
+                                                                    className="text-emerald-600 hover:text-emerald-800"
                                                                     onClick={(
                                                                         e,
                                                                     ) =>
@@ -518,7 +518,7 @@ export default function ProveedorDashboard({
                                                             }
                                                             className={`rounded border px-3 py-1.5 text-sm ${
                                                                 link.active
-                                                                    ? 'border-indigo-600 bg-indigo-600 text-white'
+                                                                    ? 'border-emerald-600 bg-emerald-600 text-white'
                                                                     : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
                                                             } ${!link.url ? 'cursor-not-allowed opacity-50' : ''}`}
                                                             preserveScroll
@@ -840,7 +840,7 @@ export default function ProveedorDashboard({
                                                     className="flex items-center justify-between rounded-lg border bg-white p-3 hover:bg-gray-50"
                                                 >
                                                     <div className="flex min-w-0 items-center gap-3">
-                                                        <FileText className="h-5 w-5 shrink-0 text-indigo-500" />
+                                                        <FileText className="h-5 w-5 shrink-0 text-emerald-500" />
                                                         <div className="min-w-0">
                                                             <p className="truncate text-sm font-medium">
                                                                 {doc.titulo}
@@ -866,7 +866,7 @@ export default function ProveedorDashboard({
                                                             href={doc.url}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="rounded p-2 text-indigo-600 hover:bg-indigo-50"
+                                                            className="rounded p-2 text-emerald-600 hover:bg-emerald-50"
                                                             title="Descargar"
                                                         >
                                                             <Download className="h-4 w-4" />

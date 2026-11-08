@@ -66,8 +66,8 @@ export default function Emisor({ config }: Props) {
 
             <div className="mx-auto max-w-5xl p-4 sm:p-6 md:p-8">
                 <div className="mb-8 flex items-center gap-4">
-                    <div className="rounded-2xl bg-indigo-500/10 p-3">
-                        <Building2 className="h-8 w-8 text-indigo-600" />
+                    <div className="rounded-2xl bg-emerald-500/10 p-3">
+                        <Building2 className="h-8 w-8 text-emerald-600" />
                     </div>
                     <div>
                         <h1 className="text-3xl font-black tracking-tight">
@@ -81,7 +81,7 @@ export default function Emisor({ config }: Props) {
 
                 <form onSubmit={handleSubmit} className="space-y-8">
                     <Card className="border-none shadow-xl">
-                        <CardHeader className="bg-indigo-500/5">
+                        <CardHeader className="bg-emerald-500/5">
                             <CardTitle className="text-lg">
                                 Información Legal
                             </CardTitle>

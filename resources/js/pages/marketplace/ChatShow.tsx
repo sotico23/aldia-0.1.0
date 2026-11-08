@@ -318,7 +318,7 @@ export default function ChatShow({ conversation, messages, auth }: Props) {
                                                 </p>
                                             )}
                                             <p
-                                                className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${isMe ? 'text-blue-100' : 'text-slate-400'}`}
+                                                className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${isMe ? 'text-emerald-100' : 'text-slate-400'}`}
                                             >
                                                 <span>
                                                     {format(

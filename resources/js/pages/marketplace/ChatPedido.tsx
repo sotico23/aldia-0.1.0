@@ -308,7 +308,7 @@ export default function ChatPedido({
             case 'pendiente':
                 return 'bg-yellow-100 text-yellow-800';
             case 'confirmado':
-                return 'bg-blue-100 text-blue-800';
+                return 'bg-emerald-100 text-emerald-800';
             case 'preparando':
                 return 'bg-orange-100 text-orange-800';
             case 'enviado':
@@ -425,7 +425,7 @@ export default function ChatPedido({
                                                             download={
                                                                 msg.file_name
                                                             }
-                                                            className="flex items-center gap-2 text-xs text-blue-600 hover:underline"
+                                                            className="flex items-center gap-2 text-xs text-emerald-600 hover:underline"
                                                         >
                                                             <FileIcon className="h-4 w-4" />
                                                             {msg.file_name}
@@ -437,7 +437,7 @@ export default function ChatPedido({
                                                 {msg.contenido}
                                             </p>
                                             <div
-                                                className={`mt-1 flex items-center justify-end gap-1 ${isMe ? 'text-blue-100' : 'text-slate-400'}`}
+                                                className={`mt-1 flex items-center justify-end gap-1 ${isMe ? 'text-emerald-100' : 'text-slate-400'}`}
                                             >
                                                 <span className="text-[10px]">
                                                     {format(
@@ -452,7 +452,7 @@ export default function ChatPedido({
                                                     !(msg as Message)
                                                         ._error && (
                                                         <CheckCheck
-                                                            className={`h-3 w-3 ${msg.leido ? 'text-blue-300' : 'opacity-50'}`}
+                                                            className={`h-3 w-3 ${msg.leido ? 'text-emerald-300' : 'opacity-50'}`}
                                                         />
                                                     )}
                                                 {isMe &&
@@ -542,7 +542,7 @@ export default function ChatPedido({
                             className="flex flex-col gap-2"
                         >
                             {selectedFile && (
-                                <div className="flex items-center justify-between rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2">
+                                <div className="flex items-center justify-between rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
                                     <div className="flex items-center gap-2 truncate">
                                         {previewImage && (
                                             <img
@@ -552,16 +552,16 @@ export default function ChatPedido({
                                             />
                                         )}
                                         {!previewImage && (
-                                            <Paperclip className="h-4 w-4 text-indigo-500" />
+                                            <Paperclip className="h-4 w-4 text-emerald-500" />
                                         )}
-                                        <span className="truncate text-sm text-indigo-700">
+                                        <span className="truncate text-sm text-emerald-700">
                                             {selectedFile.name}
                                         </span>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={clearFile}
-                                        className="text-indigo-400 hover:text-indigo-600"
+                                        className="text-emerald-400 hover:text-emerald-600"
                                     >
                                         <X className="h-4 w-4" />
                                     </button>
