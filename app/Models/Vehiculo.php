@@ -16,13 +16,14 @@ class Vehiculo extends Model
         'owner_id',
         'placa', 'imei', 'marca', 'modelo', 'tipo', 'año', 'color',
         'lat', 'lng', 'velocidad', 'ultima_actualizacion',
-        'estado', 'kilometraje', 'notas', 'fotos',
+        'estado', 'kilometraje', 'capacidad_carga', 'notas', 'fotos',
     ];
 
     protected function casts(): array
     {
         return [
             'kilometraje' => 'decimal:2',
+            'capacidad_carga' => 'decimal:2',
             'año' => 'integer',
             'lat' => 'float',
             'lng' => 'float',

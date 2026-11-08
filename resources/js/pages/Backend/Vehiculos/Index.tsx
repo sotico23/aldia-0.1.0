@@ -63,6 +63,7 @@ interface Vehiculo {
     ultima_actualizacion: string | null;
     estado: string;
     kilometraje: number;
+    capacidad_carga: number | null;
     notas: string | null;
 }
 
@@ -185,6 +186,7 @@ export default function Index({
         color: '',
         estado: 'disponible',
         kilometraje: 0,
+        capacidad_carga: null,
         notas: '',
         fotos: [] as string[],
     });
@@ -316,6 +318,7 @@ export default function Index({
             color: v.color || '',
             estado: v.estado,
             kilometraje: v.kilometraje,
+            capacidad_carga: v.capacidad_carga ?? null,
             notas: v.notas || '',
             fotos: (v as any).fotos || [],
         });
@@ -339,6 +342,7 @@ export default function Index({
             color: '',
             estado: 'disponible',
             kilometraje: 0,
+            capacidad_carga: null,
             notas: '',
             fotos: [],
         });
@@ -978,6 +982,29 @@ export default function Index({
                                         className="h-11 border-none bg-muted/30 font-bold focus-visible:ring-primary/30"
                                     />
                                 </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                                        Capacidad de Carga (kg)
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        value={data.capacidad_carga ?? ''}
+                                        onChange={(e) =>
+                                            setData(
+                                                'capacidad_carga',
+                                                e.target.value === ''
+                                                    ? null
+                                                    : parseFloat(
+                                                          e.target.value,
+                                                      ),
+                                            )
+                                        }
+                                        placeholder="0"
+                                        className="h-11 border-none bg-muted/30 font-bold focus-visible:ring-primary/30"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                                         Estado
