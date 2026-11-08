@@ -1,0 +1,505 @@
+================================================================================
+  REDCLIENTE - REGISTRO DE RUTAS DISPONIBLES
+================================================================================
+Fecha: 08 Nov 2026
+Aplicación: RedCliente (Laravel + Inertia + React)
+================================================================================
+
+================================================================================
+1. RUTAS PÚBLICAS (Sin autenticación)
+================================================================================
+
+GET    /                                        -> home
+GET    /quienes-somos                           -> quienes-somos
+GET    /feedback                                -> feedback
+GET    /fundacion                               -> fundacion
+GET    /status                                  -> status
+GET    /status/embed                            -> status.embed
+
+GET    /tienda                                  -> marketplace.index
+GET    /tienda/{slug}                           -> marketplace.show
+GET    /tienda/{slug}/categorias                -> marketplace.categories
+POST   /tienda/{slug}/react                     -> marketplace.react (auth)
+POST   /tienda/{slug}/opinion                   -> marketplace.review (auth)
+GET    /tienda/{slug}/categoria/{categoria}     -> marketplace.category
+POST   /tienda/{slug}/checkout                  -> tienda.checkout (auth)
+GET    /tienda/{slug}/confirmacion/{pedidoId}   -> tienda.confirmacion (auth)
+GET    /tienda/{slug}/chat                      -> chat.start (auth)
+GET    /mis-pedidos                             -> pedidos.mios (auth)
+GET    /pedidos/{pedido}                        -> pedidos.ver (auth)
+GET    /pedidos/{pedido}/estado                 -> pedidos.estado (auth)
+GET    /booking/{slug}                          -> booking.show
+POST   /booking/{slug}                          -> booking.store
+GET    /booking/{slug}/webpay/{pedido}          -> booking.webpay-pay
+
+GET    /auth/telegram/redirect                  -> telegram.redirect (guest)
+GET|POST /auth/telegram/callback                -> telegram.callback (guest)
+GET    /auth/telegram/email-form                -> telegram.email-form (guest)
+POST   /auth/telegram/email                     -> telegram.email-store (guest)
+GET    /auth/{provider}/redirect                -> socialite.redirect
+GET    /auth/{provider}/callback                -> socialite.callback
+
+GET    /canales/telegram/vincular/{token}       -> telegram.vincular
+POST   /canales/telegram/webhook                -> canales.telegram.webhook
+
+POST   /webhooks/paypal                         -> webhooks.paypal
+POST   /webhooks/mercadopago                    -> webhooks.mercadopago
+POST   /webhooks/whatsapp                       -> webhooks.whatsapp
+POST   /webhooks/telegram                       -> webhooks.telegram
+POST   /webhooks/telegram/global                -> webhooks.telegram.global
+POST   /webhooks/telegram/tenant/{key}          -> webhooks.telegram.tenant
+GET|POST /webhooks/whatsapp/global              -> webhooks.whatsapp.global
+GET|POST /webhooks/whatsapp/tenant/{key}        -> webhooks.whatsapp.tenant
+
+================================================================================
+2. RUTAS WEB - AUTENTICADAS (Grupo auth)
+================================================================================
+
+GET    /dashboard                               -> dashboard
+POST   /dashboard/config                        -> dashboard.config
+POST   /dashboard/widgets/toggle                -> dashboard.widgets.toggle
+POST   /dashboard/widgets/reorder               -> dashboard.widgets.reorder
+
+-- System Integrations (n8n) --
+GET    /api/system-integrations/n8n             -> system-integrations.show
+PUT|POST /api/system-integrations/n8n           -> system-integrations.update
+POST   /api/system-integrations/n8n/test        -> system-integrations.test
+POST   /api/system-integrations/n8n/test-whatsapp -> system-integrations.test-whatsapp
+
+-- Canales / Automatizaciones --
+GET    /canales                                 -> channel-credentials.index
+PUT    /canales                                 -> channel-credentials.update
+POST   /canales/test-telegram                   -> channel-credentials.test-telegram
+POST   /canales/send-test-message               -> channel-credentials.send-test-message
+POST   /canales/test-whatsapp                   -> channel-credentials.test-whatsapp
+POST   /canales/send-whatsapp-test-message      -> channel-credentials.send-whatsapp-test-message
+POST   /canales/automation                      -> automation.store
+POST   /canales/automation/test                 -> automation.test
+GET    /canales/n8n-config                      -> channel-credentials.n8n-config
+PUT    /canales/n8n-config                      -> channel-credentials.n8n-config.update
+POST   /canales/n8n-config/test                 -> channel-credentials.n8n-config.test
+GET    /automatizaciones/historial              -> automation.history
+GET    /automatizaciones/historial/{id}         -> automation.history.show
+
+POST   /telegram/login-callback                 -> telegram.login-callback
+POST   /canales/telegram/generate-link          -> telegram.generate-link
+POST   /canales/telegram/unlink                 -> telegram.unlink
+
+-- Integraciones API --
+GET    /integraciones-api                       -> integraciones-api.index
+POST   /integraciones-api/save                  -> integraciones-api.save
+POST   /integraciones-api/test/{provider}       -> integraciones-api.test
+GET    /api/v1/tenant-credentials/autocomplete  -> tenant-credentials.autocomplete
+
+-- Cotizaciones --
+GET    /cotizaciones/export                     -> cotizaciones.export
+GET    /cotizaciones/export-excel               -> cotizaciones.export_excel
+GET    /cotizaciones/{cotizacion}/pdf           -> cotizaciones.pdf
+GET    /cotizaciones/{cotizacion}/preview       -> cotizaciones.preview
+GET    /cotizaciones                            -> cotizaciones.index
+POST   /cotizaciones                            -> cotizaciones.store
+GET    /cotizaciones/{cotizacion}               -> cotizaciones.show
+PUT    /cotizaciones/{cotizacion}               -> cotizaciones.update
+DELETE /cotizaciones/{cotizacion}               -> cotizaciones.destroy
+
+-- Importaciones --
+POST   /cotizaciones/import                     -> cotizaciones.import
+POST   /cotizaciones/import-excel               -> cotizaciones.import_excel
+POST   /ventas/import                           -> ventas.import
+POST   /productos/import-excel                  -> productos.import_excel
+
+-- Ventas --
+GET    /ventas/export                           -> ventas.export
+GET    /ventas/export-excel                     -> ventas.export_excel
+GET    /ventas/{venta}/download                 -> ventas.download
+GET    /ventas/{venta}/download-informal        -> ventas.download-informal
+
+-- Productos --
+GET    /productos/export                        -> productos.export
+GET    /productos/export-excel                  -> productos.export_excel
+
+-- Modulos requeridos (ver secciones abajo)
+-- crm.php, ventas.php, inventario.php, mrp.php, finanzas.php, rrhh.php
+-- proyectos.php, uptime.php, flota.php, zonas-reparto.php, repartidores.php
+
+GET    /admin/system/health                     -> admin.system.health
+
+-- Admin module (ver seccion 4)
+
+-- Onboarding
+GET    /onboarding                              -> onboarding
+POST   /onboarding                              -> onboarding.store
+
+-- Mensajes / Comunidad
+GET    /mensajes                                -> mensajes.index
+GET    /mensajes/usuarios                       -> mensajes.usuarios
+GET    /mensajes/{usuarioId}                    -> mensajes.conversacion
+POST   /mensajes                                -> mensajes.enviar
+
+GET    /planes                                  -> planes.index
+
+-- Tareas
+GET    /tareas                                  -> tareas.index
+POST   /tareas                                  -> tareas.store
+PUT    /tareas/{tarea}                          -> tareas.update
+DELETE /tareas/{tarea}                          -> tareas.destroy
+
+-- Pedidos Recibidos
+GET    /pedidos-recibidos                       -> pedidos-recibidos.index
+GET    /pedidos-recibidos/export                -> pedidos-recibidos.export
+GET    /pedidos-recibidos/{pedido}              -> pedidos-recibidos.show
+PUT    /pedidos-recibidos/{pedido}/estado       -> pedidos-recibidos.estado
+POST   /pedidos-recibidos/{pedido}/venta        -> pedidos-recibidos.generar-venta
+
+-- Conversaciones Pedidos (Chat Marketplace)
+GET    /conversaciones-pedidos/{conversacion}/chat           -> conversaciones-pedidos.show
+GET    /conversaciones-pedidos/{conversacion}/mensajes       -> conversaciones-pedidos.mensajes
+POST   /conversaciones-pedidos/{conversacion}/mensajes       -> conversaciones-pedidos.enviar
+
+-- Afiliados
+GET    /afiliados/recomendar                    -> afiliados.recomendar
+GET    /afiliados/red                           -> afiliados.red
+
+-- Chat Marketplace
+GET    /chat                                    -> chat.index
+GET    /chat/{conversation}                     -> chat.show
+POST   /chat/{conversation}/messages            -> chat.send
+
+-- Communication API
+GET    /communication/inbox                     -> communication.inbox
+GET    /communication/{type}/{id}/messages      -> communication.messages
+POST   /communication/{type}/{id}/messages      -> communication.send
+POST   /communication/{type}/{id}/read          -> communication.read
+
+-- Citas y Reservas
+GET    /appointments/export                     -> appointments.export
+GET    /appointments/exportar                   -> appointments.exportar
+POST   /appointments/importar                   -> appointments.importar
+GET    /appointments/dashboard                  -> appointments.dashboard
+GET    /appointments/calendar                   -> appointments.calendar
+POST   /appointments/calendar/google-config     -> appointments.calendar.google-config
+GET    /appointments/calendar/google-auth       -> appointments.calendar.google-auth
+GET    /appointments/calendar/google-callback   -> appointments.calendar.google-callback
+POST   /appointments/calendar/sync              -> appointments.calendar.sync
+GET    /appointments                            -> appointments.index
+POST   /appointments                            -> appointments.store
+GET    /appointments/{appointment}              -> appointments.show
+PUT    /appointments/{appointment}              -> appointments.update
+DELETE /appointments/{appointment}              -> appointments.destroy
+
+-- Servicios
+GET    /services                                -> services.index
+POST   /services                                -> services.store
+GET    /services/{service}                      -> services.show
+PUT    /services/{service}                      -> services.update
+DELETE /services/{service}                      -> services.destroy
+
+-- Busqueda Global
+GET    /api/global-search                       -> api.global-search
+GET    /api/sii/consultar/{rut}                 -> api.sii.consultar
+POST   /api/sii/validar-rut                     -> api.sii.validar-rut
+
+-- Pagos Webpay Plus CONFIG
+GET    /webpay/config                           -> webpay.config
+POST   /webpay/config                           -> webpay.config.update
+GET    /webpay/movimientos                      -> webpay.movimientos
+
+-- Pagos PayPal CONFIG
+GET    /paypal/config                           -> paypal.config
+POST   /paypal/config                           -> paypal.config.update
+POST   /paypal/test                             -> paypal.test
+
+-- Pagos PayPal CHECKOUT
+GET    /paypal/pay/{pedidoId}                   -> paypal.pay
+GET    /paypal/success/{pedidoId}               -> paypal.success
+GET    /paypal/cancel/{pedidoId}                -> paypal.cancel
+
+-- Pagos MercadoPago CONFIG
+GET    /mercadopago/config                      -> mercadopago.config
+POST   /mercadopago/config                      -> mercadopago.config.update
+POST   /mercadopago/test                        -> mercadopago.test
+
+-- Pago Plataforma
+GET    /pagos/plataforma                        -> pagos.plataforma
+POST   /pagos/plataforma                        -> pagos.plataforma.update
+
+-- Pagos MercadoPago CHECKOUT
+GET    /mercadopago/pay/{pedidoId}              -> mercadopago.pay
+GET    /mercadopago/success/{pedidoId}          -> mercadopago.success
+GET    /mercadopago/failure/{pedidoId}          -> mercadopago.failure
+GET    /mercadopago/pending/{pedidoId}          -> mercadopago.pending
+
+-- Transbank Webpay
+POST   /webpay/pay                              -> webpay.pay
+POST   /webpay/return                           -> webpay.callback
+GET    /webpay/error                            -> webpay.error
+
+-- Cliente (role:Cliente)
+GET    /cliente/                                -> cliente.dashboard
+POST   /cliente/pedidos                         -> cliente.pedidos.store
+POST   /cliente/pedidos/{pedido}/cancelar       -> cliente.pedidos.cancelar
+POST   /cliente/citas                           -> cliente.citas.store
+POST   /cliente/tickets                         -> cliente.tickets.store
+
+-- Proveedor (role:Proveedor)
+GET    /proveedor/                              -> proveedor.dashboard
+POST   /proveedor/perfil                        -> proveedor.perfil.update
+GET    /proveedor/compras/{compra}/pdf          -> proveedor.compras.pdf
+POST   /proveedor/documentos                    -> proveedor.documentos.store
+DELETE /proveedor/documentos/{documento}        -> proveedor.documentos.destroy
+
+-- Notificaciones
+GET    /notifications                           -> notifications.index
+POST   /notifications/mark-as-read              -> notifications.mark-as-read
+DELETE /notifications/{id}                      -> notifications.destroy
+
+-- Seguidores
+POST   /usuarios/{user}/follow                  -> usuarios.follow
+DELETE /usuarios/{user}/unfollow                -> usuarios.unfollow
+
+-- Perfil
+GET    /perfil/{user}                           -> profile.show
+
+================================================================================
+3. RUTAS WEB - SETTINGS (Configuracion de Usuario)
+================================================================================
+
+GET    /settings                                -> profile.edit (redirect)
+GET    /settings/profile                        -> profile.edit
+PATCH  /settings/profile                        -> profile.update
+PATCH  /settings/profile/onboarding             -> profile.onboarding.disable
+DELETE /settings/profile                        -> profile.destroy
+GET    /settings/password                       -> user-password.edit
+PUT    /settings/password                       -> user-password.update
+GET    /settings/notifications                  -> notifications.preferences
+POST   /settings/notifications                  -> notifications.preferences.update
+GET    /settings/two-factor                     -> two-factor.show
+GET    /settings/public-profile                 -> public-profile.edit
+PATCH  /settings/public-profile                 -> public-profile.update
+POST   /settings/public-profile/toggle-active   -> public-profile.toggle-active
+
+GET    /mi-informacion                          -> mi-informacion.show
+PATCH  /mi-informacion                          -> mi-informacion.update
+
+GET    /comunidad                               -> comunidad.index
+
+================================================================================
+4. RUTAS WEB - ADMIN (modulo admin.php)
+================================================================================
+
+-- Reportes
+GET    /reportes                                -> reportes.index
+
+-- Configuracion General
+GET    /configuracion                           -> configuracion.index
+POST   /configuracion                           -> configuracion.store
+GET    /configuracion/{configuracion}           -> configuracion.show
+PUT    /configuracion/{configuracion}           -> configuracion.update
+DELETE /configuracion/{configuracion}           -> configuracion.destroy
+
+-- Paises y Monedas
+GET    /paises                                  -> paises.index
+POST   /paises                                  -> paises.store
+GET    /paises/{country}                        -> paises.show
+PUT    /paises/{country}                        -> paises.update
+DELETE /paises/{country}                        -> paises.destroy
+PATCH  /paises/{country}/toggle                 -> paises.toggle
+
+-- Configuracion Web (Gateway Settings, Web Settings, etc.)
+POST   /configuracion-web/test-social           -> configuracion-web.test-social
+POST   /web-settings/telegram-login/test        -> web-settings.telegram-login.test
+POST   /web-settings/telegram-login/disconnect  -> web-settings.telegram-login.disconnect
+GET    /configuracion-web/financial-settings    -> configuracion-web.financial-settings
+PUT    /configuracion-web/financial-settings    -> configuracion-web.financial-settings.update
+GET    /configuracion-web/gateway-settings      -> configuracion-web.gateway-settings
+PUT    /configuracion-web/gateway-settings/webpay     -> configuracion-web.gateway-settings.webpay
+PUT    /configuracion-web/gateway-settings/paypal       -> configuracion-web.gateway-settings.paypal
+PUT    /configuracion-web/gateway-settings/mercadopago  -> configuracion-web.gateway-settings.mercadopago
+PUT    /configuracion-web/gateway-settings/telegram     -> configuracion-web.gateway-settings.telegram
+POST   /configuracion-web/gateway-settings/telegram/test   -> configuracion-web.gateway-settings.telegram.test
+POST   /configuracion-web/gateway-settings/telegram/webhook -> configuracion-web.gateway-settings.telegram.webhook
+DELETE /configuracion-web/gateway-settings/telegram/webhook -> configuracion-web.gateway-settings.telegram.webhook.delete
+PUT    /configuracion-web/gateway-settings/whatsapp     -> configuracion-web.gateway-settings.whatsapp
+POST   /configuracion-web/gateway-settings/whatsapp/test   -> configuracion-web.gateway-settings.whatsapp.test
+POST   /configuracion-web/gateway-settings/whatsapp/webhook -> configuracion-web.gateway-settings.whatsapp.webhook
+GET    /configuracion-web/marketplace-settings  -> configuracion-web.marketplace-settings
+PUT    /configuracion-web/marketplace-settings  -> configuracion-web.marketplace-settings.update
+GET    /configuracion-web/webhook-settings      -> configuracion-web.webhook-settings
+GET    /configuracion-web/financial-automations -> configuracion-web.financial-automations
+PUT    /configuracion-web/financial-automations -> configuracion-web.financial-automations.update
+GET    /configuracion-web/servidor              -> configuracion-web.system-settings
+GET    /configuracion-web                       -> configuracion-web.index
+PUT    /configuracion-web/{configuracion-web}   -> configuracion-web.update
+
+-- Mail Templates
+GET    /mail-templates                          -> mail-templates.index
+POST   /mail-templates                          -> mail-templates.store
+GET    /mail-templates/{mailTemplate}           -> mail-templates.show
+PUT    /mail-templates/{mailTemplate}           -> mail-templates.update
+DELETE /mail-templates/{mailTemplate}           -> mail-templates.destroy
+POST   /mail-templates/test                     -> mail-templates.test
+PATCH  /mail-templates/{mailTemplate}/toggle    -> mail-templates.toggle
+
+-- Email Config (Marketing)
+GET    /marketing/email-config                  -> email-config.index
+POST   /marketing/email-config                  -> email-config.store
+GET    /marketing/email-config/{emailConfig}    -> email-config.show
+PUT    /marketing/email-config/{emailConfig}    -> email-config.update
+DELETE /marketing/email-config/{emailConfig}    -> email-config.destroy
+POST   /marketing/email-config/{emailConfig}/test   -> email-config.test
+POST   /marketing/email-config/{emailConfig}/set-default -> email-config.set-default
+POST   /marketing/email-config/{emailConfig}/set-active   -> email-config.set-active
+GET    /marketing/email-config/{emailConfig}/logs     -> email-config.logs
+
+-- Usuarios y Roles
+POST   /usuarios-roles/user/create              -> usuarios-roles.user.store (role:Master)
+POST   /usuarios-roles/role                     -> usuarios-roles.role.store
+PUT    /usuarios-roles/role/{role}              -> usuarios-roles.role.update
+DELETE /usuarios-roles/role/{role}              -> usuarios-roles.role.destroy
+POST   /usuarios-roles/permission               -> usuarios-roles.permission.store
+PUT    /usuarios-roles/permission/{permission}  -> usuarios-roles.permission.update
+DELETE /usuarios-roles/permission/{permission}  -> usuarios-roles.permission.destroy
+PATCH  /usuarios-roles/user/{user}              -> usuarios-roles.user.update
+POST   /usuarios-roles/user/{user}/reset-password -> usuarios-roles.user.reset-password
+POST   /usuarios-roles/user/{user}/toggle-ban   -> usuarios-roles.user.toggle-ban
+DELETE /usuarios-roles/user/{user}              -> usuarios-roles.user.destroy
+PATCH  /usuarios-roles/public-profile/{publicProfile}/toggle-official -> usuarios-roles.toggle-official
+PATCH  /usuarios-roles/public-profile/{publicProfile}/toggle-status -> usuarios-roles.toggle-status
+GET    /usuarios-roles                          -> usuarios-roles.index
+POST   /usuarios-roles                          -> usuarios-roles.store
+GET    /usuarios-roles/{usuarioRol}             -> usuarios-roles.show
+PUT    /usuarios-roles/{usuarioRol}             -> usuarios-roles.update
+DELETE /usuarios-roles/{usuarioRol}             -> usuarios-roles.destroy
+
+================================================================================
+5. RUTAS WEB - MODULO FLOTA (flota.php)
+================================================================================
+
+-- Vehiculos
+GET    /vehiculos/export                        -> vehiculos.export
+GET    /vehiculos/export-excel                  -> vehiculos.exportExcel
+POST   /vehiculos/import                        -> vehiculos.import
+POST   /vehiculos/import-excel                  -> vehiculos.importExcel
+GET    /vehiculos                               -> vehiculos.index
+POST   /vehiculos                               -> vehiculos.store
+GET    /vehiculos/{vehiculo}                    -> vehiculos.show
+PUT    /vehiculos/{vehiculo}                    -> vehiculos.update
+DELETE /vehiculos/{vehiculo}                    -> vehiculos.destroy
+PATCH  /vehiculos/{vehiculo}/tracking           -> vehiculos.tracking
+POST   /vehiculos/{vehiculo}/simular            -> vehiculos.simular
+POST   /vehiculos/{vehiculo}/limpiar            -> vehiculos.limpiar
+
+-- Conductores
+GET    /conductores/export                      -> conductores.export
+GET    /conductores/export-excel                -> conductores.exportExcel
+POST   /conductores/import                      -> conductores.import
+POST   /conductores/import-excel                -> conductores.importExcel
+GET    /conductores                             -> conductores.index
+POST   /conductores                             -> conductores.store
+GET    /conductores/{conductor}                 -> conductores.show
+PUT    /conductores/{conductor}                 -> conductores.update
+DELETE /conductores/{conductor}                 -> conductores.destroy
+POST   /conductores/{conductor}/simular         -> conductores.simular
+POST   /conductores/{conductor}/limpiar         -> conductores.limpiar
+
+-- Entregas
+GET    /entregas/export                         -> entregas.export
+GET    /entregas/export-excel                   -> entregas.exportExcel
+POST   /entregas/import                         -> entregas.import
+POST   /entregas/import-excel                   -> entregas.importExcel
+POST   /entregas/tarifas                        -> entregas.tarifas.store
+PUT    /entregas/tarifas/{deliveryRate}         -> entregas.tarifas.update
+DELETE /entregas/tarifas/{deliveryRate}         -> entregas.tarifas.destroy
+GET    /entregas                                -> entregas.index
+POST   /entregas                                -> entregas.store
+GET    /entregas/{entrega}                      -> entregas.show
+PUT    /entregas/{entrega}                      -> entregas.update
+DELETE /entregas/{entrega}                      -> entregas.destroy
+
+-- Cargas Diarias
+GET    /cargas-diarias                          -> cargas-diarias.index
+POST   /cargas-diarias                          -> cargas-diarias.store
+GET    /cargas-diarias/{cargaDiaria}            -> cargas-diarias.show
+PUT    /cargas-diarias/{cargaDiaria}            -> cargas-diarias.update
+DELETE /cargas-diarias/{cargaDiaria}            -> cargas-diarias.destroy
+POST   /cargas-diarias/{cargaDiaria}/renovar    -> cargas-diarias.renovar
+POST   /cargas-diarias/{cargaDiaria}/recargar   -> cargas-diarias.recargar
+GET    /cargas-diarias/{cargaDiaria}/renovaciones -> cargas-diarias.renovaciones
+GET    /cargas-diarias/renovacion/{renovacionId}  -> cargas-diarias.ver-renovacion
+
+-- Grupos de Trabajo
+GET    /grupos-trabajo/export                   -> grupos-trabajo.export
+GET    /grupos-trabajo/export-excel             -> grupos-trabajo.exportExcel
+POST   /grupos-trabajo/import                   -> grupos-trabajo.import
+POST   /grupos-trabajo/import-excel             -> grupos-trabajo.importExcel
+GET    /grupos-trabajo                          -> grupos-trabajo.index
+POST   /grupos-trabajo                          -> grupos-trabajo.store
+GET    /grupos-trabajo/{grupoTrabajo}           -> grupos-trabajo.show
+PUT    /grupos-trabajo/{grupoTrabajo}           -> grupos-trabajo.update
+DELETE /grupos-trabajo/{grupoTrabajo}           -> grupos-trabajo.destroy
+POST   /grupos-trabajo/rendimiento              -> grupos-trabajo.rendimiento.store
+PUT    /grupos-trabajo/rendimiento/{asignacion} -> grupos-trabajo.rendimiento.update
+DELETE /grupos-trabajo/rendimiento/{asignacion} -> grupos-trabajo.rendimiento.destroy
+
+-- Lista Pendientes
+GET    /lista-pendientes                        -> lista-pendientes.index
+
+================================================================================
+6. RUTAS WEB - MODULO REPARTIDORES (repartidores.php)
+================================================================================
+
+GET    /repartidores                            -> repartidores.index
+POST   /repartidores                            -> repartidores.store
+GET    /repartidores/{repartidor}               -> repartidores.show
+PUT    /repartidores/{repartidor}               -> repartidores.update
+DELETE /repartidores/{repartidor}               -> repartidores.destroy
+
+================================================================================
+7. RUTAS WEB - ZONA REPARTIDOR (PWA / delivery)
+================================================================================
+
+GET    /repartidor/mapa                         -> repartidor.mapa
+POST   /repartidor/ubicacion                    -> repartidor.ubicacion
+POST   /repartidor/disponibilidad               -> repartidor.disponibilidad
+POST   /repartidor/pedidos/{pedido}/aceptar     -> repartidor.pedidos.aceptar
+POST   /repartidor/pedidos/{pedido}/recoger     -> repartidor.pedidos.recoger
+POST   /repartidor/pedidos/{pedido}/entregar    -> repartidor.pedidos.entregar
+POST   /repartidor/pedidos/{pedido}/rechazar    -> repartidor.pedidos.rechazar
+
+================================================================================
+8. RUTAS API (api.php)
+================================================================================
+-- Ver archivo routes/api.php para rutas de API REST (Sanctum, Delivery, etc.)
+-- Incluye: /api/v1/delivery/*, /api/v1/zones/*, /api/v1/driver/*, /api/v1/bot/*, etc.
+
+================================================================================
+9. RUTAS CONSOLE (console.php)
+================================================================================
+-- Comandos Artisan programados (schedule)
+-- Incluye: delivery:pool-timeout y otros comandos programados
+
+================================================================================
+10. RUTAS CANALES (channels.php)
+================================================================================
+-- Canales de broadcasting WebSocket/Reverb
+-- Incluye: delivery.{ownerId}.positions, delivery.{ownerId}.orders
+-- delivery.pool.{ownerId}, delivery.driver.{driverId}, etc.
+
+================================================================================
+11. MODULOS REQUERIDOS POR web.php (archivos adicionales)
+================================================================================
+-- routes/modules/crm.php
+-- routes/modules/ventas.php
+-- routes/modules/inventario.php
+-- routes/modules/mrp.php
+-- routes/modules/finanzas.php
+-- routes/modules/rrhh.php
+-- routes/modules/proyectos.php
+-- routes/modules/uptime.php
+-- routes/modules/lms.php
+-- routes/modules/raffles.php
+-- routes/modules/zonas-reparto.php
+
+================================================================================
+FIN DEL REGISTRO DE RUTAS
+================================================================================

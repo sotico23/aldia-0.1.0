@@ -145,6 +145,13 @@ class PosController extends Controller implements HasMiddleware
         $empleadoActual = $empleados->firstWhere('user_id', Auth::id());
         $puedeSeleccionarCajero = $this->puedeSeleccionarCajero();
 
+        // Si el usuario NO puede seleccionar cajero (rol operativo/restringido),
+        // solo exponemos su propio empleado en la lista para evitar
+        // filtrar/falsificar la identidad de otros cajeros.
+        if (! $puedeSeleccionarCajero && $empleadoActual) {
+            $empleados = $empleados->filter(fn ($e) => $e->id === $empleadoActual->id);
+        }
+
         return Inertia::render('Backend/Pos/Index', [
             'productos' => $productos,
             'clientes' => $clientes,
