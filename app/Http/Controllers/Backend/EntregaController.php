@@ -147,7 +147,7 @@ class EntregaController extends Controller implements HasMiddleware
             'vehiculo_id' => 'nullable|integer|exists:vehiculos,id',
             'conductor_id' => 'nullable|integer|exists:conductores,id',
             'repartidor_id' => 'nullable|integer|exists:repartidores,id',
-            'estado_asignacion' => ['required', 'string', 'in:asignado,libre'],
+            'estado_asignacion' => ['required', 'string', 'in:asignado,interno,libre'],
             'cliente' => 'nullable|string|max:255',
             'direccion' => 'nullable|string',
             'fecha_entrega' => 'nullable|date',
@@ -158,17 +158,25 @@ class EntregaController extends Controller implements HasMiddleware
         ]);
 
         // Lógica de modalidad de asignación
-        if ($validated['estado_asignacion'] === 'libre') {
+        $estadoAsignacion = $validated['estado_asignacion'];
+        // Normalizar 'interno' a 'asignado' para consistencia en BD
+        if ($estadoAsignacion === 'interno') {
+            $estadoAsignacion = 'asignado';
+        }
+
+        if ($estadoAsignacion === 'libre') {
             // Bolsa de ofertas: sin asignación fija
             $validated['repartidor_id'] = null;
             $validated['conductor_id'] = null;
-        } elseif ($validated['estado_asignacion'] === 'asignado') {
+        } elseif ($estadoAsignacion === 'asignado') {
             // Asignado: al menos uno de repartidor_id o conductor_id debe estar presente
             if (! $request->filled('repartidor_id') && ! $request->filled('conductor_id')) {
                 $validated['repartidor_id'] = null;
                 $validated['conductor_id'] = null;
             }
         }
+
+        $validated['estado_asignacion'] = $estadoAsignacion;
 
         $ownerId = Auth::user()->getOwnerId();
         $validated['owner_id'] = $ownerId;
@@ -193,7 +201,7 @@ class EntregaController extends Controller implements HasMiddleware
             'vehiculo_id' => 'nullable|integer',
             'conductor_id' => 'nullable|integer',
             'repartidor_id' => 'nullable|integer|exists:repartidores,id',
-            'estado_asignacion' => ['nullable', 'string', 'in:asignado,libre'],
+            'estado_asignacion' => ['nullable', 'string', 'in:asignado,interno,libre'],
             'cliente' => 'nullable|string|max:255',
             'direccion' => 'nullable|string',
             'fecha_entrega' => 'nullable|date',
@@ -204,14 +212,23 @@ class EntregaController extends Controller implements HasMiddleware
         ]);
 
         // Lógica de modalidad de asignación
-        if ($request->filled('estado_asignacion') && $validated['estado_asignacion'] === 'libre') {
+        $estadoAsignacion = $validated['estado_asignacion'] ?? null;
+        if ($estadoAsignacion === 'interno') {
+            $estadoAsignacion = 'asignado';
+        }
+
+        if ($request->filled('estado_asignacion') && $estadoAsignacion === 'libre') {
             $validated['repartidor_id'] = null;
             $validated['conductor_id'] = null;
-        } elseif ($request->filled('estado_asignacion') && $validated['estado_asignacion'] === 'asignado') {
+        } elseif ($request->filled('estado_asignacion') && $estadoAsignacion === 'asignado') {
             if (! $request->filled('repartidor_id') && ! $request->filled('conductor_id')) {
                 $validated['repartidor_id'] = null;
                 $validated['conductor_id'] = null;
             }
+        }
+
+        if ($estadoAsignacion !== null) {
+            $validated['estado_asignacion'] = $estadoAsignacion;
         }
 
         $estadoAnterior = $entrega->estado;

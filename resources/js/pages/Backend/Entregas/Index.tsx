@@ -1053,7 +1053,7 @@ export default function Index({
                                         <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
                                             Modalidad de Despacho
                                         </Label>
-                                        <div className="grid grid-cols-3 gap-1">
+                                        <div className="grid grid-cols-2 gap-1">
                                             <label
                                                 className={`cursor-pointer rounded-lg border p-3 text-center text-xs font-semibold transition-colors ${data.estado_asignacion === 'asignado' ? 'bg-primary/10 border-primary text-primary' : 'bg-muted border-muted text-muted-foreground hover:bg-muted/50'}`}
                                             onClick={() =>
@@ -1069,23 +1069,6 @@ export default function Index({
                                             </div>
                                             <p className="text-[10px]">
                                                 Chofer / Repartidor
-                                            </p>
-                                        </label>
-                                        <label
-                                            className={`cursor-pointer rounded-lg border p-3 text-center text-xs font-semibold transition-colors ${data.estado_asignacion === 'freelancer' ? 'bg-primary/10 border-primary text-primary' : 'bg-muted border-muted text-muted-foreground hover:bg-muted/50'}`}
-                                            onClick={() =>
-                                                setData(
-                                                    'estado_asignacion',
-                                                    'freelancer',
-                                                )
-                                            }
-                                        >
-                                            <div className="flex items-center justify-center gap-1.5 mb-1">
-                                                <User className="h-3 w-3" />
-                                                <span>Freelance</span>
-                                            </div>
-                                            <p className="text-[10px]">
-                                                Repartidor Externo
                                             </p>
                                         </label>
                                         <label
@@ -1106,7 +1089,10 @@ export default function Index({
                                             </p>
                                         </label>
                                     </div>
-                                    {data.estado_asignacion !== 'libre' && (
+                                    {(
+                                        data.estado_asignacion === 'asignado' ||
+                                        data.estado_asignacion === 'interno'
+                                    ) && (
                                         <div className="space-y-2">
                                             <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
                                                 Repartidor / Chofer
