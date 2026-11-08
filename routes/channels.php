@@ -90,6 +90,15 @@ Broadcast::channel('delivery.orders.{orderId}', function ($user, $orderId) {
     return (int) $user->id === (int) $orderId;
 });
 
+/**
+ * Canal de la bolsa de ofertas (pool) de entregas.
+ * Cualquier repartidor del mismo tenant puede suscribirse para recibir
+ * alertas en tiempo real cuando una entrega se libera al pool.
+ */
+Broadcast::channel('delivery.pool.{ownerId}', function ($user, $ownerId) {
+    return (int) $user->getOwnerId() === (int) $ownerId;
+});
+
 Broadcast::channel('chat.conversation.{id}', function ($user, $id) {
     $conversacion = Conversacion::find($id);
     if (! $conversacion) {

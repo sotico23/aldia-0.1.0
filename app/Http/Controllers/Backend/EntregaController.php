@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Backend;
 
+use App\Events\EntregaDisponiblePool;
 use App\Exports\EntregasExport;
 use App\Http\Controllers\Controller;
 use App\Imports\EntregasImport;
@@ -176,6 +177,11 @@ class EntregaController extends Controller implements HasMiddleware
 
         $this->syncItemsFromVenta($entrega, $ownerId);
 
+        // Emitir evento de entrega disponible en el pool (Bolsa de Ofertas)
+        if ($validated['estado_asignacion'] === 'libre') {
+            broadcast(new EntregaDisponiblePool($entrega, 'nuevo'));
+        }
+
         return redirect()->route('entregas.index');
     }
 
@@ -241,6 +247,13 @@ class EntregaController extends Controller implements HasMiddleware
                     }
                 }
             }
+        }
+
+        // Emitir evento de entrega disponible en el pool (Bolsa de Ofertas)
+        // cuando se cambia a modo libre en una actualización
+        if ($request->filled('estado_asignacion') && $validated['estado_asignacion'] === 'libre') {
+            $entrega->refresh();
+            broadcast(new EntregaDisponiblePool($entrega, 'liberado'));
         }
 
         return redirect()->route('entregas.index');
