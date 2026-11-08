@@ -83,7 +83,7 @@ Broadcast::channel('notifications.{userId}', function ($user, $userId) {
 });
 
 Broadcast::channel('delivery.driver.{driverId}', function ($user, $driverId) {
-    return (int) $user->repartidor?->id === (int) $driverId;
+    return (int) $user->id === (int) $driverId;
 });
 
 Broadcast::channel('delivery.orders.{orderId}', function ($user, $orderId) {
@@ -96,7 +96,14 @@ Broadcast::channel('delivery.orders.{orderId}', function ($user, $orderId) {
  * alertas en tiempo real cuando una entrega se libera al pool.
  */
 Broadcast::channel('delivery.pool.{ownerId}', function ($user, $ownerId) {
-    return (int) $user->getOwnerId() === (int) $ownerId;
+    if ((int) $user->getOwnerId() === (int) $ownerId) {
+        return true;
+    }
+    // Repartidores con rol o freelancers aprobados pueden suscribirse a la bolsa abierta
+    if ($user->hasRole('Repartidor') || ($user->driver_type ?? null) === 'freelancer') {
+        return true;
+    }
+    return false;
 });
 
 Broadcast::channel('chat.conversation.{id}', function ($user, $id) {

@@ -35,6 +35,14 @@ class EntregaDisponiblePool implements ShouldBroadcast
     }
 
     /**
+     * Nombre del evento para clientes Pusher / Reverb.
+     */
+    public function broadcastAs(): string
+    {
+        return 'delivery.pool.available';
+    }
+
+    /**
      * Datos que se difunden por el canal.
      */
     public function broadcastWith(): array

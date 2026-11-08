@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Events\EntregaDisponiblePool;
+use App\Events\EntregaAsignadaRepartidor;
 use App\Exports\EntregasExport;
 use App\Http\Controllers\Controller;
 use App\Imports\EntregasImport;
@@ -190,6 +191,12 @@ class EntregaController extends Controller implements HasMiddleware
             broadcast(new EntregaDisponiblePool($entrega, 'nuevo'));
         }
 
+        // Emitir evento de asignación directa a repartidor (modalidad Interno)
+        if ($validated['estado_asignacion'] === 'asignado' && $validated['repartidor_id']) {
+            $entrega->load('repartidor.user');
+            broadcast(new EntregaAsignadaRepartidor($entrega, 'asignado_directo'));
+        }
+
         return redirect()->route('entregas.index');
     }
 
@@ -271,6 +278,12 @@ class EntregaController extends Controller implements HasMiddleware
         if ($request->filled('estado_asignacion') && $validated['estado_asignacion'] === 'libre') {
             $entrega->refresh();
             broadcast(new EntregaDisponiblePool($entrega, 'liberado'));
+        }
+
+        // Emitir evento de asignación directa a repartidor (modalidad Interno)
+        if ($request->filled('estado_asignacion') && $estadoAsignacion === 'asignado' && $validated['repartidor_id']) {
+            $entrega->load('repartidor.user');
+            broadcast(new EntregaAsignadaRepartidor($entrega, 'actualizado_directo'));
         }
 
         return redirect()->route('entregas.index');

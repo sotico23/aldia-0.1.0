@@ -175,11 +175,29 @@ Route::prefix('v1/delivery')
         Route::get('orders', [DeliveryOrdenController::class, 'orders']);
 
         Route::post('orders/{pedido}/accept', [DeliveryOrdenController::class, 'accept']);
+        Route::post('orders/{pedido}/aceptar', [DeliveryOrdenController::class, 'accept']);
         Route::post('orders/{pedido}/pickup', [DeliveryOrdenController::class, 'pickup']);
+        Route::post('orders/{pedido}/recoger', [DeliveryOrdenController::class, 'pickup']);
         Route::post('orders/{pedido}/delivered', [DeliveryOrdenController::class, 'delivered']);
+        Route::post('orders/{pedido}/entregar', [DeliveryOrdenController::class, 'delivered']);
         Route::post('orders/{pedido}/reject', [DeliveryOrdenController::class, 'reject']);
+        Route::post('orders/{pedido}/rechazar', [DeliveryOrdenController::class, 'reject']);
         Route::post('orders/{pedido}/cancel', [DeliveryOrdenController::class, 'cancel']);
     });
+
+// Alias directos de repartidor para clientes móviles (compatibilidad /repartidor/pedidos/...)
+Route::middleware(['auth:sanctum', 'delivery', 'throttle:delivery'])->prefix('repartidor')->group(function () {
+    Route::post('pedidos/{pedido}/aceptar', [DeliveryOrdenController::class, 'accept']);
+    Route::post('pedidos/{pedido}/recoger', [DeliveryOrdenController::class, 'pickup']);
+    Route::post('pedidos/{pedido}/entregar', [DeliveryOrdenController::class, 'delivered']);
+    Route::post('pedidos/{pedido}/rechazar', [DeliveryOrdenController::class, 'reject']);
+    Route::post('disponibilidad', [DeliveryOrdenController::class, 'availability']);
+    Route::post('ubicacion', [DeliveryOrdenController::class, 'location']);
+});
+
+// Autenticación de canales privados WebSocket / Reverb con Sanctum PAT
+Route::match(['get', 'post'], 'broadcasting/auth', [Illuminate\Broadcasting\BroadcastController::class, 'authenticate'])
+    ->middleware(['auth:sanctum']);
 
 // API de Repartidor — modelo Uber/Rappi (Online/Offline + Ofertas)
 // /register y /status son públicos (el freelancer no tiene token aún al registrarse)
