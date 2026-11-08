@@ -20,6 +20,7 @@ class Entrega extends Model
         'grupo_trabajo_id',
         'vehiculo_id',
         'conductor_id',
+        'repartidor_id',
         'cliente_id',
         'cliente',
         'telefono',
@@ -53,6 +54,11 @@ class Entrega extends Model
     public function conductor(): BelongsTo
     {
         return $this->belongsTo(Conductor::class);
+    }
+
+    public function repartidor(): BelongsTo
+    {
+        return $this->belongsTo(Repartidor::class);
     }
 
     public function vehiculo(): BelongsTo

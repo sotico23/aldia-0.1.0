@@ -45,7 +45,9 @@ import Pagination from '@/components/ui/Pagination';
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
+    SelectSeparator,
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
@@ -65,11 +67,20 @@ interface EntregaItem {
     unidad_medida?: string;
 }
 
+interface Repartidor {
+    id: number;
+    nombre: string;
+    tipo: 'interno' | 'freelancer';
+    cargo: string;
+    estado: string;
+}
+
 interface Entrega {
     id: number;
     venta_id: number | null;
     vehiculo_id: number | null;
     conductor_id: number | null;
+    repartidor_id: number | null;
     cliente: string | null;
     direccion: string | null;
     fecha_entrega: string | null;
@@ -157,6 +168,7 @@ export default function Index({
     entregas: { data: Entrega[]; links: any[]; meta?: any; total: number };
     vehiculos: Vehiculo[];
     conductores: Conductor[];
+    repartidores: Repartidor[];
     clientes: Cliente[];
     ventas: Venta[];
     stats: { kg: number; litros: number; unidades: number };
@@ -191,6 +203,7 @@ export default function Index({
         grupo_trabajo_id: '',
         vehiculo_id: '',
         conductor_id: '',
+        repartidor_id: '',
         cliente: '',
         direccion: '',
         fecha_entrega: '',
@@ -317,6 +330,8 @@ export default function Index({
             venta_id: data.venta_id === '' ? null : data.venta_id,
             vehiculo_id: data.vehiculo_id === '' ? null : data.vehiculo_id,
             conductor_id: data.conductor_id === '' ? null : data.conductor_id,
+            repartidor_id:
+                data.repartidor_id === '' ? null : data.repartidor_id,
             grupo_trabajo_id:
                 data.grupo_trabajo_id === '' ? null : data.grupo_trabajo_id,
             productos_json: productosJson,
@@ -357,6 +372,7 @@ export default function Index({
             grupo_trabajo_id: (e as any).grupo_trabajo_id?.toString() || '',
             vehiculo_id: e.vehiculo_id?.toString() || '',
             conductor_id: e.conductor_id?.toString() || '',
+            repartidor_id: (e as any).repartidor_id?.toString() || '',
             cliente: e.cliente || '',
             direccion: e.direccion || '',
             fecha_entrega: datePart,
@@ -390,6 +406,7 @@ export default function Index({
             grupo_trabajo_id: '',
             vehiculo_id: '',
             conductor_id: '',
+            repartidor_id: '',
             cliente: '',
             direccion: '',
             fecha_entrega: '',
@@ -629,12 +646,22 @@ export default function Index({
                                         </SelectItem>
                                         {conductores.map((c) => (
                                             <SelectItem
-                                                key={c.id}
+                                                key={`cond-${c.id}`}
                                                 value={c.id.toString()}
                                             >
                                                 {c.nombre}
                                             </SelectItem>
                                         ))}
+                                        {repartidores
+                                            .filter((r) => r.tipo === 'freelancer')
+                                            .map((r) => (
+                                                <SelectItem
+                                                    key={`rep-${r.id}`}
+                                                    value={r.id.toString()}
+                                                >
+                                                    {r.nombre} (Freelancer)
+                                                </SelectItem>
+                                            ))}
                                     </SelectContent>
                                 </Select>
 
@@ -1017,29 +1044,96 @@ export default function Index({
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                            Conductor Responsable
+                                            Repartidor / Chofer
                                         </Label>
                                         <Select
-                                            value={data.conductor_id || ''}
-                                            onValueChange={(val) =>
-                                                setData('conductor_id', val)
+                                            value={
+                                                data.repartidor_id ||
+                                                data.conductor_id ||
+                                                ''
                                             }
+                                            onValueChange={(val) => {
+                                                const repartidor =
+                                                    repartidores.find(
+                                                        (r) =>
+                                                            r.id.toString() ===
+                                                            val,
+                                                    );
+                                                const conductor =
+                                                    conductores.find(
+                                                        (c) =>
+                                                            c.id.toString() ===
+                                                            val,
+                                                    );
+
+                                                if (repartidor) {
+                                                    setData('repartidor_id', val);
+                                                    setData('conductor_id', '');
+                                                } else if (conductor) {
+                                                    setData('conductor_id', val);
+                                                    setData('repartidor_id', '');
+                                                } else {
+                                                    setData('conductor_id', '');
+                                                    setData('repartidor_id', '');
+                                                }
+                                            }}
                                         >
                                             <SelectTrigger className="h-11 border-none bg-muted/30 focus-visible:ring-primary/20">
                                                 <div className="flex items-center gap-2">
                                                     <User className="h-4 w-4 text-muted-foreground" />
-                                                    <SelectValue placeholder="Asignar Conductor" />
+                                                    <SelectValue placeholder="Asignar Repartidor / Chofer" />
                                                 </div>
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {conductores.map((c) => (
-                                                    <SelectItem
-                                                        key={c.id}
-                                                        value={c.id.toString()}
-                                                    >
-                                                        {c.nombre}
-                                                    </SelectItem>
-                                                ))}
+                                                <SelectGroup>
+                                                    <SelectSeparator>Conductores</SelectSeparator>
+                                                    {conductores.map((c) => (
+                                                        <SelectItem
+                                                            key={`cond-${c.id}`}
+                                                            value={c.id.toString()}
+                                                        >
+                                                            {c.nombre}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectGroup>
+                                                <SelectGroup>
+                                                    <SelectSeparator>Repartidores Internos</SelectSeparator>
+                                                    {repartidores
+                                                        .filter(
+                                                            (r) =>
+                                                                r.tipo ===
+                                                                'interno',
+                                                        )
+                                                        .map((r) => (
+                                                            <SelectItem
+                                                                key={`rep-int-${r.id}`}
+                                                                value={
+                                                                    r.id.toString()
+                                                                }
+                                                            >
+                                                            {r.nombre} (Empleado)
+                                                            </SelectItem>
+                                                        ))}
+                                                </SelectGroup>
+                                                <SelectGroup>
+                                                    <SelectSeparator>Repartidores Freelancers</SelectSeparator>
+                                                    {repartidores
+                                                        .filter(
+                                                            (r) =>
+                                                                r.tipo ===
+                                                                'freelancer',
+                                                        )
+                                                        .map((r) => (
+                                                            <SelectItem
+                                                                key={`rep-freel-${r.id}`}
+                                                                value={
+                                                                    r.id.toString()
+                                                                }
+                                                            >
+                                                            {r.nombre} (Freelancer)
+                                                            </SelectItem>
+                                                        ))}
+                                                </SelectGroup>
                                             </SelectContent>
                                         </Select>
                                     </div>

@@ -165,7 +165,7 @@ export default function Index({
         telefono: '',
         direccion: '',
         comuna: '',
-        cargo: '',
+        cargo: null,
         departamento: '',
         almacen_id: '',
         fecha_contratacion: '',
@@ -297,7 +297,7 @@ export default function Index({
             estado_civil: emp.estado_civil || 'Soltero(a)',
             direccion: emp.direccion || '',
             comuna: emp.comuna || '',
-            cargo: emp.cargo || '',
+            cargo: emp.cargo ?? null,
             departamento: emp.departamento || '',
             fecha_contratacion: emp.fecha_contratacion || '',
             tipo_contrato: emp.tipo_contrato || 'Indefinido',
@@ -339,7 +339,7 @@ export default function Index({
             estado_civil: 'Soltero(a)',
             direccion: '',
             comuna: '',
-            cargo: '',
+            cargo: null,
             departamento: '',
             almacen_id: '',
             fecha_contratacion: '',
@@ -644,7 +644,7 @@ export default function Index({
                                                     </CardTitle>
                                                     <CardDescription className="truncate text-xs font-semibold text-primary/80">
                                                         {emp.cargo ||
-                                                            'Sin Cargo'}
+                                                            '-'}
                                                         {emp.almacen
                                                             ? ` • ${emp.almacen.nombre}`
                                                             : ''}
@@ -1032,15 +1032,37 @@ export default function Index({
                                         Contrato y Previsión (AFP/Salud)
                                     </h3>
                                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                        <FormInput
-                                            label="Cargo"
-                                            id="cargo"
-                                            value={data.cargo}
-                                            onChange={(e) =>
-                                                setData('cargo', e.target.value)
-                                            }
-                                            error={errors.cargo}
-                                        />
+                                        <div className="space-y-1.5">
+                                            <Label htmlFor="cargo">Cargo</Label>
+                                            <select
+                                                id="cargo"
+                                                value={data.cargo ?? ''}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'cargo',
+                                                        e.target.value === ''
+                                                            ? null
+                                                            : e.target.value,
+                                                    )
+                                                }
+                                                className="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                            >
+                                                <option value="">
+                                                    Sin cargo asignado
+                                                </option>
+                                                <option value="repartidor">
+                                                    Repartidor
+                                                </option>
+                                                <option value="cajero">
+                                                    Cajero
+                                                </option>
+                                            </select>
+                                            {errors.cargo && (
+                                                <p className="text-xs text-destructive">
+                                                    {errors.cargo}
+                                                </p>
+                                            )}
+                                        </div>
                                         <div className="space-y-1.5">
                                             <Label htmlFor="almacen_id">
                                                 Unidad / Depto

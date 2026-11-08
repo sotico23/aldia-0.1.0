@@ -39,7 +39,7 @@ class StoreEmpleadoRequest extends FormRequest
             'estado_civil' => ['nullable', 'string', 'max:50'],
             'direccion' => ['nullable', 'string'],
             'comuna' => ['nullable', 'string', 'max:100'],
-            'cargo' => ['nullable', 'string', 'max:100'],
+            'cargo' => ['nullable', 'string', 'max:100', Rule::in(['repartidor', 'cajero'])],
             'departamento' => ['nullable', 'string', 'max:100'],
             'almacen_id' => [
                 'nullable',

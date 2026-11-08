@@ -11,6 +11,7 @@ use App\Models\DeliveryRate;
 use App\Models\Entrega;
 use App\Models\GrupoTrabajo;
 use App\Models\Pedido;
+use App\Models\Repartidor;
 use App\Models\Vehiculo;
 use App\Models\Venta;
 use App\Scopes\OwnerScope;
@@ -73,6 +74,42 @@ class EntregaController extends Controller implements HasMiddleware
             ->orderBy('nombre')
             ->get();
 
+        // ── Repartidores unificados para asignación de entregas ──
+        // a) Repartidores empleados (internos) con cargo 'repartidor' y estado activo
+        $repartidoresInternos = Repartidor::where('owner_id', $ownerId)
+            ->where('driver_type', Repartidor::TYPE_EMPLOYEE)
+            ->where('estado', 'disponible')
+            ->whereHas('user.empleado', fn ($q) => $q->where('cargo', 'repartidor'))
+            ->with('user:id,name')
+            ->get()
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'nombre' => $r->user?->name ?? 'Sin nombre',
+                'tipo' => 'interno',
+                'cargo' => 'repartidor',
+                'estado' => $r->estado,
+            ]);
+
+        // b) Freelancers aprobados y disponibles
+        $repartidoresFreelancers = Repartidor::where('owner_id', $ownerId)
+            ->where('driver_type', Repartidor::TYPE_FREELANCER)
+            ->where('approval_status', Repartidor::APPROVAL_APPROVED)
+            ->where('estado', 'disponible')
+            ->with('user:id,name')
+            ->get()
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'nombre' => $r->user?->name ?? 'Sin nombre',
+                'tipo' => 'freelancer',
+                'cargo' => 'repartidor',
+                'estado' => $r->estado,
+            ]);
+
+        $repartidores = $repartidoresInternos
+            ->merge($repartidoresFreelancers)
+            ->values()
+            ->all();
+
         $driverId = $request->input('conductor_id');
         $stats = $this->statsService->getDriverStats($ownerId, $driverId);
 
@@ -92,6 +129,7 @@ class EntregaController extends Controller implements HasMiddleware
                 ]),
             'vehiculos' => $vehiculos,
             'conductores' => $conductores,
+            'repartidores' => $repartidores,
             'clientes' => $clientes,
             'ventas' => $ventas,
             'grupos_trabajo' => $gruposTrabajo,
@@ -107,6 +145,7 @@ class EntregaController extends Controller implements HasMiddleware
             'grupo_trabajo_id' => 'nullable|integer|exists:grupo_trabajos,id',
             'vehiculo_id' => 'nullable|integer|exists:vehiculos,id',
             'conductor_id' => 'nullable|integer|exists:conductores,id',
+            'repartidor_id' => 'nullable|integer|exists:repartidores,id',
             'cliente' => 'nullable|string|max:255',
             'direccion' => 'nullable|string',
             'fecha_entrega' => 'nullable|date',
@@ -133,6 +172,7 @@ class EntregaController extends Controller implements HasMiddleware
             'grupo_trabajo_id' => 'nullable|integer|exists:grupo_trabajos,id',
             'vehiculo_id' => 'nullable|integer',
             'conductor_id' => 'nullable|integer',
+            'repartidor_id' => 'nullable|integer|exists:repartidores,id',
             'cliente' => 'nullable|string|max:255',
             'direccion' => 'nullable|string',
             'fecha_entrega' => 'nullable|date',
