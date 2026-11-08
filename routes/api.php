@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\InternalAutomationSendController;
 use App\Http\Controllers\Api\TenantDataController;
 use App\Http\Controllers\Api\TrackingController;
 use App\Http\Controllers\Backend\GlobalSearchController;
+use App\Http\Controllers\Backend\RepartidorSolicitudesController;
 use App\Http\Controllers\Backend\SiiController;
 use App\Http\Controllers\Internal\N8nController;
 use App\Http\Controllers\Webhooks\TelegramWebhookController;
@@ -277,6 +278,23 @@ Route::prefix('tenant')->middleware(['verify-tenant-token', 'active', 'throttle:
 // Utilidades para agentes y clientes no-browser
 // -----------------------------------------------------------------------------
 //
+// OJO: las rutas se registran bajo el prefijo `v1/` a proposito. Laravel
+// indexa las rutas por metodo+URI, asi que registrar `api/global-search`
+// aqui SOBREESCRIBIRIA la ruta homonima del panel web (routes/web.php) y
+// esta quedara anulada. El prefijo `v1` evita la colision.
+
+// Admin: Gestión de solicitudes de repartidores
+Route::prefix('v1/admin/repartidores')
+    ->middleware(['auth:sanctum', 'throttle:60,1'])
+    ->group(function () {
+        Route::get('solicitudes', [RepartidorSolicitudesController::class, 'index'])
+            ->name('api.admin.repartidores.solicitudes');
+        Route::post('{id}/aprobar', [RepartidorSolicitudesController::class, 'aprobar'])
+            ->name('api.admin.repartidores.aprobar');
+        Route::post('{id}/rechazar', [RepartidorSolicitudesController::class, 'rechazar'])
+            ->name('api.admin.repartidores.rechazar');
+    });
+
 // OJO: las rutas se registran bajo el prefijo `v1/` a proposito. Laravel
 // indexa las rutas por metodo+URI, asi que registrar `api/global-search`
 // aqui SOBREESCRIBIRIA la ruta homonima del panel web (routes/web.php) y

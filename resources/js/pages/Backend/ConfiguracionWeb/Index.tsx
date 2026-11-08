@@ -42,6 +42,7 @@ const Gateways = lazy(() => import('./Gateways'));
 const Marketplace = lazy(() => import('./Marketplace'));
 const WebhooksPage = lazy(() => import('./Webhooks'));
 const FinancialAutomations = lazy(() => import('./FinancialAutomations'));
+const RepartidorSolicitudes = lazy(() => import('./RepartidorSolicitudes'));
 
 interface Caracteristica {
     icono: string;
@@ -872,6 +873,7 @@ export default function Index({
         { id: 'financial-automations', label: 'Auto. Financieras', icon: '⚡' },
         { id: 'countries', label: 'Países', icon: '🌎' },
         { id: 'logs', label: 'Logs', icon: '📋' },
+        { id: 'solicitudes-repartidores', label: 'Solicitudes Repartidores', icon: '🚚' },
         ...(isN8nAllowed ? [{ id: 'n8n', label: 'n8n', icon: '⚡' }] : []),
     ];
 
@@ -3042,6 +3044,10 @@ export default function Index({
                             </div>
                         )}
                     </form>
+
+                    {activeSection === 'solicitudes-repartidores' && (
+                        <RepartidorSolicitudes />
+                    )}
                 </div>
             </AppLayout>
         </>
