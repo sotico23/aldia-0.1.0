@@ -24,10 +24,12 @@ import {
     Calendar,
     TrendingUp,
     Wallet,
+    Camera,
 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
 import { Badge } from '@/components/ui/badge';
+import { BarcodeScannerDialog } from '@/components/ui/barcode-scanner-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -214,8 +216,7 @@ function buildSkuRows(
     };
 
     const combinations = cartesianProduct(valueSets);
-    const skuBase =
-        (baseSku || 'SKU').trim().replace(/\s+/g, '-') || 'SKU';
+    const skuBase = (baseSku || 'SKU').trim().replace(/\s+/g, '-') || 'SKU';
 
     return combinations.map((combo, i) => {
         const labels = combo.map((c) => c.varianteNombre + ': ' + c.valor);
@@ -300,6 +301,10 @@ export default function Index({
     const [newVariantValueInput, setNewVariantValueInput] = useState('');
     const [skuRows, setSkuRows] = useState<SkuRow[]>([]);
     const [skuSignature, setSkuSignature] = useState<string | null>(null);
+    const [scannerOpen, setScannerOpen] = useState(false);
+    const [scannerTarget, setScannerTarget] = useState<
+        number | 'codigo' | null
+    >(null);
 
     const {
         data,
@@ -900,6 +905,29 @@ export default function Index({
         );
     };
 
+    const openSkuScanner = (target: number | 'codigo') => {
+        setScannerTarget(target);
+        setScannerOpen(true);
+    };
+
+    const handleBarcodeDetected = (code: string) => {
+        const scannedCode = code.trim();
+
+        if (scannedCode === '') {
+            return;
+        }
+
+        if (scannerTarget === 'codigo') {
+            setData('codigo', scannedCode);
+
+            return;
+        }
+
+        if (typeof scannerTarget === 'number') {
+            updateSkuRow(scannerTarget, 'sku', scannedCode);
+        }
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Gestión de Productos e Inventario" />
@@ -1498,6 +1526,21 @@ export default function Index({
                                                         placeholder="Ej: PRO-001"
                                                         className="h-11 flex-1 border-none bg-muted/30 font-black focus-visible:ring-primary/20"
                                                     />
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="icon"
+                                                        className="h-11 w-11 shrink-0"
+                                                        aria-label="Escanear código SKU con la cámara"
+                                                        title="Escanear SKU con la cámara"
+                                                        onClick={() =>
+                                                            openSkuScanner(
+                                                                'codigo',
+                                                            )
+                                                        }
+                                                    >
+                                                        <Camera className="h-5 w-5" />
+                                                    </Button>
                                                 </div>
                                                 {errors.codigo && (
                                                     <p className="text-[10px] font-bold text-destructive">
@@ -2442,23 +2485,40 @@ export default function Index({
                                                                                     ),
                                                                                 )}
                                                                                 <td className="px-3 py-2">
-                                                                                    <Input
-                                                                                        value={
-                                                                                            row.sku
-                                                                                        }
-                                                                                        onChange={(
-                                                                                            e,
-                                                                                        ) =>
-                                                                                            updateSkuRow(
-                                                                                                i,
-                                                                                                'sku',
-                                                                                                e
-                                                                                                    .target
-                                                                                                    .value,
-                                                                                            )
-                                                                                        }
-                                                                                        className="h-7 w-28 border-none bg-emerald-50/50 font-mono text-[10px] font-bold"
-                                                                                    />
+                                                                                    <div className="flex items-center gap-1">
+                                                                                        <Input
+                                                                                            value={
+                                                                                                row.sku
+                                                                                            }
+                                                                                            onChange={(
+                                                                                                e,
+                                                                                            ) =>
+                                                                                                updateSkuRow(
+                                                                                                    i,
+                                                                                                    'sku',
+                                                                                                    e
+                                                                                                        .target
+                                                                                                        .value,
+                                                                                                )
+                                                                                            }
+                                                                                            className="h-7 w-28 border-none bg-emerald-50/50 font-mono text-[10px] font-bold"
+                                                                                        />
+                                                                                        <Button
+                                                                                            type="button"
+                                                                                            variant="ghost"
+                                                                                            size="icon"
+                                                                                            className="h-7 w-7 shrink-0"
+                                                                                            aria-label={`Escanear SKU de la variante ${row.labels.join(', ')}`}
+                                                                                            title="Escanear SKU con la cámara"
+                                                                                            onClick={() =>
+                                                                                                openSkuScanner(
+                                                                                                    i,
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            <Camera className="h-3.5 w-3.5" />
+                                                                                        </Button>
+                                                                                    </div>
                                                                                 </td>
                                                                                 <td className="px-3 py-2 text-right">
                                                                                     <Input
@@ -2757,6 +2817,24 @@ export default function Index({
                     </form>
                 </DialogContent>
             </Dialog>
+
+            <BarcodeScannerDialog
+                open={scannerOpen}
+                onOpenChange={(open) => {
+                    setScannerOpen(open);
+
+                    if (!open) {
+                        setScannerTarget(null);
+                    }
+                }}
+                onDetected={handleBarcodeDetected}
+                title={
+                    scannerTarget === 'codigo'
+                        ? 'Escanear SKU del producto'
+                        : 'Escanear SKU de la variante'
+                }
+                description="Centra el código de barras del SKU dentro del recuadro."
+            />
 
             {/* View Dialog */}
             <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>

@@ -68,6 +68,16 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => $webSettings['app_name'] ?? config('app.name', 'Al Dia'),
+            'client_config' => [
+                'app_name' => config('services.frontend.app_name', config('app.name', 'Laravel')),
+                'google_maps_api_key' => config('services.frontend.google_maps_api_key'),
+                'reverb' => [
+                    'key' => config('services.frontend.reverb.key', ''),
+                    'host' => config('services.frontend.reverb.host', ''),
+                    'port' => config('services.frontend.reverb.port', 8080),
+                    'scheme' => config('services.frontend.reverb.scheme', 'https'),
+                ],
+            ],
             'web_settings' => $webSettings,
             'auth' => ['user' => $authData],
             'country_settings' => $countrySettings,

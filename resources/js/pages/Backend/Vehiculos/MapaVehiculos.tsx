@@ -8,6 +8,7 @@ import { Loader2, Navigation, Gauge, Clock } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { clientConfig } from '@/lib/client-config';
 
 interface Vehiculo {
     id: number;
@@ -37,9 +38,13 @@ export default function MapaVehiculos({
 }: {
     vehiculos: Vehiculo[];
 }) {
+    const googleMapsApiKey =
+        clientConfig.google_maps_api_key ??
+        import.meta.env.VITE_GOOGLE_MAPS_API_KEY ??
+        '';
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+        googleMapsApiKey,
     });
 
     const [selected, setSelected] = useState<Vehiculo | null>(null);

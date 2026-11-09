@@ -185,6 +185,7 @@ class SystemSettingsPage extends Component
             $rules["values.{$key}"] = match ($field['type'] ?? 'text') {
                 'number' => ['nullable', 'integer', 'min:1', 'max:65535'],
                 'email' => ['nullable', 'email', 'max:255'],
+                'url' => ['nullable', 'url', 'max:2048'],
                 'select' => ['nullable', 'string', Rule::in(array_keys($field['options'] ?? []))],
                 default => ['nullable', 'string', 'max:2000'],
             };

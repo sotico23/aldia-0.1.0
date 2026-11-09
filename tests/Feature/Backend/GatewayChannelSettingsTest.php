@@ -1,9 +1,12 @@
 <?php
 
 use App\Models\SystemIntegration;
+use App\Models\Setting;
 use App\Models\User;
+use App\Support\SystemSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Spatie\Permission\Models\Permission;
 
@@ -29,6 +32,106 @@ test('gateway settings show includes official channel configuration without a ma
         ->assertJsonPath('data.telegram.has_bot_token', false)
         ->assertJsonPath('data.whatsapp.phone_number_id', '')
         ->assertJsonPath('data.whatsapp.has_access_token', false);
+});
+
+test('gateway settings expose service configuration without returning stored secrets', function () {
+    SystemSettings::save([
+        'REVERB_APP_SECRET' => [
+            'value' => 'reverb-secret-test',
+            'secret' => true,
+            'group' => 'reverb',
+        ],
+        'OPENROUTER_API_KEY' => [
+            'value' => 'openrouter-secret-test',
+            'secret' => true,
+            'group' => 'openrouter',
+        ],
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->getJson(route('configuracion-web.gateway-settings'));
+
+    $response->assertSuccessful()
+        ->assertJsonPath('data.system_settings.reverb.fields.REVERB_APP_SECRET.configured', true)
+        ->assertJsonPath('data.system_settings.sii.fields.SII_SEMILLA_URL.type', 'url')
+        ->assertJsonMissingPath('data.system_settings.reverb.fields.REVERB_APP_SECRET.value');
+
+    expect($response->getContent())
+        ->not->toContain('reverb-secret-test')
+        ->not->toContain('openrouter-secret-test');
+});
+
+test('gateway service settings can be updated and secrets are encrypted', function () {
+    $response = $this->actingAs($this->user)
+        ->putJson(route('configuracion-web.gateway-settings.services'), [
+            'values' => [
+                'REVERB_APP_ID' => 'app-test',
+                'REVERB_HOST' => 'reverb.example.test',
+                'REVERB_PORT' => '8081',
+                'REVERB_SCHEME' => 'http',
+                'REVERB_ALLOWED_ORIGINS' => 'app.example.test,admin.example.test',
+                'REVERB_SERVER_PORT' => '8081',
+                'SII_SEMILLA_URL' => 'https://sii.example.test/seed',
+                'AWS_USE_PATH_STYLE_ENDPOINT' => 'true',
+            ],
+            'secrets' => [
+                'REVERB_APP_SECRET' => 'reverb-secret-to-encrypt',
+                'OPENROUTER_API_KEY' => 'openrouter-secret-to-encrypt',
+            ],
+        ]);
+
+    $response->assertSuccessful()
+        ->assertJsonPath('success', true);
+
+    $storedSecret = Setting::query()->where('key', 'REVERB_APP_SECRET')->firstOrFail();
+    $rawSecret = DB::table('settings')->where('key', 'REVERB_APP_SECRET')->value('value');
+
+    expect($storedSecret->is_encrypted)->toBeTrue()
+        ->and($storedSecret->value)->toBe('reverb-secret-to-encrypt')
+        ->and($rawSecret)->not->toBe('reverb-secret-to-encrypt')
+        ->and(SystemSettings::get('OPENROUTER_API_KEY'))->toBe('openrouter-secret-to-encrypt')
+        ->and(config('broadcasting.connections.reverb.options.host'))->toBe('reverb.example.test')
+        ->and(config('broadcasting.connections.reverb.options.port'))->toBe(8081)
+        ->and(config('broadcasting.connections.reverb.options.useTLS'))->toBeFalse()
+        ->and(config('reverb.apps.apps.0.allowed_origins'))->toBe([
+            'app.example.test',
+            'admin.example.test',
+        ])
+        ->and(config('filesystems.disks.s3.use_path_style_endpoint'))->toBeTrue()
+        ->and(config('sii.urls.certificacion.semilla'))->toBe('https://sii.example.test/seed');
+});
+
+test('gateway service settings reject unknown fields and invalid service URLs', function () {
+    $this->actingAs($this->user)
+        ->putJson(route('configuracion-web.gateway-settings.services'), [
+            'values' => [
+                'SII_SEMILLA_URL' => 'javascript:alert(1)',
+                'UNSUPPORTED_SETTING' => 'unexpected',
+            ],
+            'secrets' => [],
+        ])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors([
+            'values',
+            'values.SII_SEMILLA_URL',
+        ]);
+});
+
+test('gateway service settings require edit permission', function () {
+    $userWithoutPermission = User::factory()->create();
+    $userWithoutPermission->givePermissionTo(
+        Permission::firstOrCreate([
+            'name' => 'admin.web-settings.viewAny',
+            'guard_name' => 'web',
+        ])
+    );
+
+    $this->actingAs($userWithoutPermission)
+        ->putJson(route('configuracion-web.gateway-settings.services'), [
+            'values' => [],
+            'secrets' => [],
+        ])
+        ->assertForbidden();
 });
 
 test('telegram official configuration can be saved and masks the token', function () {

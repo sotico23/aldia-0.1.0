@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import echo from '@/echo';
 import AppLayout from '@/layouts/app-layout';
+import { clientConfig } from '@/lib/client-config';
 
 // ============================================================================
 // ZONA DE REPARTIDORES - MAPA PWA DEL REPARTIDOR
@@ -72,9 +73,13 @@ export default function MapaRepartidor({
     pool,
     activos,
 }: Props) {
+    const googleMapsApiKey =
+        clientConfig.google_maps_api_key ??
+        import.meta.env.VITE_GOOGLE_MAPS_API_KEY ??
+        '';
     const { isLoaded } = useJsApiLoader({
         id: 'repartidor-map',
-        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+        googleMapsApiKey,
     });
 
     const [posicion, setPosicion] = useState<{

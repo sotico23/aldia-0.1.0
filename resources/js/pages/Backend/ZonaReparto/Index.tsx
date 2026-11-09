@@ -56,6 +56,7 @@ import {
 import echo from '@/echo';
 import AppLayout from '@/layouts/app-layout';
 import { comunasChile } from '@/lib/chile-communes';
+import { clientConfig } from '@/lib/client-config';
 
 const MAP_CENTER = { lat: -33.4489, lng: -70.6693 };
 
@@ -161,10 +162,14 @@ export default function Index({
     rendimiento,
     historial,
 }: Props) {
-    const mapConfigured = Boolean(import.meta.env.VITE_GOOGLE_MAPS_API_KEY);
+    const googleMapsApiKey =
+        clientConfig.google_maps_api_key ??
+        import.meta.env.VITE_GOOGLE_MAPS_API_KEY ??
+        '';
+    const mapConfigured = Boolean(googleMapsApiKey);
     const { isLoaded } = useJsApiLoader({
         id: 'zonas-reparto-map',
-        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? '',
+        googleMapsApiKey,
         libraries: ['drawing'],
     });
 
@@ -442,8 +447,7 @@ export default function Index({
                             </div>
                         )}
                         <div className="h-[400px] w-full sm:h-[480px]">
-                            {isLoaded &&
-                            import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? (
+                            {isLoaded && googleMapsApiKey ? (
                                 <GoogleMap
                                     mapContainerStyle={{
                                         width: '100%',
@@ -650,7 +654,9 @@ export default function Index({
                                                         ? `Radio de ${zona.radio_km ?? 0} km`
                                                         : zona.comunas
                                                               .filter(
-                                                                  (comuna) =>
+                                                                  (
+                                                                      comuna,
+                                                                  ) =>
                                                                       comuna.activa,
                                                               )
                                                               .map(
@@ -743,9 +749,7 @@ export default function Index({
                                                         <span className="flex max-w-sm flex-wrap gap-1">
                                                             {zona.comunas
                                                                 .filter(
-                                                                    (
-                                                                        comuna,
-                                                                    ) =>
+                                                                    (comuna) =>
                                                                         comuna.activa,
                                                                 )
                                                                 .map(

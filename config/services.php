@@ -88,6 +88,21 @@ return [
         'memory_window' => env('LLM_MEMORY_WINDOW', 20),
     ],
 
+    'openrouter' => [
+        'api_key' => env('OPENROUTER_API_KEY'),
+    ],
+
+    'frontend' => [
+        'app_name' => env('VITE_APP_NAME', env('APP_NAME', 'Laravel')),
+        'google_maps_api_key' => env('VITE_GOOGLE_MAPS_API_KEY'),
+        'reverb' => [
+            'key' => env('VITE_REVERB_APP_KEY', env('REVERB_APP_KEY')),
+            'host' => env('VITE_REVERB_HOST', env('REVERB_PUBLIC_HOST', env('REVERB_HOST'))),
+            'port' => env('VITE_REVERB_PORT', env('REVERB_PUBLIC_PORT', env('REVERB_PORT', 443))),
+            'scheme' => env('VITE_REVERB_SCHEME', env('REVERB_PUBLIC_SCHEME', env('REVERB_SCHEME', 'https'))),
+        ],
+    ],
+
     'currency' => [
         'clp_to_usd_rate' => env('CLP_TO_USD_RATE', 0.0011), // ~909 CLP per USD
     ],

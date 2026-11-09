@@ -155,13 +155,27 @@ class SystemSettings
             }
 
             foreach ((array) ($field['config'] ?? []) as $target) {
-                config([$target => $values[$key]]);
+                $value = $values[$key];
+
+                if (($field['cast'] ?? null) === 'boolean') {
+                    $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+                } elseif (($field['cast'] ?? null) === 'csv') {
+                    $value = array_values(array_filter(
+                        array_map('trim', explode(',', (string) $value)),
+                        fn (string $item): bool => $item !== '',
+                    ));
+                } elseif (($field['type'] ?? null) === 'number') {
+                    $value = (int) $value;
+                }
+
+                config([$target => $value]);
             }
         }
 
         if (isset($values['REVERB_SCHEME'])) {
             config([
                 'broadcasting.connections.reverb.options.useTLS' => $values['REVERB_SCHEME'] === 'https',
+                'reverb.apps.apps.0.options.useTLS' => $values['REVERB_SCHEME'] === 'https',
             ]);
         }
 

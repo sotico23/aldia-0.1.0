@@ -35,14 +35,14 @@ return [
 
     'urls' => [
         'certificacion' => [
-            'semilla' => 'https://maullin.sii.cl/DTEWS/CrSeed.jws',
-            'token' => 'https://maullin.sii.cl/DTEWS/GetTokenFromSeed.jws',
-            'envio_dte' => 'https://maullin.sii.cl/cgi_dte/UPL/DTEUpload',
+            'semilla' => env('SII_SEMILLA_URL', 'https://maullin.sii.cl/DTEWS/CrSeed.jws'),
+            'token' => env('SII_TOKEN_URL', 'https://maullin.sii.cl/DTEWS/GetTokenFromSeed.jws'),
+            'envio_dte' => env('SII_ENVIO_DTE_URL', 'https://maullin.sii.cl/cgi_dte/UPL/DTEUpload'),
         ],
         'produccion' => [
-            'semilla' => 'https://palena.sii.cl/DTEWS/CrSeed.jws',
-            'token' => 'https://palena.sii.cl/DTEWS/GetTokenFromSeed.jws',
-            'envio_dte' => 'https://palena.sii.cl/cgi_dte/UPL/DTEUpload',
+            'semilla' => env('SII_PROD_SEMILLA_URL', 'https://palena.sii.cl/DTEWS/CrSeed.jws'),
+            'token' => env('SII_PROD_TOKEN_URL', 'https://palena.sii.cl/DTEWS/GetTokenFromSeed.jws'),
+            'envio_dte' => env('SII_PROD_ENVIO_DTE_URL', 'https://palena.sii.cl/cgi_dte/UPL/DTEUpload'),
         ],
     ],
 

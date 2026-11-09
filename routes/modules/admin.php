@@ -38,6 +38,7 @@ Route::middleware(['permission:admin.web-settings.viewAny'])->group(function () 
         Route::put('configuracion-web/financial-settings', [FinancialSettingsController::class, 'update'])->name('configuracion-web.financial-settings.update');
 
         Route::get('configuracion-web/gateway-settings', [GatewaySettingsController::class, 'show'])->name('configuracion-web.gateway-settings');
+        Route::put('configuracion-web/gateway-settings/services', [GatewaySettingsController::class, 'updateServiceSettings'])->name('configuracion-web.gateway-settings.services');
         Route::put('configuracion-web/gateway-settings/webpay', [GatewaySettingsController::class, 'updateWebpay'])->name('configuracion-web.gateway-settings.webpay');
         Route::put('configuracion-web/gateway-settings/paypal', [GatewaySettingsController::class, 'updatePaypal'])->name('configuracion-web.gateway-settings.paypal');
         Route::put('configuracion-web/gateway-settings/mercadopago', [GatewaySettingsController::class, 'updateMercadopago'])->name('configuracion-web.gateway-settings.mercadopago');

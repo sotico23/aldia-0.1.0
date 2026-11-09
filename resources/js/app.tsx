@@ -5,12 +5,14 @@ import { createRoot } from 'react-dom/client';
 import { toast } from 'sonner';
 import '../css/app.css';
 import { initializeTheme } from './hooks/use-appearance';
+import { clientConfig } from './lib/client-config';
 import { applyWebThemeFromPageProps } from './lib/web-theme';
 
 createInertiaApp({
     title: (title) => {
         const dynamicAppName =
             (window as any).appName ||
+            clientConfig.app_name ||
             import.meta.env.VITE_APP_NAME ||
             'Laravel';
         return title ? `${title} - ${dynamicAppName}` : dynamicAppName;

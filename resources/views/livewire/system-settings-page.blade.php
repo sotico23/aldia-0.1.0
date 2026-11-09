@@ -35,7 +35,8 @@
 
     <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
         <strong class="font-semibold">Importante:</strong> los cambios de base de datos, Redis y Reverb se aplican en la
-        siguiente petición. Los valores de <code class="font-mono">VITE_*</code> requieren reconstruir el frontend.
+        siguiente petición. Los valores públicos de <code class="font-mono">VITE_*</code> se entregan dinámicamente
+        al navegador; recarga la página para aplicar los cambios. Reinicia los procesos de larga duración afectados.
     </div>
 
     <form wire:submit="save" class="space-y-6">

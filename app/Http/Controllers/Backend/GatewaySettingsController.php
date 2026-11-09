@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PaymentConfig;
 use App\Models\User;
 use App\Services\OfficialChannelService;
+use App\Support\SystemSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -14,9 +15,20 @@ use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class GatewaySettingsController extends Controller implements HasMiddleware
 {
+    private const SERVICE_SETTINGS_GROUPS = [
+        'app',
+        'redis',
+        'mail',
+        'aws',
+        'reverb',
+        'openrouter',
+        'sii',
+    ];
+
     public function __construct(protected OfficialChannelService $officialChannels) {}
 
     public static function middleware(): array
@@ -83,7 +95,79 @@ class GatewaySettingsController extends Controller implements HasMiddleware
                 ],
                 'telegram' => $this->officialChannels->telegramPayload(),
                 'whatsapp' => $this->officialChannels->whatsAppPayload(),
+                'system_settings' => $this->serviceSettingsPayload(),
             ],
+        ]);
+    }
+
+    public function updateServiceSettings(Request $request): JsonResponse
+    {
+        $fields = $this->serviceSettingsFields();
+        $valueKeys = [];
+        $secretKeys = [];
+
+        foreach ($fields as $key => $field) {
+            if ($field['secret'] ?? false) {
+                $secretKeys[] = $key;
+            } else {
+                $valueKeys[] = $key;
+            }
+        }
+
+        $rules = [
+            'values' => ['required', 'array:'.implode(',', $valueKeys)],
+            'secrets' => ['sometimes', 'array:'.implode(',', $secretKeys)],
+        ];
+
+        foreach ($fields as $key => $field) {
+            if ($field['secret'] ?? false) {
+                $rules["secrets.{$key}"] = ['nullable', 'string', 'max:4000'];
+
+                continue;
+            }
+
+            $rules["values.{$key}"] = match ($field['type'] ?? 'text') {
+                'number' => ['nullable', 'integer', 'min:1', 'max:65535'],
+                'email' => ['nullable', 'email', 'max:255'],
+                'url' => ['nullable', 'url', 'max:2048'],
+                'select' => ['nullable', 'string', Rule::in(array_keys($field['options'] ?? []))],
+                default => ['nullable', 'string', 'max:2000'],
+            };
+        }
+
+        $validated = $request->validate($rules);
+        $entries = [];
+
+        foreach ($fields as $key => $field) {
+            if ($field['secret'] ?? false) {
+                $secret = $validated['secrets'][$key] ?? null;
+
+                if (filled($secret)) {
+                    $entries[$key] = [
+                        'value' => $secret,
+                        'secret' => true,
+                        'group' => $field['group'],
+                    ];
+                }
+
+                continue;
+            }
+
+            if (array_key_exists($key, $validated['values'])) {
+                $entries[$key] = [
+                    'value' => $validated['values'][$key],
+                    'secret' => false,
+                    'group' => $field['group'],
+                ];
+            }
+        }
+
+        SystemSettings::save($entries);
+        SystemSettings::applyToConfig();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Configuración de servicios guardada correctamente.',
         ]);
     }
 
@@ -325,5 +409,69 @@ class GatewaySettingsController extends Controller implements HasMiddleware
 
             return false;
         }
+    }
+
+    /**
+     * @return array<string, array{label: string, description: string, fields: array<string, array<string, mixed>>}>
+     */
+    private function serviceSettingsPayload(): array
+    {
+        $stored = SystemSettings::values();
+        $groups = [];
+
+        foreach (self::SERVICE_SETTINGS_GROUPS as $groupId) {
+            $group = SystemSettings::groups()[$groupId] ?? null;
+
+            if ($group === null) {
+                continue;
+            }
+
+            $fields = [];
+
+            foreach ($group['fields'] as $key => $field) {
+                $isSecret = (bool) ($field['secret'] ?? false);
+                $fieldPayload = [
+                    'key' => $key,
+                    'label' => $field['label'] ?? $key,
+                    'type' => $field['type'] ?? 'text',
+                    'options' => $field['options'] ?? [],
+                    'help' => $field['help'] ?? null,
+                    'secret' => $isSecret,
+                    'configured' => $isSecret
+                        ? filled($stored[$key] ?? null) || SystemSettings::envHasValue($key)
+                        : null,
+                ];
+
+                if (! $isSecret) {
+                    $fieldPayload['value'] = (string) ($stored[$key] ?? $field['default'] ?? '');
+                }
+
+                $fields[$key] = $fieldPayload;
+            }
+
+            $groups[$groupId] = [
+                'label' => $group['label'] ?? $groupId,
+                'description' => $group['description'] ?? '',
+                'fields' => $fields,
+            ];
+        }
+
+        return $groups;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function serviceSettingsFields(): array
+    {
+        $fields = [];
+
+        foreach (self::SERVICE_SETTINGS_GROUPS as $groupId) {
+            foreach (SystemSettings::groups()[$groupId]['fields'] ?? [] as $key => $field) {
+                $fields[$key] = [...$field, 'group' => $groupId];
+            }
+        }
+
+        return $fields;
     }
 }

@@ -6,9 +6,14 @@ import {
     ChevronRight,
     CreditCard,
     KeyRound,
+    Settings2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import {
+    show as showGatewaySettings,
+    updateServiceSettings,
+} from '@/actions/App/Http/Controllers/Backend/GatewaySettingsController';
 import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -25,6 +30,23 @@ import OfficialChannels, {
     type TelegramConfig,
     type WhatsAppConfig,
 } from './OfficialChannels';
+
+type ServiceSettingField = {
+    key: string;
+    label: string;
+    type: string;
+    options: Record<string, string>;
+    help?: string | null;
+    secret: boolean;
+    configured?: boolean | null;
+    value?: string | null;
+};
+
+type ServiceSettingGroup = {
+    label: string;
+    description: string;
+    fields: Record<string, ServiceSettingField>;
+};
 
 type AccordionProps = {
     id: string;
@@ -104,10 +126,20 @@ export default function Gateways() {
 
     const [telegram, setTelegram] = useState<TelegramConfig>({});
     const [whatsapp, setWhatsapp] = useState<WhatsAppConfig>({});
+    const [serviceGroups, setServiceGroups] = useState<
+        Record<string, ServiceSettingGroup>
+    >({});
+    const [serviceValues, setServiceValues] = useState<Record<string, string>>(
+        {},
+    );
+    const [serviceSecrets, setServiceSecrets] = useState<
+        Record<string, string>
+    >({});
+    const [serviceSaving, setServiceSaving] = useState(false);
 
     useEffect(() => {
         axios
-            .get('/configuracion-web/gateway-settings')
+            .get(showGatewaySettings.url())
             .then((res) => {
                 const d = res.data.data;
                 setWebpay((prev) => ({ ...prev, ...d.webpay }));
@@ -115,6 +147,26 @@ export default function Gateways() {
                 setMercadopago((prev) => ({ ...prev, ...d.mercadopago }));
                 setTelegram(d.telegram ?? {});
                 setWhatsapp(d.whatsapp ?? {});
+                const groups = (d.system_settings?.groups ?? {}) as Record<
+                    string,
+                    ServiceSettingGroup
+                >;
+                const values: Record<string, string> = {};
+                const secrets: Record<string, string> = {};
+
+                Object.values(groups).forEach((group) => {
+                    Object.entries(group.fields).forEach(([key, field]) => {
+                        if (field.secret) {
+                            secrets[key] = '';
+                        } else {
+                            values[key] = field.value ?? '';
+                        }
+                    });
+                });
+
+                setServiceGroups(groups);
+                setServiceValues(values);
+                setServiceSecrets(secrets);
             })
             .catch(() => {
                 toast.error('Error al cargar configuración de gateways');
@@ -164,6 +216,47 @@ export default function Gateways() {
             toast.error(error.response?.data?.message || 'Error al guardar');
         } finally {
             setMercadopagoSaving(false);
+        }
+    };
+
+    const saveServiceSettings = async () => {
+        setServiceSaving(true);
+        try {
+            const res = await axios.put(updateServiceSettings.url(), {
+                values: serviceValues,
+                secrets: serviceSecrets,
+            });
+            toast.success(res.data.message || 'Configuración guardada');
+            setServiceSecrets(
+                Object.fromEntries(
+                    Object.keys(serviceSecrets).map((key) => [key, '']),
+                ),
+            );
+            setServiceGroups((previous) =>
+                Object.fromEntries(
+                    Object.entries(previous).map(([groupId, group]) => [
+                        groupId,
+                        {
+                            ...group,
+                            fields: Object.fromEntries(
+                                Object.entries(group.fields).map(
+                                    ([key, field]) => [
+                                        key,
+                                        field.secret &&
+                                        serviceSecrets[key]?.trim()
+                                            ? { ...field, configured: true }
+                                            : field,
+                                    ],
+                                ),
+                            ),
+                        },
+                    ]),
+                ),
+            );
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Error al guardar');
+        } finally {
+            setServiceSaving(false);
         }
     };
 
@@ -595,6 +688,171 @@ export default function Gateways() {
                             <Save className="h-4 w-4" />
                         )}
                         Guardar Configuración MercadoPago
+                    </Button>
+                </div>
+            </Accordion>
+
+            <Accordion
+                id="service-settings"
+                title="Servicios y credenciales"
+                icon={<Settings2 className="h-5 w-5" />}
+                expanded={expanded}
+                onToggle={setExpanded}
+            >
+                <div className="space-y-6 pt-4">
+                    <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
+                        Los secretos se guardan cifrados. Recarga la página
+                        después de cambiar valores que usa el navegador. Los
+                        cambios del servidor Reverb requieren reiniciar su
+                        proceso.
+                    </p>
+
+                    {Object.entries(serviceGroups).map(([groupId, group]) => (
+                        <section
+                            key={groupId}
+                            className="space-y-4 rounded-xl border p-4"
+                        >
+                            <div>
+                                <h3 className="font-semibold">{group.label}</h3>
+                                {group.description && (
+                                    <p className="text-sm text-muted-foreground">
+                                        {group.description}
+                                    </p>
+                                )}
+                            </div>
+                            <div className="grid gap-4 md:grid-cols-2">
+                                {Object.entries(group.fields).map(
+                                    ([key, field]) => (
+                                        <div key={key} className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <Label
+                                                    htmlFor={`setting-${key}`}
+                                                >
+                                                    {field.label}
+                                                </Label>
+                                                {field.secret &&
+                                                    field.configured && (
+                                                        <span className="text-xs text-emerald-600 dark:text-emerald-400">
+                                                            Configurado
+                                                        </span>
+                                                    )}
+                                            </div>
+                                            {field.type === 'select' ? (
+                                                <Select
+                                                    value={
+                                                        serviceValues[key] ?? ''
+                                                    }
+                                                    onValueChange={(value) =>
+                                                        setServiceValues(
+                                                            (previous) => ({
+                                                                ...previous,
+                                                                [key]: value,
+                                                            }),
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger
+                                                        id={`setting-${key}`}
+                                                    >
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {Object.entries(
+                                                            field.options,
+                                                        ).map(
+                                                            ([
+                                                                value,
+                                                                label,
+                                                            ]) => (
+                                                                <SelectItem
+                                                                    key={value}
+                                                                    value={
+                                                                        value
+                                                                    }
+                                                                >
+                                                                    {label}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                            ) : (
+                                                <Input
+                                                    id={`setting-${key}`}
+                                                    type={
+                                                        field.secret
+                                                            ? 'password'
+                                                            : field.type ===
+                                                                'number'
+                                                              ? 'number'
+                                                              : field.type ===
+                                                                  'url'
+                                                                ? 'url'
+                                                                : 'text'
+                                                    }
+                                                    value={
+                                                        field.secret
+                                                            ? (serviceSecrets[
+                                                                  key
+                                                              ] ?? '')
+                                                            : (serviceValues[
+                                                                  key
+                                                              ] ?? '')
+                                                    }
+                                                    autoComplete={
+                                                        field.secret
+                                                            ? 'new-password'
+                                                            : undefined
+                                                    }
+                                                    placeholder={
+                                                        field.secret
+                                                            ? field.configured
+                                                                ? '•••••••• (guardado)'
+                                                                : 'Sin configurar'
+                                                            : undefined
+                                                    }
+                                                    onChange={(event) => {
+                                                        const setter =
+                                                            field.secret
+                                                                ? setServiceSecrets
+                                                                : setServiceValues;
+                                                        setter((previous) => ({
+                                                            ...previous,
+                                                            [key]: event.target
+                                                                .value,
+                                                        }));
+                                                    }}
+                                                />
+                                            )}
+                                            {field.help && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    {field.help}
+                                                </p>
+                                            )}
+                                            {field.secret && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    Deja el campo vacío para
+                                                    conservar el valor actual.
+                                                </p>
+                                            )}
+                                        </div>
+                                    ),
+                                )}
+                            </div>
+                        </section>
+                    ))}
+
+                    <Button
+                        onClick={saveServiceSettings}
+                        disabled={serviceSaving}
+                        className="gap-2"
+                    >
+                        {serviceSaving ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Save className="h-4 w-4" />
+                        )}
+                        Guardar servicios y credenciales
                     </Button>
                 </div>
             </Accordion>
