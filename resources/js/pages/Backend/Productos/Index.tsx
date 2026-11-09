@@ -1,4 +1,5 @@
 import { Head, useForm, router } from '@inertiajs/react';
+import axios from 'axios';
 import {
     Check,
     Pencil,
@@ -26,7 +27,9 @@ import {
     Wallet,
     Camera,
 } from 'lucide-react';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { toast } from 'sonner';
+import lookupProductByBarcode from '@/actions/App/Http/Controllers/Backend/ProductoBarcodeController';
 import { BulkActions } from '@/components/shared/BulkActions';
 import { Badge } from '@/components/ui/badge';
 import { BarcodeScannerDialog } from '@/components/ui/barcode-scanner-dialog';
@@ -138,6 +141,20 @@ interface Producto {
             };
         }[];
     }[];
+}
+
+interface BarcodeProductData {
+    nombre: string | null;
+    marca: string | null;
+    categoria: string | null;
+    imagen: string | null;
+    formato: string | null;
+}
+
+interface BarcodeLookupResponse {
+    encontrado: boolean;
+    origen: 'base_datos' | 'api_externa';
+    datos: BarcodeProductData | null;
 }
 
 const PRODUCT_IMAGE_KEYS = [
@@ -305,6 +322,10 @@ export default function Index({
     const [scannerTarget, setScannerTarget] = useState<
         number | 'codigo' | null
     >(null);
+    const [barcodeLookupLoading, setBarcodeLookupLoading] = useState(false);
+    const [barcodeProduct, setBarcodeProduct] =
+        useState<BarcodeProductData | null>(null);
+    const barcodeLookupRequest = useRef(0);
 
     const {
         data,
@@ -341,6 +362,92 @@ export default function Index({
         tiene_variantes: false,
         variantes: [] as any[],
     });
+
+    const lookupBarcode = async (rawCode: string) => {
+        const code = rawCode.trim();
+        const requestId = ++barcodeLookupRequest.current;
+
+        if (!/^(?:\d{8}|\d{12,14})$/.test(code) || editando) {
+            setBarcodeLookupLoading(false);
+            return;
+        }
+
+        setBarcodeLookupLoading(true);
+        setBarcodeProduct(null);
+
+        try {
+            const response = await axios.get<BarcodeLookupResponse>(
+                lookupProductByBarcode.url({ ean: code }),
+            );
+            const result = response.data;
+
+            if (requestId !== barcodeLookupRequest.current) {
+                return;
+            }
+
+            if (!result.encontrado || !result.datos) {
+                toast.info('No se encontró información para este código.');
+                return;
+            }
+
+            const product = result.datos;
+            setBarcodeProduct(product);
+
+            if (product.nombre) {
+                setData('nombre', product.nombre);
+            }
+
+            if (!data.descripcion.trim()) {
+                const description = [
+                    product.marca ? `Marca: ${product.marca}` : null,
+                    product.categoria
+                        ? `Categoría: ${product.categoria}`
+                        : null,
+                    product.formato ? `Formato: ${product.formato}` : null,
+                ]
+                    .filter(Boolean)
+                    .join(' | ');
+
+                if (description) {
+                    setData('descripcion', description);
+                }
+            }
+
+            if (product.categoria) {
+                const matchingCategory = categorias.find(
+                    (category) =>
+                        category.nombre.trim().toLocaleLowerCase() ===
+                        product.categoria?.trim().toLocaleLowerCase(),
+                );
+
+                if (matchingCategory) {
+                    setData('categoria_id', matchingCategory.id.toString());
+                }
+            }
+
+            toast.success(
+                result.origen === 'base_datos'
+                    ? 'Datos cargados desde tus productos.'
+                    : 'Datos encontrados en Open Food Facts. Revísalos antes de guardar.',
+            );
+        } catch (error) {
+            if (requestId !== barcodeLookupRequest.current) {
+                return;
+            }
+
+            if (axios.isAxiosError(error) && error.response?.status === 404) {
+                toast.info('No se encontró información para este código.');
+            } else {
+                toast.error(
+                    'No se pudo consultar Open Food Facts. Puedes completar el producto manualmente.',
+                );
+            }
+        } finally {
+            if (requestId === barcodeLookupRequest.current) {
+                setBarcodeLookupLoading(false);
+            }
+        }
+    };
 
     const getSelectedVariants = useMemo(() => {
         return variantesDisponibles.filter((v) =>
@@ -919,6 +1026,8 @@ export default function Index({
 
         if (scannerTarget === 'codigo') {
             setData('codigo', scannedCode);
+            setBarcodeProduct(null);
+            void lookupBarcode(scannedCode);
 
             return;
         }
@@ -1517,10 +1626,22 @@ export default function Index({
                                                 <div className="flex gap-2">
                                                     <Input
                                                         value={data.codigo}
-                                                        onChange={(e) =>
+                                                        onChange={(e) => {
                                                             setData(
                                                                 'codigo',
                                                                 e.target.value,
+                                                            );
+                                                            setBarcodeProduct(
+                                                                null,
+                                                            );
+                                                            barcodeLookupRequest.current += 1;
+                                                            setBarcodeLookupLoading(
+                                                                false,
+                                                            );
+                                                        }}
+                                                        onBlur={() =>
+                                                            void lookupBarcode(
+                                                                data.codigo,
                                                             )
                                                         }
                                                         placeholder="Ej: PRO-001"
@@ -1546,6 +1667,65 @@ export default function Index({
                                                     <p className="text-[10px] font-bold text-destructive">
                                                         {errors.codigo}
                                                     </p>
+                                                )}
+                                                <p className="text-xs text-muted-foreground">
+                                                    Ingresa un UPC/EAN o
+                                                    escanéalo para buscar datos
+                                                    del producto.
+                                                </p>
+                                                {barcodeLookupLoading && (
+                                                    <p
+                                                        className="text-xs text-muted-foreground"
+                                                        role="status"
+                                                    >
+                                                        Buscando producto...
+                                                    </p>
+                                                )}
+                                                {barcodeProduct && (
+                                                    <div className="flex items-start gap-3 rounded-lg border bg-background p-3">
+                                                        {barcodeProduct.imagen && (
+                                                            <img
+                                                                src={
+                                                                    barcodeProduct.imagen
+                                                                }
+                                                                alt={
+                                                                    barcodeProduct.nombre ??
+                                                                    'Producto encontrado'
+                                                                }
+                                                                className="h-16 w-16 rounded object-contain"
+                                                                loading="lazy"
+                                                            />
+                                                        )}
+                                                        <div className="min-w-0 text-sm">
+                                                            <p className="font-semibold">
+                                                                Datos sugeridos
+                                                            </p>
+                                                            {barcodeProduct.marca && (
+                                                                <p>
+                                                                    Marca:{' '}
+                                                                    {
+                                                                        barcodeProduct.marca
+                                                                    }
+                                                                </p>
+                                                            )}
+                                                            {barcodeProduct.categoria && (
+                                                                <p>
+                                                                    Categoría:{' '}
+                                                                    {
+                                                                        barcodeProduct.categoria
+                                                                    }
+                                                                </p>
+                                                            )}
+                                                            {barcodeProduct.formato && (
+                                                                <p>
+                                                                    Formato:{' '}
+                                                                    {
+                                                                        barcodeProduct.formato
+                                                                    }
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 )}
                                             </div>
                                             <div className="space-y-2">
