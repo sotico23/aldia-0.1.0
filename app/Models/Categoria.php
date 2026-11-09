@@ -12,6 +12,18 @@ class Categoria extends Model
 {
     use BelongsToOwner, HasFactory;
 
+    /**
+     * Tipos de categoría conocidos por el sistema.
+     *
+     * @var array<string, string>
+     */
+    public const TIPOS = [
+        'producto' => 'Producto',
+        'cliente' => 'Cliente',
+        'proveedor' => 'Proveedor',
+        'servicio' => 'Servicio',
+    ];
+
     protected $fillable = [
         'user_id',
         'owner_id',

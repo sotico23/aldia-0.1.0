@@ -14,6 +14,8 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -54,24 +56,75 @@ class CategoriaController extends Controller implements HasMiddleware
                 ->update(['public_profile_id' => $publicProfile->id]);
         }
 
-        $query = Categoria::where('owner_id', $ownerId);
+        $query = Categoria::query()->where('owner_id', $ownerId);
 
         if ($request->filled('search')) {
             $search = SearchHelper::escapeLike($request->input('search'));
-            $query->where('nombre', 'like', "%{$search}%")
-                ->orWhere('id', 'like', "%{$search}%");
+            $query->where(function ($query) use ($search) {
+                $query->where('nombre', 'like', "%{$search}%")
+                    ->orWhere('descripcion', 'like', "%{$search}%")
+                    ->orWhere('id', 'like', "%{$search}%");
+            });
         }
 
         if ($request->filled('tipo')) {
             $query->where('tipo', $request->input('tipo'));
         }
 
-        $categorias = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+        $marketplace = $request->input('marketplace');
+
+        if ($marketplace === '1') {
+            $query->where('mostrar_en_perfil', true)
+                ->whereNotNull('public_profile_id');
+        } elseif ($marketplace === '0') {
+            $query->where(function ($query) {
+                $query->where('mostrar_en_perfil', false)
+                    ->orWhereNull('public_profile_id');
+            });
+        }
+
+        $categorias = $query->orderBy('nombre')->get();
+
+        $ordenTipos = array_flip(array_keys(Categoria::TIPOS));
+
+        $categoriasPorTipo = $categorias
+            ->groupBy('tipo')
+            ->sortBy(fn ($items, $tipo) => [$ordenTipos[$tipo] ?? 999, $tipo])
+            ->map(fn ($items, $tipo) => [
+                'tipo' => $tipo,
+                'label' => Str::headline($tipo),
+                'total' => $items->count(),
+                'activas' => $items->where('activo', true)->count(),
+                'marketplace' => $items
+                    ->filter(fn (Categoria $categoria) => $categoria->mostrar_en_perfil && $categoria->public_profile_id !== null)
+                    ->count(),
+                'data' => $items->values(),
+            ])
+            ->values();
+
+        $tiposDisponibles = collect(array_keys(Categoria::TIPOS))
+            ->merge(Categoria::where('owner_id', $ownerId)->distinct()->pluck('tipo'))
+            ->filter()
+            ->unique()
+            ->values()
+            ->map(fn (string $tipo) => [
+                'value' => $tipo,
+                'label' => Str::headline($tipo),
+            ]);
 
         return Inertia::render('Backend/Categorias/Index', [
-            'categorias' => $categorias,
+            'categoriasPorTipo' => $categoriasPorTipo,
+            'tiposDisponibles' => $tiposDisponibles,
+            'resumen' => [
+                'total' => $categorias->count(),
+                'activas' => $categorias->where('activo', true)->count(),
+                'marketplace' => $categorias
+                    ->filter(fn (Categoria $categoria) => $categoria->mostrar_en_perfil && $categoria->public_profile_id !== null)
+                    ->count(),
+                'tipos' => $categoriasPorTipo->count(),
+            ],
             'tiendaSlug' => $publicProfile?->slug,
-            'filters' => $request->only(['search', 'tipo']),
+            'filters' => $request->only(['search', 'tipo', 'marketplace']),
         ]);
     }
 
@@ -80,7 +133,7 @@ class CategoriaController extends Controller implements HasMiddleware
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
-            'tipo' => 'required|in:producto,cliente,proveedor,servicio',
+            'tipo' => ['required', Rule::in(array_keys(Categoria::TIPOS))],
             'activo' => 'boolean',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
             'mostrar_en_perfil' => 'boolean',
@@ -114,7 +167,7 @@ class CategoriaController extends Controller implements HasMiddleware
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
-            'tipo' => 'required|in:producto,cliente,proveedor,servicio',
+            'tipo' => ['required', Rule::in(array_keys(Categoria::TIPOS))],
             'activo' => 'boolean',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
             'mostrar_en_perfil' => 'boolean',
