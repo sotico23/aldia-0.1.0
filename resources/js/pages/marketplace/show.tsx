@@ -23,6 +23,7 @@ import {
     Trash2,
     Package,
     Tag,
+    ExternalLink,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -56,6 +57,7 @@ import {
     SheetHeader,
     SheetTitle,
     SheetTrigger,
+    SheetFooter,
 } from '@/components/ui/sheet';
 import {
     Tooltip,
@@ -220,6 +222,10 @@ export default function MarketplaceShow({
     );
     const [carritoAbierto, setCarritoAbierto] = useState(false);
     const [checkoutAbierto, setCheckoutAbierto] = useState(false);
+    const [catalogoAbierto, setCatalogoAbierto] = useState(false);
+
+    // Cantidad de productos mostrados en la vista previa del catálogo principal
+    const PRODUCTOS_VISTA_PREVIA = 8;
     const [productoDetalle, setProductoDetalle] = useState<Producto | null>(
         null,
     );
@@ -1050,13 +1056,53 @@ export default function MarketplaceShow({
                     <div className="flex-1 space-y-4">
                         {tabActivo === 'productos' && (
                             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                                <h2 className="mb-4 text-lg font-bold text-slate-900">
-                                    Catálogo de Productos
-                                </h2>
-                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    {store.productos.map((p) => (
-                                        <ProductCard key={p.id} producto={p} />
-                                    ))}
+                                <div className="flex flex-col gap-4">
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="text-lg font-bold text-slate-900">
+                                            Catálogo de Productos
+                                        </h2>
+                                        {store.productos.length >
+                                            PRODUCTOS_VISTA_PREVIA && (
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                onClick={() =>
+                                                    setCatalogoAbierto(true)
+                                                }
+                                                className="flex items-center gap-1.5 text-sm font-semibold transition-colors hover:bg-primary/50"
+                                            >
+                                                Ver todos los productos
+                                                <ExternalLink className="h-3 w-3" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                    {/* Vista previa limitada con altura controlada y scroll */}
+                                    <div
+                                        className={cn(
+                                            'grid gap-4 sm:grid-cols-2 lg:grid-cols-3',
+                                            store.productos.length >
+                                                PRODUCTOS_VISTA_PREVIA
+                                                ? 'custom-scrollbar max-h-[520px] overflow-y-auto pr-2'
+                                                : '',
+                                        )}
+                                    >
+                                        {store.productos
+                                            .slice(0, PRODUCTOS_VISTA_PREVIA)
+                                            .map((p) => (
+                                                <ProductCard
+                                                    key={p.id}
+                                                    producto={p}
+                                                />
+                                            ))}
+                                        {store.productos.length === 0 && (
+                                            <div className="col-span-full py-8 text-center text-slate-400">
+                                                <Package className="mx-auto mb-3 h-10 w-10 opacity-50" />
+                                                <p className="text-sm">
+                                                    No hay productos disponibles
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -2117,6 +2163,64 @@ export default function MarketplaceShow({
                                                     </DialogContent>
                                                 </Dialog>
                                             </div>
+                                        </SheetContent>
+                                    </Sheet>
+                                    {/* Sheet: Catálogo completo ("Ver todos los productos") */}
+                                    <Sheet
+                                        open={catalogoAbierto}
+                                        onOpenChange={setCatalogoAbierto}
+                                    >
+                                        <SheetTrigger asChild>
+                                            <button
+                                                type="button"
+                                                className="hidden"
+                                            />
+                                        </SheetTrigger>
+                                        <SheetContent className="rounded-xl border border-slate-200 bg-white shadow-xl sm:max-w-[720px]">
+                                            <SheetHeader className="flex items-center justify-between border-b pb-4">
+                                                <SheetTitle className="text-lg font-bold text-slate-900">
+                                                    Catálogo Completo
+                                                </SheetTitle>
+                                                <p className="text-xs text-slate-500">
+                                                    {store.productos.length}{' '}
+                                                    productos disponibles
+                                                </p>
+                                            </SheetHeader>
+                                            <div className="p-4">
+                                                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                                    {store.productos.map(
+                                                        (p) => (
+                                                            <ProductCard
+                                                                key={p.id}
+                                                                producto={p}
+                                                            />
+                                                        ),
+                                                    )}
+                                                    {store.productos.length ===
+                                                        0 && (
+                                                        <div className="col-span-full py-8 text-center text-slate-400">
+                                                            <Package className="mx-auto mb-3 h-10 w-10 opacity-50" />
+                                                            <p className="text-sm">
+                                                                No hay productos
+                                                                disponibles
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <SheetFooter className="border-t pt-3">
+                                                <Button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setCatalogoAbierto(
+                                                            false,
+                                                        )
+                                                    }
+                                                    className="w-full"
+                                                >
+                                                    Ver menos
+                                                </Button>
+                                            </SheetFooter>
                                         </SheetContent>
                                     </Sheet>
                                 </div>

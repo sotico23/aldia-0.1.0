@@ -22,7 +22,9 @@ import {
     ChevronDown,
     ArrowUpDown,
     MessageCircle,
+    Tags,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useState, useMemo, useRef } from 'react';
 import {
     BarChart,
@@ -37,6 +39,9 @@ import {
     Cell,
 } from 'recharts';
 import { toast } from 'sonner';
+import { SectionPanel } from '@/components/shared/SectionPanel';
+import type { PanelTone } from '@/components/shared/SectionPanel';
+import { TruncatedText } from '@/components/shared/TruncatedText';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -70,6 +75,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { WhatsAppButton } from '@/components/whatsapp-button';
 import { useCountry } from '@/hooks/use-country';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -140,6 +146,12 @@ interface Venta {
     }[];
     currency?: string;
 }
+
+const ESTADO_META: Record<string, { tone: PanelTone; icon: LucideIcon }> = {
+    pendiente: { tone: 'amber', icon: Clock },
+    pagada: { tone: 'emerald', icon: Check },
+    cancelada: { tone: 'rose', icon: X },
+};
 
 function generateRandomInvoice(): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -271,6 +283,36 @@ export default function Index({
             return 0;
         });
     }, [ventas, filtros, sortColumn, sortDirection]);
+
+    const gruposPorEstado = useMemo(() => {
+        const agrupados = ventasFiltradas.reduce<Record<string, Venta[]>>(
+            (acc, venta) => {
+                (acc[venta.estado] ??= []).push(venta);
+
+                return acc;
+            },
+            {},
+        );
+
+        return Object.entries(agrupados).map(([estado, data]) => {
+            const meta = ESTADO_META[estado] ?? {
+                tone: 'slate' as PanelTone,
+                icon: Tags,
+            };
+
+            return {
+                estado,
+                label: estado.charAt(0).toUpperCase() + estado.slice(1),
+                tone: meta.tone,
+                icon: meta.icon,
+                data,
+                total: data.reduce(
+                    (sum, venta) => sum + Number(venta.total),
+                    0,
+                ),
+            };
+        });
+    }, [ventasFiltradas]);
 
     const monthlyData = ventasPorMes;
     const weeklyData = ventasPorSemana;
@@ -716,1254 +758,1473 @@ export default function Index({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Ventas" />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold">Ventas</h1>
-                    <div className="flex gap-2">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="gap-2">
-                                    <Download className="h-4 w-4" />
-                                    Herramientas
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56">
-                                <DropdownMenuItem
-                                    onClick={handleExportCsv}
-                                    className="gap-2"
+            <TooltipProvider delayDuration={200}>
+                <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+                    <div className="flex items-center justify-between">
+                        <h1 className="text-2xl font-bold">Ventas</h1>
+                        <div className="flex gap-2">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="gap-2">
+                                        <Download className="h-4 w-4" />
+                                        Herramientas
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                    align="end"
+                                    className="w-56"
                                 >
-                                    <Download className="h-4 w-4 text-green-500" />
-                                    Exportar CSV
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={handleExportExcel}
-                                    className="gap-2"
-                                >
-                                    <Download className="h-4 w-4 text-emerald-500" />
-                                    Exportar Excel
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() => csvInputRef.current?.click()}
-                                    className="cursor-pointer gap-2"
-                                >
-                                    <Upload className="h-4 w-4 text-orange-500" />
-                                    Importar CSV
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() =>
-                                        excelInputRef.current?.click()
-                                    }
-                                    className="cursor-pointer gap-2"
-                                >
-                                    <Upload className="h-4 w-4 text-purple-500" />
-                                    Importar Excel
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        {canCreate && (
-                            <Button
-                                onClick={() => {
-                                    setEditando(null);
-                                    reset();
-                                    setData('productos', []);
-                                    setIsOpen(true);
-                                }}
-                            >
-                                <Plus className="mr-2 h-4 w-4" />
-                                Nueva Venta
-                            </Button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Hidden file inputs for import (moved outside DropdownMenu) */}
-                <input
-                    type="file"
-                    ref={csvInputRef}
-                    className="hidden"
-                    accept=".csv"
-                    onChange={(e) => handleImportCsv(e, false)}
-                />
-                <input
-                    type="file"
-                    ref={excelInputRef}
-                    className="hidden"
-                    accept=".xlsx,.xls"
-                    onChange={(e) => handleImportCsv(e, true)}
-                />
-
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="text-sm font-medium">
-                                    {chartMode === 'monthly'
-                                        ? 'Ventas por Mes'
-                                        : chartMode === 'weekly'
-                                          ? 'Ventas por Semana'
-                                          : 'Ventas por Día'}
-                                </CardTitle>
-                                <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">
-                                    <button
-                                        onClick={() => setChartMode('daily')}
-                                        className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${chartMode === 'daily' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                    <DropdownMenuItem
+                                        onClick={handleExportCsv}
+                                        className="gap-2"
                                     >
-                                        Día
-                                    </button>
-                                    <button
-                                        onClick={() => setChartMode('weekly')}
-                                        className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${chartMode === 'weekly' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                        <Download className="h-4 w-4 text-green-500" />
+                                        Exportar CSV
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={handleExportExcel}
+                                        className="gap-2"
                                     >
-                                        Semana
-                                    </button>
-                                    <button
-                                        onClick={() => setChartMode('monthly')}
-                                        className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${chartMode === 'monthly' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-                                    >
-                                        Mes
-                                    </button>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="h-48">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={chartData}>
-                                        <CartesianGrid
-                                            strokeDasharray="3 3"
-                                            className="stroke-muted"
-                                        />
-                                        <XAxis
-                                            dataKey="mes"
-                                            tick={{ fontSize: 10 }}
-                                            interval={0}
-                                            angle={
-                                                chartMode === 'weekly'
-                                                    ? -30
-                                                    : -45
-                                            }
-                                            textAnchor="end"
-                                            height={
-                                                chartMode === 'monthly'
-                                                    ? 30
-                                                    : 50
-                                            }
-                                        />
-                                        <YAxis tick={{ fontSize: 11 }} />
-                                        <Tooltip
-                                            formatter={
-                                                ((value: any) =>
-                                                    formatCurrency(
-                                                        value,
-                                                    )) as any
-                                            }
-                                            contentStyle={{ fontSize: 12 }}
-                                        />
-                                        <Bar
-                                            dataKey="total"
-                                            fill="#10b981"
-                                            radius={[4, 4, 0, 0]}
-                                        />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Estado de Ventas
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex h-48 items-center justify-center">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={estadoData}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={50}
-                                            outerRadius={70}
-                                            paddingAngle={4}
-                                            dataKey="value"
-                                        >
-                                            {estadoData.map((e, i) => (
-                                                <Cell key={i} fill={e.color} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                                <div className="ml-2 space-y-1 text-xs">
-                                    {estadoData.map((e) => (
-                                        <div
-                                            key={e.name}
-                                            className="flex items-center gap-2"
-                                        >
-                                            <span
-                                                className="inline-block h-2.5 w-2.5 rounded-full"
-                                                style={{
-                                                    backgroundColor: e.color,
-                                                }}
-                                            />
-                                            <span>
-                                                {e.name}: {e.value}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <Card className="border-l-4 border-l-emerald-500">
-                        <CardHeader className="pb-1 sm:pb-2">
-                            <CardTitle className="flex items-center gap-2 text-xs font-medium sm:text-sm">
-                                <Wallet className="h-3.5 w-3.5 text-emerald-500 sm:h-4 sm:w-4" />
-                                Total Ventas
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-xl font-bold sm:text-2xl">
-                                {resumenVentas.total_ventas}
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-l-4 border-l-emerald-500">
-                        <CardHeader className="pb-1 sm:pb-2">
-                            <CardTitle className="flex items-center gap-2 text-xs font-medium sm:text-sm">
-                                <DollarSign className="h-3.5 w-3.5 text-emerald-500 sm:h-4 sm:w-4" />
-                                Ingresos
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-xl font-bold text-emerald-600 sm:text-2xl">
-                                {formatCurrency(resumenVentas.ingresos)}
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-l-4 border-l-emerald-500">
-                        <CardHeader className="pb-1 sm:pb-2">
-                            <CardTitle className="flex items-center gap-2 text-xs font-medium sm:text-sm">
-                                <TrendingUp className="h-3.5 w-3.5 text-emerald-500 sm:h-4 sm:w-4" />
-                                Pagadas
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-xl font-bold text-emerald-600 sm:text-2xl">
-                                {resumenVentas.pagadas}
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-l-4 border-l-amber-500">
-                        <CardHeader className="pb-1 sm:pb-2">
-                            <CardTitle className="flex items-center gap-2 text-xs font-medium sm:text-sm">
-                                <Clock className="h-3.5 w-3.5 text-amber-500 sm:h-4 sm:w-4" />
-                                Pendientes
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-xl font-bold text-amber-600 sm:text-2xl">
-                                {resumenVentas.pendientes}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle>Listado de Ventas</CardTitle>
-                                <CardDescription>
-                                    {ventasFiltradas.length} registros
-                                    encontrados
-                                </CardDescription>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant={
-                                        viewMode === 'table'
-                                            ? 'default'
-                                            : 'outline'
-                                    }
-                                    size="icon"
-                                    onClick={() => setViewMode('table')}
-                                >
-                                    <List className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant={
-                                        viewMode === 'cards'
-                                            ? 'default'
-                                            : 'outline'
-                                    }
-                                    size="icon"
-                                    onClick={() => setViewMode('cards')}
-                                >
-                                    <LayoutGrid className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="mb-4 flex flex-wrap gap-3 rounded-xl border bg-muted/50 p-4 shadow-sm">
-                            <div className="min-w-[200px] flex-1">
-                                <div className="group relative">
-                                    <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
-                                    <Input
-                                        placeholder="Buscar por factura, cliente o notas..."
-                                        value={filtros.busqueda}
-                                        onChange={(e) =>
-                                            setFiltros({
-                                                ...filtros,
-                                                busqueda: e.target.value,
-                                            })
+                                        <Download className="h-4 w-4 text-emerald-500" />
+                                        Exportar Excel
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={() =>
+                                            csvInputRef.current?.click()
                                         }
-                                        className="h-10 border-muted-foreground/20 pr-9 pl-9 transition-all focus:border-primary"
-                                    />
+                                        className="cursor-pointer gap-2"
+                                    >
+                                        <Upload className="h-4 w-4 text-orange-500" />
+                                        Importar CSV
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={() =>
+                                            excelInputRef.current?.click()
+                                        }
+                                        className="cursor-pointer gap-2"
+                                    >
+                                        <Upload className="h-4 w-4 text-purple-500" />
+                                        Importar Excel
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            {canCreate && (
+                                <Button
+                                    onClick={() => {
+                                        setEditando(null);
+                                        reset();
+                                        setData('productos', []);
+                                        setIsOpen(true);
+                                    }}
+                                >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Nueva Venta
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Hidden file inputs for import (moved outside DropdownMenu) */}
+                    <input
+                        type="file"
+                        ref={csvInputRef}
+                        className="hidden"
+                        accept=".csv"
+                        onChange={(e) => handleImportCsv(e, false)}
+                    />
+                    <input
+                        type="file"
+                        ref={excelInputRef}
+                        className="hidden"
+                        accept=".xlsx,.xls"
+                        onChange={(e) => handleImportCsv(e, true)}
+                    />
+
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                        <Card>
+                            <CardHeader className="pb-2">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-sm font-medium">
+                                        {chartMode === 'monthly'
+                                            ? 'Ventas por Mes'
+                                            : chartMode === 'weekly'
+                                              ? 'Ventas por Semana'
+                                              : 'Ventas por Día'}
+                                    </CardTitle>
+                                    <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">
+                                        <button
+                                            onClick={() =>
+                                                setChartMode('daily')
+                                            }
+                                            className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${chartMode === 'daily' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                        >
+                                            Día
+                                        </button>
+                                        <button
+                                            onClick={() =>
+                                                setChartMode('weekly')
+                                            }
+                                            className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${chartMode === 'weekly' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                        >
+                                            Semana
+                                        </button>
+                                        <button
+                                            onClick={() =>
+                                                setChartMode('monthly')
+                                            }
+                                            className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${chartMode === 'monthly' ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                        >
+                                            Mes
+                                        </button>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="h-48">
+                                    <ResponsiveContainer
+                                        width="100%"
+                                        height="100%"
+                                    >
+                                        <BarChart data={chartData}>
+                                            <CartesianGrid
+                                                strokeDasharray="3 3"
+                                                className="stroke-muted"
+                                            />
+                                            <XAxis
+                                                dataKey="mes"
+                                                tick={{ fontSize: 10 }}
+                                                interval={0}
+                                                angle={
+                                                    chartMode === 'weekly'
+                                                        ? -30
+                                                        : -45
+                                                }
+                                                textAnchor="end"
+                                                height={
+                                                    chartMode === 'monthly'
+                                                        ? 30
+                                                        : 50
+                                                }
+                                            />
+                                            <YAxis tick={{ fontSize: 11 }} />
+                                            <Tooltip
+                                                formatter={
+                                                    ((value: any) =>
+                                                        formatCurrency(
+                                                            value,
+                                                        )) as any
+                                                }
+                                                contentStyle={{ fontSize: 12 }}
+                                            />
+                                            <Bar
+                                                dataKey="total"
+                                                fill="#10b981"
+                                                radius={[4, 4, 0, 0]}
+                                            />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium">
+                                    Estado de Ventas
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex h-48 items-center justify-center">
+                                    <ResponsiveContainer
+                                        width="100%"
+                                        height="100%"
+                                    >
+                                        <PieChart>
+                                            <Pie
+                                                data={estadoData}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={50}
+                                                outerRadius={70}
+                                                paddingAngle={4}
+                                                dataKey="value"
+                                            >
+                                                {estadoData.map((e, i) => (
+                                                    <Cell
+                                                        key={i}
+                                                        fill={e.color}
+                                                    />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                    <div className="ml-2 space-y-1 text-xs">
+                                        {estadoData.map((e) => (
+                                            <div
+                                                key={e.name}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <span
+                                                    className="inline-block h-2.5 w-2.5 rounded-full"
+                                                    style={{
+                                                        backgroundColor:
+                                                            e.color,
+                                                    }}
+                                                />
+                                                <span>
+                                                    {e.name}: {e.value}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <Card className="border-l-4 border-l-emerald-500">
+                            <CardHeader className="pb-1 sm:pb-2">
+                                <CardTitle className="flex items-center gap-2 text-xs font-medium sm:text-sm">
+                                    <Wallet className="h-3.5 w-3.5 text-emerald-500 sm:h-4 sm:w-4" />
+                                    Total Ventas
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-xl font-bold sm:text-2xl">
+                                    {resumenVentas.total_ventas}
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-l-4 border-l-emerald-500">
+                            <CardHeader className="pb-1 sm:pb-2">
+                                <CardTitle className="flex items-center gap-2 text-xs font-medium sm:text-sm">
+                                    <DollarSign className="h-3.5 w-3.5 text-emerald-500 sm:h-4 sm:w-4" />
+                                    Ingresos
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-xl font-bold text-emerald-600 sm:text-2xl">
+                                    {formatCurrency(resumenVentas.ingresos)}
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-l-4 border-l-emerald-500">
+                            <CardHeader className="pb-1 sm:pb-2">
+                                <CardTitle className="flex items-center gap-2 text-xs font-medium sm:text-sm">
+                                    <TrendingUp className="h-3.5 w-3.5 text-emerald-500 sm:h-4 sm:w-4" />
+                                    Pagadas
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-xl font-bold text-emerald-600 sm:text-2xl">
+                                    {resumenVentas.pagadas}
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-l-4 border-l-amber-500">
+                            <CardHeader className="pb-1 sm:pb-2">
+                                <CardTitle className="flex items-center gap-2 text-xs font-medium sm:text-sm">
+                                    <Clock className="h-3.5 w-3.5 text-amber-500 sm:h-4 sm:w-4" />
+                                    Pendientes
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-xl font-bold text-amber-600 sm:text-2xl">
+                                    {resumenVentas.pendientes}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle>Listado de Ventas</CardTitle>
+                                    <CardDescription>
+                                        {ventasFiltradas.length} registros
+                                        encontrados
+                                    </CardDescription>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant={
+                                            viewMode === 'table'
+                                                ? 'default'
+                                                : 'outline'
+                                        }
+                                        size="icon"
+                                        onClick={() => setViewMode('table')}
+                                    >
+                                        <List className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant={
+                                            viewMode === 'cards'
+                                                ? 'default'
+                                                : 'outline'
+                                        }
+                                        size="icon"
+                                        onClick={() => setViewMode('cards')}
+                                    >
+                                        <LayoutGrid className="h-4 w-4" />
+                                    </Button>
                                 </div>
                             </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="mb-4 flex flex-wrap gap-3 rounded-xl border bg-muted/50 p-4 shadow-sm">
+                                <div className="min-w-[200px] flex-1">
+                                    <div className="group relative">
+                                        <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                                        <Input
+                                            placeholder="Buscar por factura, cliente o notas..."
+                                            value={filtros.busqueda}
+                                            onChange={(e) =>
+                                                setFiltros({
+                                                    ...filtros,
+                                                    busqueda: e.target.value,
+                                                })
+                                            }
+                                            className="h-10 border-muted-foreground/20 pr-9 pl-9 transition-all focus:border-primary"
+                                        />
+                                    </div>
+                                </div>
 
-                            <Select
-                                value={filtros.estado}
-                                onValueChange={(v) =>
-                                    setFiltros({
-                                        ...filtros,
-                                        estado: v,
-                                    })
-                                }
-                            >
-                                <SelectTrigger className="h-10 w-full border-muted-foreground/20 bg-background sm:w-[180px]">
-                                    <SelectValue placeholder="Todos los estados" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        Todos los estados
-                                    </SelectItem>
-                                    <SelectItem value="pendiente">
-                                        Pendiente
-                                    </SelectItem>
-                                    <SelectItem value="pagada">
-                                        Pagada
-                                    </SelectItem>
-                                    <SelectItem value="cancelada">
-                                        Cancelada
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            <Select
-                                value={filtros.cliente_id}
-                                onValueChange={(v) =>
-                                    setFiltros({
-                                        ...filtros,
-                                        cliente_id: v,
-                                    })
-                                }
-                            >
-                                <SelectTrigger className="h-10 w-full border-muted-foreground/20 bg-background sm:w-[200px]">
-                                    <SelectValue placeholder="Todos los clientes" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        Todos los clientes
-                                    </SelectItem>
-                                    {clientes.map((c) => (
-                                        <SelectItem
-                                            key={c.id}
-                                            value={c.id.toString()}
-                                        >
-                                            {c.nombre}
+                                <Select
+                                    value={filtros.estado}
+                                    onValueChange={(v) =>
+                                        setFiltros({
+                                            ...filtros,
+                                            estado: v,
+                                        })
+                                    }
+                                >
+                                    <SelectTrigger className="h-10 w-full border-muted-foreground/20 bg-background sm:w-[180px]">
+                                        <SelectValue placeholder="Todos los estados" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            Todos los estados
                                         </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                        <SelectItem value="pendiente">
+                                            Pendiente
+                                        </SelectItem>
+                                        <SelectItem value="pagada">
+                                            Pagada
+                                        </SelectItem>
+                                        <SelectItem value="cancelada">
+                                            Cancelada
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
 
-                            <Input
-                                type="date"
-                                placeholder="Desde"
-                                value={filtros.fechaDesde}
-                                onChange={(e) =>
-                                    setFiltros({
-                                        ...filtros,
-                                        fechaDesde: e.target.value,
-                                    })
-                                }
-                                className="h-10 w-full border-muted-foreground/20 sm:w-[150px]"
-                            />
-                            <Input
-                                type="date"
-                                placeholder="Hasta"
-                                value={filtros.fechaHasta}
-                                onChange={(e) =>
-                                    setFiltros({
-                                        ...filtros,
-                                        fechaHasta: e.target.value,
-                                    })
-                                }
-                                className="h-10 w-full border-muted-foreground/20 sm:w-[150px]"
-                            />
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={limpiarFiltros}
-                                className="h-10 w-10 border-muted-foreground/20 hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
-                                title="Limpiar filtros"
-                            >
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </div>
-                        {viewMode === 'table' ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="border-b">
-                                            <th
-                                                className="group cursor-pointer pb-3 text-left text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground"
-                                                onClick={() =>
-                                                    handleSort('numero_factura')
-                                                }
+                                <Select
+                                    value={filtros.cliente_id}
+                                    onValueChange={(v) =>
+                                        setFiltros({
+                                            ...filtros,
+                                            cliente_id: v,
+                                        })
+                                    }
+                                >
+                                    <SelectTrigger className="h-10 w-full border-muted-foreground/20 bg-background sm:w-[200px]">
+                                        <SelectValue placeholder="Todos los clientes" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            Todos los clientes
+                                        </SelectItem>
+                                        {clientes.map((c) => (
+                                            <SelectItem
+                                                key={c.id}
+                                                value={c.id.toString()}
                                             >
-                                                <div className="flex items-center gap-1">
-                                                    Factura{' '}
-                                                    {sortColumn ===
-                                                    'numero_factura' ? (
-                                                        sortDirection ===
-                                                        'asc' ? (
-                                                            <ChevronUp className="h-4 w-4" />
-                                                        ) : (
-                                                            <ChevronDown className="h-4 w-4" />
-                                                        )
-                                                    ) : (
-                                                        <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                {c.nombre}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+
+                                <Input
+                                    type="date"
+                                    placeholder="Desde"
+                                    value={filtros.fechaDesde}
+                                    onChange={(e) =>
+                                        setFiltros({
+                                            ...filtros,
+                                            fechaDesde: e.target.value,
+                                        })
+                                    }
+                                    className="h-10 w-full border-muted-foreground/20 sm:w-[150px]"
+                                />
+                                <Input
+                                    type="date"
+                                    placeholder="Hasta"
+                                    value={filtros.fechaHasta}
+                                    onChange={(e) =>
+                                        setFiltros({
+                                            ...filtros,
+                                            fechaHasta: e.target.value,
+                                        })
+                                    }
+                                    className="h-10 w-full border-muted-foreground/20 sm:w-[150px]"
+                                />
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={limpiarFiltros}
+                                    className="h-10 w-10 border-muted-foreground/20 hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                                    title="Limpiar filtros"
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            {gruposPorEstado.length === 0 ? (
+                                <div className="flex flex-col items-center py-12 text-center text-muted-foreground">
+                                    <Wallet className="mb-4 h-12 w-12 opacity-20" />
+                                    <p className="font-medium">
+                                        {ventas.data.length === 0
+                                            ? 'No hay ventas registradas'
+                                            : 'No hay ventas que coincidan con los filtros'}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col gap-3">
+                                    {gruposPorEstado.map((grupo) => (
+                                        <SectionPanel
+                                            key={grupo.estado}
+                                            title={grupo.label}
+                                            description={`Panel de ventas en estado ${grupo.label.toLowerCase()}.`}
+                                            icon={grupo.icon}
+                                            tone={grupo.tone}
+                                            count={grupo.data.length}
+                                            badges={
+                                                <Badge
+                                                    variant="outline"
+                                                    className="bg-white/70 text-[10px]"
+                                                >
+                                                    {formatCurrency(
+                                                        grupo.total,
+                                                        grupo.data[0]?.currency,
                                                     )}
-                                                </div>
-                                            </th>
-                                            <th
-                                                className="group cursor-pointer pb-3 text-left text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground"
-                                                onClick={() =>
-                                                    handleSort('cliente')
-                                                }
-                                            >
-                                                <div className="flex items-center gap-1">
-                                                    Cliente{' '}
-                                                    {sortColumn ===
-                                                    'cliente' ? (
-                                                        sortDirection ===
-                                                        'asc' ? (
-                                                            <ChevronUp className="h-4 w-4" />
-                                                        ) : (
-                                                            <ChevronDown className="h-4 w-4" />
-                                                        )
-                                                    ) : (
-                                                        <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
-                                                    )}
-                                                </div>
-                                            </th>
-                                            <th
-                                                className="group cursor-pointer pb-3 text-left text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground"
-                                                onClick={() =>
-                                                    handleSort('fecha')
-                                                }
-                                            >
-                                                <div className="flex items-center gap-1">
-                                                    Fecha{' '}
-                                                    {sortColumn === 'fecha' ? (
-                                                        sortDirection ===
-                                                        'asc' ? (
-                                                            <ChevronUp className="h-4 w-4" />
-                                                        ) : (
-                                                            <ChevronDown className="h-4 w-4" />
-                                                        )
-                                                    ) : (
-                                                        <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
-                                                    )}
-                                                </div>
-                                            </th>
-                                            <th
-                                                className="group cursor-pointer pb-3 text-left text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground"
-                                                onClick={() =>
-                                                    handleSort('total')
-                                                }
-                                            >
-                                                <div className="flex items-center gap-1">
-                                                    Total{' '}
-                                                    {sortColumn === 'total' ? (
-                                                        sortDirection ===
-                                                        'asc' ? (
-                                                            <ChevronUp className="h-4 w-4" />
-                                                        ) : (
-                                                            <ChevronDown className="h-4 w-4" />
-                                                        )
-                                                    ) : (
-                                                        <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
-                                                    )}
-                                                </div>
-                                            </th>
-                                            <th
-                                                className="group cursor-pointer pb-3 text-left text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground"
-                                                onClick={() =>
-                                                    handleSort('estado')
-                                                }
-                                            >
-                                                <div className="flex items-center gap-1">
-                                                    Estado{' '}
-                                                    {sortColumn === 'estado' ? (
-                                                        sortDirection ===
-                                                        'asc' ? (
-                                                            <ChevronUp className="h-4 w-4" />
-                                                        ) : (
-                                                            <ChevronDown className="h-4 w-4" />
-                                                        )
-                                                    ) : (
-                                                        <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
-                                                    )}
-                                                </div>
-                                            </th>
-                                            <th className="pb-3 text-left text-sm font-medium whitespace-nowrap">
-                                                Acciones
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {ventasFiltradas.map((venta) => (
-                                            <tr
-                                                key={venta.id}
-                                                className="border-b"
-                                            >
-                                                <td className="py-3 font-medium">
-                                                    {venta.numero_factura}
-                                                </td>
-                                                <td className="py-3">
-                                                    <div className="flex items-center gap-1">
-                                                        <span
-                                                            className="block max-w-[150px] truncate"
-                                                            title={
-                                                                venta.cliente
-                                                                    ?.nombre
-                                                            }
-                                                        >
-                                                            {
-                                                                venta.cliente
-                                                                    ?.nombre
-                                                            }
-                                                        </span>
-                                                        {venta.cliente
-                                                            ?.telefono && (
-                                                            <WhatsAppButton
-                                                                phone={
-                                                                    venta
-                                                                        .cliente
-                                                                        .telefono
-                                                                }
-                                                            />
+                                                </Badge>
+                                            }
+                                        >
+                                            {viewMode === 'table' ? (
+                                                <>
+                                                    <div className="hidden overflow-x-auto md:block">
+                                                        <table className="w-full">
+                                                            <thead>
+                                                                <tr className="border-b">
+                                                                    <th
+                                                                        className="group cursor-pointer pb-3 text-left text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground"
+                                                                        onClick={() =>
+                                                                            handleSort(
+                                                                                'numero_factura',
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <div className="flex items-center gap-1">
+                                                                            Factura{' '}
+                                                                            {sortColumn ===
+                                                                            'numero_factura' ? (
+                                                                                sortDirection ===
+                                                                                'asc' ? (
+                                                                                    <ChevronUp className="h-4 w-4" />
+                                                                                ) : (
+                                                                                    <ChevronDown className="h-4 w-4" />
+                                                                                )
+                                                                            ) : (
+                                                                                <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                                            )}
+                                                                        </div>
+                                                                    </th>
+                                                                    <th
+                                                                        className="group cursor-pointer pb-3 text-left text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground"
+                                                                        onClick={() =>
+                                                                            handleSort(
+                                                                                'cliente',
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <div className="flex items-center gap-1">
+                                                                            Cliente{' '}
+                                                                            {sortColumn ===
+                                                                            'cliente' ? (
+                                                                                sortDirection ===
+                                                                                'asc' ? (
+                                                                                    <ChevronUp className="h-4 w-4" />
+                                                                                ) : (
+                                                                                    <ChevronDown className="h-4 w-4" />
+                                                                                )
+                                                                            ) : (
+                                                                                <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                                            )}
+                                                                        </div>
+                                                                    </th>
+                                                                    <th
+                                                                        className="group cursor-pointer pb-3 text-left text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground"
+                                                                        onClick={() =>
+                                                                            handleSort(
+                                                                                'fecha',
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <div className="flex items-center gap-1">
+                                                                            Fecha{' '}
+                                                                            {sortColumn ===
+                                                                            'fecha' ? (
+                                                                                sortDirection ===
+                                                                                'asc' ? (
+                                                                                    <ChevronUp className="h-4 w-4" />
+                                                                                ) : (
+                                                                                    <ChevronDown className="h-4 w-4" />
+                                                                                )
+                                                                            ) : (
+                                                                                <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                                            )}
+                                                                        </div>
+                                                                    </th>
+                                                                    <th
+                                                                        className="group cursor-pointer pb-3 text-left text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground"
+                                                                        onClick={() =>
+                                                                            handleSort(
+                                                                                'total',
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <div className="flex items-center gap-1">
+                                                                            Total{' '}
+                                                                            {sortColumn ===
+                                                                            'total' ? (
+                                                                                sortDirection ===
+                                                                                'asc' ? (
+                                                                                    <ChevronUp className="h-4 w-4" />
+                                                                                ) : (
+                                                                                    <ChevronDown className="h-4 w-4" />
+                                                                                )
+                                                                            ) : (
+                                                                                <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                                            )}
+                                                                        </div>
+                                                                    </th>
+                                                                    <th className="pb-3 text-left text-sm font-medium whitespace-nowrap">
+                                                                        Notas
+                                                                    </th>
+                                                                    <th
+                                                                        className="group cursor-pointer pb-3 text-left text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground"
+                                                                        onClick={() =>
+                                                                            handleSort(
+                                                                                'estado',
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <div className="flex items-center gap-1">
+                                                                            Estado{' '}
+                                                                            {sortColumn ===
+                                                                            'estado' ? (
+                                                                                sortDirection ===
+                                                                                'asc' ? (
+                                                                                    <ChevronUp className="h-4 w-4" />
+                                                                                ) : (
+                                                                                    <ChevronDown className="h-4 w-4" />
+                                                                                )
+                                                                            ) : (
+                                                                                <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
+                                                                            )}
+                                                                        </div>
+                                                                    </th>
+                                                                    <th className="pb-3 text-left text-sm font-medium whitespace-nowrap">
+                                                                        Acciones
+                                                                    </th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {grupo.data.map(
+                                                                    (venta) => (
+                                                                        <tr
+                                                                            key={
+                                                                                venta.id
+                                                                            }
+                                                                            className="border-b"
+                                                                        >
+                                                                            <td className="py-3 font-medium">
+                                                                                {
+                                                                                    venta.numero_factura
+                                                                                }
+                                                                            </td>
+                                                                            <td className="py-3">
+                                                                                <div className="flex items-center gap-1">
+                                                                                    <span
+                                                                                        className="block max-w-[150px] truncate"
+                                                                                        title={
+                                                                                            venta
+                                                                                                .cliente
+                                                                                                ?.nombre
+                                                                                        }
+                                                                                    >
+                                                                                        {
+                                                                                            venta
+                                                                                                .cliente
+                                                                                                ?.nombre
+                                                                                        }
+                                                                                    </span>
+                                                                                    {venta
+                                                                                        .cliente
+                                                                                        ?.telefono && (
+                                                                                        <WhatsAppButton
+                                                                                            phone={
+                                                                                                venta
+                                                                                                    .cliente
+                                                                                                    .telefono
+                                                                                            }
+                                                                                        />
+                                                                                    )}
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="py-3">
+                                                                                {formatDateCLP(
+                                                                                    venta.fecha,
+                                                                                )}
+                                                                            </td>
+                                                                            <td className="py-3 font-medium">
+                                                                                {formatCurrency(
+                                                                                    venta.total,
+                                                                                    venta.currency,
+                                                                                )}
+                                                                            </td>
+                                                                            <td className="max-w-[240px] py-3">
+                                                                                <TruncatedText
+                                                                                    text={
+                                                                                        venta.notas
+                                                                                    }
+                                                                                    emptyLabel="Sin notas"
+                                                                                    onExpand={() =>
+                                                                                        handleVer(
+                                                                                            venta,
+                                                                                        )
+                                                                                    }
+                                                                                />
+                                                                            </td>
+                                                                            <td className="py-3">
+                                                                                <Select
+                                                                                    value={
+                                                                                        venta.estado
+                                                                                    }
+                                                                                    onValueChange={(
+                                                                                        v,
+                                                                                    ) =>
+                                                                                        handleUpdateStatus(
+                                                                                            venta,
+                                                                                            v,
+                                                                                        )
+                                                                                    }
+                                                                                >
+                                                                                    <SelectTrigger className="h-8 w-[120px] border-none bg-transparent p-0 hover:bg-transparent focus:ring-0">
+                                                                                        <SelectValue>
+                                                                                            {getEstadoBadge(
+                                                                                                venta.estado,
+                                                                                            )}
+                                                                                        </SelectValue>
+                                                                                    </SelectTrigger>
+                                                                                    <SelectContent>
+                                                                                        <SelectItem value="pendiente">
+                                                                                            Pendiente
+                                                                                        </SelectItem>
+                                                                                        <SelectItem value="pagada">
+                                                                                            Pagada
+                                                                                        </SelectItem>
+                                                                                        <SelectItem value="cancelada">
+                                                                                            Cancelada
+                                                                                        </SelectItem>
+                                                                                    </SelectContent>
+                                                                                </Select>
+                                                                            </td>
+                                                                            <td className="py-3">
+                                                                                <div className="flex gap-2">
+                                                                                    <Button
+                                                                                        variant="outline"
+                                                                                        size="icon"
+                                                                                        onClick={() =>
+                                                                                            handleVer(
+                                                                                                venta,
+                                                                                            )
+                                                                                        }
+                                                                                        title="Ver detalles"
+                                                                                    >
+                                                                                        <Eye className="h-4 w-4" />
+                                                                                    </Button>
+                                                                                    <DropdownMenu>
+                                                                                        <DropdownMenuTrigger
+                                                                                            asChild
+                                                                                        >
+                                                                                            <Button
+                                                                                                variant="outline"
+                                                                                                size="icon"
+                                                                                                title="Descargar PDF"
+                                                                                                className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                                                            >
+                                                                                                <FileText className="h-4 w-4" />
+                                                                                            </Button>
+                                                                                        </DropdownMenuTrigger>
+                                                                                        <DropdownMenuContent
+                                                                                            align="end"
+                                                                                            className="w-56"
+                                                                                        >
+                                                                                            <DropdownMenuItem
+                                                                                                onClick={() =>
+                                                                                                    window.open(
+                                                                                                        `/ventas/${venta.id}/download`,
+                                                                                                        '_blank',
+                                                                                                    )
+                                                                                                }
+                                                                                            >
+                                                                                                <FileText className="mr-2 h-4 w-4" />
+                                                                                                Formato
+                                                                                                SII
+                                                                                                (Formal)
+                                                                                            </DropdownMenuItem>
+                                                                                            <DropdownMenuItem
+                                                                                                onClick={() =>
+                                                                                                    window.open(
+                                                                                                        `/ventas/${venta.id}/download-informal`,
+                                                                                                        '_blank',
+                                                                                                    )
+                                                                                                }
+                                                                                            >
+                                                                                                <FileText className="mr-2 h-4 w-4" />
+                                                                                                Formato
+                                                                                                Simple
+                                                                                                (Informal)
+                                                                                            </DropdownMenuItem>
+                                                                                        </DropdownMenuContent>
+                                                                                    </DropdownMenu>
+                                                                                    {canEditVenta(
+                                                                                        venta,
+                                                                                    ) && (
+                                                                                        <Button
+                                                                                            variant="outline"
+                                                                                            size="icon"
+                                                                                            onClick={() =>
+                                                                                                handleEdit(
+                                                                                                    venta,
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            <Pencil className="h-4 w-4" />
+                                                                                        </Button>
+                                                                                    )}
+                                                                                    {canDeleteVenta(
+                                                                                        venta,
+                                                                                    ) && (
+                                                                                        <Button
+                                                                                            variant="outline"
+                                                                                            size="icon"
+                                                                                            onClick={() =>
+                                                                                                handleDelete(
+                                                                                                    venta.id,
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            <Trash2 className="h-4 w-4" />
+                                                                                        </Button>
+                                                                                    )}
+                                                                                </div>
+                                                                            </td>
+                                                                        </tr>
+                                                                    ),
+                                                                )}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                    <div className="grid gap-2 p-2 sm:p-3 md:hidden">
+                                                        {grupo.data.map(
+                                                            (venta) => (
+                                                                <div
+                                                                    key={
+                                                                        venta.id
+                                                                    }
+                                                                    className="rounded-xl border bg-card p-3 shadow-sm"
+                                                                >
+                                                                    <div className="flex items-start justify-between gap-2">
+                                                                        <div className="min-w-0">
+                                                                            <p className="truncate font-mono text-xs font-bold">
+                                                                                {
+                                                                                    venta.numero_factura
+                                                                                }
+                                                                            </p>
+                                                                            <p className="truncate text-sm font-semibold">
+                                                                                {venta
+                                                                                    .cliente
+                                                                                    ?.nombre ||
+                                                                                    'General'}
+                                                                            </p>
+                                                                        </div>
+                                                                        {getEstadoBadge(
+                                                                            venta.estado,
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="mt-1">
+                                                                        <TruncatedText
+                                                                            text={
+                                                                                venta.notas
+                                                                            }
+                                                                            emptyLabel="Sin notas"
+                                                                            lines={
+                                                                                2
+                                                                            }
+                                                                            onExpand={() =>
+                                                                                handleVer(
+                                                                                    venta,
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                    </div>
+                                                                    <div className="mt-2 flex items-center justify-between border-t pt-2 text-[10px] text-muted-foreground">
+                                                                        <span>
+                                                                            {formatDateCLP(
+                                                                                venta.fecha,
+                                                                            )}
+                                                                        </span>
+                                                                        <span className="text-sm font-black text-foreground">
+                                                                            {formatCurrency(
+                                                                                venta.total,
+                                                                                venta.currency,
+                                                                            )}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="mt-2 flex justify-end gap-1">
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            size="icon"
+                                                                            onClick={() =>
+                                                                                handleVer(
+                                                                                    venta,
+                                                                                )
+                                                                            }
+                                                                            title="Ver detalles"
+                                                                        >
+                                                                            <Eye className="h-4 w-4" />
+                                                                        </Button>
+                                                                        {canEditVenta(
+                                                                            venta,
+                                                                        ) && (
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                size="icon"
+                                                                                onClick={() =>
+                                                                                    handleEdit(
+                                                                                        venta,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <Pencil className="h-4 w-4" />
+                                                                            </Button>
+                                                                        )}
+                                                                        {canDeleteVenta(
+                                                                            venta,
+                                                                        ) && (
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                size="icon"
+                                                                                onClick={() =>
+                                                                                    handleDelete(
+                                                                                        venta.id,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <Trash2 className="h-4 w-4" />
+                                                                            </Button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            ),
                                                         )}
                                                     </div>
-                                                </td>
-                                                <td className="py-3">
-                                                    {formatDateCLP(venta.fecha)}
-                                                </td>
-                                                <td className="py-3 font-medium">
-                                                    {formatCurrency(
-                                                        venta.total,
-                                                        venta.currency,
-                                                    )}
-                                                </td>
-                                                <td className="py-3">
+                                                </>
+                                            ) : (
+                                                <div className="grid grid-cols-1 gap-4 p-2 sm:grid-cols-2 sm:p-3 lg:grid-cols-3">
+                                                    {grupo.data.map((venta) => (
+                                                        <Card
+                                                            key={venta.id}
+                                                            className="overflow-hidden"
+                                                        >
+                                                            <CardHeader className="pb-3">
+                                                                <div className="flex items-center justify-between">
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="font-mono text-xs"
+                                                                    >
+                                                                        {
+                                                                            venta.numero_factura
+                                                                        }
+                                                                    </Badge>
+                                                                    {getEstadoBadge(
+                                                                        venta.estado,
+                                                                    )}
+                                                                </div>
+                                                                <CardTitle className="text-sm font-bold">
+                                                                    {
+                                                                        venta
+                                                                            .cliente
+                                                                            ?.nombre
+                                                                    }
+                                                                </CardTitle>
+                                                            </CardHeader>
+                                                            <CardContent className="space-y-2 pt-0">
+                                                                <div className="flex items-center justify-between text-sm">
+                                                                    <span className="text-muted-foreground">
+                                                                        Fecha
+                                                                    </span>
+                                                                    <span>
+                                                                        {formatDateCLP(
+                                                                            venta.fecha,
+                                                                        )}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex items-center justify-between text-sm">
+                                                                    <span className="text-muted-foreground">
+                                                                        Total
+                                                                    </span>
+                                                                    <span className="font-bold">
+                                                                        {formatCurrency(
+                                                                            venta.total,
+                                                                            venta.currency,
+                                                                        )}
+                                                                    </span>
+                                                                </div>
+                                                                {venta.almacen_nombre && (
+                                                                    <div className="flex items-center justify-between text-sm">
+                                                                        <span className="text-muted-foreground">
+                                                                            Almacén
+                                                                        </span>
+                                                                        <span>
+                                                                            {
+                                                                                venta.almacen_nombre
+                                                                            }
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                                <div className="flex justify-end gap-1 border-t pt-2">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="icon"
+                                                                        onClick={() =>
+                                                                            handleVer(
+                                                                                venta,
+                                                                            )
+                                                                        }
+                                                                        title="Ver detalles"
+                                                                    >
+                                                                        <Eye className="h-4 w-4" />
+                                                                    </Button>
+                                                                    <DropdownMenu>
+                                                                        <DropdownMenuTrigger
+                                                                            asChild
+                                                                        >
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                size="icon"
+                                                                                className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                                            >
+                                                                                <FileText className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </DropdownMenuTrigger>
+                                                                        <DropdownMenuContent
+                                                                            align="end"
+                                                                            className="w-56"
+                                                                        >
+                                                                            <DropdownMenuItem
+                                                                                onClick={() =>
+                                                                                    window.open(
+                                                                                        `/ventas/${venta.id}/download`,
+                                                                                        '_blank',
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <FileText className="mr-2 h-4 w-4" />{' '}
+                                                                                Formato
+                                                                                SII
+                                                                            </DropdownMenuItem>
+                                                                            <DropdownMenuItem
+                                                                                onClick={() =>
+                                                                                    window.open(
+                                                                                        `/ventas/${venta.id}/download-informal`,
+                                                                                        '_blank',
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <FileText className="mr-2 h-4 w-4" />{' '}
+                                                                                Formato
+                                                                                Simple
+                                                                            </DropdownMenuItem>
+                                                                        </DropdownMenuContent>
+                                                                    </DropdownMenu>
+                                                                    {canEditVenta(
+                                                                        venta,
+                                                                    ) && (
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            size="icon"
+                                                                            onClick={() =>
+                                                                                handleEdit(
+                                                                                    venta,
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <Pencil className="h-4 w-4" />
+                                                                        </Button>
+                                                                    )}
+                                                                    {canDeleteVenta(
+                                                                        venta,
+                                                                    ) && (
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            size="icon"
+                                                                            onClick={() =>
+                                                                                handleDelete(
+                                                                                    venta.id,
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </Button>
+                                                                    )}
+                                                                </div>
+                                                            </CardContent>
+                                                        </Card>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </SectionPanel>
+                                    ))}
+                                </div>
+                            )}
+                            <Pagination
+                                links={ventas.links}
+                                meta={
+                                    ventas.meta || {
+                                        from: (ventas as any).from,
+                                        to: (ventas as any).to,
+                                        total: ventas.total,
+                                    }
+                                }
+                            />
+                        </CardContent>
+                    </Card>
+                    <Dialog
+                        open={isOpen}
+                        onOpenChange={(open) => !open && handleClose()}
+                    >
+                        <DialogContent
+                            className="max-w-[calc(100%-1rem)] overflow-hidden rounded-xl border-none p-0 shadow-2xl sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl"
+                            style={{ maxHeight: '95vh', height: 'auto' }}
+                        >
+                            <DialogHeader className="border-b bg-background p-4 pb-3 md:p-6 md:pb-4">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <DialogTitle className="text-lg font-black md:text-xl">
+                                            {editando
+                                                ? 'Editar Venta'
+                                                : 'Nueva Venta'}
+                                        </DialogTitle>
+                                        <DialogDescription className="text-sm">
+                                            Complete los datos de la venta
+                                        </DialogDescription>
+                                    </div>
+                                </div>
+                            </DialogHeader>
+                            <form
+                                onSubmit={handleSubmit}
+                                className="flex flex-col overflow-hidden"
+                                style={{ maxHeight: 'calc(95vh - 140px)' }}
+                            >
+                                <div className="flex-1 overflow-y-auto px-4 py-3 md:px-6 md:py-4">
+                                    {Object.keys(errors).length > 0 && (
+                                        <div className="mb-3 rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                                            <p className="font-semibold">
+                                                Por favor corrija los siguientes
+                                                errores:
+                                            </p>
+                                            <ul className="list-inside list-disc">
+                                                {Object.values(errors).map(
+                                                    (err, i) => (
+                                                        <li key={i}>{err}</li>
+                                                    ),
+                                                )}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    <div className="space-y-3 md:space-y-4">
+                                        <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
+                                            <div className="grid gap-2">
+                                                <Label>
+                                                    No. Factura
+                                                    <span className="text-red-500">
+                                                        {' '}
+                                                        *
+                                                    </span>
+                                                </Label>
+                                                <div className="flex gap-2">
+                                                    <Input
+                                                        value={
+                                                            data.numero_factura
+                                                        }
+                                                        onChange={(e) =>
+                                                            setData(
+                                                                'numero_factura',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className={
+                                                            !data.numero_factura
+                                                                ? 'border-red-500 focus:border-red-500'
+                                                                : ''
+                                                        }
+                                                        placeholder="Ej: FAC-001"
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="icon"
+                                                        onClick={() =>
+                                                            setData(
+                                                                'numero_factura',
+                                                                generateRandomInvoice(),
+                                                            )
+                                                        }
+                                                        title="Generar número aleatorio"
+                                                        className="shrink-0"
+                                                    >
+                                                        <Shuffle className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                                {!data.numero_factura && (
+                                                    <p className="text-xs text-red-500">
+                                                        El número de factura es
+                                                        requerido
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label>Cliente</Label>
+                                                <div className="flex gap-2 text-xs">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setData(
+                                                                'cliente_tipo',
+                                                                'existente',
+                                                            );
+                                                            setData(
+                                                                'cliente_id',
+                                                                '',
+                                                            );
+                                                        }}
+                                                        className={`flex-1 rounded-md px-3 py-2 text-center font-medium transition-colors ${
+                                                            data.cliente_tipo ===
+                                                            'existente'
+                                                                ? 'bg-primary text-primary-foreground'
+                                                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                                        }`}
+                                                    >
+                                                        Cliente Existente
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setData(
+                                                                'cliente_tipo',
+                                                                'generico',
+                                                            );
+                                                            setData(
+                                                                'cliente_id',
+                                                                '',
+                                                            );
+                                                        }}
+                                                        className={`flex-1 rounded-md px-3 py-2 text-center font-medium transition-colors ${
+                                                            data.cliente_tipo ===
+                                                            'generico'
+                                                                ? 'bg-primary text-primary-foreground'
+                                                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                                        }`}
+                                                    >
+                                                        Cliente Genérico
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {data.cliente_tipo ===
+                                            'existente' ? (
+                                                <div className="space-y-2">
                                                     <Select
-                                                        value={venta.estado}
+                                                        value={data.cliente_id}
                                                         onValueChange={(v) =>
-                                                            handleUpdateStatus(
-                                                                venta,
+                                                            setData(
+                                                                'cliente_id',
                                                                 v,
                                                             )
                                                         }
                                                     >
-                                                        <SelectTrigger className="h-8 w-[120px] border-none bg-transparent p-0 hover:bg-transparent focus:ring-0">
-                                                            <SelectValue>
-                                                                {getEstadoBadge(
-                                                                    venta.estado,
-                                                                )}
-                                                            </SelectValue>
+                                                        <SelectTrigger
+                                                            className={
+                                                                data.cliente_tipo ===
+                                                                    'existente' &&
+                                                                !data.cliente_id
+                                                                    ? 'border-red-500'
+                                                                    : ''
+                                                            }
+                                                        >
+                                                            <SelectValue placeholder="Seleccionar cliente" />
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            <SelectItem value="pendiente">
-                                                                Pendiente
-                                                            </SelectItem>
-                                                            <SelectItem value="pagada">
-                                                                Pagada
-                                                            </SelectItem>
-                                                            <SelectItem value="cancelada">
-                                                                Cancelada
-                                                            </SelectItem>
+                                                            <div className="sticky top-0 z-10 border-b bg-popover p-2">
+                                                                <Input
+                                                                    autoFocus
+                                                                    value={
+                                                                        clienteSearch
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        setClienteSearch(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                    onKeyDown={(
+                                                                        e,
+                                                                    ) =>
+                                                                        e.stopPropagation()
+                                                                    }
+                                                                    placeholder="Buscar cliente..."
+                                                                    className="h-8 text-sm"
+                                                                />
+                                                            </div>
+                                                            <div className="max-h-56 overflow-y-auto">
+                                                                {clientes
+                                                                    .filter(
+                                                                        (c) =>
+                                                                            c.nombre
+                                                                                .toLowerCase()
+                                                                                .includes(
+                                                                                    clienteSearch.toLowerCase(),
+                                                                                ),
+                                                                    )
+                                                                    .map(
+                                                                        (c) => (
+                                                                            <SelectItem
+                                                                                key={
+                                                                                    c.id
+                                                                                }
+                                                                                value={c.id.toString()}
+                                                                            >
+                                                                                {
+                                                                                    c.nombre
+                                                                                }
+                                                                            </SelectItem>
+                                                                        ),
+                                                                    )}
+                                                                {clientes.filter(
+                                                                    (c) =>
+                                                                        c.nombre
+                                                                            .toLowerCase()
+                                                                            .includes(
+                                                                                clienteSearch.toLowerCase(),
+                                                                            ),
+                                                                ).length ===
+                                                                    0 && (
+                                                                    <p className="px-2 py-3 text-center text-xs text-muted-foreground">
+                                                                        Sin
+                                                                        resultados
+                                                                    </p>
+                                                                )}
+                                                            </div>
                                                         </SelectContent>
                                                     </Select>
-                                                </td>
-                                                <td className="py-3">
-                                                    <div className="flex gap-2">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                handleVer(venta)
-                                                            }
-                                                            title="Ver detalles"
-                                                        >
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger
-                                                                asChild
-                                                            >
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="icon"
-                                                                    title="Descargar PDF"
-                                                                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                                                                >
-                                                                    <FileText className="h-4 w-4" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent
-                                                                align="end"
-                                                                className="w-56"
-                                                            >
-                                                                <DropdownMenuItem
-                                                                    onClick={() =>
-                                                                        window.open(
-                                                                            `/ventas/${venta.id}/download`,
-                                                                            '_blank',
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <FileText className="mr-2 h-4 w-4" />
-                                                                    Formato SII
-                                                                    (Formal)
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem
-                                                                    onClick={() =>
-                                                                        window.open(
-                                                                            `/ventas/${venta.id}/download-informal`,
-                                                                            '_blank',
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <FileText className="mr-2 h-4 w-4" />
-                                                                    Formato
-                                                                    Simple
-                                                                    (Informal)
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                        {canEditVenta(
-                                                            venta,
-                                                        ) && (
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    handleEdit(
-                                                                        venta,
+                                                    {data.cliente_tipo ===
+                                                        'existente' &&
+                                                        !data.cliente_id && (
+                                                            <p className="text-xs text-red-500">
+                                                                Seleccione un
+                                                                cliente
+                                                            </p>
+                                                        )}
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
+                                                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3">
+                                                        <div className="grid gap-1">
+                                                            <Label className="text-[10px] text-muted-foreground uppercase">
+                                                                Nombre/Razón
+                                                                Social
+                                                                <span className="text-red-500">
+                                                                    {' '}
+                                                                    *
+                                                                </span>
+                                                            </Label>
+                                                            <Input
+                                                                value={
+                                                                    data.cliente_nombre
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setData(
+                                                                        'cliente_nombre',
+                                                                        e.target
+                                                                            .value,
                                                                     )
                                                                 }
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                        {canDeleteVenta(
-                                                            venta,
-                                                        ) && (
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    handleDelete(
-                                                                        venta.id,
+                                                                placeholder="Ej: Juan Pérez"
+                                                                className={`h-9 ${data.cliente_tipo === 'generico' && !data.cliente_nombre ? 'border-red-500 focus:border-red-500' : ''}`}
+                                                            />
+                                                            {data.cliente_tipo ===
+                                                                'generico' &&
+                                                                !data.cliente_nombre && (
+                                                                    <p className="text-xs text-red-500">
+                                                                        El
+                                                                        nombre
+                                                                        es
+                                                                        requerido
+                                                                    </p>
+                                                                )}
+                                                        </div>
+                                                        <div className="grid gap-1">
+                                                            <Label className="text-[10px] text-muted-foreground uppercase">
+                                                                RUT (opcional)
+                                                            </Label>
+                                                            <Input
+                                                                value={
+                                                                    data.cliente_rut
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setData(
+                                                                        'cliente_rut',
+                                                                        e.target
+                                                                            .value,
                                                                     )
                                                                 }
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
+                                                                onBlur={(e) =>
+                                                                    setData(
+                                                                        'cliente_rut',
+                                                                        formatRut(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        ),
+                                                                    )
+                                                                }
+                                                                placeholder="12.345.678-9"
+                                                                className="h-9"
+                                                            />
+                                                        </div>
                                                     </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {ventasFiltradas.length === 0 && (
-                                            <tr>
-                                                <td
-                                                    colSpan={6}
-                                                    className="py-4 text-center"
-                                                >
-                                                    {ventas.data.length === 0
-                                                        ? 'No hay ventas registradas'
-                                                        : 'No hay ventas que coincidan con los filtros'}
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {ventasFiltradas.length === 0 ? (
-                                    <div className="col-span-full flex flex-col items-center py-12 text-center text-muted-foreground">
-                                        <Wallet className="mb-4 h-12 w-12 opacity-20" />
-                                        <p className="font-medium">
-                                            No hay ventas que coincidan con los
-                                            filtros
-                                        </p>
-                                    </div>
-                                ) : (
-                                    ventasFiltradas.map((venta) => (
-                                        <Card
-                                            key={venta.id}
-                                            className="overflow-hidden"
-                                        >
-                                            <CardHeader className="pb-3">
-                                                <div className="flex items-center justify-between">
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="font-mono text-xs"
-                                                    >
-                                                        {venta.numero_factura}
-                                                    </Badge>
-                                                    {getEstadoBadge(
-                                                        venta.estado,
-                                                    )}
-                                                </div>
-                                                <CardTitle className="text-sm font-bold">
-                                                    {venta.cliente?.nombre}
-                                                </CardTitle>
-                                            </CardHeader>
-                                            <CardContent className="space-y-2 pt-0">
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <span className="text-muted-foreground">
-                                                        Fecha
-                                                    </span>
-                                                    <span>
-                                                        {formatDateCLP(
-                                                            venta.fecha,
-                                                        )}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <span className="text-muted-foreground">
-                                                        Total
-                                                    </span>
-                                                    <span className="font-bold">
-                                                        {formatCurrency(
-                                                            venta.total,
-                                                            venta.currency,
-                                                        )}
-                                                    </span>
-                                                </div>
-                                                {venta.almacen_nombre && (
-                                                    <div className="flex items-center justify-between text-sm">
-                                                        <span className="text-muted-foreground">
-                                                            Almacén
-                                                        </span>
-                                                        <span>
-                                                            {
-                                                                venta.almacen_nombre
-                                                            }
-                                                        </span>
+                                                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3">
+                                                        <div className="grid gap-1">
+                                                            <Label className="text-[10px] text-muted-foreground uppercase">
+                                                                Teléfono
+                                                            </Label>
+                                                            <Input
+                                                                value={
+                                                                    data.cliente_telefono
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setData(
+                                                                        'cliente_telefono',
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                                placeholder="+56 9 1234 5678"
+                                                                className="h-9"
+                                                            />
+                                                        </div>
+                                                        <div className="grid gap-1">
+                                                            <Label className="text-[10px] text-muted-foreground uppercase">
+                                                                Dirección
+                                                            </Label>
+                                                            <Input
+                                                                value={
+                                                                    data.cliente_direccion
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setData(
+                                                                        'cliente_direccion',
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                                placeholder="Av. Principal 123"
+                                                                className="h-9"
+                                                            />
+                                                        </div>
                                                     </div>
-                                                )}
-                                                <div className="flex justify-end gap-1 border-t pt-2">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="icon"
-                                                        onClick={() =>
-                                                            handleVer(venta)
-                                                        }
-                                                        title="Ver detalles"
-                                                    >
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger
-                                                            asChild
-                                                        >
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                                                            >
-                                                                <FileText className="h-4 w-4" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent
-                                                            align="end"
-                                                            className="w-56"
-                                                        >
-                                                            <DropdownMenuItem
-                                                                onClick={() =>
-                                                                    window.open(
-                                                                        `/ventas/${venta.id}/download`,
-                                                                        '_blank',
-                                                                    )
-                                                                }
-                                                            >
-                                                                <FileText className="mr-2 h-4 w-4" />{' '}
-                                                                Formato SII
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem
-                                                                onClick={() =>
-                                                                    window.open(
-                                                                        `/ventas/${venta.id}/download-informal`,
-                                                                        '_blank',
-                                                                    )
-                                                                }
-                                                            >
-                                                                <FileText className="mr-2 h-4 w-4" />{' '}
-                                                                Formato Simple
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                    {canEditVenta(venta) && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                handleEdit(
-                                                                    venta,
-                                                                )
-                                                            }
-                                                        >
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-                                                    {canDeleteVenta(venta) && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    venta.id,
-                                                                )
-                                                            }
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
                                                 </div>
-                                            </CardContent>
-                                        </Card>
-                                    ))
-                                )}
-                            </div>
-                        )}
-                        <Pagination
-                            links={ventas.links}
-                            meta={
-                                ventas.meta || {
-                                    from: (ventas as any).from,
-                                    to: (ventas as any).to,
-                                    total: ventas.total,
-                                }
-                            }
-                        />
-                    </CardContent>
-                </Card>
-                <Dialog
-                    open={isOpen}
-                    onOpenChange={(open) => !open && handleClose()}
-                >
-                    <DialogContent
-                        className="max-w-[calc(100%-1rem)] overflow-hidden rounded-xl border-none p-0 shadow-2xl sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl"
-                        style={{ maxHeight: '95vh', height: 'auto' }}
-                    >
-                        <DialogHeader className="border-b bg-background p-4 pb-3 md:p-6 md:pb-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <DialogTitle className="text-lg font-black md:text-xl">
-                                        {editando
-                                            ? 'Editar Venta'
-                                            : 'Nueva Venta'}
-                                    </DialogTitle>
-                                    <DialogDescription className="text-sm">
-                                        Complete los datos de la venta
-                                    </DialogDescription>
-                                </div>
-                            </div>
-                        </DialogHeader>
-                        <form
-                            onSubmit={handleSubmit}
-                            className="flex flex-col overflow-hidden"
-                            style={{ maxHeight: 'calc(95vh - 140px)' }}
-                        >
-                            <div className="flex-1 overflow-y-auto px-4 py-3 md:px-6 md:py-4">
-                                {Object.keys(errors).length > 0 && (
-                                    <div className="mb-3 rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                                        <p className="font-semibold">
-                                            Por favor corrija los siguientes
-                                            errores:
-                                        </p>
-                                        <ul className="list-inside list-disc">
-                                            {Object.values(errors).map(
-                                                (err, i) => (
-                                                    <li key={i}>{err}</li>
-                                                ),
                                             )}
-                                        </ul>
-                                    </div>
-                                )}
-                                <div className="space-y-3 md:space-y-4">
-                                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
-                                        <div className="grid gap-2">
-                                            <Label>
-                                                No. Factura
-                                                <span className="text-red-500">
-                                                    {' '}
-                                                    *
-                                                </span>
-                                            </Label>
-                                            <div className="flex gap-2">
+                                            <div className="grid gap-2">
+                                                <Label>
+                                                    Fecha
+                                                    <span className="text-red-500">
+                                                        {' '}
+                                                        *
+                                                    </span>
+                                                </Label>
                                                 <Input
-                                                    value={data.numero_factura}
+                                                    type="date"
+                                                    value={data.fecha}
                                                     onChange={(e) =>
                                                         setData(
-                                                            'numero_factura',
+                                                            'fecha',
                                                             e.target.value,
                                                         )
                                                     }
                                                     className={
-                                                        !data.numero_factura
+                                                        !data.fecha
                                                             ? 'border-red-500 focus:border-red-500'
                                                             : ''
                                                     }
-                                                    placeholder="Ej: FAC-001"
                                                 />
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="icon"
-                                                    onClick={() =>
-                                                        setData(
-                                                            'numero_factura',
-                                                            generateRandomInvoice(),
-                                                        )
-                                                    }
-                                                    title="Generar número aleatorio"
-                                                    className="shrink-0"
-                                                >
-                                                    <Shuffle className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                            {!data.numero_factura && (
-                                                <p className="text-xs text-red-500">
-                                                    El número de factura es
-                                                    requerido
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label>Cliente</Label>
-                                            <div className="flex gap-2 text-xs">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setData(
-                                                            'cliente_tipo',
-                                                            'existente',
-                                                        );
-                                                        setData(
-                                                            'cliente_id',
-                                                            '',
-                                                        );
-                                                    }}
-                                                    className={`flex-1 rounded-md px-3 py-2 text-center font-medium transition-colors ${
-                                                        data.cliente_tipo ===
-                                                        'existente'
-                                                            ? 'bg-primary text-primary-foreground'
-                                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                                    }`}
-                                                >
-                                                    Cliente Existente
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setData(
-                                                            'cliente_tipo',
-                                                            'generico',
-                                                        );
-                                                        setData(
-                                                            'cliente_id',
-                                                            '',
-                                                        );
-                                                    }}
-                                                    className={`flex-1 rounded-md px-3 py-2 text-center font-medium transition-colors ${
-                                                        data.cliente_tipo ===
-                                                        'generico'
-                                                            ? 'bg-primary text-primary-foreground'
-                                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                                    }`}
-                                                >
-                                                    Cliente Genérico
-                                                </button>
+                                                {!data.fecha && (
+                                                    <p className="text-xs text-red-500">
+                                                        La fecha es requerida
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
-
-                                        {data.cliente_tipo === 'existente' ? (
-                                            <div className="space-y-2">
-                                                <Select
-                                                    value={data.cliente_id}
-                                                    onValueChange={(v) =>
-                                                        setData('cliente_id', v)
-                                                    }
-                                                >
-                                                    <SelectTrigger
-                                                        className={
-                                                            data.cliente_tipo ===
-                                                                'existente' &&
-                                                            !data.cliente_id
-                                                                ? 'border-red-500'
-                                                                : ''
-                                                        }
-                                                    >
-                                                        <SelectValue placeholder="Seleccionar cliente" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <div className="sticky top-0 z-10 border-b bg-popover p-2">
-                                                            <Input
-                                                                autoFocus
-                                                                value={
-                                                                    clienteSearch
-                                                                }
-                                                                onChange={(e) =>
-                                                                    setClienteSearch(
-                                                                        e.target
-                                                                            .value,
-                                                                    )
-                                                                }
-                                                                onKeyDown={(
-                                                                    e,
-                                                                ) =>
-                                                                    e.stopPropagation()
-                                                                }
-                                                                placeholder="Buscar cliente..."
-                                                                className="h-8 text-sm"
-                                                            />
-                                                        </div>
-                                                        <div className="max-h-56 overflow-y-auto">
-                                                            {clientes
-                                                                .filter((c) =>
-                                                                    c.nombre
-                                                                        .toLowerCase()
-                                                                        .includes(
-                                                                            clienteSearch.toLowerCase(),
-                                                                        ),
-                                                                )
-                                                                .map((c) => (
-                                                                    <SelectItem
-                                                                        key={
-                                                                            c.id
-                                                                        }
-                                                                        value={c.id.toString()}
-                                                                    >
-                                                                        {
-                                                                            c.nombre
-                                                                        }
-                                                                    </SelectItem>
-                                                                ))}
-                                                            {clientes.filter(
-                                                                (c) =>
-                                                                    c.nombre
-                                                                        .toLowerCase()
-                                                                        .includes(
-                                                                            clienteSearch.toLowerCase(),
-                                                                        ),
-                                                            ).length === 0 && (
-                                                                <p className="px-2 py-3 text-center text-xs text-muted-foreground">
-                                                                    Sin
-                                                                    resultados
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    </SelectContent>
-                                                </Select>
-                                                {data.cliente_tipo ===
-                                                    'existente' &&
-                                                    !data.cliente_id && (
-                                                        <p className="text-xs text-red-500">
-                                                            Seleccione un
-                                                            cliente
-                                                        </p>
-                                                    )}
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
-                                                <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3">
-                                                    <div className="grid gap-1">
-                                                        <Label className="text-[10px] text-muted-foreground uppercase">
-                                                            Nombre/Razón Social
-                                                            <span className="text-red-500">
-                                                                {' '}
-                                                                *
-                                                            </span>
-                                                        </Label>
-                                                        <Input
-                                                            value={
-                                                                data.cliente_nombre
-                                                            }
-                                                            onChange={(e) =>
-                                                                setData(
-                                                                    'cliente_nombre',
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            placeholder="Ej: Juan Pérez"
-                                                            className={`h-9 ${data.cliente_tipo === 'generico' && !data.cliente_nombre ? 'border-red-500 focus:border-red-500' : ''}`}
-                                                        />
-                                                        {data.cliente_tipo ===
-                                                            'generico' &&
-                                                            !data.cliente_nombre && (
-                                                                <p className="text-xs text-red-500">
-                                                                    El nombre es
-                                                                    requerido
-                                                                </p>
-                                                            )}
-                                                    </div>
-                                                    <div className="grid gap-1">
-                                                        <Label className="text-[10px] text-muted-foreground uppercase">
-                                                            RUT (opcional)
-                                                        </Label>
-                                                        <Input
-                                                            value={
-                                                                data.cliente_rut
-                                                            }
-                                                            onChange={(e) =>
-                                                                setData(
-                                                                    'cliente_rut',
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            onBlur={(e) =>
-                                                                setData(
-                                                                    'cliente_rut',
-                                                                    formatRut(
-                                                                        e.target
-                                                                            .value,
-                                                                    ),
-                                                                )
-                                                            }
-                                                            placeholder="12.345.678-9"
-                                                            className="h-9"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3">
-                                                    <div className="grid gap-1">
-                                                        <Label className="text-[10px] text-muted-foreground uppercase">
-                                                            Teléfono
-                                                        </Label>
-                                                        <Input
-                                                            value={
-                                                                data.cliente_telefono
-                                                            }
-                                                            onChange={(e) =>
-                                                                setData(
-                                                                    'cliente_telefono',
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            placeholder="+56 9 1234 5678"
-                                                            className="h-9"
-                                                        />
-                                                    </div>
-                                                    <div className="grid gap-1">
-                                                        <Label className="text-[10px] text-muted-foreground uppercase">
-                                                            Dirección
-                                                        </Label>
-                                                        <Input
-                                                            value={
-                                                                data.cliente_direccion
-                                                            }
-                                                            onChange={(e) =>
-                                                                setData(
-                                                                    'cliente_direccion',
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            placeholder="Av. Principal 123"
-                                                            className="h-9"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
                                         <div className="grid gap-2">
-                                            <Label>
-                                                Fecha
-                                                <span className="text-red-500">
-                                                    {' '}
-                                                    *
-                                                </span>
-                                            </Label>
-                                            <Input
-                                                type="date"
-                                                value={data.fecha}
-                                                onChange={(e) =>
+                                            <Label>Estado</Label>
+                                            <Select
+                                                value={data.estado}
+                                                onValueChange={(v) =>
                                                     setData(
-                                                        'fecha',
-                                                        e.target.value,
+                                                        'estado',
+                                                        v as
+                                                            | 'pendiente'
+                                                            | 'pagada'
+                                                            | 'cancelada',
                                                     )
                                                 }
-                                                className={
-                                                    !data.fecha
-                                                        ? 'border-red-500 focus:border-red-500'
-                                                        : ''
-                                                }
-                                            />
-                                            {!data.fecha && (
-                                                <p className="text-xs text-red-500">
-                                                    La fecha es requerida
-                                                </p>
-                                            )}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="pendiente">
+                                                        Pendiente
+                                                    </SelectItem>
+                                                    <SelectItem value="pagada">
+                                                        Pagada
+                                                    </SelectItem>
+                                                    <SelectItem value="cancelada">
+                                                        Cancelada
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label>Estado</Label>
-                                        <Select
-                                            value={data.estado}
-                                            onValueChange={(v) =>
-                                                setData(
-                                                    'estado',
-                                                    v as
-                                                        | 'pendiente'
-                                                        | 'pagada'
-                                                        | 'cancelada',
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="pendiente">
-                                                    Pendiente
-                                                </SelectItem>
-                                                <SelectItem value="pagada">
-                                                    Pagada
-                                                </SelectItem>
-                                                <SelectItem value="cancelada">
-                                                    Cancelada
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
 
-                                    {/*                                 <div className="grid gap-2">
+                                        {/*                                 <div className="grid gap-2">
                                         <Label>Moneda</Label>
                                         <Select
                                             value={data.currency}
@@ -1982,1049 +2243,1067 @@ export default function Index({
                                         </Select>
                                     </div> */}
 
-                                    <div className="grid gap-2">
-                                        <Label>
-                                            Almacenes de Origen
-                                            <span className="text-red-500">
-                                                {' '}
-                                                *
-                                            </span>
-                                        </Label>
-                                        <div
-                                            className={`space-y-2 rounded-lg border p-3 ${data.almacen_ids.length === 0 ? 'border-red-500' : ''}`}
-                                        >
-                                            {almacenes.map((a) => {
-                                                const selected =
-                                                    data.almacen_ids.includes(
-                                                        a.id,
-                                                    );
-                                                return (
-                                                    <label
-                                                        key={a.id}
-                                                        className={`flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 transition-colors ${selected ? 'bg-primary/10 ring-1 ring-primary/30' : 'hover:bg-muted/50'}`}
-                                                    >
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selected}
-                                                            onChange={() => {
-                                                                const next =
+                                        <div className="grid gap-2">
+                                            <Label>
+                                                Almacenes de Origen
+                                                <span className="text-red-500">
+                                                    {' '}
+                                                    *
+                                                </span>
+                                            </Label>
+                                            <div
+                                                className={`space-y-2 rounded-lg border p-3 ${data.almacen_ids.length === 0 ? 'border-red-500' : ''}`}
+                                            >
+                                                {almacenes.map((a) => {
+                                                    const selected =
+                                                        data.almacen_ids.includes(
+                                                            a.id,
+                                                        );
+                                                    return (
+                                                        <label
+                                                            key={a.id}
+                                                            className={`flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 transition-colors ${selected ? 'bg-primary/10 ring-1 ring-primary/30' : 'hover:bg-muted/50'}`}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={
                                                                     selected
-                                                                        ? data.almacen_ids.filter(
-                                                                              (
-                                                                                  id,
-                                                                              ) =>
-                                                                                  id !==
+                                                                }
+                                                                onChange={() => {
+                                                                    const next =
+                                                                        selected
+                                                                            ? data.almacen_ids.filter(
+                                                                                  (
+                                                                                      id,
+                                                                                  ) =>
+                                                                                      id !==
+                                                                                      a.id,
+                                                                              )
+                                                                            : [
+                                                                                  ...data.almacen_ids,
                                                                                   a.id,
-                                                                          )
-                                                                        : [
-                                                                              ...data.almacen_ids,
-                                                                              a.id,
-                                                                          ];
-                                                                setData(
-                                                                    'almacen_ids',
-                                                                    next,
-                                                                );
-                                                            }}
-                                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/30"
-                                                        />
-                                                        <span className="text-sm font-medium">
-                                                            {a.nombre}
-                                                        </span>
-                                                    </label>
-                                                );
-                                            })}
-                                            {almacenes.length === 0 && (
-                                                <p className="text-sm text-muted-foreground">
-                                                    No hay almacenes activos
+                                                                              ];
+                                                                    setData(
+                                                                        'almacen_ids',
+                                                                        next,
+                                                                    );
+                                                                }}
+                                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/30"
+                                                            />
+                                                            <span className="text-sm font-medium">
+                                                                {a.nombre}
+                                                            </span>
+                                                        </label>
+                                                    );
+                                                })}
+                                                {almacenes.length === 0 && (
+                                                    <p className="text-sm text-muted-foreground">
+                                                        No hay almacenes activos
+                                                    </p>
+                                                )}
+                                            </div>
+                                            {data.almacen_ids.length === 0 && (
+                                                <p className="text-xs text-red-500">
+                                                    Seleccione al menos un
+                                                    almacén
                                                 </p>
                                             )}
                                         </div>
-                                        {data.almacen_ids.length === 0 && (
-                                            <p className="text-xs text-red-500">
-                                                Seleccione al menos un almacén
-                                            </p>
-                                        )}
-                                    </div>
 
-                                    <div className="overflow-x-auto rounded-lg border p-3 md:overflow-visible md:border-0 md:p-0">
-                                        <div className="mb-4 flex items-center justify-between">
-                                            <Label className="text-base font-semibold">
-                                                Productos
-                                            </Label>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={addProducto}
-                                            >
-                                                <Plus className="mr-1 h-4 w-4" />
-                                                Agregar Producto
-                                            </Button>
-                                        </div>
+                                        <div className="overflow-x-auto rounded-lg border p-3 md:overflow-visible md:border-0 md:p-0">
+                                            <div className="mb-4 flex items-center justify-between">
+                                                <Label className="text-base font-semibold">
+                                                    Productos
+                                                </Label>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={addProducto}
+                                                >
+                                                    <Plus className="mr-1 h-4 w-4" />
+                                                    Agregar Producto
+                                                </Button>
+                                            </div>
 
-                                        {data.productos.length === 0 ? (
-                                            <p className="py-4 text-center text-sm text-gray-500">
-                                                No hay productos agregados. Haga
-                                                clic en "Agregar Producto"
-                                            </p>
-                                        ) : (
-                                            <div className="space-y-3">
-                                                {data.productos.length ===
-                                                    0 && (
-                                                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-center">
-                                                        <p className="text-sm text-red-600">
-                                                            Agregue al menos un
-                                                            producto para
-                                                            continuar
-                                                        </p>
-                                                    </div>
-                                                )}
-                                                {data.productos.map(
-                                                    (producto, index) => {
-                                                        const prod =
-                                                            productos.find(
-                                                                (p) =>
-                                                                    p.id ===
-                                                                    Number(
-                                                                        producto.producto_id,
-                                                                    ),
-                                                            );
-                                                        const tieneError =
-                                                            !producto.producto_id ||
-                                                            !producto.cantidad ||
-                                                            producto.cantidad <=
-                                                                0;
-                                                        const precio =
-                                                            Math.round(
-                                                                producto.precio_unitario ||
-                                                                    prod?.precio_venta ||
-                                                                    0,
-                                                            );
-                                                        const subtotalItem =
-                                                            Math.round(
-                                                                producto.cantidad *
-                                                                    precio,
-                                                            );
+                                            {data.productos.length === 0 ? (
+                                                <p className="py-4 text-center text-sm text-gray-500">
+                                                    No hay productos agregados.
+                                                    Haga clic en "Agregar
+                                                    Producto"
+                                                </p>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    {data.productos.length ===
+                                                        0 && (
+                                                        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-center">
+                                                            <p className="text-sm text-red-600">
+                                                                Agregue al menos
+                                                                un producto para
+                                                                continuar
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                    {data.productos.map(
+                                                        (producto, index) => {
+                                                            const prod =
+                                                                productos.find(
+                                                                    (p) =>
+                                                                        p.id ===
+                                                                        Number(
+                                                                            producto.producto_id,
+                                                                        ),
+                                                                );
+                                                            const tieneError =
+                                                                !producto.producto_id ||
+                                                                !producto.cantidad ||
+                                                                producto.cantidad <=
+                                                                    0;
+                                                            const precio =
+                                                                Math.round(
+                                                                    producto.precio_unitario ||
+                                                                        prod?.precio_venta ||
+                                                                        0,
+                                                                );
+                                                            const subtotalItem =
+                                                                Math.round(
+                                                                    producto.cantidad *
+                                                                        precio,
+                                                                );
 
-                                                        return (
-                                                            <div
-                                                                key={index}
-                                                                className={`grid grid-cols-1 items-end gap-3 rounded-md border border-dashed p-3 md:grid-cols-12 md:border-0 md:p-0 ${tieneError ? 'ring-2 ring-red-500' : ''}`}
-                                                            >
-                                                                <div className="md:col-span-5">
-                                                                    <Label className="md:text-xs">
-                                                                        Producto
-                                                                    </Label>
-                                                                    <Select
-                                                                        value={
-                                                                            producto.producto_id
-                                                                        }
-                                                                        onValueChange={(
-                                                                            v,
-                                                                        ) =>
-                                                                            updateProducto(
-                                                                                index,
-                                                                                'producto_id',
+                                                            return (
+                                                                <div
+                                                                    key={index}
+                                                                    className={`grid grid-cols-1 items-end gap-3 rounded-md border border-dashed p-3 md:grid-cols-12 md:border-0 md:p-0 ${tieneError ? 'ring-2 ring-red-500' : ''}`}
+                                                                >
+                                                                    <div className="md:col-span-5">
+                                                                        <Label className="md:text-xs">
+                                                                            Producto
+                                                                        </Label>
+                                                                        <Select
+                                                                            value={
+                                                                                producto.producto_id
+                                                                            }
+                                                                            onValueChange={(
                                                                                 v,
-                                                                            )
-                                                                        }
-                                                                        disabled={
-                                                                            data
-                                                                                .almacen_ids
-                                                                                .length ===
-                                                                            0
-                                                                        }
-                                                                    >
-                                                                        <SelectTrigger>
-                                                                            <SelectValue>
-                                                                                {data
+                                                                            ) =>
+                                                                                updateProducto(
+                                                                                    index,
+                                                                                    'producto_id',
+                                                                                    v,
+                                                                                )
+                                                                            }
+                                                                            disabled={
+                                                                                data
                                                                                     .almacen_ids
                                                                                     .length ===
                                                                                 0
-                                                                                    ? 'Seleccione almacén(es) primero'
-                                                                                    : productos.find(
-                                                                                          (
-                                                                                              p,
-                                                                                          ) =>
-                                                                                              p.id ===
-                                                                                              Number(
-                                                                                                  producto.producto_id,
-                                                                                              ),
-                                                                                      )
-                                                                                          ?.nombre ||
-                                                                                      'Seleccionar'}
-                                                                            </SelectValue>
-                                                                        </SelectTrigger>
-                                                                        <SelectContent>
-                                                                            {productosFiltrados.map(
-                                                                                (
-                                                                                    p,
-                                                                                ) => {
-                                                                                    const stockItems =
-                                                                                        p.inventarios?.filter(
-                                                                                            (
-                                                                                                inv,
-                                                                                            ) =>
-                                                                                                data.almacen_ids.includes(
-                                                                                                    inv.almacen_id,
-                                                                                                ),
-                                                                                        ) ||
-                                                                                        [];
-                                                                                    const totalStock =
-                                                                                        stockItems.reduce(
-                                                                                            (
-                                                                                                sum,
-                                                                                                inv,
-                                                                                            ) =>
-                                                                                                sum +
-                                                                                                (inv.cantidad ||
-                                                                                                    0),
-                                                                                            0,
-                                                                                        );
-                                                                                    const stockStr =
-                                                                                        stockItems
-                                                                                            .map(
+                                                                            }
+                                                                        >
+                                                                            <SelectTrigger>
+                                                                                <SelectValue>
+                                                                                    {data
+                                                                                        .almacen_ids
+                                                                                        .length ===
+                                                                                    0
+                                                                                        ? 'Seleccione almacén(es) primero'
+                                                                                        : productos.find(
+                                                                                              (
+                                                                                                  p,
+                                                                                              ) =>
+                                                                                                  p.id ===
+                                                                                                  Number(
+                                                                                                      producto.producto_id,
+                                                                                                  ),
+                                                                                          )
+                                                                                              ?.nombre ||
+                                                                                          'Seleccionar'}
+                                                                                </SelectValue>
+                                                                            </SelectTrigger>
+                                                                            <SelectContent>
+                                                                                {productosFiltrados.map(
+                                                                                    (
+                                                                                        p,
+                                                                                    ) => {
+                                                                                        const stockItems =
+                                                                                            p.inventarios?.filter(
                                                                                                 (
                                                                                                     inv,
-                                                                                                ) => {
-                                                                                                    const alm =
-                                                                                                        almacenes.find(
-                                                                                                            (
-                                                                                                                a,
-                                                                                                            ) =>
-                                                                                                                a.id ===
-                                                                                                                inv.almacen_id,
-                                                                                                        );
-                                                                                                    return `${alm?.nombre || '?'}: ${Math.round(inv.cantidad || 0)}`;
-                                                                                                },
-                                                                                            )
-                                                                                            .join(
-                                                                                                ' | ',
+                                                                                                ) =>
+                                                                                                    data.almacen_ids.includes(
+                                                                                                        inv.almacen_id,
+                                                                                                    ),
+                                                                                            ) ||
+                                                                                            [];
+                                                                                        const totalStock =
+                                                                                            stockItems.reduce(
+                                                                                                (
+                                                                                                    sum,
+                                                                                                    inv,
+                                                                                                ) =>
+                                                                                                    sum +
+                                                                                                    (inv.cantidad ||
+                                                                                                        0),
+                                                                                                0,
                                                                                             );
-                                                                                    return (
-                                                                                        <SelectItem
-                                                                                            key={
-                                                                                                p.id
-                                                                                            }
-                                                                                            value={p.id.toString()}
-                                                                                        >
-                                                                                            <span className="flex flex-col gap-0.5">
-                                                                                                <span>
-                                                                                                    {
-                                                                                                        p.nombre
-                                                                                                    }{' '}
-                                                                                                    <span className="text-muted-foreground">
-                                                                                                        (
+                                                                                        const stockStr =
+                                                                                            stockItems
+                                                                                                .map(
+                                                                                                    (
+                                                                                                        inv,
+                                                                                                    ) => {
+                                                                                                        const alm =
+                                                                                                            almacenes.find(
+                                                                                                                (
+                                                                                                                    a,
+                                                                                                                ) =>
+                                                                                                                    a.id ===
+                                                                                                                    inv.almacen_id,
+                                                                                                            );
+                                                                                                        return `${alm?.nombre || '?'}: ${Math.round(inv.cantidad || 0)}`;
+                                                                                                    },
+                                                                                                )
+                                                                                                .join(
+                                                                                                    ' | ',
+                                                                                                );
+                                                                                        return (
+                                                                                            <SelectItem
+                                                                                                key={
+                                                                                                    p.id
+                                                                                                }
+                                                                                                value={p.id.toString()}
+                                                                                            >
+                                                                                                <span className="flex flex-col gap-0.5">
+                                                                                                    <span>
                                                                                                         {
-                                                                                                            p.codigo
-                                                                                                        }
+                                                                                                            p.nombre
+                                                                                                        }{' '}
+                                                                                                        <span className="text-muted-foreground">
+                                                                                                            (
+                                                                                                            {
+                                                                                                                p.codigo
+                                                                                                            }
 
-                                                                                                        )
+                                                                                                            )
+                                                                                                        </span>
+                                                                                                        {totalStock <=
+                                                                                                            0 && (
+                                                                                                            <span className="ml-1 text-[10px] font-bold text-red-500">
+                                                                                                                {totalStock <
+                                                                                                                0
+                                                                                                                    ? 'SIN STOCK'
+                                                                                                                    : 'SIN STOCK'}
+                                                                                                            </span>
+                                                                                                        )}
                                                                                                     </span>
-                                                                                                    {totalStock <=
-                                                                                                        0 && (
-                                                                                                        <span className="ml-1 text-[10px] font-bold text-red-500">
-                                                                                                            {totalStock <
-                                                                                                            0
-                                                                                                                ? 'SIN STOCK'
-                                                                                                                : 'SIN STOCK'}
+                                                                                                    {stockStr && (
+                                                                                                        <span
+                                                                                                            className={`font-mono text-[10px] ${totalStock < 0 ? 'text-red-500' : totalStock === 0 ? 'text-orange-500' : 'text-muted-foreground'}`}
+                                                                                                        >
+                                                                                                            {
+                                                                                                                stockStr
+                                                                                                            }
                                                                                                         </span>
                                                                                                     )}
                                                                                                 </span>
-                                                                                                {stockStr && (
-                                                                                                    <span
-                                                                                                        className={`font-mono text-[10px] ${totalStock < 0 ? 'text-red-500' : totalStock === 0 ? 'text-orange-500' : 'text-muted-foreground'}`}
-                                                                                                    >
-                                                                                                        {
-                                                                                                            stockStr
-                                                                                                        }
-                                                                                                    </span>
-                                                                                                )}
-                                                                                            </span>
-                                                                                        </SelectItem>
-                                                                                    );
-                                                                                },
-                                                                            )}
-                                                                            {productosFiltrados.length ===
-                                                                                0 &&
-                                                                                data
-                                                                                    .almacen_ids
-                                                                                    .length >
-                                                                                    0 && (
-                                                                                    <div className="px-3 py-4 text-center text-sm text-muted-foreground">
-                                                                                        No
-                                                                                        hay
-                                                                                        productos
-                                                                                        en
-                                                                                        los
-                                                                                        almacenes
-                                                                                        seleccionados
-                                                                                    </div>
+                                                                                            </SelectItem>
+                                                                                        );
+                                                                                    },
                                                                                 )}
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                </div>
-                                                                <div className="grid grid-cols-1 gap-2 md:col-span-6 md:grid-cols-12 md:gap-2">
-                                                                    <div className="md:col-span-4">
-                                                                        <Label className="md:text-xs">
-                                                                            Cant.
-                                                                        </Label>
-                                                                        <div className="flex items-center gap-1">
-                                                                            <Input
-                                                                                type="number"
-                                                                                min="1"
-                                                                                step="1"
-                                                                                value={
-                                                                                    producto.modoGramos
-                                                                                        ? Math.round(
-                                                                                              (producto.cantidad ||
-                                                                                                  0) *
-                                                                                                  1000,
-                                                                                          )
-                                                                                        : producto.cantidad ||
-                                                                                          ''
-                                                                                }
-                                                                                onChange={(
-                                                                                    e,
-                                                                                ) => {
-                                                                                    const raw =
-                                                                                        parseInt(
-                                                                                            e
-                                                                                                .target
-                                                                                                .value,
-                                                                                            10,
-                                                                                        ) ||
-                                                                                        0;
-                                                                                    const val =
+                                                                                {productosFiltrados.length ===
+                                                                                    0 &&
+                                                                                    data
+                                                                                        .almacen_ids
+                                                                                        .length >
+                                                                                        0 && (
+                                                                                        <div className="px-3 py-4 text-center text-sm text-muted-foreground">
+                                                                                            No
+                                                                                            hay
+                                                                                            productos
+                                                                                            en
+                                                                                            los
+                                                                                            almacenes
+                                                                                            seleccionados
+                                                                                        </div>
+                                                                                    )}
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                    </div>
+                                                                    <div className="grid grid-cols-1 gap-2 md:col-span-6 md:grid-cols-12 md:gap-2">
+                                                                        <div className="md:col-span-4">
+                                                                            <Label className="md:text-xs">
+                                                                                Cant.
+                                                                            </Label>
+                                                                            <div className="flex items-center gap-1">
+                                                                                <Input
+                                                                                    type="number"
+                                                                                    min="1"
+                                                                                    step="1"
+                                                                                    value={
                                                                                         producto.modoGramos
                                                                                             ? Math.round(
-                                                                                                  raw,
-                                                                                              ) /
-                                                                                              1000
-                                                                                            : raw;
-                                                                                    updateProducto(
-                                                                                        index,
-                                                                                        'cantidad',
-                                                                                        val,
-                                                                                    );
-                                                                                }}
-                                                                            />
-                                                                            <span className="text-[9px] font-bold whitespace-nowrap text-muted-foreground">
-                                                                                {producto.modoGramos
-                                                                                    ? (
-                                                                                          prod as any
-                                                                                      )
-                                                                                          ?.unidad_medida ===
-                                                                                      'lt'
-                                                                                        ? 'ml'
-                                                                                        : 'g'
-                                                                                    : (
-                                                                                            prod as any
-                                                                                        )
-                                                                                            ?.unidad_medida ===
-                                                                                        'kg'
-                                                                                      ? 'kg'
-                                                                                      : (
+                                                                                                  (producto.cantidad ||
+                                                                                                      0) *
+                                                                                                      1000,
+                                                                                              )
+                                                                                            : producto.cantidad ||
+                                                                                              ''
+                                                                                    }
+                                                                                    onChange={(
+                                                                                        e,
+                                                                                    ) => {
+                                                                                        const raw =
+                                                                                            parseInt(
+                                                                                                e
+                                                                                                    .target
+                                                                                                    .value,
+                                                                                                10,
+                                                                                            ) ||
+                                                                                            0;
+                                                                                        const val =
+                                                                                            producto.modoGramos
+                                                                                                ? Math.round(
+                                                                                                      raw,
+                                                                                                  ) /
+                                                                                                  1000
+                                                                                                : raw;
+                                                                                        updateProducto(
+                                                                                            index,
+                                                                                            'cantidad',
+                                                                                            val,
+                                                                                        );
+                                                                                    }}
+                                                                                />
+                                                                                <span className="text-[9px] font-bold whitespace-nowrap text-muted-foreground">
+                                                                                    {producto.modoGramos
+                                                                                        ? (
                                                                                               prod as any
                                                                                           )
                                                                                               ?.unidad_medida ===
                                                                                           'lt'
-                                                                                        ? 'L'
-                                                                                        : 'u'}
-                                                                            </span>
-                                                                            {prod &&
-                                                                                ((
-                                                                                    prod as any
-                                                                                )
-                                                                                    ?.unidad_medida ===
-                                                                                    'kg' ||
-                                                                                    (
-                                                                                        prod as any
-                                                                                    )
-                                                                                        ?.unidad_medida ===
-                                                                                        'lt') && (
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        onClick={() =>
-                                                                                            updateProducto(
-                                                                                                index,
-                                                                                                'modoGramos',
-                                                                                                !producto.modoGramos,
+                                                                                            ? 'ml'
+                                                                                            : 'g'
+                                                                                        : (
+                                                                                                prod as any
                                                                                             )
-                                                                                        }
-                                                                                        className="h-6 rounded bg-muted px-1.5 text-[9px] font-bold transition-colors hover:bg-muted/80"
-                                                                                        title={
-                                                                                            producto.modoGramos
-                                                                                                ? 'Cambiar a unidad completa'
-                                                                                                : 'Cambiar a gramos/ml'
-                                                                                        }
-                                                                                    >
-                                                                                        {producto.modoGramos
-                                                                                            ? (
+                                                                                                ?.unidad_medida ===
+                                                                                            'kg'
+                                                                                          ? 'kg'
+                                                                                          : (
                                                                                                   prod as any
                                                                                               )
                                                                                                   ?.unidad_medida ===
                                                                                               'lt'
-                                                                                                ? 'L'
-                                                                                                : 'kg'
-                                                                                            : (
-                                                                                                    prod as any
+                                                                                            ? 'L'
+                                                                                            : 'u'}
+                                                                                </span>
+                                                                                {prod &&
+                                                                                    ((
+                                                                                        prod as any
+                                                                                    )
+                                                                                        ?.unidad_medida ===
+                                                                                        'kg' ||
+                                                                                        (
+                                                                                            prod as any
+                                                                                        )
+                                                                                            ?.unidad_medida ===
+                                                                                            'lt') && (
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={() =>
+                                                                                                updateProducto(
+                                                                                                    index,
+                                                                                                    'modoGramos',
+                                                                                                    !producto.modoGramos,
                                                                                                 )
-                                                                                                    ?.unidad_medida ===
-                                                                                                'lt'
-                                                                                              ? 'ml'
-                                                                                              : 'g'}
-                                                                                    </button>
+                                                                                            }
+                                                                                            className="h-6 rounded bg-muted px-1.5 text-[9px] font-bold transition-colors hover:bg-muted/80"
+                                                                                            title={
+                                                                                                producto.modoGramos
+                                                                                                    ? 'Cambiar a unidad completa'
+                                                                                                    : 'Cambiar a gramos/ml'
+                                                                                            }
+                                                                                        >
+                                                                                            {producto.modoGramos
+                                                                                                ? (
+                                                                                                      prod as any
+                                                                                                  )
+                                                                                                      ?.unidad_medida ===
+                                                                                                  'lt'
+                                                                                                    ? 'L'
+                                                                                                    : 'kg'
+                                                                                                : (
+                                                                                                        prod as any
+                                                                                                    )
+                                                                                                        ?.unidad_medida ===
+                                                                                                    'lt'
+                                                                                                  ? 'ml'
+                                                                                                  : 'g'}
+                                                                                        </button>
+                                                                                    )}
+                                                                            </div>
+                                                                            {prod &&
+                                                                                (() => {
+                                                                                    const stockTotal =
+                                                                                        prod.inventarios
+                                                                                            ?.filter(
+                                                                                                (
+                                                                                                    inv,
+                                                                                                ) =>
+                                                                                                    data.almacen_ids.includes(
+                                                                                                        inv.almacen_id,
+                                                                                                    ),
+                                                                                            )
+                                                                                            .reduce(
+                                                                                                (
+                                                                                                    sum,
+                                                                                                    inv,
+                                                                                                ) =>
+                                                                                                    sum +
+                                                                                                    (inv.cantidad ||
+                                                                                                        0),
+                                                                                                0,
+                                                                                            ) ??
+                                                                                        0;
+                                                                                    const solicitado =
+                                                                                        producto.cantidad ||
+                                                                                        0;
+                                                                                    const sinStock =
+                                                                                        stockTotal <=
+                                                                                        0;
+                                                                                    const insuficiente =
+                                                                                        solicitado >
+                                                                                            stockTotal &&
+                                                                                        stockTotal >
+                                                                                            0;
+                                                                                    if (
+                                                                                        !sinStock &&
+                                                                                        !insuficiente
+                                                                                    )
+                                                                                        return null;
+                                                                                    return (
+                                                                                        <span
+                                                                                            className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${sinStock ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'}`}
+                                                                                        >
+                                                                                            {sinStock
+                                                                                                ? 'Sin stock'
+                                                                                                : `Stock: ${Math.round(stockTotal)} (necesita ${solicitado})`}
+                                                                                        </span>
+                                                                                    );
+                                                                                })()}
+                                                                        </div>
+                                                                        <div className="md:col-span-4">
+                                                                            <Label className="md:text-xs">
+                                                                                Precio
+                                                                            </Label>
+                                                                            <Input
+                                                                                type="number"
+                                                                                min="0"
+                                                                                step="1"
+                                                                                value={
+                                                                                    producto.precio_unitario
+                                                                                }
+                                                                                onChange={(
+                                                                                    e,
+                                                                                ) =>
+                                                                                    updateProducto(
+                                                                                        index,
+                                                                                        'precio_unitario',
+                                                                                        parseFloat(
+                                                                                            e
+                                                                                                .target
+                                                                                                .value,
+                                                                                        ) ||
+                                                                                            0,
+                                                                                    )
+                                                                                }
+                                                                            />
+                                                                        </div>
+                                                                        <div className="md:col-span-4">
+                                                                            <Label className="md:text-xs">
+                                                                                Subt.
+                                                                            </Label>
+                                                                            <Input
+                                                                                value={formatCurrency(
+                                                                                    subtotalItem,
+                                                                                )}
+                                                                                disabled
+                                                                                className="h-9 bg-gray-50"
+                                                                            />
+                                                                            {prod &&
+                                                                                ((
+                                                                                    prod as any
+                                                                                )
+                                                                                    .medida_pesable ||
+                                                                                    (
+                                                                                        prod as any
+                                                                                    )
+                                                                                        .unidad_medida !==
+                                                                                        'unidad' ||
+                                                                                    (
+                                                                                        prod as any
+                                                                                    )
+                                                                                        .peso_base >
+                                                                                        0) && (
+                                                                                    <div className="mt-1 flex justify-between px-1 text-[10px] font-bold text-emerald-600">
+                                                                                        <span>
+                                                                                            Total{' '}
+                                                                                            {(
+                                                                                                prod as any
+                                                                                            )
+                                                                                                .unidad_medida ===
+                                                                                            'lt'
+                                                                                                ? 'Litros'
+                                                                                                : 'Kg'}
+
+                                                                                            :
+                                                                                        </span>
+                                                                                        <span>
+                                                                                            {(() => {
+                                                                                                const contenido =
+                                                                                                    Number(
+                                                                                                        (
+                                                                                                            prod as any
+                                                                                                        )
+                                                                                                            .contenido_por_unidad,
+                                                                                                    ) ||
+                                                                                                    1;
+                                                                                                const tara =
+                                                                                                    Number(
+                                                                                                        (
+                                                                                                            prod as any
+                                                                                                        )
+                                                                                                            .peso_base,
+                                                                                                    ) ||
+                                                                                                    0;
+                                                                                                const total =
+                                                                                                    producto.cantidad *
+                                                                                                        contenido +
+                                                                                                    producto.cantidad *
+                                                                                                        tara;
+                                                                                                return total.toFixed(
+                                                                                                    2,
+                                                                                                );
+                                                                                            })()}{' '}
+                                                                                            {(
+                                                                                                prod as any
+                                                                                            )
+                                                                                                .unidad_medida ===
+                                                                                            'lt'
+                                                                                                ? 'L'
+                                                                                                : 'Kg'}
+                                                                                        </span>
+                                                                                    </div>
                                                                                 )}
                                                                         </div>
-                                                                        {prod &&
-                                                                            (() => {
-                                                                                const stockTotal =
-                                                                                    prod.inventarios
-                                                                                        ?.filter(
+                                                                        {(
+                                                                            prod as any
+                                                                        )
+                                                                            ?.envase_retornable ==
+                                                                            true && (
+                                                                            <div className="mt-2 flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50 p-2 md:col-span-12">
+                                                                                <Label className="text-xs font-bold whitespace-nowrap text-amber-800">
+                                                                                    Envases
+                                                                                    retornados
+                                                                                </Label>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        min={
+                                                                                            0
+                                                                                        }
+                                                                                        max={
+                                                                                            producto.cantidad ??
+                                                                                            0
+                                                                                        }
+                                                                                        className="h-8 w-20 rounded-md border border-amber-300 bg-white px-2 text-sm text-amber-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                                                                        placeholder="0"
+                                                                                        value={
                                                                                             (
-                                                                                                inv,
-                                                                                            ) =>
-                                                                                                data.almacen_ids.includes(
-                                                                                                    inv.almacen_id,
-                                                                                                ),
-                                                                                        )
-                                                                                        .reduce(
-                                                                                            (
-                                                                                                sum,
-                                                                                                inv,
-                                                                                            ) =>
-                                                                                                sum +
-                                                                                                (inv.cantidad ||
-                                                                                                    0),
-                                                                                            0,
-                                                                                        ) ??
-                                                                                    0;
-                                                                                const solicitado =
-                                                                                    producto.cantidad ||
-                                                                                    0;
-                                                                                const sinStock =
-                                                                                    stockTotal <=
-                                                                                    0;
-                                                                                const insuficiente =
-                                                                                    solicitado >
-                                                                                        stockTotal &&
-                                                                                    stockTotal >
-                                                                                        0;
-                                                                                if (
-                                                                                    !sinStock &&
-                                                                                    !insuficiente
-                                                                                )
-                                                                                    return null;
-                                                                                return (
-                                                                                    <span
-                                                                                        className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${sinStock ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'}`}
-                                                                                    >
-                                                                                        {sinStock
-                                                                                            ? 'Sin stock'
-                                                                                            : `Stock: ${Math.round(stockTotal)} (necesita ${solicitado})`}
-                                                                                    </span>
-                                                                                );
-                                                                            })()}
-                                                                    </div>
-                                                                    <div className="md:col-span-4">
-                                                                        <Label className="md:text-xs">
-                                                                            Precio
-                                                                        </Label>
-                                                                        <Input
-                                                                            type="number"
-                                                                            min="0"
-                                                                            step="1"
-                                                                            value={
-                                                                                producto.precio_unitario
-                                                                            }
-                                                                            onChange={(
-                                                                                e,
-                                                                            ) =>
-                                                                                updateProducto(
-                                                                                    index,
-                                                                                    'precio_unitario',
-                                                                                    parseFloat(
-                                                                                        e
-                                                                                            .target
-                                                                                            .value,
-                                                                                    ) ||
-                                                                                        0,
-                                                                                )
-                                                                            }
-                                                                        />
-                                                                    </div>
-                                                                    <div className="md:col-span-4">
-                                                                        <Label className="md:text-xs">
-                                                                            Subt.
-                                                                        </Label>
-                                                                        <Input
-                                                                            value={formatCurrency(
-                                                                                subtotalItem,
-                                                                            )}
-                                                                            disabled
-                                                                            className="h-9 bg-gray-50"
-                                                                        />
-                                                                        {prod &&
-                                                                            ((
-                                                                                prod as any
-                                                                            )
-                                                                                .medida_pesable ||
-                                                                                (
-                                                                                    prod as any
-                                                                                )
-                                                                                    .unidad_medida !==
-                                                                                    'unidad' ||
-                                                                                (
-                                                                                    prod as any
-                                                                                )
-                                                                                    .peso_base >
-                                                                                    0) && (
-                                                                                <div className="mt-1 flex justify-between px-1 text-[10px] font-bold text-emerald-600">
-                                                                                    <span>
-                                                                                        Total{' '}
-                                                                                        {(
-                                                                                            prod as any
-                                                                                        )
-                                                                                            .unidad_medida ===
-                                                                                        'lt'
-                                                                                            ? 'Litros'
-                                                                                            : 'Kg'}
-
-                                                                                        :
-                                                                                    </span>
-                                                                                    <span>
-                                                                                        {(() => {
-                                                                                            const contenido =
-                                                                                                Number(
-                                                                                                    (
-                                                                                                        prod as any
-                                                                                                    )
-                                                                                                        .contenido_por_unidad,
-                                                                                                ) ||
-                                                                                                1;
-                                                                                            const tara =
-                                                                                                Number(
-                                                                                                    (
-                                                                                                        prod as any
-                                                                                                    )
-                                                                                                        .peso_base,
-                                                                                                ) ||
-                                                                                                0;
-                                                                                            const total =
-                                                                                                producto.cantidad *
-                                                                                                    contenido +
-                                                                                                producto.cantidad *
-                                                                                                    tara;
-                                                                                            return total.toFixed(
-                                                                                                2,
-                                                                                            );
-                                                                                        })()}{' '}
-                                                                                        {(
-                                                                                            prod as any
-                                                                                        )
-                                                                                            .unidad_medida ===
-                                                                                        'lt'
-                                                                                            ? 'L'
-                                                                                            : 'Kg'}
+                                                                                                producto as any
+                                                                                            )
+                                                                                                .cantidad_retornada ??
+                                                                                            ''
+                                                                                        }
+                                                                                        onChange={(
+                                                                                            e,
+                                                                                        ) =>
+                                                                                            updateProducto(
+                                                                                                index,
+                                                                                                'cantidad_retornada',
+                                                                                                (e
+                                                                                                    .target
+                                                                                                    .value ===
+                                                                                                ''
+                                                                                                    ? (null as any)
+                                                                                                    : Number(
+                                                                                                          e
+                                                                                                              .target
+                                                                                                              .value,
+                                                                                                      )) as any,
+                                                                                            )
+                                                                                        }
+                                                                                    />
+                                                                                    <span className="text-xs text-amber-700">
+                                                                                        de{' '}
+                                                                                        {
+                                                                                            producto.cantidad
+                                                                                        }{' '}
+                                                                                        vendidos
                                                                                     </span>
                                                                                 </div>
-                                                                            )}
-                                                                    </div>
-                                                                    {(
-                                                                        prod as any
-                                                                    )
-                                                                        ?.envase_retornable ==
-                                                                        true && (
-                                                                        <div className="mt-2 flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50 p-2 md:col-span-12">
-                                                                            <Label className="text-xs font-bold whitespace-nowrap text-amber-800">
-                                                                                Envases
-                                                                                retornados
-                                                                            </Label>
-                                                                            <div className="flex items-center gap-2">
-                                                                                <input
-                                                                                    type="number"
-                                                                                    min={
-                                                                                        0
-                                                                                    }
-                                                                                    max={
-                                                                                        producto.cantidad ??
-                                                                                        0
-                                                                                    }
-                                                                                    className="h-8 w-20 rounded-md border border-amber-300 bg-white px-2 text-sm text-amber-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                                                                    placeholder="0"
-                                                                                    value={
-                                                                                        (
-                                                                                            producto as any
-                                                                                        )
-                                                                                            .cantidad_retornada ??
-                                                                                        ''
-                                                                                    }
-                                                                                    onChange={(
-                                                                                        e,
-                                                                                    ) =>
-                                                                                        updateProducto(
-                                                                                            index,
-                                                                                            'cantidad_retornada',
-                                                                                            (e
-                                                                                                .target
-                                                                                                .value ===
-                                                                                            ''
-                                                                                                ? (null as any)
-                                                                                                : Number(
-                                                                                                      e
-                                                                                                          .target
-                                                                                                          .value,
-                                                                                                  )) as any,
-                                                                                        )
-                                                                                    }
-                                                                                />
-                                                                                <span className="text-xs text-amber-700">
-                                                                                    de{' '}
-                                                                                    {
-                                                                                        producto.cantidad
-                                                                                    }{' '}
-                                                                                    vendidos
-                                                                                </span>
                                                                             </div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                <div className="flex justify-end md:col-span-1">
-                                                                    <Button
-                                                                        type="button"
-                                                                        variant="destructive"
-                                                                        size="icon"
-                                                                        onClick={() =>
-                                                                            removeProducto(
-                                                                                index,
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <Trash2 className="h-4 w-4" />
-                                                                    </Button>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    },
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="grid grid-cols-1 gap-4 rounded-lg border p-4 md:grid-cols-2">
-                                        <div className="flex items-center justify-between space-x-2">
-                                            <div className="flex flex-col gap-1">
-                                                <Label className="font-semibold text-gray-700">
-                                                    Impuesto IVA (19%)
-                                                </Label>
-                                                <span className="text-[10px] text-gray-500">
-                                                    ¿Incluye cálculo de
-                                                    impuestos en el total?
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span
-                                                    className={`text-[10px] font-bold uppercase ${data.incluye_iva ? 'text-green-600' : 'text-gray-400'}`}
-                                                >
-                                                    {data.incluye_iva
-                                                        ? 'Activado'
-                                                        : 'Desactivado'}
-                                                </span>
-                                                <input
-                                                    type="checkbox"
-                                                    className="h-5 w-10 cursor-pointer appearance-none rounded-full bg-gray-200 transition-colors checked:bg-emerald-600"
-                                                    checked={data.incluye_iva}
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            'incluye_iva',
-                                                            e.target.checked,
-                                                        )
-                                                    }
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-1 gap-3">
-                                            <Label className="font-semibold text-gray-700">
-                                                Descuento Aplicado
-                                            </Label>
-                                            <div className="flex gap-2">
-                                                <Select
-                                                    value={data.tipo_descuento}
-                                                    onValueChange={(v) =>
-                                                        setData(
-                                                            'tipo_descuento',
-                                                            v as
-                                                                | 'monto'
-                                                                | 'porcentaje',
-                                                        )
-                                                    }
-                                                >
-                                                    <SelectTrigger className="w-[110px]">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="monto">
-                                                            Monto $
-                                                        </SelectItem>
-                                                        <SelectItem value="porcentaje">
-                                                            Porc. %
-                                                        </SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <Input
-                                                    type="number"
-                                                    min="0"
-                                                    value={data.valor_descuento}
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            'valor_descuento',
-                                                            parseFloat(
-                                                                e.target.value,
-                                                            ) || 0,
-                                                        )
-                                                    }
-                                                    className="flex-1"
-                                                    placeholder={
-                                                        data.tipo_descuento ===
-                                                        'monto'
-                                                            ? 'Ej: 5000'
-                                                            : 'Ej: 10'
-                                                    }
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="rounded-lg border bg-gray-50 p-4">
-                                        <div className="flex justify-between text-sm">
-                                            <span>Subtotal Bruto:</span>
-                                            <span className="font-medium">
-                                                {formatCurrency(
-                                                    calcularTotales.subtotal,
-                                                )}
-                                            </span>
-                                        </div>
-                                        {calcularTotales.montoDescuento > 0 && (
-                                            <div className="mt-1 flex justify-between text-sm text-red-600">
-                                                <span>
-                                                    Descuento (
-                                                    {data.tipo_descuento ===
-                                                    'porcentaje'
-                                                        ? `${data.valor_descuento}%`
-                                                        : 'Monto'}
-                                                    ):
-                                                </span>
-                                                <span className="font-medium">
-                                                    -
-                                                    {formatCurrency(
-                                                        calcularTotales.montoDescuento,
-                                                    )}
-                                                </span>
-                                            </div>
-                                        )}
-                                        <div className="mt-1 flex justify-between border-t border-dashed pt-1 text-sm">
-                                            <span>Base Imponible:</span>
-                                            <span className="font-medium">
-                                                {formatCurrency(
-                                                    calcularTotales.baseImponible,
-                                                )}
-                                            </span>
-                                        </div>
-                                        <div className="mt-1 flex justify-between text-sm">
-                                            <span>IVA (19%):</span>
-                                            <span
-                                                className={`font-medium ${!data.incluye_iva ? 'text-gray-400 line-through' : ''}`}
-                                            >
-                                                {formatCurrency(
-                                                    calcularTotales.iva,
-                                                )}
-                                            </span>
-                                        </div>
-                                        <div className="mt-2 flex justify-between border-t border-emerald-200 pt-2 text-base font-bold text-emerald-900">
-                                            <span>Total Neto a Pagar:</span>
-                                            <span className="text-xl">
-                                                {formatCurrency(
-                                                    calcularTotales.total,
-                                                )}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid gap-2">
-                                        <Label>Notas / Descripción</Label>
-                                        <textarea
-                                            value={data.notas}
-                                            onChange={(e) =>
-                                                setData('notas', e.target.value)
-                                            }
-                                            className="min-h-[80px] w-full rounded-lg border bg-background p-3 text-sm"
-                                            placeholder="Agregar notas o descripción adicional..."
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                            <DialogFooter className="shrink-0 border-t bg-background p-4">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={handleClose}
-                                >
-                                    Cancelar
-                                </Button>
-                                <Button
-                                    type="submit"
-                                    disabled={
-                                        !data.numero_factura ||
-                                        !data.fecha ||
-                                        data.productos.length === 0 ||
-                                        (data.cliente_tipo === 'existente' &&
-                                            !data.cliente_id) ||
-                                        (data.cliente_tipo === 'generico' &&
-                                            !data.cliente_nombre) ||
-                                        data.productos.some(
-                                            (p: any) =>
-                                                !p.producto_id ||
-                                                !p.cantidad ||
-                                                p.cantidad <= 0,
-                                        )
-                                    }
-                                >
-                                    <Check className="mr-2 h-4 w-4" />
-                                    Guardar
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
-
-                {/* Modal de Vista Premium (Solo lectura) */}
-                <Dialog open={verModalOpen} onOpenChange={setVerModalOpen}>
-                    <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto rounded-2xl border-none bg-white p-0 shadow-2xl md:max-w-3xl">
-                        <DialogHeader className="relative overflow-hidden px-6 pt-10 pb-16 md:px-8 md:pt-10 md:pb-20">
-                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-700 via-emerald-800 to-emerald-950 opacity-100" />
-                            <div className="absolute top-0 right-0 p-6 text-white opacity-20 md:p-8">
-                                <Eye className="h-16 w-16 rotate-12 md:h-24 md:w-24" />
-                            </div>
-
-                            <div className="relative z-10 flex flex-col gap-1 text-white">
-                                <Badge className="w-fit border-none bg-white/20 px-2 py-0.5 text-[8px] font-bold tracking-widest text-white uppercase md:px-3 md:py-1 md:text-[10px]">
-                                    Detalle de Venta
-                                </Badge>
-                                <DialogTitle className="text-2xl font-black tracking-tight text-white md:text-3xl lg:text-4xl">
-                                    Venta #{ventaSeleccionada?.numero_factura}
-                                </DialogTitle>
-                                <DialogDescription className="text-base font-medium text-emerald-100/80 md:text-lg">
-                                    Información administrativa y financiera del
-                                    registro.
-                                </DialogDescription>
-                            </div>
-                        </DialogHeader>
-
-                        {ventaSeleccionada && (
-                            <>
-                                <div className="relative z-20 px-4 pb-6 md:px-8 md:pb-6">
-                                    <div className="grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-4 lg:grid-cols-5">
-                                        {[
-                                            {
-                                                label: 'Cliente',
-                                                val: ventaSeleccionada.cliente
-                                                    ?.nombre,
-                                                color: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-                                            },
-                                            {
-                                                label: 'Bodega',
-                                                val:
-                                                    ventaSeleccionada.almacen_nombre ||
-                                                    'Sin bodega',
-                                                color: 'border-purple-200 bg-purple-50 text-purple-800',
-                                            },
-                                            {
-                                                label: 'Fecha',
-                                                val: formatDateCLP(
-                                                    ventaSeleccionada.fecha,
-                                                ),
-                                                color: 'border-gray-200 bg-gray-50 text-gray-800',
-                                            },
-                                            {
-                                                label: 'Estado',
-                                                val: ventaSeleccionada.estado.toUpperCase(),
-                                                color:
-                                                    ventaSeleccionada.estado ===
-                                                    'pagada'
-                                                        ? 'border-green-200 bg-green-50 text-green-800'
-                                                        : ventaSeleccionada.estado ===
-                                                            'cancelada'
-                                                          ? 'border-red-200 bg-red-50 text-red-800'
-                                                          : 'border-amber-200 bg-amber-50 text-amber-800',
-                                            },
-                                            {
-                                                label: 'Total',
-                                                val: formatCurrency(
-                                                    ventaSeleccionada.total,
-                                                ),
-                                                color: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-                                            },
-                                        ].map((item, idx) => (
-                                            <div
-                                                key={idx}
-                                                className={`rounded-lg border p-2 md:rounded-xl md:p-4 ${item.color}`}
-                                            >
-                                                <p className="mb-0.5 text-[8px] font-extrabold tracking-wider uppercase opacity-70 md:text-[10px]">
-                                                    {item.label}
-                                                </p>
-                                                <p className="truncate text-xs font-semibold md:text-sm">
-                                                    {item.val}
-                                                </p>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-                                        <div className="lg:col-span-2">
-                                            <Card className="border-none bg-gray-50/50 shadow-sm">
-                                                <CardHeader className="border-b border-gray-100 pb-2 md:pb-3">
-                                                    <CardTitle className="text-sm font-bold text-gray-800 md:text-base">
-                                                        Productos Detallados
-                                                    </CardTitle>
-                                                </CardHeader>
-                                                <CardContent className="p-0">
-                                                    <div className="w-full overflow-x-auto">
-                                                        <table className="w-full text-xs md:text-sm">
-                                                            <thead>
-                                                                <tr className="border-b bg-gray-100/50 text-[9px] font-bold text-gray-500 uppercase md:text-[10px]">
-                                                                    <th className="px-3 py-2 text-left md:px-5 md:py-3">
-                                                                        Producto
-                                                                    </th>
-                                                                    <th className="px-3 py-2 text-center md:px-5 md:py-3">
-                                                                        Cant.
-                                                                    </th>
-                                                                    <th className="px-3 py-2 text-right md:px-5 md:py-3">
-                                                                        Unitario
-                                                                    </th>
-                                                                    <th className="px-3 py-2 text-right md:px-5 md:py-3">
-                                                                        Subtotal
-                                                                    </th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody className="divide-y divide-gray-100 bg-white">
-                                                                {ventaSeleccionada.detalle_ventas?.map(
-                                                                    (
-                                                                        detalle,
-                                                                        i,
-                                                                    ) => (
-                                                                        <tr
-                                                                            key={
-                                                                                i
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex justify-end md:col-span-1">
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="destructive"
+                                                                            size="icon"
+                                                                            onClick={() =>
+                                                                                removeProducto(
+                                                                                    index,
+                                                                                )
                                                                             }
-                                                                            className="group transition-colors hover:bg-emerald-50/30"
                                                                         >
-                                                                            <td className="px-3 py-2 md:px-5 md:py-3">
-                                                                                <span className="font-bold text-gray-700">
-                                                                                    {detalle
-                                                                                        .producto
-                                                                                        ?.nombre ||
-                                                                                        'Producto'}
-                                                                                </span>
-                                                                            </td>
-                                                                            <td className="px-3 py-2 text-center md:px-5 md:py-3">
-                                                                                {
-                                                                                    detalle.cantidad
-                                                                                }
-                                                                            </td>
-                                                                            <td className="px-3 py-2 text-right md:px-5 md:py-3">
-                                                                                {formatCurrency(
-                                                                                    detalle.precio_unitario,
-                                                                                )}
-                                                                            </td>
-                                                                            <td className="px-3 py-2 text-right font-bold text-emerald-600 md:px-5 md:py-3">
-                                                                                {formatCurrency(
-                                                                                    detalle.subtotal,
-                                                                                )}
-                                                                            </td>
-                                                                        </tr>
-                                                                    ),
-                                                                )}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-
-                                            {ventaSeleccionada.notas && (
-                                                <Card className="mt-4 border-none bg-amber-50/30 shadow-sm">
-                                                    <CardHeader className="border-b border-amber-100 px-4 py-2 md:px-5 md:py-3">
-                                                        <CardTitle className="text-[10px] font-black tracking-widest text-amber-700 uppercase md:text-xs">
-                                                            Observaciones
-                                                        </CardTitle>
-                                                    </CardHeader>
-                                                    <CardContent className="p-4 text-xs leading-relaxed font-medium text-amber-900/70 italic md:text-sm">
-                                                        {
-                                                            ventaSeleccionada.notas
-                                                        }
-                                                    </CardContent>
-                                                </Card>
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        },
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
 
-                                        <div className="flex flex-col gap-4">
-                                            <Card className="border-none bg-emerald-950 text-white shadow-xl">
-                                                <CardHeader className="pb-1 md:pb-2">
-                                                    <CardTitle className="text-[10px] font-extrabold tracking-widest text-emerald-300 uppercase opacity-80 md:text-xs">
-                                                        Liquidación Final
-                                                    </CardTitle>
-                                                </CardHeader>
-                                                <CardContent className="flex flex-col gap-2 md:gap-4">
-                                                    <div className="flex items-center justify-between border-b border-white/10 pb-2 text-xs md:pb-3 md:text-sm">
-                                                        <span className="font-medium text-emerald-100/60">
-                                                            Subtotal
-                                                        </span>
-                                                        <span className="font-mono text-emerald-50">
-                                                            {formatCurrency(
-                                                                ventaSeleccionada.subtotal,
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center justify-between border-b border-white/10 pb-2 text-xs md:pb-3 md:text-sm">
-                                                        <span className="font-medium text-emerald-100/60">
-                                                            IVA (19%)
-                                                        </span>
-                                                        <span
-                                                            className={`font-mono text-emerald-50 ${!ventaSeleccionada.incluye_iva ? 'line-through opacity-50' : ''}`}
-                                                        >
-                                                            {formatCurrency(
-                                                                ventaSeleccionada.iva,
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                    {ventaSeleccionada.monto_descuento >
-                                                        0 && (
+                                        <div className="grid grid-cols-1 gap-4 rounded-lg border p-4 md:grid-cols-2">
+                                            <div className="flex items-center justify-between space-x-2">
+                                                <div className="flex flex-col gap-1">
+                                                    <Label className="font-semibold text-gray-700">
+                                                        Impuesto IVA (19%)
+                                                    </Label>
+                                                    <span className="text-[10px] text-gray-500">
+                                                        ¿Incluye cálculo de
+                                                        impuestos en el total?
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span
+                                                        className={`text-[10px] font-bold uppercase ${data.incluye_iva ? 'text-green-600' : 'text-gray-400'}`}
+                                                    >
+                                                        {data.incluye_iva
+                                                            ? 'Activado'
+                                                            : 'Desactivado'}
+                                                    </span>
+                                                    <input
+                                                        type="checkbox"
+                                                        className="h-5 w-10 cursor-pointer appearance-none rounded-full bg-gray-200 transition-colors checked:bg-emerald-600"
+                                                        checked={
+                                                            data.incluye_iva
+                                                        }
+                                                        onChange={(e) =>
+                                                            setData(
+                                                                'incluye_iva',
+                                                                e.target
+                                                                    .checked,
+                                                            )
+                                                        }
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-1 gap-3">
+                                                <Label className="font-semibold text-gray-700">
+                                                    Descuento Aplicado
+                                                </Label>
+                                                <div className="flex gap-2">
+                                                    <Select
+                                                        value={
+                                                            data.tipo_descuento
+                                                        }
+                                                        onValueChange={(v) =>
+                                                            setData(
+                                                                'tipo_descuento',
+                                                                v as
+                                                                    | 'monto'
+                                                                    | 'porcentaje',
+                                                            )
+                                                        }
+                                                    >
+                                                        <SelectTrigger className="w-[110px]">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="monto">
+                                                                Monto $
+                                                            </SelectItem>
+                                                            <SelectItem value="porcentaje">
+                                                                Porc. %
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <Input
+                                                        type="number"
+                                                        min="0"
+                                                        value={
+                                                            data.valor_descuento
+                                                        }
+                                                        onChange={(e) =>
+                                                            setData(
+                                                                'valor_descuento',
+                                                                parseFloat(
+                                                                    e.target
+                                                                        .value,
+                                                                ) || 0,
+                                                            )
+                                                        }
+                                                        className="flex-1"
+                                                        placeholder={
+                                                            data.tipo_descuento ===
+                                                            'monto'
+                                                                ? 'Ej: 5000'
+                                                                : 'Ej: 10'
+                                                        }
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-lg border bg-gray-50 p-4">
+                                            <div className="flex justify-between text-sm">
+                                                <span>Subtotal Bruto:</span>
+                                                <span className="font-medium">
+                                                    {formatCurrency(
+                                                        calcularTotales.subtotal,
+                                                    )}
+                                                </span>
+                                            </div>
+                                            {calcularTotales.montoDescuento >
+                                                0 && (
+                                                <div className="mt-1 flex justify-between text-sm text-red-600">
+                                                    <span>
+                                                        Descuento (
+                                                        {data.tipo_descuento ===
+                                                        'porcentaje'
+                                                            ? `${data.valor_descuento}%`
+                                                            : 'Monto'}
+                                                        ):
+                                                    </span>
+                                                    <span className="font-medium">
+                                                        -
+                                                        {formatCurrency(
+                                                            calcularTotales.montoDescuento,
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <div className="mt-1 flex justify-between border-t border-dashed pt-1 text-sm">
+                                                <span>Base Imponible:</span>
+                                                <span className="font-medium">
+                                                    {formatCurrency(
+                                                        calcularTotales.baseImponible,
+                                                    )}
+                                                </span>
+                                            </div>
+                                            <div className="mt-1 flex justify-between text-sm">
+                                                <span>IVA (19%):</span>
+                                                <span
+                                                    className={`font-medium ${!data.incluye_iva ? 'text-gray-400 line-through' : ''}`}
+                                                >
+                                                    {formatCurrency(
+                                                        calcularTotales.iva,
+                                                    )}
+                                                </span>
+                                            </div>
+                                            <div className="mt-2 flex justify-between border-t border-emerald-200 pt-2 text-base font-bold text-emerald-900">
+                                                <span>Total Neto a Pagar:</span>
+                                                <span className="text-xl">
+                                                    {formatCurrency(
+                                                        calcularTotales.total,
+                                                    )}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid gap-2">
+                                            <Label>Notas / Descripción</Label>
+                                            <textarea
+                                                value={data.notas}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'notas',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className="min-h-[80px] w-full rounded-lg border bg-background p-3 text-sm"
+                                                placeholder="Agregar notas o descripción adicional..."
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <DialogFooter className="shrink-0 border-t bg-background p-4">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={handleClose}
+                                    >
+                                        Cancelar
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        disabled={
+                                            !data.numero_factura ||
+                                            !data.fecha ||
+                                            data.productos.length === 0 ||
+                                            (data.cliente_tipo ===
+                                                'existente' &&
+                                                !data.cliente_id) ||
+                                            (data.cliente_tipo === 'generico' &&
+                                                !data.cliente_nombre) ||
+                                            data.productos.some(
+                                                (p: any) =>
+                                                    !p.producto_id ||
+                                                    !p.cantidad ||
+                                                    p.cantidad <= 0,
+                                            )
+                                        }
+                                    >
+                                        <Check className="mr-2 h-4 w-4" />
+                                        Guardar
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
+
+                    {/* Modal de Vista Premium (Solo lectura) */}
+                    <Dialog open={verModalOpen} onOpenChange={setVerModalOpen}>
+                        <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto rounded-2xl border-none bg-white p-0 shadow-2xl md:max-w-3xl">
+                            <DialogHeader className="relative overflow-hidden px-6 pt-10 pb-16 md:px-8 md:pt-10 md:pb-20">
+                                <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-700 via-emerald-800 to-emerald-950 opacity-100" />
+                                <div className="absolute top-0 right-0 p-6 text-white opacity-20 md:p-8">
+                                    <Eye className="h-16 w-16 rotate-12 md:h-24 md:w-24" />
+                                </div>
+
+                                <div className="relative z-10 flex flex-col gap-1 text-white">
+                                    <Badge className="w-fit border-none bg-white/20 px-2 py-0.5 text-[8px] font-bold tracking-widest text-white uppercase md:px-3 md:py-1 md:text-[10px]">
+                                        Detalle de Venta
+                                    </Badge>
+                                    <DialogTitle className="text-2xl font-black tracking-tight text-white md:text-3xl lg:text-4xl">
+                                        Venta #
+                                        {ventaSeleccionada?.numero_factura}
+                                    </DialogTitle>
+                                    <DialogDescription className="text-base font-medium text-emerald-100/80 md:text-lg">
+                                        Información administrativa y financiera
+                                        del registro.
+                                    </DialogDescription>
+                                </div>
+                            </DialogHeader>
+
+                            {ventaSeleccionada && (
+                                <>
+                                    <div className="relative z-20 px-4 pb-6 md:px-8 md:pb-6">
+                                        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-4 lg:grid-cols-5">
+                                            {[
+                                                {
+                                                    label: 'Cliente',
+                                                    val: ventaSeleccionada
+                                                        .cliente?.nombre,
+                                                    color: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+                                                },
+                                                {
+                                                    label: 'Bodega',
+                                                    val:
+                                                        ventaSeleccionada.almacen_nombre ||
+                                                        'Sin bodega',
+                                                    color: 'border-purple-200 bg-purple-50 text-purple-800',
+                                                },
+                                                {
+                                                    label: 'Fecha',
+                                                    val: formatDateCLP(
+                                                        ventaSeleccionada.fecha,
+                                                    ),
+                                                    color: 'border-gray-200 bg-gray-50 text-gray-800',
+                                                },
+                                                {
+                                                    label: 'Estado',
+                                                    val: ventaSeleccionada.estado.toUpperCase(),
+                                                    color:
+                                                        ventaSeleccionada.estado ===
+                                                        'pagada'
+                                                            ? 'border-green-200 bg-green-50 text-green-800'
+                                                            : ventaSeleccionada.estado ===
+                                                                'cancelada'
+                                                              ? 'border-red-200 bg-red-50 text-red-800'
+                                                              : 'border-amber-200 bg-amber-50 text-amber-800',
+                                                },
+                                                {
+                                                    label: 'Total',
+                                                    val: formatCurrency(
+                                                        ventaSeleccionada.total,
+                                                    ),
+                                                    color: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+                                                },
+                                            ].map((item, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className={`rounded-lg border p-2 md:rounded-xl md:p-4 ${item.color}`}
+                                                >
+                                                    <p className="mb-0.5 text-[8px] font-extrabold tracking-wider uppercase opacity-70 md:text-[10px]">
+                                                        {item.label}
+                                                    </p>
+                                                    <p className="truncate text-xs font-semibold md:text-sm">
+                                                        {item.val}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                                            <div className="lg:col-span-2">
+                                                <Card className="border-none bg-gray-50/50 shadow-sm">
+                                                    <CardHeader className="border-b border-gray-100 pb-2 md:pb-3">
+                                                        <CardTitle className="text-sm font-bold text-gray-800 md:text-base">
+                                                            Productos Detallados
+                                                        </CardTitle>
+                                                    </CardHeader>
+                                                    <CardContent className="p-0">
+                                                        <div className="w-full overflow-x-auto">
+                                                            <table className="w-full text-xs md:text-sm">
+                                                                <thead>
+                                                                    <tr className="border-b bg-gray-100/50 text-[9px] font-bold text-gray-500 uppercase md:text-[10px]">
+                                                                        <th className="px-3 py-2 text-left md:px-5 md:py-3">
+                                                                            Producto
+                                                                        </th>
+                                                                        <th className="px-3 py-2 text-center md:px-5 md:py-3">
+                                                                            Cant.
+                                                                        </th>
+                                                                        <th className="px-3 py-2 text-right md:px-5 md:py-3">
+                                                                            Unitario
+                                                                        </th>
+                                                                        <th className="px-3 py-2 text-right md:px-5 md:py-3">
+                                                                            Subtotal
+                                                                        </th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody className="divide-y divide-gray-100 bg-white">
+                                                                    {ventaSeleccionada.detalle_ventas?.map(
+                                                                        (
+                                                                            detalle,
+                                                                            i,
+                                                                        ) => (
+                                                                            <tr
+                                                                                key={
+                                                                                    i
+                                                                                }
+                                                                                className="group transition-colors hover:bg-emerald-50/30"
+                                                                            >
+                                                                                <td className="px-3 py-2 md:px-5 md:py-3">
+                                                                                    <span className="font-bold text-gray-700">
+                                                                                        {detalle
+                                                                                            .producto
+                                                                                            ?.nombre ||
+                                                                                            'Producto'}
+                                                                                    </span>
+                                                                                </td>
+                                                                                <td className="px-3 py-2 text-center md:px-5 md:py-3">
+                                                                                    {
+                                                                                        detalle.cantidad
+                                                                                    }
+                                                                                </td>
+                                                                                <td className="px-3 py-2 text-right md:px-5 md:py-3">
+                                                                                    {formatCurrency(
+                                                                                        detalle.precio_unitario,
+                                                                                    )}
+                                                                                </td>
+                                                                                <td className="px-3 py-2 text-right font-bold text-emerald-600 md:px-5 md:py-3">
+                                                                                    {formatCurrency(
+                                                                                        detalle.subtotal,
+                                                                                    )}
+                                                                                </td>
+                                                                            </tr>
+                                                                        ),
+                                                                    )}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+
+                                                {ventaSeleccionada.notas && (
+                                                    <Card className="mt-4 border-none bg-amber-50/30 shadow-sm">
+                                                        <CardHeader className="border-b border-amber-100 px-4 py-2 md:px-5 md:py-3">
+                                                            <CardTitle className="text-[10px] font-black tracking-widest text-amber-700 uppercase md:text-xs">
+                                                                Observaciones
+                                                            </CardTitle>
+                                                        </CardHeader>
+                                                        <CardContent className="p-4 text-xs leading-relaxed font-medium text-amber-900/70 italic md:text-sm">
+                                                            {
+                                                                ventaSeleccionada.notas
+                                                            }
+                                                        </CardContent>
+                                                    </Card>
+                                                )}
+                                            </div>
+
+                                            <div className="flex flex-col gap-4">
+                                                <Card className="border-none bg-emerald-950 text-white shadow-xl">
+                                                    <CardHeader className="pb-1 md:pb-2">
+                                                        <CardTitle className="text-[10px] font-extrabold tracking-widest text-emerald-300 uppercase opacity-80 md:text-xs">
+                                                            Liquidación Final
+                                                        </CardTitle>
+                                                    </CardHeader>
+                                                    <CardContent className="flex flex-col gap-2 md:gap-4">
                                                         <div className="flex items-center justify-between border-b border-white/10 pb-2 text-xs md:pb-3 md:text-sm">
-                                                            <span className="font-medium text-red-300">
-                                                                Descuento
+                                                            <span className="font-medium text-emerald-100/60">
+                                                                Subtotal
                                                             </span>
-                                                            <span className="font-mono text-red-100">
-                                                                -
+                                                            <span className="font-mono text-emerald-50">
                                                                 {formatCurrency(
-                                                                    ventaSeleccionada.monto_descuento,
+                                                                    ventaSeleccionada.subtotal,
                                                                 )}
                                                             </span>
                                                         </div>
-                                                    )}
-                                                    <div className="py-2 text-center md:py-4">
-                                                        <span className="text-[9px] font-black tracking-tighter text-white/40 uppercase md:text-[10px]">
-                                                            Monto Total
-                                                        </span>
-                                                        <p className="text-2xl font-black tracking-tighter text-white md:text-3xl lg:text-4xl">
-                                                            {formatCurrency(
-                                                                ventaSeleccionada.total,
-                                                            )}
-                                                        </p>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
+                                                        <div className="flex items-center justify-between border-b border-white/10 pb-2 text-xs md:pb-3 md:text-sm">
+                                                            <span className="font-medium text-emerald-100/60">
+                                                                IVA (19%)
+                                                            </span>
+                                                            <span
+                                                                className={`font-mono text-emerald-50 ${!ventaSeleccionada.incluye_iva ? 'line-through opacity-50' : ''}`}
+                                                            >
+                                                                {formatCurrency(
+                                                                    ventaSeleccionada.iva,
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                        {ventaSeleccionada.monto_descuento >
+                                                            0 && (
+                                                            <div className="flex items-center justify-between border-b border-white/10 pb-2 text-xs md:pb-3 md:text-sm">
+                                                                <span className="font-medium text-red-300">
+                                                                    Descuento
+                                                                </span>
+                                                                <span className="font-mono text-red-100">
+                                                                    -
+                                                                    {formatCurrency(
+                                                                        ventaSeleccionada.monto_descuento,
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        <div className="py-2 text-center md:py-4">
+                                                            <span className="text-[9px] font-black tracking-tighter text-white/40 uppercase md:text-[10px]">
+                                                                Monto Total
+                                                            </span>
+                                                            <p className="text-2xl font-black tracking-tighter text-white md:text-3xl lg:text-4xl">
+                                                                {formatCurrency(
+                                                                    ventaSeleccionada.total,
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
 
-                                            {/*              {ventaSeleccionada.almacenes_data && ventaSeleccionada.almacenes_data.length > 0 && (
+                                                {/*              {ventaSeleccionada.almacenes_data && ventaSeleccionada.almacenes_data.length > 0 && (
                                                 <Card className="border shadow-sm">
                                                     <CardHeader className="border-b bg-gray-50 py-2 md:py-3">
                                                         <CardTitle className="flex items-center gap-2 text-[10px] font-black tracking-widest text-gray-700 uppercase md:text-xs">
@@ -3090,116 +3369,119 @@ export default function Index({
                                                 </Card>
                                             )} */}
 
-                                            <Card className="border shadow-sm">
-                                                <CardHeader className="border-b bg-gray-50 py-2 md:py-3">
-                                                    <CardTitle className="text-[10px] font-bold text-gray-600 md:text-xs">
-                                                        Soporte Cliente
-                                                    </CardTitle>
-                                                </CardHeader>
-                                                <CardContent className="p-3 md:p-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="flex-1 rounded-lg bg-gray-100 p-2">
-                                                            <p className="mb-0.5 text-[9px] font-black text-gray-400 uppercase md:text-[10px]">
-                                                                Nombre
-                                                            </p>
-                                                            <p className="truncate text-xs font-bold text-gray-700 md:text-sm">
-                                                                {
-                                                                    ventaSeleccionada
-                                                                        .cliente
-                                                                        ?.nombre
-                                                                }
-                                                            </p>
-                                                        </div>
+                                                <Card className="border shadow-sm">
+                                                    <CardHeader className="border-b bg-gray-50 py-2 md:py-3">
+                                                        <CardTitle className="text-[10px] font-bold text-gray-600 md:text-xs">
+                                                            Soporte Cliente
+                                                        </CardTitle>
+                                                    </CardHeader>
+                                                    <CardContent className="p-3 md:p-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="flex-1 rounded-lg bg-gray-100 p-2">
+                                                                <p className="mb-0.5 text-[9px] font-black text-gray-400 uppercase md:text-[10px]">
+                                                                    Nombre
+                                                                </p>
+                                                                <p className="truncate text-xs font-bold text-gray-700 md:text-sm">
+                                                                    {
+                                                                        ventaSeleccionada
+                                                                            .cliente
+                                                                            ?.nombre
+                                                                    }
+                                                                </p>
+                                                            </div>
 
-                                                        {/* Botón directo de WhatsApp con icono garantizado */}
-                                                        {ventaSeleccionada
-                                                            .cliente
-                                                            ?.telefono && (
-                                                            <Button
-                                                                type="button"
-                                                                size="icon"
-                                                                className="h-10 w-10 shrink-0 rounded-lg bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
-                                                                onClick={() => {
-                                                                    const phone =
-                                                                        ventaSeleccionada.cliente?.telefono?.replace(
-                                                                            /\D/g,
-                                                                            '',
+                                                            {/* Botón directo de WhatsApp con icono garantizado */}
+                                                            {ventaSeleccionada
+                                                                .cliente
+                                                                ?.telefono && (
+                                                                <Button
+                                                                    type="button"
+                                                                    size="icon"
+                                                                    className="h-10 w-10 shrink-0 rounded-lg bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
+                                                                    onClick={() => {
+                                                                        const phone =
+                                                                            ventaSeleccionada.cliente?.telefono?.replace(
+                                                                                /\D/g,
+                                                                                '',
+                                                                            );
+                                                                        const mensaje =
+                                                                            encodeURIComponent(
+                                                                                `Hola ${ventaSeleccionada.cliente?.nombre || ''}, te contactamos respecto a tu pedido.`,
+                                                                            );
+                                                                        window.open(
+                                                                            `https://wa.me/${phone}?text=${mensaje}`,
+                                                                            '_blank',
                                                                         );
-                                                                    const mensaje =
-                                                                        encodeURIComponent(
-                                                                            `Hola ${ventaSeleccionada.cliente?.nombre || ''}, te contactamos respecto a tu pedido.`,
-                                                                        );
-                                                                    window.open(
-                                                                        `https://wa.me/${phone}?text=${mensaje}`,
-                                                                        '_blank',
-                                                                    );
-                                                                }}
-                                                                title="Enviar mensaje por WhatsApp"
-                                                            >
-                                                                <MessageCircle className="h-5 w-5 fill-white stroke-none" />
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
+                                                                    }}
+                                                                    title="Enviar mensaje por WhatsApp"
+                                                                >
+                                                                    <MessageCircle className="h-5 w-5 fill-white stroke-none" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <DialogFooter className="mt-4 flex flex-col gap-2 border-t bg-gray-50 p-4 sm:flex-row md:p-6">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                className="w-full font-bold shadow-sm transition-all hover:bg-emerald-50 hover:text-emerald-600 active:scale-95 sm:w-auto"
+                                    <DialogFooter className="mt-4 flex flex-col gap-2 border-t bg-gray-50 p-4 sm:flex-row md:p-6">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    className="w-full font-bold shadow-sm transition-all hover:bg-emerald-50 hover:text-emerald-600 active:scale-95 sm:w-auto"
+                                                >
+                                                    <FileText className="mr-2 h-4 w-4" />
+                                                    Descargar PDF
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent
+                                                align="end"
+                                                className="w-56"
                                             >
-                                                <FileText className="mr-2 h-4 w-4" />
-                                                Descargar PDF
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent
-                                            align="end"
-                                            className="w-56"
+                                                <DropdownMenuItem
+                                                    onClick={() =>
+                                                        ventaSeleccionada &&
+                                                        window.open(
+                                                            `/ventas/${ventaSeleccionada.id}/download`,
+                                                            '_blank',
+                                                        )
+                                                    }
+                                                >
+                                                    <FileText className="mr-2 h-4 w-4" />
+                                                    Formato SII (Formal)
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    onClick={() =>
+                                                        ventaSeleccionada &&
+                                                        window.open(
+                                                            `/ventas/${ventaSeleccionada.id}/download-informal`,
+                                                            '_blank',
+                                                        )
+                                                    }
+                                                >
+                                                    <FileText className="mr-2 h-4 w-4" />
+                                                    Formato Simple (Informal)
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() =>
+                                                setVerModalOpen(false)
+                                            }
+                                            className="w-full font-bold shadow-sm transition-all hover:bg-white hover:text-primary active:scale-95 sm:w-auto"
                                         >
-                                            <DropdownMenuItem
-                                                onClick={() =>
-                                                    ventaSeleccionada &&
-                                                    window.open(
-                                                        `/ventas/${ventaSeleccionada.id}/download`,
-                                                        '_blank',
-                                                    )
-                                                }
-                                            >
-                                                <FileText className="mr-2 h-4 w-4" />
-                                                Formato SII (Formal)
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onClick={() =>
-                                                    ventaSeleccionada &&
-                                                    window.open(
-                                                        `/ventas/${ventaSeleccionada.id}/download-informal`,
-                                                        '_blank',
-                                                    )
-                                                }
-                                            >
-                                                <FileText className="mr-2 h-4 w-4" />
-                                                Formato Simple (Informal)
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => setVerModalOpen(false)}
-                                        className="w-full font-bold shadow-sm transition-all hover:bg-white hover:text-primary active:scale-95 sm:w-auto"
-                                    >
-                                        Cerrar
-                                    </Button>
-                                </DialogFooter>
-                            </>
-                        )}
-                    </DialogContent>
-                </Dialog>
-            </div>
+                                            Cerrar
+                                        </Button>
+                                    </DialogFooter>
+                                </>
+                            )}
+                        </DialogContent>
+                    </Dialog>
+                </div>
+            </TooltipProvider>
         </AppLayout>
     );
 }

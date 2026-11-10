@@ -1,6 +1,7 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { FileSpreadsheet, Download, Upload } from 'lucide-react';
 import {
+    Check,
     Pencil,
     Plus,
     Trash2,
@@ -11,10 +12,15 @@ import {
     List,
     MapPin,
     Phone,
+    Store,
     Warehouse,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useState, useMemo, useRef } from 'react';
 
+import { SectionPanel } from '@/components/shared/SectionPanel';
+import type { PanelTone } from '@/components/shared/SectionPanel';
+import { TruncatedText } from '@/components/shared/TruncatedText';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -41,6 +47,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Pagination from '@/components/ui/Pagination';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
@@ -88,6 +95,24 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const tipos = ['principal', 'secundario', 'tienda'];
+
+interface TipoMeta {
+    label: string;
+    tone: PanelTone;
+    icon: LucideIcon;
+}
+
+const TIPO_META: Record<string, TipoMeta> = {
+    principal: { label: 'Principal', tone: 'emerald', icon: Warehouse },
+    secundario: { label: 'Secundario', tone: 'blue', icon: Store },
+    tienda: { label: 'Tienda', tone: 'amber', icon: Store },
+};
+
+const TIPO_META_FALLBACK: TipoMeta = {
+    label: 'Otros',
+    tone: 'slate',
+    icon: Warehouse,
+};
 
 export default function Index({
     almacenes,
@@ -161,6 +186,38 @@ export default function Index({
             return true;
         });
     }, [almacenes, filtros]);
+
+    const gruposPorTipo = useMemo(() => {
+        const agrupados = almacenesFiltrados.reduce<Record<string, Almacen[]>>(
+            (acc, almacen) => {
+                const tipo = almacen.tipo || 'otro';
+                (acc[tipo] ??= []).push(almacen);
+
+                return acc;
+            },
+            {},
+        );
+
+        return Object.entries(agrupados)
+            .map(([tipo, data]) => {
+                const meta = TIPO_META[tipo] ?? {
+                    ...TIPO_META_FALLBACK,
+                    label: tipo.charAt(0).toUpperCase() + tipo.slice(1),
+                };
+
+                return {
+                    tipo,
+                    ...meta,
+                    data,
+                    activos: data.filter((almacen) => almacen.activo).length,
+                };
+            })
+            .sort((a, b) => {
+                const order = tipos.indexOf(a.tipo) - tipos.indexOf(b.tipo);
+
+                return order !== 0 ? order : a.label.localeCompare(b.label);
+            });
+    }, [almacenesFiltrados]);
 
     const limpiarFiltros = () => {
         setFiltros({ busqueda: '', tipo: '', activo: '' });
@@ -348,490 +405,673 @@ export default function Index({
         <>
             <Head title="Almacenes" />
             <AppLayout breadcrumbs={breadcrumbs}>
-                <div className="flex flex-col gap-4 p-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-2xl font-bold">Almacenes</h1>
-                            <p className="text-muted-foreground">
-                                Gestión de almacenes
-                            </p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                            <div className="flex items-center gap-2">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-9 gap-2 rounded-xl border-muted-foreground/10 font-bold"
+                <TooltipProvider delayDuration={200}>
+                    <div className="flex flex-col gap-4 p-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h1 className="text-2xl font-bold">
+                                    Almacenes
+                                </h1>
+                                <p className="text-muted-foreground">
+                                    Gestión de almacenes
+                                </p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                                <div className="flex items-center gap-2">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-9 gap-2 rounded-xl border-muted-foreground/10 font-bold"
+                                            >
+                                                <Download className="h-4 w-4 text-primary" />
+                                                <span>Herramientas</span>
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent
+                                            align="end"
+                                            className="w-48"
                                         >
-                                            <Download className="h-4 w-4 text-primary" />
-                                            <span>Herramientas</span>
+                                            <DropdownMenuItem
+                                                onSelect={(e) => {
+                                                    e.preventDefault();
+                                                    csvInputRef.current?.click();
+                                                }}
+                                            >
+                                                <Upload className="mr-2 h-4 w-4" />
+                                                Importar CSV
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onSelect={(e) => {
+                                                    e.preventDefault();
+                                                    excelInputRef.current?.click();
+                                                }}
+                                            >
+                                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                                Importar Excel
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem
+                                                onClick={() =>
+                                                    (window.location.href =
+                                                        '/almacenes/export')
+                                                }
+                                            >
+                                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                                Exportar CSV
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={() =>
+                                                    (window.location.href =
+                                                        '/almacenes/export-excel')
+                                                }
+                                            >
+                                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                                Exportar Excel
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    {canCreate && (
+                                        <Button onClick={handleNew}>
+                                            <Plus className="mr-2 h-4 w-4" />{' '}
+                                            Nuevo
                                         </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent
-                                        align="end"
-                                        className="w-48"
-                                    >
-                                        <DropdownMenuItem
-                                            onSelect={(e) => {
-                                                e.preventDefault();
-                                                csvInputRef.current?.click();
-                                            }}
-                                        >
-                                            <Upload className="mr-2 h-4 w-4" />
-                                            Importar CSV
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            onSelect={(e) => {
-                                                e.preventDefault();
-                                                excelInputRef.current?.click();
-                                            }}
-                                        >
-                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                            Importar Excel
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                            onClick={() =>
-                                                (window.location.href =
-                                                    '/almacenes/export')
-                                            }
-                                        >
-                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                            Exportar CSV
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            onClick={() =>
-                                                (window.location.href =
-                                                    '/almacenes/export-excel')
-                                            }
-                                        >
-                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                            Exportar Excel
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                                {canCreate && (
-                                    <Button onClick={handleNew}>
-                                        <Plus className="mr-2 h-4 w-4" /> Nuevo
-                                    </Button>
-                                )}
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle>Almacenes</CardTitle>
-                                    <CardDescription>
-                                        {almacenes.total} registros
-                                    </CardDescription>
-                                </div>
-                                <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">
-                                    <button
-                                        onClick={() => setViewMode('table')}
-                                        className={`rounded-md p-1.5 transition-colors ${
-                                            viewMode === 'table'
-                                                ? 'bg-white text-primary shadow-sm'
-                                                : 'text-muted-foreground hover:text-foreground'
-                                        }`}
-                                        title="Vista tabla"
-                                    >
-                                        <List className="h-4 w-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => setViewMode('cards')}
-                                        className={`rounded-md p-1.5 transition-colors ${
-                                            viewMode === 'cards'
-                                                ? 'bg-white text-primary shadow-sm'
-                                                : 'text-muted-foreground hover:text-foreground'
-                                        }`}
-                                        title="Vista tarjetas"
-                                    >
-                                        <LayoutGrid className="h-4 w-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="mb-4 flex flex-wrap gap-2 rounded-lg bg-muted/30 p-3 text-xs sm:text-sm">
-                                <div className="min-w-[200px] flex-1">
-                                    <div className="relative">
-                                        <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            placeholder="Buscar..."
-                                            value={filtros.busqueda}
-                                            onChange={(e) =>
-                                                setFiltros({
-                                                    ...filtros,
-                                                    busqueda: e.target.value,
-                                                })
-                                            }
-                                            className="h-9 pl-8"
-                                        />
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <CardTitle>Almacenes</CardTitle>
+                                        <CardDescription>
+                                            {almacenes.total} registros
+                                        </CardDescription>
+                                    </div>
+                                    <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">
+                                        <button
+                                            onClick={() => setViewMode('table')}
+                                            className={`rounded-md p-1.5 transition-colors ${
+                                                viewMode === 'table'
+                                                    ? 'bg-white text-primary shadow-sm'
+                                                    : 'text-muted-foreground hover:text-foreground'
+                                            }`}
+                                            title="Vista tabla"
+                                        >
+                                            <List className="h-4 w-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => setViewMode('cards')}
+                                            className={`rounded-md p-1.5 transition-colors ${
+                                                viewMode === 'cards'
+                                                    ? 'bg-white text-primary shadow-sm'
+                                                    : 'text-muted-foreground hover:text-foreground'
+                                            }`}
+                                            title="Vista tarjetas"
+                                        >
+                                            <LayoutGrid className="h-4 w-4" />
+                                        </button>
                                     </div>
                                 </div>
-                                <select
-                                    value={filtros.tipo}
-                                    onChange={(e) =>
-                                        setFiltros({
-                                            ...filtros,
-                                            tipo: e.target.value,
-                                        })
-                                    }
-                                    className="flex h-9 min-w-[120px] rounded-md border bg-background px-3 py-1"
-                                >
-                                    <option value="">Todos los tipos</option>
-                                    {tipos.map((t) => (
-                                        <option key={t} value={t}>
-                                            {t.charAt(0).toUpperCase() +
-                                                t.slice(1)}
+                            </CardHeader>
+                            <CardContent>
+                                <div className="mb-4 flex flex-wrap gap-2 rounded-lg bg-muted/30 p-3 text-xs sm:text-sm">
+                                    <div className="min-w-[200px] flex-1">
+                                        <div className="relative">
+                                            <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
+                                            <Input
+                                                placeholder="Buscar..."
+                                                value={filtros.busqueda}
+                                                onChange={(e) =>
+                                                    setFiltros({
+                                                        ...filtros,
+                                                        busqueda:
+                                                            e.target.value,
+                                                    })
+                                                }
+                                                className="h-9 pl-8"
+                                            />
+                                        </div>
+                                    </div>
+                                    <select
+                                        value={filtros.tipo}
+                                        onChange={(e) =>
+                                            setFiltros({
+                                                ...filtros,
+                                                tipo: e.target.value,
+                                            })
+                                        }
+                                        className="flex h-9 min-w-[120px] rounded-md border bg-background px-3 py-1"
+                                    >
+                                        <option value="">
+                                            Todos los tipos
                                         </option>
-                                    ))}
-                                </select>
-                                <select
-                                    value={filtros.activo}
-                                    onChange={(e) =>
-                                        setFiltros({
-                                            ...filtros,
-                                            activo: e.target.value,
-                                        })
-                                    }
-                                    className="flex h-9 rounded-md border bg-background px-3 py-1"
-                                >
-                                    <option value="">Todos</option>
-                                    <option value="1">Activos</option>
-                                    <option value="0">Inactivos</option>
-                                </select>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-9"
-                                    onClick={limpiarFiltros}
-                                >
-                                    <X className="mr-1 h-4 w-4" /> Limpiar
-                                </Button>
-                            </div>
-                            {viewMode === 'table' ? (
-                                <>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-xs sm:text-sm">
-                                            <thead>
-                                                <tr className="border-b">
-                                                    <th className="w-16 pb-3 text-left font-medium">
-                                                        Imagen
-                                                    </th>
-                                                    <th className="pb-3 text-left font-medium">
-                                                        Nombre
-                                                    </th>
-                                                    <th className="pb-3 text-left font-medium">
-                                                        Código
-                                                    </th>
-                                                    <th className="pb-3 text-left font-medium">
-                                                        Tipo
-                                                    </th>
-                                                    <th className="pb-3 text-left font-medium">
-                                                        Estado
-                                                    </th>
-                                                    <th className="pb-3 text-right font-medium">
-                                                        Acciones
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {almacenesFiltrados.map((a) => (
-                                                    <tr
-                                                        key={a.id}
-                                                        className="border-b transition-colors hover:bg-muted/30"
-                                                    >
-                                                        <td className="px-4 py-2">
-                                                            {a.imagenes &&
-                                                            a.imagenes.length >
-                                                                0 ? (
-                                                                <img
-                                                                    src={
-                                                                        a
-                                                                            .imagenes[0]
-                                                                    }
-                                                                    alt={
-                                                                        a.nombre
-                                                                    }
-                                                                    className="h-10 w-10 rounded-lg border object-cover"
-                                                                />
-                                                            ) : (
-                                                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                                                                    <Warehouse className="h-5 w-5" />
-                                                                </div>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-4 py-2 font-medium">
-                                                            {a.nombre}
-                                                        </td>
-                                                        <td className="px-4 py-2 font-mono text-muted-foreground">
-                                                            {a.codigo}
-                                                        </td>
-                                                        <td className="px-4 py-2 capitalize">
-                                                            {a.tipo}
-                                                        </td>
-                                                        <td className="px-4 py-2">
-                                                            <Badge
-                                                                variant={
-                                                                    a.activo
-                                                                        ? 'default'
-                                                                        : 'destructive'
-                                                                }
-                                                                className="px-1.5 py-0 text-[10px]"
-                                                            >
-                                                                {a.activo
-                                                                    ? 'Activo'
-                                                                    : 'Inactivo'}
-                                                            </Badge>
-                                                        </td>
-                                                        <td className="px-4 py-2 text-right">
-                                                            <div className="flex justify-end gap-1">
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-8 w-8 p-0"
-                                                                    onClick={() => {
-                                                                        setViendo(
-                                                                            a,
-                                                                        );
-                                                                        setIsViewOpen(
-                                                                            true,
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    <Eye className="h-4 w-4" />
-                                                                </Button>
-                                                                {canEdit && (
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="sm"
-                                                                        className="h-8 w-8 p-0"
-                                                                        onClick={() =>
-                                                                            handleEdit(
-                                                                                a,
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <Pencil className="h-4 w-4" />
-                                                                    </Button>
-                                                                )}
-                                                                {canDelete && (
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="sm"
-                                                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                                                        onClick={() =>
-                                                                            handleDelete(
-                                                                                a.id,
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <Trash2 className="h-4 w-4" />
-                                                                    </Button>
-                                                                )}
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                                {almacenesFiltrados.length ===
-                                                    0 && (
-                                                    <tr>
-                                                        <td
-                                                            colSpan={5}
-                                                            className="py-8 text-center text-muted-foreground"
-                                                        >
-                                                            Sin resultados
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
+                                        {tipos.map((t) => (
+                                            <option key={t} value={t}>
+                                                {t.charAt(0).toUpperCase() +
+                                                    t.slice(1)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <select
+                                        value={filtros.activo}
+                                        onChange={(e) =>
+                                            setFiltros({
+                                                ...filtros,
+                                                activo: e.target.value,
+                                            })
+                                        }
+                                        className="flex h-9 rounded-md border bg-background px-3 py-1"
+                                    >
+                                        <option value="">Todos</option>
+                                        <option value="1">Activos</option>
+                                        <option value="0">Inactivos</option>
+                                    </select>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-9"
+                                        onClick={limpiarFiltros}
+                                    >
+                                        <X className="mr-1 h-4 w-4" /> Limpiar
+                                    </Button>
+                                </div>
+                                {gruposPorTipo.length === 0 ? (
+                                    <div className="py-12 text-center text-muted-foreground">
+                                        <Warehouse className="mx-auto mb-3 h-12 w-12 opacity-30" />
+                                        <p>Sin resultados</p>
                                     </div>
-                                    <Pagination
-                                        links={almacenes.links}
-                                        meta={
-                                            almacenes.meta || {
-                                                from: (almacenes as any).from,
-                                                to: (almacenes as any).to,
-                                                total: almacenes.total,
-                                            }
-                                        }
-                                    />
-                                </>
-                            ) : (
-                                <>
-                                    {almacenesFiltrados.length === 0 ? (
-                                        <div className="py-12 text-center text-muted-foreground">
-                                            <Warehouse className="mx-auto mb-3 h-12 w-12 opacity-30" />
-                                            <p>Sin resultados</p>
-                                        </div>
-                                    ) : (
-                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                            {almacenesFiltrados.map((a) => (
-                                                <div
-                                                    key={a.id}
-                                                    className="group relative overflow-hidden rounded-xl border bg-card transition-all hover:shadow-lg"
-                                                >
-                                                    <div className="relative h-36 overflow-hidden bg-muted">
-                                                        {a.imagenes &&
-                                                        a.imagenes.length >
-                                                            0 ? (
-                                                            <img
-                                                                src={
-                                                                    a
-                                                                        .imagenes[0]
-                                                                }
-                                                                alt={a.nombre}
-                                                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                                            />
-                                                        ) : (
-                                                            <div className="flex h-full items-center justify-center">
-                                                                <Warehouse className="h-12 w-12 text-muted-foreground/30" />
-                                                            </div>
-                                                        )}
-                                                        <div className="absolute top-2 right-2">
-                                                            <Badge
-                                                                variant={
-                                                                    a.activo
-                                                                        ? 'default'
-                                                                        : 'destructive'
-                                                                }
-                                                                className="px-2 py-0.5 text-[10px]"
-                                                            >
-                                                                {a.activo
-                                                                    ? 'Activo'
-                                                                    : 'Inactivo'}
-                                                            </Badge>
+                                ) : (
+                                    <div className="flex flex-col gap-3">
+                                        {gruposPorTipo.map((grupo) => (
+                                            <SectionPanel
+                                                key={grupo.tipo}
+                                                title={grupo.label}
+                                                description={`Panel independiente de almacenes de tipo ${grupo.label.toLowerCase()}.`}
+                                                icon={grupo.icon}
+                                                tone={grupo.tone}
+                                                count={grupo.data.length}
+                                                badges={
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="bg-white/70 text-[10px]"
+                                                    >
+                                                        <Check className="h-3 w-3 text-emerald-600" />
+                                                        {grupo.activos} activos
+                                                    </Badge>
+                                                }
+                                            >
+                                                {viewMode === 'table' ? (
+                                                    <>
+                                                        <div className="hidden overflow-x-auto md:block">
+                                                            <table className="w-full text-xs sm:text-sm">
+                                                                <thead>
+                                                                    <tr className="border-b">
+                                                                        <th className="w-16 pb-3 text-left font-medium">
+                                                                            Imagen
+                                                                        </th>
+                                                                        <th className="pb-3 text-left font-medium">
+                                                                            Nombre
+                                                                        </th>
+                                                                        <th className="pb-3 text-left font-medium">
+                                                                            Código
+                                                                        </th>
+                                                                        <th className="pb-3 text-left font-medium">
+                                                                            Tipo
+                                                                        </th>
+                                                                        <th className="pb-3 text-left font-medium">
+                                                                            Dirección
+                                                                            /
+                                                                            Notas
+                                                                        </th>
+                                                                        <th className="pb-3 text-left font-medium">
+                                                                            Estado
+                                                                        </th>
+                                                                        <th className="pb-3 text-right font-medium">
+                                                                            Acciones
+                                                                        </th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {grupo.data.map(
+                                                                        (a) => (
+                                                                            <tr
+                                                                                key={
+                                                                                    a.id
+                                                                                }
+                                                                                className="border-b transition-colors hover:bg-muted/30"
+                                                                            >
+                                                                                <td className="px-4 py-2">
+                                                                                    {a.imagenes &&
+                                                                                    a
+                                                                                        .imagenes
+                                                                                        .length >
+                                                                                        0 ? (
+                                                                                        <img
+                                                                                            src={
+                                                                                                a
+                                                                                                    .imagenes[0]
+                                                                                            }
+                                                                                            alt={
+                                                                                                a.nombre
+                                                                                            }
+                                                                                            className="h-10 w-10 rounded-lg border object-cover"
+                                                                                        />
+                                                                                    ) : (
+                                                                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                                                                                            <Warehouse className="h-5 w-5" />
+                                                                                        </div>
+                                                                                    )}
+                                                                                </td>
+                                                                                <td className="px-4 py-2 font-medium">
+                                                                                    {
+                                                                                        a.nombre
+                                                                                    }
+                                                                                </td>
+                                                                                <td className="px-4 py-2 font-mono text-muted-foreground">
+                                                                                    {
+                                                                                        a.codigo
+                                                                                    }
+                                                                                </td>
+                                                                                <td className="px-4 py-2 capitalize">
+                                                                                    {
+                                                                                        a.tipo
+                                                                                    }
+                                                                                </td>
+                                                                                <td className="max-w-[260px] px-4 py-2">
+                                                                                    <TruncatedText
+                                                                                        text={
+                                                                                            a.direccion ||
+                                                                                            a.notas
+                                                                                        }
+                                                                                        emptyLabel="Sin dirección"
+                                                                                        onExpand={() => {
+                                                                                            setViendo(
+                                                                                                a,
+                                                                                            );
+                                                                                            setIsViewOpen(
+                                                                                                true,
+                                                                                            );
+                                                                                        }}
+                                                                                    />
+                                                                                </td>
+                                                                                <td className="px-4 py-2">
+                                                                                    <Badge
+                                                                                        variant={
+                                                                                            a.activo
+                                                                                                ? 'default'
+                                                                                                : 'destructive'
+                                                                                        }
+                                                                                        className="px-1.5 py-0 text-[10px]"
+                                                                                    >
+                                                                                        {a.activo
+                                                                                            ? 'Activo'
+                                                                                            : 'Inactivo'}
+                                                                                    </Badge>
+                                                                                </td>
+                                                                                <td className="px-4 py-2 text-right">
+                                                                                    <div className="flex justify-end gap-1">
+                                                                                        <Button
+                                                                                            variant="ghost"
+                                                                                            size="sm"
+                                                                                            className="h-8 w-8 p-0"
+                                                                                            onClick={() => {
+                                                                                                setViendo(
+                                                                                                    a,
+                                                                                                );
+                                                                                                setIsViewOpen(
+                                                                                                    true,
+                                                                                                );
+                                                                                            }}
+                                                                                        >
+                                                                                            <Eye className="h-4 w-4" />
+                                                                                        </Button>
+                                                                                        {canEdit && (
+                                                                                            <Button
+                                                                                                variant="ghost"
+                                                                                                size="sm"
+                                                                                                className="h-8 w-8 p-0"
+                                                                                                onClick={() =>
+                                                                                                    handleEdit(
+                                                                                                        a,
+                                                                                                    )
+                                                                                                }
+                                                                                            >
+                                                                                                <Pencil className="h-4 w-4" />
+                                                                                            </Button>
+                                                                                        )}
+                                                                                        {canDelete && (
+                                                                                            <Button
+                                                                                                variant="ghost"
+                                                                                                size="sm"
+                                                                                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                                                onClick={() =>
+                                                                                                    handleDelete(
+                                                                                                        a.id,
+                                                                                                    )
+                                                                                                }
+                                                                                            >
+                                                                                                <Trash2 className="h-4 w-4" />
+                                                                                            </Button>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </td>
+                                                                            </tr>
+                                                                        ),
+                                                                    )}
+                                                                </tbody>
+                                                            </table>
                                                         </div>
-                                                        <div className="absolute top-2 left-2">
-                                                            <Badge
-                                                                variant="secondary"
-                                                                className="px-2 py-0.5 text-[10px] capitalize"
-                                                            >
-                                                                {a.tipo}
-                                                            </Badge>
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-y-2 p-4">
-                                                        <div className="flex items-start justify-between gap-2">
-                                                            <div>
-                                                                <h3 className="leading-tight font-semibold">
-                                                                    {a.nombre}
-                                                                </h3>
-                                                                <p className="font-mono text-xs text-muted-foreground">
-                                                                    {a.codigo}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="space-y-1 text-xs text-muted-foreground">
-                                                            {a.direccion && (
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <MapPin className="h-3.5 w-3.5 shrink-0" />
-                                                                    <span className="truncate">
-                                                                        {
-                                                                            a.direccion
+                                                        <div className="grid gap-2 p-2 sm:p-3 md:hidden">
+                                                            {grupo.data.map(
+                                                                (a) => (
+                                                                    <div
+                                                                        key={
+                                                                            a.id
                                                                         }
-                                                                    </span>
-                                                                </div>
-                                                            )}
-                                                            {a.telefono && (
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <Phone className="h-3.5 w-3.5 shrink-0" />
-                                                                    <span>
-                                                                        {
-                                                                            a.telefono
-                                                                        }
-                                                                    </span>
-                                                                </div>
-                                                            )}
-                                                            {a.capacidad &&
-                                                                a.capacidad >
-                                                                    0 && (
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <Warehouse className="h-3.5 w-3.5 shrink-0" />
-                                                                        <span>
-                                                                            Capacidad:{' '}
-                                                                            {
-                                                                                a.capacidad
-                                                                            }{' '}
-                                                                            und
-                                                                        </span>
+                                                                        className="rounded-xl border bg-card p-3 shadow-sm"
+                                                                    >
+                                                                        <div className="flex items-start gap-3">
+                                                                            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted">
+                                                                                {a.imagenes &&
+                                                                                a
+                                                                                    .imagenes
+                                                                                    .length >
+                                                                                    0 ? (
+                                                                                    <img
+                                                                                        src={
+                                                                                            a
+                                                                                                .imagenes[0]
+                                                                                        }
+                                                                                        alt={
+                                                                                            a.nombre
+                                                                                        }
+                                                                                        className="h-full w-full object-cover"
+                                                                                    />
+                                                                                ) : (
+                                                                                    <div className="flex h-full w-full items-center justify-center">
+                                                                                        <Warehouse className="h-5 w-5 text-muted-foreground" />
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="min-w-0 flex-1">
+                                                                                <div className="flex items-start justify-between gap-2">
+                                                                                    <div className="min-w-0">
+                                                                                        <p className="truncate text-sm font-bold">
+                                                                                            {
+                                                                                                a.nombre
+                                                                                            }
+                                                                                        </p>
+                                                                                        <p className="font-mono text-[10px] text-muted-foreground">
+                                                                                            {
+                                                                                                a.codigo
+                                                                                            }
+                                                                                        </p>
+                                                                                    </div>
+                                                                                    <Badge
+                                                                                        variant={
+                                                                                            a.activo
+                                                                                                ? 'default'
+                                                                                                : 'destructive'
+                                                                                        }
+                                                                                        className="px-1.5 py-0 text-[10px]"
+                                                                                    >
+                                                                                        {a.activo
+                                                                                            ? 'Activo'
+                                                                                            : 'Inactivo'}
+                                                                                    </Badge>
+                                                                                </div>
+                                                                                <div className="mt-1">
+                                                                                    <TruncatedText
+                                                                                        text={
+                                                                                            a.direccion ||
+                                                                                            a.notas
+                                                                                        }
+                                                                                        emptyLabel="Sin dirección"
+                                                                                        lines={
+                                                                                            2
+                                                                                        }
+                                                                                        onExpand={() => {
+                                                                                            setViendo(
+                                                                                                a,
+                                                                                            );
+                                                                                            setIsViewOpen(
+                                                                                                true,
+                                                                                            );
+                                                                                        }}
+                                                                                    />
+                                                                                </div>
+                                                                                <div className="mt-2 flex items-center justify-end gap-1">
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="sm"
+                                                                                        className="h-8 px-2 text-xs"
+                                                                                        onClick={() => {
+                                                                                            setViendo(
+                                                                                                a,
+                                                                                            );
+                                                                                            setIsViewOpen(
+                                                                                                true,
+                                                                                            );
+                                                                                        }}
+                                                                                    >
+                                                                                        <Eye className="mr-1 h-3.5 w-3.5" />
+                                                                                        Ver
+                                                                                    </Button>
+                                                                                    {canEdit && (
+                                                                                        <Button
+                                                                                            variant="ghost"
+                                                                                            size="sm"
+                                                                                            className="h-8 px-2 text-xs"
+                                                                                            onClick={() =>
+                                                                                                handleEdit(
+                                                                                                    a,
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            <Pencil className="mr-1 h-3.5 w-3.5" />
+                                                                                            Editar
+                                                                                        </Button>
+                                                                                    )}
+                                                                                    {canDelete && (
+                                                                                        <Button
+                                                                                            variant="ghost"
+                                                                                            size="sm"
+                                                                                            className="h-8 px-2 text-xs text-destructive hover:text-destructive"
+                                                                                            onClick={() =>
+                                                                                                handleDelete(
+                                                                                                    a.id,
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            <Trash2 className="mr-1 h-3.5 w-3.5" />
+                                                                                            Eliminar
+                                                                                        </Button>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
-                                                                )}
+                                                                ),
+                                                            )}
                                                         </div>
-                                                        <div className="flex items-center gap-1 pt-1">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-8 px-2 text-xs"
-                                                                onClick={() => {
-                                                                    setViendo(
-                                                                        a,
-                                                                    );
-                                                                    setIsViewOpen(
-                                                                        true,
-                                                                    );
-                                                                }}
+                                                    </>
+                                                ) : (
+                                                    <div className="grid grid-cols-1 gap-4 p-2 sm:grid-cols-2 sm:p-3 lg:grid-cols-3 xl:grid-cols-4">
+                                                        {grupo.data.map((a) => (
+                                                            <div
+                                                                key={a.id}
+                                                                className="group relative overflow-hidden rounded-xl border bg-card transition-all hover:shadow-lg"
                                                             >
-                                                                <Eye className="mr-1 h-3.5 w-3.5" />{' '}
-                                                                Ver
-                                                            </Button>
-                                                            {canEdit && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-8 px-2 text-xs"
-                                                                    onClick={() =>
-                                                                        handleEdit(
-                                                                            a,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Pencil className="mr-1 h-3.5 w-3.5" />{' '}
-                                                                    Editar
-                                                                </Button>
-                                                            )}
-                                                            {canDelete && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-8 px-2 text-xs text-destructive hover:text-destructive"
-                                                                    onClick={() =>
-                                                                        handleDelete(
-                                                                            a.id,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Trash2 className="mr-1 h-3.5 w-3.5" />{' '}
-                                                                    Eliminar
-                                                                </Button>
-                                                            )}
-                                                        </div>
+                                                                <div className="relative h-36 overflow-hidden bg-muted">
+                                                                    {a.imagenes &&
+                                                                    a.imagenes
+                                                                        .length >
+                                                                        0 ? (
+                                                                        <img
+                                                                            src={
+                                                                                a
+                                                                                    .imagenes[0]
+                                                                            }
+                                                                            alt={
+                                                                                a.nombre
+                                                                            }
+                                                                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="flex h-full items-center justify-center">
+                                                                            <Warehouse className="h-12 w-12 text-muted-foreground/30" />
+                                                                        </div>
+                                                                    )}
+                                                                    <div className="absolute top-2 right-2">
+                                                                        <Badge
+                                                                            variant={
+                                                                                a.activo
+                                                                                    ? 'default'
+                                                                                    : 'destructive'
+                                                                            }
+                                                                            className="px-2 py-0.5 text-[10px]"
+                                                                        >
+                                                                            {a.activo
+                                                                                ? 'Activo'
+                                                                                : 'Inactivo'}
+                                                                        </Badge>
+                                                                    </div>
+                                                                    <div className="absolute top-2 left-2">
+                                                                        <Badge
+                                                                            variant="secondary"
+                                                                            className="px-2 py-0.5 text-[10px] capitalize"
+                                                                        >
+                                                                            {
+                                                                                a.tipo
+                                                                            }
+                                                                        </Badge>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="space-y-2 p-4">
+                                                                    <div className="flex items-start justify-between gap-2">
+                                                                        <div>
+                                                                            <h3 className="leading-tight font-semibold">
+                                                                                {
+                                                                                    a.nombre
+                                                                                }
+                                                                            </h3>
+                                                                            <p className="font-mono text-xs text-muted-foreground">
+                                                                                {
+                                                                                    a.codigo
+                                                                                }
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="space-y-1 text-xs text-muted-foreground">
+                                                                        {a.direccion && (
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <MapPin className="h-3.5 w-3.5 shrink-0" />
+                                                                                <span className="truncate">
+                                                                                    {
+                                                                                        a.direccion
+                                                                                    }
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
+                                                                        {a.telefono && (
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <Phone className="h-3.5 w-3.5 shrink-0" />
+                                                                                <span>
+                                                                                    {
+                                                                                        a.telefono
+                                                                                    }
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
+                                                                        {a.capacidad &&
+                                                                            a.capacidad >
+                                                                                0 && (
+                                                                                <div className="flex items-center gap-1.5">
+                                                                                    <Warehouse className="h-3.5 w-3.5 shrink-0" />
+                                                                                    <span>
+                                                                                        Capacidad:{' '}
+                                                                                        {
+                                                                                            a.capacidad
+                                                                                        }{' '}
+                                                                                        und
+                                                                                    </span>
+                                                                                </div>
+                                                                            )}
+                                                                    </div>
+                                                                    <div className="flex items-center gap-1 pt-1">
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            className="h-8 px-2 text-xs"
+                                                                            onClick={() => {
+                                                                                setViendo(
+                                                                                    a,
+                                                                                );
+                                                                                setIsViewOpen(
+                                                                                    true,
+                                                                                );
+                                                                            }}
+                                                                        >
+                                                                            <Eye className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                            Ver
+                                                                        </Button>
+                                                                        {canEdit && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="h-8 px-2 text-xs"
+                                                                                onClick={() =>
+                                                                                    handleEdit(
+                                                                                        a,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <Pencil className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                                Editar
+                                                                            </Button>
+                                                                        )}
+                                                                        {canDelete && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="h-8 px-2 text-xs text-destructive hover:text-destructive"
+                                                                                onClick={() =>
+                                                                                    handleDelete(
+                                                                                        a.id,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <Trash2 className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                                Eliminar
+                                                                            </Button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    <Pagination
-                                        links={almacenes.links}
-                                        meta={
-                                            almacenes.meta || {
-                                                from: (almacenes as any).from,
-                                                to: (almacenes as any).to,
-                                                total: almacenes.total,
-                                            }
+                                                )}
+                                            </SectionPanel>
+                                        ))}
+                                    </div>
+                                )}
+                                <Pagination
+                                    links={almacenes.links}
+                                    meta={
+                                        almacenes.meta || {
+                                            from: (almacenes as any).from,
+                                            to: (almacenes as any).to,
+                                            total: almacenes.total,
                                         }
-                                    />
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
+                                    }
+                                />
+                            </CardContent>
+                        </Card>
+                    </div>
+                </TooltipProvider>
             </AppLayout>
 
             {/* Hidden file inputs for imports — outside dropdown to avoid focus loss */}

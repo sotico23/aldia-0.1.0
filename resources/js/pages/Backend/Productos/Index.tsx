@@ -26,11 +26,14 @@ import {
     TrendingUp,
     Wallet,
     Camera,
+    Tags,
 } from 'lucide-react';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import lookupProductByBarcode from '@/actions/App/Http/Controllers/Backend/ProductoBarcodeController';
 import { BulkActions } from '@/components/shared/BulkActions';
+import { SectionPanel } from '@/components/shared/SectionPanel';
+import { TruncatedText } from '@/components/shared/TruncatedText';
 import { Badge } from '@/components/ui/badge';
 import { BarcodeScannerDialog } from '@/components/ui/barcode-scanner-dialog';
 import { Button } from '@/components/ui/button';
@@ -55,6 +58,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import { formatCurrency } from '@/lib/utils';
@@ -525,6 +529,39 @@ export default function Index({
         setStockBajoFilter(false);
         setAlmacenFilter('all');
     };
+
+    const gruposPorCategoria = useMemo(() => {
+        const agrupados = productos.data.reduce<Record<string, Producto[]>>(
+            (acc, producto) => {
+                const categoria = producto.categoria?.nombre || 'General';
+                (acc[categoria] ??= []).push(producto);
+
+                return acc;
+            },
+            {},
+        );
+
+        return Object.entries(agrupados)
+            .map(([nombre, data]) => ({
+                nombre,
+                data,
+                stockBajo: data.filter((producto) => {
+                    const actual =
+                        producto.inventarios?.reduce(
+                            (sum, inv) => sum + inv.cantidad,
+                            0,
+                        ) || 0;
+                    const minimo =
+                        producto.inventarios?.reduce(
+                            (sum, inv) => sum + inv.cantidad_minima,
+                            0,
+                        ) || 0;
+
+                    return actual <= minimo;
+                }).length,
+            }))
+            .sort((a, b) => a.nombre.localeCompare(b.nombre));
+    }, [productos.data]);
 
     const appendProductImagesToFormData = (formData: FormData) => {
         formData.append('manage_images', '1');
@@ -1041,1257 +1078,1420 @@ export default function Index({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Gestión de Productos e Inventario" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
-                {/* Header Section */}
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <h1 className="text-3xl font-black tracking-tight text-foreground">
-                            Catálogo
-                        </h1>
-                        <p className="text-sm font-medium text-muted-foreground">
-                            Administración de productos, precios y niveles de
-                            inventario maestro
-                        </p>
+            <TooltipProvider delayDuration={200}>
+                <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
+                    {/* Header Section */}
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <h1 className="text-3xl font-black tracking-tight text-foreground">
+                                Catálogo
+                            </h1>
+                            <p className="text-sm font-medium text-muted-foreground">
+                                Administración de productos, precios y niveles
+                                de inventario maestro
+                            </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <BulkActions
+                                baseUrl="/productos"
+                                filters={{
+                                    search: searchTerm,
+                                    categoria_id: categoriaFilter,
+                                    stock_bajo: stockBajoFilter ? '1' : '',
+                                    almacen_id:
+                                        almacenFilter !== 'all'
+                                            ? almacenFilter
+                                            : '',
+                                }}
+                                modelName="Productos"
+                            />
+
+                            {canCreate && (
+                                <Button
+                                    onClick={handleNew}
+                                    className="h-9 rounded-full bg-primary px-5 font-bold shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
+                                >
+                                    <Plus className="mr-2 h-4 w-4" /> Nuevo
+                                    Producto
+                                </Button>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <BulkActions
-                            baseUrl="/productos"
-                            filters={{
-                                search: searchTerm,
-                                categoria_id: categoriaFilter,
-                                stock_bajo: stockBajoFilter ? '1' : '',
-                                almacen_id:
-                                    almacenFilter !== 'all'
-                                        ? almacenFilter
-                                        : '',
-                            }}
-                            modelName="Productos"
-                        />
-
-                        {canCreate && (
-                            <Button
-                                onClick={handleNew}
-                                className="h-9 rounded-full bg-primary px-5 font-bold shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
-                            >
-                                <Plus className="mr-2 h-4 w-4" /> Nuevo Producto
-                            </Button>
-                        )}
-                    </div>
-                </div>
-
-                <div className="grid gap-6">
-                    <Card className="overflow-hidden border-none shadow-xl shadow-foreground/5">
-                        <CardHeader className="bg-gradient-to-r from-muted/50 to-transparent pb-4">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <Package className="h-5 w-5 text-primary" />
-                                    <CardTitle>Productos Registrados</CardTitle>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
-                                        {productos.total} SKUs
+                    <div className="grid gap-6">
+                        <Card className="overflow-hidden border-none shadow-xl shadow-foreground/5">
+                            <CardHeader className="bg-gradient-to-r from-muted/50 to-transparent pb-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Package className="h-5 w-5 text-primary" />
+                                        <CardTitle>
+                                            Productos Registrados
+                                        </CardTitle>
                                     </div>
-                                    <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">
-                                        <button
-                                            onClick={() => setViewMode('table')}
-                                            className={`rounded-md p-1.5 transition-colors ${
-                                                viewMode === 'table'
-                                                    ? 'bg-white text-primary shadow-sm'
-                                                    : 'text-muted-foreground hover:text-foreground'
-                                            }`}
-                                            title="Vista tabla"
-                                        >
-                                            <List className="h-4 w-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => setViewMode('cards')}
-                                            className={`rounded-md p-1.5 transition-colors ${
-                                                viewMode === 'cards'
-                                                    ? 'bg-white text-primary shadow-sm'
-                                                    : 'text-muted-foreground hover:text-foreground'
-                                            }`}
-                                            title="Vista tarjetas"
-                                        >
-                                            <LayoutGrid className="h-4 w-4" />
-                                        </button>
+                                    <div className="flex items-center gap-2">
+                                        <div className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
+                                            {productos.total} SKUs
+                                        </div>
+                                        <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">
+                                            <button
+                                                onClick={() =>
+                                                    setViewMode('table')
+                                                }
+                                                className={`rounded-md p-1.5 transition-colors ${
+                                                    viewMode === 'table'
+                                                        ? 'bg-white text-primary shadow-sm'
+                                                        : 'text-muted-foreground hover:text-foreground'
+                                                }`}
+                                                title="Vista tabla"
+                                            >
+                                                <List className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                                onClick={() =>
+                                                    setViewMode('cards')
+                                                }
+                                                className={`rounded-md p-1.5 transition-colors ${
+                                                    viewMode === 'cards'
+                                                        ? 'bg-white text-primary shadow-sm'
+                                                        : 'text-muted-foreground hover:text-foreground'
+                                                }`}
+                                                title="Vista tarjetas"
+                                            >
+                                                <LayoutGrid className="h-4 w-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                            {/* Filters Bar */}
-                            <div className="flex flex-col gap-4 border-b border-muted/30 bg-muted/20 p-4 md:flex-row md:items-center">
-                                <div className="relative flex-1">
-                                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Buscar por nombre, SKU o descripción..."
-                                        value={searchTerm}
-                                        onChange={(e) =>
-                                            setSearchTerm(e.target.value)
-                                        }
-                                        className="h-10 border-none bg-background/50 pr-10 pl-10 focus-visible:ring-primary/20"
-                                    />
-                                </div>
-                                <div className="flex gap-2">
-                                    <Select
-                                        value={categoriaFilter}
-                                        onValueChange={setCategoriaFilter}
-                                    >
-                                        <SelectTrigger className="h-10 w-full border-none bg-background/50 sm:w-[200px]">
-                                            <SelectValue placeholder="Categoría" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">
-                                                Todas las categorías
-                                            </SelectItem>
-                                            {categorias.map((c) => (
-                                                <SelectItem
-                                                    key={c.id}
-                                                    value={c.id.toString()}
-                                                >
-                                                    {c.nombre}
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                {/* Filters Bar */}
+                                <div className="flex flex-col gap-4 border-b border-muted/30 bg-muted/20 p-4 md:flex-row md:items-center">
+                                    <div className="relative flex-1">
+                                        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Buscar por nombre, SKU o descripción..."
+                                            value={searchTerm}
+                                            onChange={(e) =>
+                                                setSearchTerm(e.target.value)
+                                            }
+                                            className="h-10 border-none bg-background/50 pr-10 pl-10 focus-visible:ring-primary/20"
+                                        />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Select
+                                            value={categoriaFilter}
+                                            onValueChange={setCategoriaFilter}
+                                        >
+                                            <SelectTrigger className="h-10 w-full border-none bg-background/50 sm:w-[200px]">
+                                                <SelectValue placeholder="Categoría" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    Todas las categorías
                                                 </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <Select
-                                        value={almacenFilter}
-                                        onValueChange={setAlmacenFilter}
-                                    >
-                                        <SelectTrigger className="h-10 w-full border-none bg-background/50 sm:w-[200px]">
-                                            <SelectValue placeholder="Almacén" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">
-                                                Todos los almacenes
-                                            </SelectItem>
-                                            {almacenes.map((a) => (
-                                                <SelectItem
-                                                    key={a.id}
-                                                    value={a.id.toString()}
-                                                >
-                                                    {a.nombre}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <Button
-                                        variant={
-                                            stockBajoFilter
-                                                ? 'destructive'
-                                                : 'outline'
-                                        }
-                                        className={`h-10 gap-2 border-none px-4 shadow-sm ${stockBajoFilter ? 'bg-destructive text-destructive-foreground' : 'bg-background/50 text-muted-foreground'}`}
-                                        onClick={() =>
-                                            setStockBajoFilter(!stockBajoFilter)
-                                        }
-                                    >
-                                        <AlertTriangle className="h-4 w-4" />
-                                        <span className="hidden sm:inline">
-                                            Stock Bajo
-                                        </span>
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        className="h-10 w-10 border-none bg-background/50"
-                                        onClick={limpiarFiltros}
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </div>
-
-                            {viewMode === 'table' ? (
-                                <>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full">
-                                            <thead>
-                                                <tr className="border-b bg-muted/5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                                                    <th className="px-6 py-4 text-left">
-                                                        SKU / Producto
-                                                    </th>
-                                                    <th className="px-6 py-4 text-left">
-                                                        Categoría
-                                                    </th>
-                                                    <th className="px-6 py-4 text-right">
-                                                        Precio Venta
-                                                    </th>
-                                                    <th className="px-6 py-4 text-center">
-                                                        Stock Actual
-                                                    </th>
-                                                    <th className="px-6 py-4 text-left">
-                                                        Estado
-                                                    </th>
-                                                    <th className="px-6 py-4 text-right">
-                                                        Acciones
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-muted/50">
-                                                {productos.data.map((p) => (
-                                                    <tr
-                                                        key={p.id}
-                                                        className="group transition-colors hover:bg-muted/30"
+                                                {categorias.map((c) => (
+                                                    <SelectItem
+                                                        key={c.id}
+                                                        value={c.id.toString()}
                                                     >
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="relative h-10 w-10 overflow-hidden rounded-lg border border-muted-foreground/10 bg-muted shadow-sm">
+                                                        {c.nombre}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <Select
+                                            value={almacenFilter}
+                                            onValueChange={setAlmacenFilter}
+                                        >
+                                            <SelectTrigger className="h-10 w-full border-none bg-background/50 sm:w-[200px]">
+                                                <SelectValue placeholder="Almacén" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    Todos los almacenes
+                                                </SelectItem>
+                                                {almacenes.map((a) => (
+                                                    <SelectItem
+                                                        key={a.id}
+                                                        value={a.id.toString()}
+                                                    >
+                                                        {a.nombre}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <Button
+                                            variant={
+                                                stockBajoFilter
+                                                    ? 'destructive'
+                                                    : 'outline'
+                                            }
+                                            className={`h-10 gap-2 border-none px-4 shadow-sm ${stockBajoFilter ? 'bg-destructive text-destructive-foreground' : 'bg-background/50 text-muted-foreground'}`}
+                                            onClick={() =>
+                                                setStockBajoFilter(
+                                                    !stockBajoFilter,
+                                                )
+                                            }
+                                        >
+                                            <AlertTriangle className="h-4 w-4" />
+                                            <span className="hidden sm:inline">
+                                                Stock Bajo
+                                            </span>
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-10 w-10 border-none bg-background/50"
+                                            onClick={limpiarFiltros}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {gruposPorCategoria.length === 0 ? (
+                                    <div className="py-12 text-center text-muted-foreground">
+                                        <Package className="mx-auto mb-3 h-12 w-12 opacity-30" />
+                                        <p>No se encontraron productos.</p>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-3 p-3 sm:p-4">
+                                        {gruposPorCategoria.map((grupo) => (
+                                            <SectionPanel
+                                                key={grupo.nombre}
+                                                title={grupo.nombre}
+                                                description={`Panel independiente de productos en la categoría ${grupo.nombre}.`}
+                                                icon={Tags}
+                                                tone="blue"
+                                                count={grupo.data.length}
+                                                badges={
+                                                    grupo.stockBajo > 0 ? (
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="border-amber-200 bg-amber-50 text-[10px] text-amber-700"
+                                                        >
+                                                            <AlertTriangle className="h-3 w-3" />
+                                                            {grupo.stockBajo}{' '}
+                                                            stock bajo
+                                                        </Badge>
+                                                    ) : null
+                                                }
+                                            >
+                                                {viewMode === 'table' ? (
+                                                    <>
+                                                        <div className="hidden overflow-x-auto md:block">
+                                                            <table className="w-full">
+                                                                <thead>
+                                                                    <tr className="border-b bg-muted/5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                                                                        <th className="px-6 py-4 text-left">
+                                                                            SKU
+                                                                            /
+                                                                            Producto
+                                                                        </th>
+                                                                        <th className="px-6 py-4 text-left">
+                                                                            Categoría
+                                                                        </th>
+                                                                        <th className="px-6 py-4 text-left">
+                                                                            Descripción
+                                                                        </th>
+                                                                        <th className="px-6 py-4 text-right">
+                                                                            Precio
+                                                                            Venta
+                                                                        </th>
+                                                                        <th className="px-6 py-4 text-center">
+                                                                            Stock
+                                                                            Actual
+                                                                        </th>
+                                                                        <th className="px-6 py-4 text-left">
+                                                                            Estado
+                                                                        </th>
+                                                                        <th className="px-6 py-4 text-right">
+                                                                            Acciones
+                                                                        </th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody className="divide-y divide-muted/50">
+                                                                    {grupo.data.map(
+                                                                        (p) => (
+                                                                            <tr
+                                                                                key={
+                                                                                    p.id
+                                                                                }
+                                                                                className="group transition-colors hover:bg-muted/30"
+                                                                            >
+                                                                                <td className="px-6 py-4">
+                                                                                    <div className="flex items-center gap-3">
+                                                                                        <div className="relative h-10 w-10 overflow-hidden rounded-lg border border-muted-foreground/10 bg-muted shadow-sm">
+                                                                                            {p.imagen ? (
+                                                                                                <img
+                                                                                                    src={`/storage/${p.imagen}`}
+                                                                                                    className="h-full w-full object-cover"
+                                                                                                    alt={
+                                                                                                        p.nombre
+                                                                                                    }
+                                                                                                />
+                                                                                            ) : (
+                                                                                                <ImageIcon className="h-full w-full p-2 text-muted-foreground/30" />
+                                                                                            )}
+                                                                                        </div>
+                                                                                        <div>
+                                                                                            <div className="text-sm font-bold tracking-tight">
+                                                                                                {
+                                                                                                    p.nombre
+                                                                                                }
+                                                                                            </div>
+                                                                                            <div className="flex items-center gap-1.5 font-mono text-[10px] leading-none text-muted-foreground">
+                                                                                                <ArrowDownZA className="h-2.5 w-2.5" />
+                                                                                                {
+                                                                                                    p.codigo
+                                                                                                }
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </td>
+                                                                                <td className="px-6 py-4">
+                                                                                    <Badge
+                                                                                        variant="outline"
+                                                                                        className="border-primary/20 bg-primary/5 text-[10px] font-bold text-primary"
+                                                                                    >
+                                                                                        {p
+                                                                                            .categoria
+                                                                                            ?.nombre ||
+                                                                                            'General'}
+                                                                                    </Badge>
+                                                                                </td>
+                                                                                <td className="max-w-[260px] px-6 py-4">
+                                                                                    <TruncatedText
+                                                                                        text={
+                                                                                            p.descripcion
+                                                                                        }
+                                                                                        emptyLabel="Sin descripción"
+                                                                                        onExpand={() => {
+                                                                                            setViendo(
+                                                                                                p,
+                                                                                            );
+                                                                                            setIsViewOpen(
+                                                                                                true,
+                                                                                            );
+                                                                                        }}
+                                                                                    />
+                                                                                </td>
+                                                                                <td className="px-6 py-4 text-right font-mono font-black text-foreground">
+                                                                                    {formatCurrency(
+                                                                                        p.precio_venta,
+                                                                                    )}
+                                                                                </td>
+                                                                                <td className="px-6 py-4 text-center">
+                                                                                    <div
+                                                                                        className={`inline-flex items-center gap-1 text-sm font-black ${(p.inventarios?.reduce((sum, inv) => sum + inv.cantidad, 0) || 0) <= (p.inventarios?.reduce((sum, inv) => sum + inv.cantidad_minima, 0) || 0) ? 'text-red-500' : 'text-green-600'}`}
+                                                                                    >
+                                                                                        {Math.round(
+                                                                                            p.inventarios?.reduce(
+                                                                                                (
+                                                                                                    sum,
+                                                                                                    inv,
+                                                                                                ) =>
+                                                                                                    sum +
+                                                                                                    inv.cantidad,
+                                                                                                0,
+                                                                                            ) ||
+                                                                                                0,
+                                                                                        )}
+                                                                                        <span className="text-[10px] font-medium text-muted-foreground lowercase italic">
+                                                                                            /{' '}
+                                                                                            {Math.round(
+                                                                                                p.inventarios?.reduce(
+                                                                                                    (
+                                                                                                        sum,
+                                                                                                        inv,
+                                                                                                    ) =>
+                                                                                                        sum +
+                                                                                                        inv.cantidad_minima,
+                                                                                                    0,
+                                                                                                ) ||
+                                                                                                    0,
+                                                                                            )}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </td>
+                                                                                <td className="px-6 py-4">
+                                                                                    {p.activo ? (
+                                                                                        <Badge className="rounded-full border border-green-200 bg-green-500/10 px-2 py-0.5 text-[10px] font-black text-green-600 uppercase">
+                                                                                            Activo
+                                                                                        </Badge>
+                                                                                    ) : (
+                                                                                        <Badge className="rounded-full border border-gray-200 bg-gray-500/10 px-2 py-0.5 text-[10px] font-black text-gray-500 uppercase">
+                                                                                            Inactivo
+                                                                                        </Badge>
+                                                                                    )}
+                                                                                </td>
+                                                                                <td className="px-6 py-4 text-right">
+                                                                                    <div className="flex justify-end gap-1">
+                                                                                        <Button
+                                                                                            variant="ghost"
+                                                                                            size="icon"
+                                                                                            className="h-8 w-8 text-emerald-600 hover:bg-emerald-50"
+                                                                                            onClick={() => {
+                                                                                                setViendo(
+                                                                                                    p,
+                                                                                                );
+                                                                                                setIsViewOpen(
+                                                                                                    true,
+                                                                                                );
+                                                                                            }}
+                                                                                        >
+                                                                                            <Eye className="h-4 w-4" />
+                                                                                        </Button>
+                                                                                        {canEdit && (
+                                                                                            <Button
+                                                                                                variant="ghost"
+                                                                                                size="icon"
+                                                                                                className="h-8 w-8 text-primary hover:bg-primary/10"
+                                                                                                onClick={() =>
+                                                                                                    handleEdit(
+                                                                                                        p,
+                                                                                                    )
+                                                                                                }
+                                                                                            >
+                                                                                                <Pencil className="h-4 w-4" />
+                                                                                            </Button>
+                                                                                        )}
+                                                                                        {canDelete && (
+                                                                                            <Button
+                                                                                                variant="ghost"
+                                                                                                size="icon"
+                                                                                                className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                                                                                onClick={() =>
+                                                                                                    handleDelete(
+                                                                                                        p.id,
+                                                                                                    )
+                                                                                                }
+                                                                                            >
+                                                                                                <Trash2 className="h-4 w-4" />
+                                                                                            </Button>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </td>
+                                                                            </tr>
+                                                                        ),
+                                                                    )}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                        <div className="grid gap-2 p-2 sm:p-3 md:hidden">
+                                                            {grupo.data.map(
+                                                                (p) => (
+                                                                    <div
+                                                                        key={
+                                                                            p.id
+                                                                        }
+                                                                        className="rounded-xl border bg-card p-3 shadow-sm"
+                                                                    >
+                                                                        <div className="flex items-start gap-3">
+                                                                            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted">
+                                                                                {p.imagen ? (
+                                                                                    <img
+                                                                                        src={`/storage/${p.imagen}`}
+                                                                                        alt={
+                                                                                            p.nombre
+                                                                                        }
+                                                                                        className="h-full w-full object-cover"
+                                                                                    />
+                                                                                ) : (
+                                                                                    <div className="flex h-full w-full items-center justify-center">
+                                                                                        <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="min-w-0 flex-1">
+                                                                                <div className="flex items-start justify-between gap-2">
+                                                                                    <div className="min-w-0">
+                                                                                        <p className="truncate text-sm font-bold">
+                                                                                            {
+                                                                                                p.nombre
+                                                                                            }
+                                                                                        </p>
+                                                                                        <p className="font-mono text-[10px] text-muted-foreground">
+                                                                                            {
+                                                                                                p.codigo
+                                                                                            }
+                                                                                        </p>
+                                                                                    </div>
+                                                                                    {p.activo ? (
+                                                                                        <Badge className="border-green-200 bg-green-500/10 px-2 py-0.5 text-[10px] font-black text-green-600 uppercase">
+                                                                                            Activo
+                                                                                        </Badge>
+                                                                                    ) : (
+                                                                                        <Badge className="border-gray-200 bg-gray-500/10 px-2 py-0.5 text-[10px] font-black text-gray-500 uppercase">
+                                                                                            Inactivo
+                                                                                        </Badge>
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="mt-1">
+                                                                                    <TruncatedText
+                                                                                        text={
+                                                                                            p.descripcion
+                                                                                        }
+                                                                                        emptyLabel="Sin descripción"
+                                                                                        lines={
+                                                                                            2
+                                                                                        }
+                                                                                        onExpand={() => {
+                                                                                            setViendo(
+                                                                                                p,
+                                                                                            );
+                                                                                            setIsViewOpen(
+                                                                                                true,
+                                                                                            );
+                                                                                        }}
+                                                                                    />
+                                                                                </div>
+                                                                                <div className="mt-2 flex items-center justify-between border-t pt-2">
+                                                                                    <span className="text-xs font-black">
+                                                                                        {formatCurrency(
+                                                                                            p.precio_venta,
+                                                                                        )}
+                                                                                    </span>
+                                                                                    <div className="flex items-center gap-1">
+                                                                                        <Button
+                                                                                            variant="ghost"
+                                                                                            size="sm"
+                                                                                            className="h-8 px-2 text-xs"
+                                                                                            onClick={() => {
+                                                                                                setViendo(
+                                                                                                    p,
+                                                                                                );
+                                                                                                setIsViewOpen(
+                                                                                                    true,
+                                                                                                );
+                                                                                            }}
+                                                                                        >
+                                                                                            <Eye className="mr-1 h-3.5 w-3.5" />
+                                                                                            Ver
+                                                                                        </Button>
+                                                                                        {canEdit && (
+                                                                                            <Button
+                                                                                                variant="ghost"
+                                                                                                size="sm"
+                                                                                                className="h-8 px-2 text-xs"
+                                                                                                onClick={() =>
+                                                                                                    handleEdit(
+                                                                                                        p,
+                                                                                                    )
+                                                                                                }
+                                                                                            >
+                                                                                                <Pencil className="mr-1 h-3.5 w-3.5" />
+                                                                                                Editar
+                                                                                            </Button>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                ),
+                                                            )}
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="grid grid-cols-1 gap-4 p-2 sm:grid-cols-2 sm:p-3 lg:grid-cols-3">
+                                                        {grupo.data.map((p) => (
+                                                            <div
+                                                                key={p.id}
+                                                                className="group relative overflow-hidden rounded-xl border bg-card transition-all hover:shadow-lg"
+                                                            >
+                                                                <div className="relative h-36 overflow-hidden bg-muted">
                                                                     {p.imagen ? (
                                                                         <img
                                                                             src={`/storage/${p.imagen}`}
-                                                                            className="h-full w-full object-cover"
                                                                             alt={
                                                                                 p.nombre
                                                                             }
+                                                                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                                                         />
                                                                     ) : (
-                                                                        <ImageIcon className="h-full w-full p-2 text-muted-foreground/30" />
+                                                                        <div className="flex h-full items-center justify-center">
+                                                                            <Package className="h-12 w-12 text-muted-foreground/30" />
+                                                                        </div>
+                                                                    )}
+                                                                    <div className="absolute top-2 right-2">
+                                                                        {p.activo ? (
+                                                                            <Badge className="border-green-200 bg-green-500/10 px-2 py-0.5 text-[10px] font-black text-green-600 uppercase">
+                                                                                Activo
+                                                                            </Badge>
+                                                                        ) : (
+                                                                            <Badge className="border-gray-200 bg-gray-500/10 px-2 py-0.5 text-[10px] font-black text-gray-500 uppercase">
+                                                                                Inactivo
+                                                                            </Badge>
+                                                                        )}
+                                                                    </div>
+                                                                    {p.categoria && (
+                                                                        <div className="absolute top-2 left-2">
+                                                                            <Badge
+                                                                                variant="secondary"
+                                                                                className="px-2 py-0.5 text-[10px]"
+                                                                            >
+                                                                                {
+                                                                                    p
+                                                                                        .categoria
+                                                                                        .nombre
+                                                                                }
+                                                                            </Badge>
+                                                                        </div>
                                                                     )}
                                                                 </div>
-                                                                <div>
-                                                                    <div className="text-sm font-bold tracking-tight">
-                                                                        {
-                                                                            p.nombre
-                                                                        }
+                                                                <div className="space-y-2 p-4">
+                                                                    <div className="flex items-start justify-between gap-2">
+                                                                        <div>
+                                                                            <h3 className="leading-tight font-semibold">
+                                                                                {
+                                                                                    p.nombre
+                                                                                }
+                                                                            </h3>
+                                                                            <p className="font-mono text-xs text-muted-foreground">
+                                                                                {
+                                                                                    p.codigo
+                                                                                }
+                                                                            </p>
+                                                                        </div>
                                                                     </div>
-                                                                    <div className="flex items-center gap-1.5 font-mono text-[10px] leading-none text-muted-foreground">
-                                                                        <ArrowDownZA className="h-2.5 w-2.5" />
-                                                                        {
-                                                                            p.codigo
+                                                                    <TruncatedText
+                                                                        text={
+                                                                            p.descripcion
                                                                         }
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <Badge
-                                                                variant="outline"
-                                                                className="border-primary/20 bg-primary/5 text-[10px] font-bold text-primary"
-                                                            >
-                                                                {p.categoria
-                                                                    ?.nombre ||
-                                                                    'General'}
-                                                            </Badge>
-                                                        </td>
-                                                        <td className="px-6 py-4 text-right font-mono font-black text-foreground">
-                                                            {formatCurrency(
-                                                                p.precio_venta,
-                                                            )}
-                                                        </td>
-                                                        <td className="px-6 py-4 text-center">
-                                                            <div
-                                                                className={`inline-flex items-center gap-1 text-sm font-black ${(p.inventarios?.reduce((sum, inv) => sum + inv.cantidad, 0) || 0) <= (p.inventarios?.reduce((sum, inv) => sum + inv.cantidad_minima, 0) || 0) ? 'text-red-500' : 'text-green-600'}`}
-                                                            >
-                                                                {Math.round(
-                                                                    p.inventarios?.reduce(
-                                                                        (
-                                                                            sum,
-                                                                            inv,
-                                                                        ) =>
-                                                                            sum +
-                                                                            inv.cantidad,
-                                                                        0,
-                                                                    ) || 0,
-                                                                )}
-                                                                <span className="text-[10px] font-medium text-muted-foreground lowercase italic">
-                                                                    /{' '}
-                                                                    {Math.round(
-                                                                        p.inventarios?.reduce(
-                                                                            (
-                                                                                sum,
-                                                                                inv,
-                                                                            ) =>
-                                                                                sum +
-                                                                                inv.cantidad_minima,
-                                                                            0,
-                                                                        ) || 0,
-                                                                    )}
-                                                                </span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            {p.activo ? (
-                                                                <Badge className="rounded-full border border-green-200 bg-green-500/10 px-2 py-0.5 text-[10px] font-black text-green-600 uppercase">
-                                                                    Activo
-                                                                </Badge>
-                                                            ) : (
-                                                                <Badge className="rounded-full border border-gray-200 bg-gray-500/10 px-2 py-0.5 text-[10px] font-black text-gray-500 uppercase">
-                                                                    Inactivo
-                                                                </Badge>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-6 py-4 text-right">
-                                                            <div className="flex justify-end gap-1">
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-8 w-8 text-emerald-600 hover:bg-emerald-50"
-                                                                    onClick={() => {
-                                                                        setViendo(
-                                                                            p,
-                                                                        );
-                                                                        setIsViewOpen(
-                                                                            true,
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    <Eye className="h-4 w-4" />
-                                                                </Button>
-                                                                {canEdit && (
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        className="h-8 w-8 text-primary hover:bg-primary/10"
-                                                                        onClick={() =>
-                                                                            handleEdit(
+                                                                        lines={
+                                                                            2
+                                                                        }
+                                                                        emptyLabel="Sin descripción"
+                                                                        onExpand={() => {
+                                                                            setViendo(
                                                                                 p,
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <Pencil className="h-4 w-4" />
-                                                                    </Button>
-                                                                )}
-                                                                {canDelete && (
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                                                        onClick={() =>
-                                                                            handleDelete(
-                                                                                p.id,
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <Trash2 className="h-4 w-4" />
-                                                                    </Button>
-                                                                )}
+                                                                            );
+                                                                            setIsViewOpen(
+                                                                                true,
+                                                                            );
+                                                                        }}
+                                                                    />
+                                                                    <div className="space-y-1 text-xs text-muted-foreground">
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <Tag className="h-3.5 w-3.5 shrink-0" />
+                                                                            <span>
+                                                                                {formatCurrency(
+                                                                                    p.precio_venta,
+                                                                                )}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <Package className="h-3.5 w-3.5 shrink-0" />
+                                                                            <span
+                                                                                className={
+                                                                                    (p.inventarios?.reduce(
+                                                                                        (
+                                                                                            sum,
+                                                                                            inv,
+                                                                                        ) =>
+                                                                                            sum +
+                                                                                            inv.cantidad,
+                                                                                        0,
+                                                                                    ) ||
+                                                                                        0) <=
+                                                                                    (p.inventarios?.reduce(
+                                                                                        (
+                                                                                            sum,
+                                                                                            inv,
+                                                                                        ) =>
+                                                                                            sum +
+                                                                                            inv.cantidad_minima,
+                                                                                        0,
+                                                                                    ) ||
+                                                                                        0)
+                                                                                        ? 'font-medium text-red-500'
+                                                                                        : ''
+                                                                                }
+                                                                            >
+                                                                                Stock:{' '}
+                                                                                {Math.round(
+                                                                                    p.inventarios?.reduce(
+                                                                                        (
+                                                                                            sum,
+                                                                                            inv,
+                                                                                        ) =>
+                                                                                            sum +
+                                                                                            inv.cantidad,
+                                                                                        0,
+                                                                                    ) ||
+                                                                                        0,
+                                                                                )}{' '}
+                                                                                /{' '}
+                                                                                {Math.round(
+                                                                                    p.inventarios?.reduce(
+                                                                                        (
+                                                                                            sum,
+                                                                                            inv,
+                                                                                        ) =>
+                                                                                            sum +
+                                                                                            inv.cantidad_minima,
+                                                                                        0,
+                                                                                    ) ||
+                                                                                        0,
+                                                                                )}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-1 pt-1">
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            className="h-8 px-2 text-xs"
+                                                                            onClick={() => {
+                                                                                setViendo(
+                                                                                    p,
+                                                                                );
+                                                                                setIsViewOpen(
+                                                                                    true,
+                                                                                );
+                                                                            }}
+                                                                        >
+                                                                            <Eye className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                            Ver
+                                                                        </Button>
+                                                                        {canEdit && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="h-8 px-2 text-xs"
+                                                                                onClick={() =>
+                                                                                    handleEdit(
+                                                                                        p,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <Pencil className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                                Editar
+                                                                            </Button>
+                                                                        )}
+                                                                        {canDelete && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="h-8 px-2 text-xs text-destructive hover:text-destructive"
+                                                                                onClick={() =>
+                                                                                    handleDelete(
+                                                                                        p.id,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <Trash2 className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                                Eliminar
+                                                                            </Button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                                {productos.data.length ===
-                                                    0 && (
-                                                    <tr>
-                                                        <td
-                                                            colSpan={6}
-                                                            className="py-20 text-center"
-                                                        >
-                                                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                                                                <Package className="h-10 w-10 opacity-20" />
-                                                                <p className="font-medium">
-                                                                    No se
-                                                                    encontraron
-                                                                    productos
-                                                                    coincidentes
-                                                                </p>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <div className="border-t border-muted/50 p-4">
-                                        <Pagination
-                                            links={productos.links}
-                                            meta={productos.meta || productos}
-                                        />
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    {productos.data.length === 0 ? (
-                                        <div className="py-12 text-center text-muted-foreground">
-                                            <Package className="mx-auto mb-3 h-12 w-12 opacity-30" />
-                                            <p>No se encontraron productos.</p>
-                                        </div>
-                                    ) : (
-                                        <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
-                                            {productos.data.map((p) => (
-                                                <div
-                                                    key={p.id}
-                                                    className="group relative overflow-hidden rounded-xl border bg-card transition-all hover:shadow-lg"
-                                                >
-                                                    <div className="relative h-36 overflow-hidden bg-muted">
-                                                        {p.imagen ? (
-                                                            <img
-                                                                src={`/storage/${p.imagen}`}
-                                                                alt={p.nombre}
-                                                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                                            />
-                                                        ) : (
-                                                            <div className="flex h-full items-center justify-center">
-                                                                <Package className="h-12 w-12 text-muted-foreground/30" />
-                                                            </div>
-                                                        )}
-                                                        <div className="absolute top-2 right-2">
-                                                            {p.activo ? (
-                                                                <Badge className="border-green-200 bg-green-500/10 px-2 py-0.5 text-[10px] font-black text-green-600 uppercase">
-                                                                    Activo
-                                                                </Badge>
-                                                            ) : (
-                                                                <Badge className="border-gray-200 bg-gray-500/10 px-2 py-0.5 text-[10px] font-black text-gray-500 uppercase">
-                                                                    Inactivo
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                        {p.categoria && (
-                                                            <div className="absolute top-2 left-2">
-                                                                <Badge
-                                                                    variant="secondary"
-                                                                    className="px-2 py-0.5 text-[10px]"
-                                                                >
-                                                                    {
-                                                                        p
-                                                                            .categoria
-                                                                            .nombre
-                                                                    }
-                                                                </Badge>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="space-y-2 p-4">
-                                                        <div className="flex items-start justify-between gap-2">
-                                                            <div>
-                                                                <h3 className="leading-tight font-semibold">
-                                                                    {p.nombre}
-                                                                </h3>
-                                                                <p className="font-mono text-xs text-muted-foreground">
-                                                                    {p.codigo}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="space-y-1 text-xs text-muted-foreground">
-                                                            <div className="flex items-center gap-1.5">
-                                                                <Tag className="h-3.5 w-3.5 shrink-0" />
-                                                                <span>
-                                                                    {formatCurrency(
-                                                                        p.precio_venta,
-                                                                    )}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex items-center gap-1.5">
-                                                                <Package className="h-3.5 w-3.5 shrink-0" />
-                                                                <span
-                                                                    className={
-                                                                        (p.inventarios?.reduce(
-                                                                            (
-                                                                                sum,
-                                                                                inv,
-                                                                            ) =>
-                                                                                sum +
-                                                                                inv.cantidad,
-                                                                            0,
-                                                                        ) ||
-                                                                            0) <=
-                                                                        (p.inventarios?.reduce(
-                                                                            (
-                                                                                sum,
-                                                                                inv,
-                                                                            ) =>
-                                                                                sum +
-                                                                                inv.cantidad_minima,
-                                                                            0,
-                                                                        ) || 0)
-                                                                            ? 'font-medium text-red-500'
-                                                                            : ''
-                                                                    }
-                                                                >
-                                                                    Stock:{' '}
-                                                                    {Math.round(
-                                                                        p.inventarios?.reduce(
-                                                                            (
-                                                                                sum,
-                                                                                inv,
-                                                                            ) =>
-                                                                                sum +
-                                                                                inv.cantidad,
-                                                                            0,
-                                                                        ) || 0,
-                                                                    )}{' '}
-                                                                    /{' '}
-                                                                    {Math.round(
-                                                                        p.inventarios?.reduce(
-                                                                            (
-                                                                                sum,
-                                                                                inv,
-                                                                            ) =>
-                                                                                sum +
-                                                                                inv.cantidad_minima,
-                                                                            0,
-                                                                        ) || 0,
-                                                                    )}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-1 pt-1">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-8 px-2 text-xs"
-                                                                onClick={() => {
-                                                                    setViendo(
-                                                                        p,
-                                                                    );
-                                                                    setIsViewOpen(
-                                                                        true,
-                                                                    );
-                                                                }}
-                                                            >
-                                                                <Eye className="mr-1 h-3.5 w-3.5" />{' '}
-                                                                Ver
-                                                            </Button>
-                                                            {canEdit && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-8 px-2 text-xs"
-                                                                    onClick={() =>
-                                                                        handleEdit(
-                                                                            p,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Pencil className="mr-1 h-3.5 w-3.5" />{' '}
-                                                                    Editar
-                                                                </Button>
-                                                            )}
-                                                            {canDelete && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-8 px-2 text-xs text-destructive hover:text-destructive"
-                                                                    onClick={() =>
-                                                                        handleDelete(
-                                                                            p.id,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Trash2 className="mr-1 h-3.5 w-3.5" />{' '}
-                                                                    Eliminar
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    <div className="border-t border-muted/50 p-4">
-                                        <Pagination
-                                            links={productos.links}
-                                            meta={productos.meta || productos}
-                                        />
-                                    </div>
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
-
-            {/* Create/Edit dialog */}
-            <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="flex max-h-[90vh] max-w-[95vw] flex-col overflow-y-auto border-none p-0 shadow-2xl md:max-w-5xl">
-                    <DialogHeader className="shrink-0 bg-gradient-to-r from-primary/10 to-transparent p-6 pb-4 text-left">
-                        <div className="mb-1 flex items-center gap-2">
-                            <Tag className="h-5 w-5 text-primary" />
-                            <span className="text-[10px] font-black tracking-widest text-primary/70 uppercase">
-                                Módulo de Catálogo
-                            </span>
-                        </div>
-                        <DialogTitle className="text-2xl font-black tracking-tight text-primary">
-                            {editando
-                                ? 'Modificar Ficha de Producto'
-                                : 'Alta de Nuevo Producto'}
-                        </DialogTitle>
-                    </DialogHeader>
-
-                    <form
-                        onSubmit={handleSubmit}
-                        className="flex flex-1 flex-col overflow-hidden"
-                    >
-                        <div className="flex-1 overflow-y-auto p-6 pt-2">
-                            <div className="grid gap-8 py-4">
-                                <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
-                                    {/* Left Column: Info */}
-                                    <div className="space-y-6 md:col-span-8">
-                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                                                    Código SKU (opcional)
-                                                </Label>
-                                                <div className="flex gap-2">
-                                                    <Input
-                                                        value={data.codigo}
-                                                        onChange={(e) => {
-                                                            setData(
-                                                                'codigo',
-                                                                e.target.value,
-                                                            );
-                                                            setBarcodeProduct(
-                                                                null,
-                                                            );
-                                                            barcodeLookupRequest.current += 1;
-                                                            setBarcodeLookupLoading(
-                                                                false,
-                                                            );
-                                                        }}
-                                                        onBlur={() =>
-                                                            void lookupBarcode(
-                                                                data.codigo,
-                                                            )
-                                                        }
-                                                        placeholder="Ej: PRO-001"
-                                                        className="h-11 flex-1 border-none bg-muted/30 font-black focus-visible:ring-primary/20"
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="icon"
-                                                        className="h-11 w-11 shrink-0"
-                                                        aria-label="Escanear código SKU con la cámara"
-                                                        title="Escanear SKU con la cámara"
-                                                        onClick={() =>
-                                                            openSkuScanner(
-                                                                'codigo',
-                                                            )
-                                                        }
-                                                    >
-                                                        <Camera className="h-5 w-5" />
-                                                    </Button>
-                                                </div>
-                                                {errors.codigo && (
-                                                    <p className="text-[10px] font-bold text-destructive">
-                                                        {errors.codigo}
-                                                    </p>
-                                                )}
-                                                <p className="text-xs text-muted-foreground">
-                                                    Ingresa un UPC/EAN o
-                                                    escanéalo para buscar datos
-                                                    del producto.
-                                                </p>
-                                                {barcodeLookupLoading && (
-                                                    <p
-                                                        className="text-xs text-muted-foreground"
-                                                        role="status"
-                                                    >
-                                                        Buscando producto...
-                                                    </p>
-                                                )}
-                                                {barcodeProduct && (
-                                                    <div className="flex items-start gap-3 rounded-lg border bg-background p-3">
-                                                        {barcodeProduct.imagen && (
-                                                            <img
-                                                                src={
-                                                                    barcodeProduct.imagen
-                                                                }
-                                                                alt={
-                                                                    barcodeProduct.nombre ??
-                                                                    'Producto encontrado'
-                                                                }
-                                                                className="h-16 w-16 rounded object-contain"
-                                                                loading="lazy"
-                                                            />
-                                                        )}
-                                                        <div className="min-w-0 text-sm">
-                                                            <p className="font-semibold">
-                                                                Datos sugeridos
-                                                            </p>
-                                                            {barcodeProduct.marca && (
-                                                                <p>
-                                                                    Marca:{' '}
-                                                                    {
-                                                                        barcodeProduct.marca
-                                                                    }
-                                                                </p>
-                                                            )}
-                                                            {barcodeProduct.categoria && (
-                                                                <p>
-                                                                    Categoría:{' '}
-                                                                    {
-                                                                        barcodeProduct.categoria
-                                                                    }
-                                                                </p>
-                                                            )}
-                                                            {barcodeProduct.formato && (
-                                                                <p>
-                                                                    Formato:{' '}
-                                                                    {
-                                                                        barcodeProduct.formato
-                                                                    }
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                                                    Nombre Comercial *
-                                                </Label>
-                                                <Input
-                                                    value={data.nombre}
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            'nombre',
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    required
-                                                    className="h-11 border-none bg-muted/30 font-bold"
-                                                />
-                                                {errors.nombre && (
-                                                    <p className="text-[10px] font-bold text-destructive">
-                                                        {errors.nombre}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                                                    Categoría Principal
-                                                </Label>
-                                                <Select
-                                                    value={data.categoria_id}
-                                                    onValueChange={(v) =>
-                                                        setData(
-                                                            'categoria_id',
-                                                            v,
-                                                        )
-                                                    }
-                                                >
-                                                    <SelectTrigger className="h-11 border-none bg-muted/30 font-bold">
-                                                        <SelectValue placeholder="Seleccione..." />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {categorias.map((c) => (
-                                                            <SelectItem
-                                                                key={c.id}
-                                                                value={c.id.toString()}
-                                                            >
-                                                                {c.nombre}
-                                                            </SelectItem>
                                                         ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-sm font-semibold text-slate-700">
-                                                    Almacenes Disponibles
-                                                </Label>
-                                                <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                                                    {almacenes.map(
-                                                        (almacen) => (
-                                                            <label
-                                                                key={almacen.id}
-                                                                className="flex cursor-pointer items-center gap-2.5 rounded-lg p-2 transition-colors select-none hover:bg-white"
-                                                            >
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={data.warehouse_ids.includes(
-                                                                        almacen.id,
-                                                                    )}
-                                                                    onChange={(
-                                                                        e,
-                                                                    ) => {
-                                                                        const checked =
-                                                                            e
-                                                                                .target
-                                                                                .checked;
-                                                                        const newIds =
-                                                                            checked
-                                                                                ? [
-                                                                                      ...data.warehouse_ids,
-                                                                                      almacen.id,
-                                                                                  ]
-                                                                                : data.warehouse_ids.filter(
-                                                                                      (
-                                                                                          id,
-                                                                                      ) =>
-                                                                                          id !==
-                                                                                          almacen.id,
-                                                                                  );
-                                                                        setData(
-                                                                            'warehouse_ids',
-                                                                            newIds,
-                                                                        );
-                                                                    }}
-                                                                    className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
-                                                                />
-                                                                <span className="text-xs font-medium text-slate-700">
-                                                                    {
-                                                                        almacen.nombre
+                                                    </div>
+                                                )}
+                                            </SectionPanel>
+                                        ))}
+                                    </div>
+                                )}
+                                <div className="border-t border-muted/50 p-4">
+                                    <Pagination
+                                        links={productos.links}
+                                        meta={productos.meta || productos}
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+
+                {/* Create/Edit dialog */}
+                <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                    <DialogContent className="flex max-h-[90vh] max-w-[95vw] flex-col overflow-y-auto border-none p-0 shadow-2xl md:max-w-5xl">
+                        <DialogHeader className="shrink-0 bg-gradient-to-r from-primary/10 to-transparent p-6 pb-4 text-left">
+                            <div className="mb-1 flex items-center gap-2">
+                                <Tag className="h-5 w-5 text-primary" />
+                                <span className="text-[10px] font-black tracking-widest text-primary/70 uppercase">
+                                    Módulo de Catálogo
+                                </span>
+                            </div>
+                            <DialogTitle className="text-2xl font-black tracking-tight text-primary">
+                                {editando
+                                    ? 'Modificar Ficha de Producto'
+                                    : 'Alta de Nuevo Producto'}
+                            </DialogTitle>
+                        </DialogHeader>
+
+                        <form
+                            onSubmit={handleSubmit}
+                            className="flex flex-1 flex-col overflow-hidden"
+                        >
+                            <div className="flex-1 overflow-y-auto p-6 pt-2">
+                                <div className="grid gap-8 py-4">
+                                    <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
+                                        {/* Left Column: Info */}
+                                        <div className="space-y-6 md:col-span-8">
+                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                                                        Código SKU (opcional)
+                                                    </Label>
+                                                    <div className="flex gap-2">
+                                                        <Input
+                                                            value={data.codigo}
+                                                            onChange={(e) => {
+                                                                setData(
+                                                                    'codigo',
+                                                                    e.target
+                                                                        .value,
+                                                                );
+                                                                setBarcodeProduct(
+                                                                    null,
+                                                                );
+                                                                barcodeLookupRequest.current += 1;
+                                                                setBarcodeLookupLoading(
+                                                                    false,
+                                                                );
+                                                            }}
+                                                            onBlur={() =>
+                                                                void lookupBarcode(
+                                                                    data.codigo,
+                                                                )
+                                                            }
+                                                            placeholder="Ej: PRO-001"
+                                                            className="h-11 flex-1 border-none bg-muted/30 font-black focus-visible:ring-primary/20"
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="icon"
+                                                            className="h-11 w-11 shrink-0"
+                                                            aria-label="Escanear código SKU con la cámara"
+                                                            title="Escanear SKU con la cámara"
+                                                            onClick={() =>
+                                                                openSkuScanner(
+                                                                    'codigo',
+                                                                )
+                                                            }
+                                                        >
+                                                            <Camera className="h-5 w-5" />
+                                                        </Button>
+                                                    </div>
+                                                    {errors.codigo && (
+                                                        <p className="text-[10px] font-bold text-destructive">
+                                                            {errors.codigo}
+                                                        </p>
+                                                    )}
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Ingresa un UPC/EAN o
+                                                        escanéalo para buscar
+                                                        datos del producto.
+                                                    </p>
+                                                    {barcodeLookupLoading && (
+                                                        <p
+                                                            className="text-xs text-muted-foreground"
+                                                            role="status"
+                                                        >
+                                                            Buscando producto...
+                                                        </p>
+                                                    )}
+                                                    {barcodeProduct && (
+                                                        <div className="flex items-start gap-3 rounded-lg border bg-background p-3">
+                                                            {barcodeProduct.imagen && (
+                                                                <img
+                                                                    src={
+                                                                        barcodeProduct.imagen
                                                                     }
-                                                                </span>
-                                                            </label>
-                                                        ),
+                                                                    alt={
+                                                                        barcodeProduct.nombre ??
+                                                                        'Producto encontrado'
+                                                                    }
+                                                                    className="h-16 w-16 rounded object-contain"
+                                                                    loading="lazy"
+                                                                />
+                                                            )}
+                                                            <div className="min-w-0 text-sm">
+                                                                <p className="font-semibold">
+                                                                    Datos
+                                                                    sugeridos
+                                                                </p>
+                                                                {barcodeProduct.marca && (
+                                                                    <p>
+                                                                        Marca:{' '}
+                                                                        {
+                                                                            barcodeProduct.marca
+                                                                        }
+                                                                    </p>
+                                                                )}
+                                                                {barcodeProduct.categoria && (
+                                                                    <p>
+                                                                        Categoría:{' '}
+                                                                        {
+                                                                            barcodeProduct.categoria
+                                                                        }
+                                                                    </p>
+                                                                )}
+                                                                {barcodeProduct.formato && (
+                                                                    <p>
+                                                                        Formato:{' '}
+                                                                        {
+                                                                            barcodeProduct.formato
+                                                                        }
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                                                        Nombre Comercial *
+                                                    </Label>
+                                                    <Input
+                                                        value={data.nombre}
+                                                        onChange={(e) =>
+                                                            setData(
+                                                                'nombre',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        required
+                                                        className="h-11 border-none bg-muted/30 font-bold"
+                                                    />
+                                                    {errors.nombre && (
+                                                        <p className="text-[10px] font-bold text-destructive">
+                                                            {errors.nombre}
+                                                        </p>
                                                     )}
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div className="space-y-4 rounded-xl border border-emerald-500/10 bg-emerald-50 p-4">
                                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                                 <div className="space-y-2">
-                                                    <Label className="text-xs font-bold tracking-wider text-emerald-600 uppercase">
-                                                        Unidad de Medida *
+                                                    <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                                                        Categoría Principal
                                                     </Label>
                                                     <Select
                                                         value={
-                                                            data.unidad_medida
+                                                            data.categoria_id
                                                         }
-                                                        onValueChange={(
-                                                            v: any,
-                                                        ) => {
+                                                        onValueChange={(v) =>
                                                             setData(
-                                                                'unidad_medida',
-                                                                v,
-                                                            );
-                                                            if (
-                                                                v !== 'unidad'
-                                                            ) {
-                                                                setData(
-                                                                    'medida_pesable',
-                                                                    true,
-                                                                );
-                                                            }
-                                                        }}
-                                                    >
-                                                        <SelectTrigger className="h-11 border-none bg-background font-bold">
-                                                            <SelectValue placeholder="Seleccione..." />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="unidad">
-                                                                Unidad (Pza /
-                                                                Cilindro)
-                                                            </SelectItem>
-                                                            <SelectItem value="kg">
-                                                                Kilogramo (KG)
-                                                            </SelectItem>
-                                                            <SelectItem value="lt">
-                                                                Litro (LT)
-                                                            </SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-
-                                                <div className="flex items-center justify-between pt-6">
-                                                    <div>
-                                                        <Label className="text-xs font-bold text-emerald-600 uppercase">
-                                                            ¿Es pesable /
-                                                            métrico?
-                                                        </Label>
-                                                    </div>
-                                                    <Switch
-                                                        checked={
-                                                            data.medida_pesable ||
-                                                            data.unidad_medida !==
-                                                                'unidad'
-                                                        }
-                                                        onCheckedChange={(v) =>
-                                                            setData(
-                                                                'medida_pesable',
+                                                                'categoria_id',
                                                                 v,
                                                             )
                                                         }
-                                                        disabled={
-                                                            data.unidad_medida !==
-                                                            'unidad'
-                                                        }
-                                                    />
+                                                    >
+                                                        <SelectTrigger className="h-11 border-none bg-muted/30 font-bold">
+                                                            <SelectValue placeholder="Seleccione..." />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {categorias.map(
+                                                                (c) => (
+                                                                    <SelectItem
+                                                                        key={
+                                                                            c.id
+                                                                        }
+                                                                        value={c.id.toString()}
+                                                                    >
+                                                                        {
+                                                                            c.nombre
+                                                                        }
+                                                                    </SelectItem>
+                                                                ),
+                                                            )}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-semibold text-slate-700">
+                                                        Almacenes Disponibles
+                                                    </Label>
+                                                    <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                                        {almacenes.map(
+                                                            (almacen) => (
+                                                                <label
+                                                                    key={
+                                                                        almacen.id
+                                                                    }
+                                                                    className="flex cursor-pointer items-center gap-2.5 rounded-lg p-2 transition-colors select-none hover:bg-white"
+                                                                >
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={data.warehouse_ids.includes(
+                                                                            almacen.id,
+                                                                        )}
+                                                                        onChange={(
+                                                                            e,
+                                                                        ) => {
+                                                                            const checked =
+                                                                                e
+                                                                                    .target
+                                                                                    .checked;
+                                                                            const newIds =
+                                                                                checked
+                                                                                    ? [
+                                                                                          ...data.warehouse_ids,
+                                                                                          almacen.id,
+                                                                                      ]
+                                                                                    : data.warehouse_ids.filter(
+                                                                                          (
+                                                                                              id,
+                                                                                          ) =>
+                                                                                              id !==
+                                                                                              almacen.id,
+                                                                                      );
+                                                                            setData(
+                                                                                'warehouse_ids',
+                                                                                newIds,
+                                                                            );
+                                                                        }}
+                                                                        className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                                                                    />
+                                                                    <span className="text-xs font-medium text-slate-700">
+                                                                        {
+                                                                            almacen.nombre
+                                                                        }
+                                                                    </span>
+                                                                </label>
+                                                            ),
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            {(data.unidad_medida !== 'unidad' ||
-                                                data.medida_pesable) && (
-                                                <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+                                            <div className="space-y-4 rounded-xl border border-emerald-500/10 bg-emerald-50 p-4">
+                                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                                     <div className="space-y-2">
-                                                        <Label className="text-xs font-bold text-emerald-600">
-                                                            ¿Cuántos
-                                                            kilos/litros
-                                                            contiene cada
-                                                            unidad?
-                                                        </Label>
-                                                        <Input
-                                                            type="number"
-                                                            value={
-                                                                data.contenido_por_unidad
-                                                            }
-                                                            onChange={(e) =>
-                                                                setData(
-                                                                    'contenido_por_unidad',
-                                                                    parseFloat(
-                                                                        e.target
-                                                                            .value,
-                                                                    ) || 0,
-                                                                )
-                                                            }
-                                                            className="h-10 border-none bg-background font-black"
-                                                            placeholder="Ej: 15"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {/* Envase retornable section */}
-                                            <div className="space-y-4 rounded-xl border border-primary/10 bg-primary/5 p-4">
-                                                <div className="flex items-center justify-between pt-2">
-                                                    <div>
-                                                        <Label className="text-xs font-bold tracking-wider text-primary uppercase">
-                                                            Envase Retornable
-                                                        </Label>
-                                                    </div>
-                                                    <Switch
-                                                        checked={
-                                                            data.envase_retornable
-                                                        }
-                                                        onCheckedChange={(
-                                                            v,
-                                                        ) => {
-                                                            setData(
-                                                                'envase_retornable',
-                                                                v,
-                                                            );
-                                                            if (!v) {
-                                                                setData(
-                                                                    'envase_producto_id',
-                                                                    null,
-                                                                );
-                                                            }
-                                                        }}
-                                                    />
-                                                </div>
-                                                {data.envase_retornable && (
-                                                    <div className="mt-4">
-                                                        <Label className="text-xs font-bold tracking-wider text-primary uppercase">
-                                                            Envase Físico
-                                                            Asociado
+                                                        <Label className="text-xs font-bold tracking-wider text-emerald-600 uppercase">
+                                                            Unidad de Medida *
                                                         </Label>
                                                         <Select
                                                             value={
-                                                                data.envase_producto_id ===
-                                                                null
-                                                                    ? 'none'
-                                                                    : data.envase_producto_id ===
-                                                                        0
-                                                                      ? 'self'
-                                                                      : String(
-                                                                            data.envase_producto_id,
-                                                                        )
+                                                                data.unidad_medida
                                                             }
                                                             onValueChange={(
-                                                                v,
+                                                                v: any,
                                                             ) => {
-                                                                const isSelf =
-                                                                    v ===
-                                                                    'self';
-                                                                setIsSelfSelected(
-                                                                    isSelf,
-                                                                );
                                                                 setData(
-                                                                    'envase_producto_id',
-                                                                    v === 'none'
-                                                                        ? null
-                                                                        : isSelf
-                                                                          ? 0
-                                                                          : Number(
-                                                                                v,
-                                                                            ),
+                                                                    'unidad_medida',
+                                                                    v,
                                                                 );
+                                                                if (
+                                                                    v !==
+                                                                    'unidad'
+                                                                ) {
+                                                                    setData(
+                                                                        'medida_pesable',
+                                                                        true,
+                                                                    );
+                                                                }
                                                             }}
                                                         >
-                                                            <SelectTrigger className="h-10 border-none bg-background font-black">
-                                                                <SelectValue
-                                                                    className={
-                                                                        isSelfSelected
-                                                                            ? 'font-semibold text-primary'
-                                                                            : ''
-                                                                    }
-                                                                    placeholder="Seleccione el envase físico..."
-                                                                />
+                                                            <SelectTrigger className="h-11 border-none bg-background font-bold">
+                                                                <SelectValue placeholder="Seleccione..." />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                <SelectItem value="none">
-                                                                    Ninguno
-                                                                    (producto no
-                                                                    retornable)
+                                                                <SelectItem value="unidad">
+                                                                    Unidad (Pza
+                                                                    / Cilindro)
                                                                 </SelectItem>
-                                                                {(!editando &&
-                                                                    data.envase_retornable) ||
-                                                                data.envase_producto_id ===
-                                                                    0 ? (
-                                                                    <SelectItem value="self">
-                                                                        Seleccione
-                                                                        este
-                                                                        producto
-                                                                        como
-                                                                        envase
-                                                                        físico
-                                                                    </SelectItem>
-                                                                ) : null}
-                                                                {productosEnvase.map(
-                                                                    (
-                                                                        envase,
-                                                                    ) => (
-                                                                        <SelectItem
-                                                                            key={
-                                                                                envase.id
-                                                                            }
-                                                                            value={envase.id.toString()}
-                                                                        >
-                                                                            {
-                                                                                envase.nombre
-                                                                            }{' '}
-                                                                            (
-                                                                            {
-                                                                                envase.codigo
-                                                                            }
-                                                                            )
-                                                                        </SelectItem>
-                                                                    ),
-                                                                )}
+                                                                <SelectItem value="kg">
+                                                                    Kilogramo
+                                                                    (KG)
+                                                                </SelectItem>
+                                                                <SelectItem value="lt">
+                                                                    Litro (LT)
+                                                                </SelectItem>
                                                             </SelectContent>
                                                         </Select>
                                                     </div>
+
+                                                    <div className="flex items-center justify-between pt-6">
+                                                        <div>
+                                                            <Label className="text-xs font-bold text-emerald-600 uppercase">
+                                                                ¿Es pesable /
+                                                                métrico?
+                                                            </Label>
+                                                        </div>
+                                                        <Switch
+                                                            checked={
+                                                                data.medida_pesable ||
+                                                                data.unidad_medida !==
+                                                                    'unidad'
+                                                            }
+                                                            onCheckedChange={(
+                                                                v,
+                                                            ) =>
+                                                                setData(
+                                                                    'medida_pesable',
+                                                                    v,
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                data.unidad_medida !==
+                                                                'unidad'
+                                                            }
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {(data.unidad_medida !==
+                                                    'unidad' ||
+                                                    data.medida_pesable) && (
+                                                    <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                        <div className="space-y-2">
+                                                            <Label className="text-xs font-bold text-emerald-600">
+                                                                ¿Cuántos
+                                                                kilos/litros
+                                                                contiene cada
+                                                                unidad?
+                                                            </Label>
+                                                            <Input
+                                                                type="number"
+                                                                value={
+                                                                    data.contenido_por_unidad
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setData(
+                                                                        'contenido_por_unidad',
+                                                                        parseFloat(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        ) || 0,
+                                                                    )
+                                                                }
+                                                                className="h-10 border-none bg-background font-black"
+                                                                placeholder="Ej: 15"
+                                                            />
+                                                        </div>
+                                                    </div>
                                                 )}
-                                            </div>
-                                        </div>
+                                                {/* Envase retornable section */}
+                                                <div className="space-y-4 rounded-xl border border-primary/10 bg-primary/5 p-4">
+                                                    <div className="flex items-center justify-between pt-2">
+                                                        <div>
+                                                            <Label className="text-xs font-bold tracking-wider text-primary uppercase">
+                                                                Envase
+                                                                Retornable
+                                                            </Label>
+                                                        </div>
+                                                        <Switch
+                                                            checked={
+                                                                data.envase_retornable
+                                                            }
+                                                            onCheckedChange={(
+                                                                v,
+                                                            ) => {
+                                                                setData(
+                                                                    'envase_retornable',
+                                                                    v,
+                                                                );
+                                                                if (!v) {
+                                                                    setData(
+                                                                        'envase_producto_id',
+                                                                        null,
+                                                                    );
+                                                                }
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    {data.envase_retornable && (
+                                                        <div className="mt-4">
+                                                            <Label className="text-xs font-bold tracking-wider text-primary uppercase">
+                                                                Envase Físico
+                                                                Asociado
+                                                            </Label>
+                                                            <Select
+                                                                value={
+                                                                    data.envase_producto_id ===
+                                                                    null
+                                                                        ? 'none'
+                                                                        : data.envase_producto_id ===
+                                                                            0
+                                                                          ? 'self'
+                                                                          : String(
+                                                                                data.envase_producto_id,
+                                                                            )
+                                                                }
+                                                                onValueChange={(
+                                                                    v,
+                                                                ) => {
+                                                                    const isSelf =
+                                                                        v ===
+                                                                        'self';
+                                                                    setIsSelfSelected(
+                                                                        isSelf,
+                                                                    );
+                                                                    setData(
+                                                                        'envase_producto_id',
+                                                                        v ===
+                                                                            'none'
+                                                                            ? null
+                                                                            : isSelf
+                                                                              ? 0
+                                                                              : Number(
+                                                                                    v,
+                                                                                ),
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <SelectTrigger className="h-10 border-none bg-background font-black">
+                                                                    <SelectValue
+                                                                        className={
+                                                                            isSelfSelected
+                                                                                ? 'font-semibold text-primary'
+                                                                                : ''
+                                                                        }
+                                                                        placeholder="Seleccione el envase físico..."
+                                                                    />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="none">
+                                                                        Ninguno
+                                                                        (producto
+                                                                        no
+                                                                        retornable)
+                                                                    </SelectItem>
+                                                                    {(!editando &&
+                                                                        data.envase_retornable) ||
+                                                                    data.envase_producto_id ===
+                                                                        0 ? (
+                                                                        <SelectItem value="self">
+                                                                            Seleccione
+                                                                            este
+                                                                            producto
+                                                                            como
+                                                                            envase
+                                                                            físico
+                                                                        </SelectItem>
+                                                                    ) : null}
+                                                                    {productosEnvase.map(
+                                                                        (
+                                                                            envase,
+                                                                        ) => (
+                                                                            <SelectItem
+                                                                                key={
+                                                                                    envase.id
+                                                                                }
+                                                                                value={envase.id.toString()}
+                                                                            >
+                                                                                {
+                                                                                    envase.nombre
+                                                                                }{' '}
+                                                                                (
+                                                                                {
+                                                                                    envase.codigo
+                                                                                }
 
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                                                Descripción Detallada
-                                            </Label>
-                                            <textarea
-                                                value={data.descripcion}
-                                                onChange={(e) =>
-                                                    setData(
-                                                        'descripcion',
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="flex min-h-[100px] w-full rounded-xl border-none bg-muted/30 px-3 py-2 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
-                                                placeholder="Detalles técnicos, características, beneficios..."
-                                            />
-                                        </div>
+                                                                                )
+                                                                            </SelectItem>
+                                                                        ),
+                                                                    )}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
 
-                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                            <div className="space-y-2 rounded-2xl border border-primary/10 bg-primary/5 p-4 transition-all hover:bg-primary/10">
-                                                <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-primary uppercase">
-                                                    <ArrowDownZA className="h-3 w-3" />{' '}
-                                                    {productoSeVendePorMedida &&
-                                                    data.unidad_medida !==
-                                                        'unidad'
-                                                        ? `Costo por ${data.unidad_medida === 'kg' ? 'Kilo' : 'Litro'}`
-                                                        : 'Costo Adq.'}
+                                            <div className="space-y-2">
+                                                <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                                                    Descripción Detallada
                                                 </Label>
-                                                <Input
-                                                    type="number"
-                                                    step={
-                                                        productoSeVendePorMedida &&
-                                                        data.unidad_medida !==
-                                                            'unidad'
-                                                            ? '0.01'
-                                                            : '1'
-                                                    }
-                                                    value={data.precio_compra}
+                                                <textarea
+                                                    value={data.descripcion}
                                                     onChange={(e) =>
                                                         setData(
-                                                            'precio_compra',
-                                                            productoSeVendePorMedida &&
-                                                                data.unidad_medida !==
-                                                                    'unidad'
-                                                                ? parseFloat(
-                                                                      e.target
-                                                                          .value,
-                                                                  ) || 0
-                                                                : Math.floor(
-                                                                      parseFloat(
-                                                                          e
-                                                                              .target
-                                                                              .value,
-                                                                      ),
-                                                                  ) || 0,
-                                                        )
-                                                    }
-                                                    className="h-10 border-none bg-background text-lg font-black shadow-inner focus-visible:ring-primary/20"
-                                                />
-                                            </div>
-                                            <div className="space-y-2 rounded-2xl border border-green-500/10 bg-green-500/5 p-4 transition-all hover:bg-green-500/10">
-                                                <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-green-600 uppercase">
-                                                    <Tag className="h-3 w-3" />{' '}
-                                                    {productoSeVendePorMedida &&
-                                                    data.unidad_medida !==
-                                                        'unidad'
-                                                        ? `Precio por ${data.unidad_medida === 'kg' ? 'Kilo' : 'Litro'}`
-                                                        : 'Precio Venta'}
-                                                </Label>
-                                                <Input
-                                                    type="number"
-                                                    step={
-                                                        productoSeVendePorMedida &&
-                                                        data.unidad_medida !==
-                                                            'unidad'
-                                                            ? '0.01'
-                                                            : '1'
-                                                    }
-                                                    value={data.precio_venta}
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            'precio_venta',
-                                                            productoSeVendePorMedida &&
-                                                                data.unidad_medida !==
-                                                                    'unidad'
-                                                                ? parseFloat(
-                                                                      e.target
-                                                                          .value,
-                                                                  ) || 0
-                                                                : Math.floor(
-                                                                      parseFloat(
-                                                                          e
-                                                                              .target
-                                                                              .value,
-                                                                      ),
-                                                                  ) || 0,
-                                                        )
-                                                    }
-                                                    className="h-10 border-none bg-background text-lg font-black text-green-600 shadow-inner focus-visible:ring-green-500/20"
-                                                />
-                                                {productoSeVendePorMedida &&
-                                                    data.unidad_medida !==
-                                                        'unidad' && (
-                                                        <p className="text-xs text-muted-foreground">
-                                                            Valor por{' '}
-                                                            {data.unidad_medida ===
-                                                            'kg'
-                                                                ? 'kilogramo'
-                                                                : 'litro'}
-                                                            ; el POS calcula el
-                                                            total según la
-                                                            cantidad.
-                                                        </p>
-                                                    )}
-                                            </div>
-                                            <div className="space-y-2 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 p-4">
-                                                <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-emerald-700 uppercase">
-                                                    <TrendingUp className="h-3 w-3" />
-                                                    Margen de Ganancia
-                                                    {productoSeVendePorMedida &&
-                                                        data.unidad_medida !==
-                                                            'unidad' &&
-                                                        ` / ${data.unidad_medida === 'kg' ? 'kg' : 'lt'}`}
-                                                </Label>
-                                                <p className="h-10 truncate text-lg font-black text-emerald-700">
-                                                    {formatCurrency(
-                                                        margenAbsoluto,
-                                                    )}
-                                                </p>
-                                                <p className="text-xs font-semibold text-muted-foreground">
-                                                    {margenPorcentual.toFixed(
-                                                        2,
-                                                    )}
-                                                    % sobre precio de venta
-                                                </p>
-                                            </div>
-                                            <div className="space-y-2 rounded-2xl border border-violet-500/10 bg-violet-500/5 p-4 transition-all hover:bg-violet-500/10">
-                                                <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-violet-700 uppercase">
-                                                    <Wallet className="h-3 w-3" />
-                                                    Comisión Cajero /{' '}
-                                                    {productoSeVendePorMedida &&
-                                                    data.unidad_medida !==
-                                                        'unidad'
-                                                        ? data.unidad_medida ===
-                                                          'kg'
-                                                            ? 'kg'
-                                                            : 'litro'
-                                                        : 'Unidad'}
-                                                </Label>
-                                                <Input
-                                                    type="number"
-                                                    min="0"
-                                                    step="0.01"
-                                                    value={
-                                                        data.comision_cajero_por_unidad
-                                                    }
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            'comision_cajero_por_unidad',
-                                                            parseFloat(
-                                                                e.target.value,
-                                                            ) || 0,
-                                                        )
-                                                    }
-                                                    className="h-10 border-none bg-background text-lg font-black text-violet-700 shadow-inner focus-visible:ring-violet-500/20"
-                                                />
-                                                <p className="text-xs text-muted-foreground">
-                                                    {productoSeVendePorMedida &&
-                                                    data.unidad_medida !==
-                                                        'unidad'
-                                                        ? 'Se prorratea según la fracción de medida vendida.'
-                                                        : 'Incentivo fijo por cada unidad vendida.'}
-                                                </p>
-                                            </div>
-                                            <div className="space-y-2 rounded-2xl border border-amber-500/10 bg-amber-500/5 p-4 transition-all hover:bg-amber-500/10">
-                                                <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-amber-600 uppercase">
-                                                    <AlertTriangle className="h-3 w-3" />{' '}
-                                                    Stock Mín.
-                                                </Label>
-                                                <Input
-                                                    type="number"
-                                                    step="1"
-                                                    value={data.stock_minimo}
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            'stock_minimo',
-                                                            Math.floor(
-                                                                parseFloat(
-                                                                    e.target
-                                                                        .value,
-                                                                ),
-                                                            ) || 0,
-                                                        )
-                                                    }
-                                                    className="h-10 border-none bg-background text-lg font-black text-amber-600 shadow-inner focus-visible:ring-amber-500/20"
-                                                />
-                                            </div>
-                                            <div className="space-y-2 rounded-2xl border border-purple-500/10 bg-purple-500/5 p-4 transition-all hover:bg-purple-500/10">
-                                                <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-purple-600 uppercase">
-                                                    <Calendar className="h-3 w-3" />{' '}
-                                                    Vencimiento
-                                                </Label>
-                                                <Input
-                                                    type="date"
-                                                    value={
-                                                        data.fecha_vencimiento
-                                                    }
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            'fecha_vencimiento',
+                                                            'descripcion',
                                                             e.target.value,
                                                         )
                                                     }
-                                                    className="h-10 border-none bg-background text-lg font-black text-purple-600 shadow-inner focus-visible:ring-purple-500/20"
+                                                    className="flex min-h-[100px] w-full rounded-xl border-none bg-muted/30 px-3 py-2 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                                                    placeholder="Detalles técnicos, características, beneficios..."
                                                 />
                                             </div>
-                                        </div>
 
-                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                            {!data.tiene_variantes && (
-                                                <div className="space-y-2 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 p-4 transition-all hover:bg-emerald-500/10">
-                                                    <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-emerald-600 uppercase">
-                                                        <Package className="h-3 w-3" />{' '}
-                                                        Stock Inicial
+                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                                <div className="space-y-2 rounded-2xl border border-primary/10 bg-primary/5 p-4 transition-all hover:bg-primary/10">
+                                                    <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-primary uppercase">
+                                                        <ArrowDownZA className="h-3 w-3" />{' '}
+                                                        {productoSeVendePorMedida &&
+                                                        data.unidad_medida !==
+                                                            'unidad'
+                                                            ? `Costo por ${data.unidad_medida === 'kg' ? 'Kilo' : 'Litro'}`
+                                                            : 'Costo Adq.'}
+                                                    </Label>
+                                                    <Input
+                                                        type="number"
+                                                        step={
+                                                            productoSeVendePorMedida &&
+                                                            data.unidad_medida !==
+                                                                'unidad'
+                                                                ? '0.01'
+                                                                : '1'
+                                                        }
+                                                        value={
+                                                            data.precio_compra
+                                                        }
+                                                        onChange={(e) =>
+                                                            setData(
+                                                                'precio_compra',
+                                                                productoSeVendePorMedida &&
+                                                                    data.unidad_medida !==
+                                                                        'unidad'
+                                                                    ? parseFloat(
+                                                                          e
+                                                                              .target
+                                                                              .value,
+                                                                      ) || 0
+                                                                    : Math.floor(
+                                                                          parseFloat(
+                                                                              e
+                                                                                  .target
+                                                                                  .value,
+                                                                          ),
+                                                                      ) || 0,
+                                                            )
+                                                        }
+                                                        className="h-10 border-none bg-background text-lg font-black shadow-inner focus-visible:ring-primary/20"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2 rounded-2xl border border-green-500/10 bg-green-500/5 p-4 transition-all hover:bg-green-500/10">
+                                                    <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-green-600 uppercase">
+                                                        <Tag className="h-3 w-3" />{' '}
+                                                        {productoSeVendePorMedida &&
+                                                        data.unidad_medida !==
+                                                            'unidad'
+                                                            ? `Precio por ${data.unidad_medida === 'kg' ? 'Kilo' : 'Litro'}`
+                                                            : 'Precio Venta'}
+                                                    </Label>
+                                                    <Input
+                                                        type="number"
+                                                        step={
+                                                            productoSeVendePorMedida &&
+                                                            data.unidad_medida !==
+                                                                'unidad'
+                                                                ? '0.01'
+                                                                : '1'
+                                                        }
+                                                        value={
+                                                            data.precio_venta
+                                                        }
+                                                        onChange={(e) =>
+                                                            setData(
+                                                                'precio_venta',
+                                                                productoSeVendePorMedida &&
+                                                                    data.unidad_medida !==
+                                                                        'unidad'
+                                                                    ? parseFloat(
+                                                                          e
+                                                                              .target
+                                                                              .value,
+                                                                      ) || 0
+                                                                    : Math.floor(
+                                                                          parseFloat(
+                                                                              e
+                                                                                  .target
+                                                                                  .value,
+                                                                          ),
+                                                                      ) || 0,
+                                                            )
+                                                        }
+                                                        className="h-10 border-none bg-background text-lg font-black text-green-600 shadow-inner focus-visible:ring-green-500/20"
+                                                    />
+                                                    {productoSeVendePorMedida &&
+                                                        data.unidad_medida !==
+                                                            'unidad' && (
+                                                            <p className="text-xs text-muted-foreground">
+                                                                Valor por{' '}
+                                                                {data.unidad_medida ===
+                                                                'kg'
+                                                                    ? 'kilogramo'
+                                                                    : 'litro'}
+                                                                ; el POS calcula
+                                                                el total según
+                                                                la cantidad.
+                                                            </p>
+                                                        )}
+                                                </div>
+                                                <div className="space-y-2 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 p-4">
+                                                    <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-emerald-700 uppercase">
+                                                        <TrendingUp className="h-3 w-3" />
+                                                        Margen de Ganancia
+                                                        {productoSeVendePorMedida &&
+                                                            data.unidad_medida !==
+                                                                'unidad' &&
+                                                            ` / ${data.unidad_medida === 'kg' ? 'kg' : 'lt'}`}
+                                                    </Label>
+                                                    <p className="h-10 truncate text-lg font-black text-emerald-700">
+                                                        {formatCurrency(
+                                                            margenAbsoluto,
+                                                        )}
+                                                    </p>
+                                                    <p className="text-xs font-semibold text-muted-foreground">
+                                                        {margenPorcentual.toFixed(
+                                                            2,
+                                                        )}
+                                                        % sobre precio de venta
+                                                    </p>
+                                                </div>
+                                                <div className="space-y-2 rounded-2xl border border-violet-500/10 bg-violet-500/5 p-4 transition-all hover:bg-violet-500/10">
+                                                    <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-violet-700 uppercase">
+                                                        <Wallet className="h-3 w-3" />
+                                                        Comisión Cajero /{' '}
+                                                        {productoSeVendePorMedida &&
+                                                        data.unidad_medida !==
+                                                            'unidad'
+                                                            ? data.unidad_medida ===
+                                                              'kg'
+                                                                ? 'kg'
+                                                                : 'litro'
+                                                            : 'Unidad'}
+                                                    </Label>
+                                                    <Input
+                                                        type="number"
+                                                        min="0"
+                                                        step="0.01"
+                                                        value={
+                                                            data.comision_cajero_por_unidad
+                                                        }
+                                                        onChange={(e) =>
+                                                            setData(
+                                                                'comision_cajero_por_unidad',
+                                                                parseFloat(
+                                                                    e.target
+                                                                        .value,
+                                                                ) || 0,
+                                                            )
+                                                        }
+                                                        className="h-10 border-none bg-background text-lg font-black text-violet-700 shadow-inner focus-visible:ring-violet-500/20"
+                                                    />
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {productoSeVendePorMedida &&
+                                                        data.unidad_medida !==
+                                                            'unidad'
+                                                            ? 'Se prorratea según la fracción de medida vendida.'
+                                                            : 'Incentivo fijo por cada unidad vendida.'}
+                                                    </p>
+                                                </div>
+                                                <div className="space-y-2 rounded-2xl border border-amber-500/10 bg-amber-500/5 p-4 transition-all hover:bg-amber-500/10">
+                                                    <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-amber-600 uppercase">
+                                                        <AlertTriangle className="h-3 w-3" />{' '}
+                                                        Stock Mín.
                                                     </Label>
                                                     <Input
                                                         type="number"
                                                         step="1"
-                                                        value={data.stock}
+                                                        value={
+                                                            data.stock_minimo
+                                                        }
                                                         onChange={(e) =>
                                                             setData(
-                                                                'stock',
+                                                                'stock_minimo',
                                                                 Math.floor(
                                                                     parseFloat(
                                                                         e.target
@@ -2300,1002 +2500,1078 @@ export default function Index({
                                                                 ) || 0,
                                                             )
                                                         }
-                                                        className="h-10 border-none bg-background text-lg font-black text-emerald-600 shadow-inner focus-visible:ring-emerald-500/20"
+                                                        className="h-10 border-none bg-background text-lg font-black text-amber-600 shadow-inner focus-visible:ring-amber-500/20"
                                                     />
                                                 </div>
-                                            )}
-                                            {/* Tiene Variantes Toggle */}
-                                            <div className="space-y-2 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 p-4 transition-all hover:bg-emerald-500/10">
-                                                <div className="flex items-center justify-between">
-                                                    <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-emerald-600 uppercase">
-                                                        <Layers className="h-3 w-3" />{' '}
-                                                        Tiene Variantes
+                                                <div className="space-y-2 rounded-2xl border border-purple-500/10 bg-purple-500/5 p-4 transition-all hover:bg-purple-500/10">
+                                                    <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-purple-600 uppercase">
+                                                        <Calendar className="h-3 w-3" />{' '}
+                                                        Vencimiento
                                                     </Label>
-                                                    <Switch
-                                                        checked={
-                                                            data.tiene_variantes
+                                                    <Input
+                                                        type="date"
+                                                        value={
+                                                            data.fecha_vencimiento
                                                         }
-                                                        onCheckedChange={(v) =>
+                                                        onChange={(e) =>
                                                             setData(
-                                                                'tiene_variantes',
-                                                                v,
+                                                                'fecha_vencimiento',
+                                                                e.target.value,
                                                             )
                                                         }
+                                                        className="h-10 border-none bg-background text-lg font-black text-purple-600 shadow-inner focus-visible:ring-purple-500/20"
                                                     />
                                                 </div>
-                                                <p className="text-[10px] text-muted-foreground">
-                                                    Tallas, colores, sabores,
-                                                    numeración, etc.
-                                                </p>
                                             </div>
-                                        </div>
 
-                                        {/* Variant Configuration Section */}
-                                        {data.tiene_variantes && (
-                                            <div className="space-y-6 rounded-xl border border-emerald-500/20 bg-emerald-50/50 p-4">
-                                                <div className="flex items-center gap-2">
-                                                    <Layers className="h-5 w-5 text-emerald-600" />
-                                                    <h3 className="text-sm font-black tracking-wider text-emerald-700 uppercase">
-                                                        Configuración de
-                                                        Variantes
-                                                    </h3>
-                                                </div>
-
-                                                {/* Existing Variant Types */}
-                                                {variantesDisponibles.length >
-                                                    0 && (
-                                                    <div className="space-y-3">
-                                                        <Label className="text-xs font-bold text-emerald-600">
-                                                            Seleccionar
-                                                            variantes existentes
+                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                {!data.tiene_variantes && (
+                                                    <div className="space-y-2 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 p-4 transition-all hover:bg-emerald-500/10">
+                                                        <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-emerald-600 uppercase">
+                                                            <Package className="h-3 w-3" />{' '}
+                                                            Stock Inicial
                                                         </Label>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {variantesDisponibles.map(
-                                                                (vt) => {
-                                                                    const isSelected =
-                                                                        selectedVariantIds.includes(
-                                                                            vt.id,
+                                                        <Input
+                                                            type="number"
+                                                            step="1"
+                                                            value={data.stock}
+                                                            onChange={(e) =>
+                                                                setData(
+                                                                    'stock',
+                                                                    Math.floor(
+                                                                        parseFloat(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        ),
+                                                                    ) || 0,
+                                                                )
+                                                            }
+                                                            className="h-10 border-none bg-background text-lg font-black text-emerald-600 shadow-inner focus-visible:ring-emerald-500/20"
+                                                        />
+                                                    </div>
+                                                )}
+                                                {/* Tiene Variantes Toggle */}
+                                                <div className="space-y-2 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 p-4 transition-all hover:bg-emerald-500/10">
+                                                    <div className="flex items-center justify-between">
+                                                        <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-emerald-600 uppercase">
+                                                            <Layers className="h-3 w-3" />{' '}
+                                                            Tiene Variantes
+                                                        </Label>
+                                                        <Switch
+                                                            checked={
+                                                                data.tiene_variantes
+                                                            }
+                                                            onCheckedChange={(
+                                                                v,
+                                                            ) =>
+                                                                setData(
+                                                                    'tiene_variantes',
+                                                                    v,
+                                                                )
+                                                            }
+                                                        />
+                                                    </div>
+                                                    <p className="text-[10px] text-muted-foreground">
+                                                        Tallas, colores,
+                                                        sabores, numeración,
+                                                        etc.
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Variant Configuration Section */}
+                                            {data.tiene_variantes && (
+                                                <div className="space-y-6 rounded-xl border border-emerald-500/20 bg-emerald-50/50 p-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <Layers className="h-5 w-5 text-emerald-600" />
+                                                        <h3 className="text-sm font-black tracking-wider text-emerald-700 uppercase">
+                                                            Configuración de
+                                                            Variantes
+                                                        </h3>
+                                                    </div>
+
+                                                    {/* Existing Variant Types */}
+                                                    {variantesDisponibles.length >
+                                                        0 && (
+                                                        <div className="space-y-3">
+                                                            <Label className="text-xs font-bold text-emerald-600">
+                                                                Seleccionar
+                                                                variantes
+                                                                existentes
+                                                            </Label>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {variantesDisponibles.map(
+                                                                    (vt) => {
+                                                                        const isSelected =
+                                                                            selectedVariantIds.includes(
+                                                                                vt.id,
+                                                                            );
+                                                                        return (
+                                                                            <button
+                                                                                key={
+                                                                                    vt.id
+                                                                                }
+                                                                                type="button"
+                                                                                onClick={() =>
+                                                                                    toggleVariantType(
+                                                                                        vt.id,
+                                                                                    )
+                                                                                }
+                                                                                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all ${
+                                                                                    isSelected
+                                                                                        ? 'bg-emerald-600 text-white shadow-md'
+                                                                                        : 'border border-emerald-200 bg-white text-emerald-600 hover:border-emerald-400'
+                                                                                }`}
+                                                                            >
+                                                                                {vt.tipo ===
+                                                                                'color' ? (
+                                                                                    <Palette className="h-3 w-3" />
+                                                                                ) : vt.tipo ===
+                                                                                  'numero' ? (
+                                                                                    <Hash className="h-3 w-3" />
+                                                                                ) : (
+                                                                                    <Ruler className="h-3 w-3" />
+                                                                                )}
+                                                                                {
+                                                                                    vt.nombre
+                                                                                }
+                                                                                {isSelected && (
+                                                                                    <span className="ml-1 rounded-full bg-white/20 px-1.5 text-[9px]">
+                                                                                        {
+                                                                                            vt
+                                                                                                .valores
+                                                                                                .length
+                                                                                        }
+                                                                                    </span>
+                                                                                )}
+                                                                            </button>
                                                                         );
-                                                                    return (
-                                                                        <button
-                                                                            key={
-                                                                                vt.id
-                                                                            }
-                                                                            type="button"
-                                                                            onClick={() =>
-                                                                                toggleVariantType(
-                                                                                    vt.id,
-                                                                                )
-                                                                            }
-                                                                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all ${
-                                                                                isSelected
-                                                                                    ? 'bg-emerald-600 text-white shadow-md'
-                                                                                    : 'border border-emerald-200 bg-white text-emerald-600 hover:border-emerald-400'
-                                                                            }`}
-                                                                        >
-                                                                            {vt.tipo ===
-                                                                            'color' ? (
-                                                                                <Palette className="h-3 w-3" />
-                                                                            ) : vt.tipo ===
-                                                                              'numero' ? (
-                                                                                <Hash className="h-3 w-3" />
-                                                                            ) : (
-                                                                                <Ruler className="h-3 w-3" />
-                                                                            )}
+                                                                    },
+                                                                )}
+                                                            </div>
+                                                            {/* Show values for selected variants */}
+                                                            {getSelectedVariants.map(
+                                                                (vt) => (
+                                                                    <div
+                                                                        key={
+                                                                            vt.id
+                                                                        }
+                                                                        className="rounded-lg border border-emerald-200 bg-white p-3"
+                                                                    >
+                                                                        <p className="mb-1 text-[10px] font-bold text-emerald-600 uppercase">
                                                                             {
                                                                                 vt.nombre
                                                                             }
-                                                                            {isSelected && (
-                                                                                <span className="ml-1 rounded-full bg-white/20 px-1.5 text-[9px]">
-                                                                                    {
-                                                                                        vt
-                                                                                            .valores
-                                                                                            .length
-                                                                                    }
-                                                                                </span>
+                                                                        </p>
+                                                                        <div className="flex flex-wrap gap-1">
+                                                                            {vt.valores.map(
+                                                                                (
+                                                                                    vl,
+                                                                                ) => (
+                                                                                    <Badge
+                                                                                        key={
+                                                                                            vl.id
+                                                                                        }
+                                                                                        variant="secondary"
+                                                                                        className="text-[10px]"
+                                                                                    >
+                                                                                        {
+                                                                                            vl.valor
+                                                                                        }
+                                                                                    </Badge>
+                                                                                ),
                                                                             )}
-                                                                        </button>
-                                                                    );
-                                                                },
+                                                                        </div>
+                                                                    </div>
+                                                                ),
                                                             )}
                                                         </div>
-                                                        {/* Show values for selected variants */}
-                                                        {getSelectedVariants.map(
-                                                            (vt) => (
-                                                                <div
-                                                                    key={vt.id}
-                                                                    className="rounded-lg border border-emerald-200 bg-white p-3"
-                                                                >
-                                                                    <p className="mb-1 text-[10px] font-bold text-emerald-600 uppercase">
-                                                                        {
-                                                                            vt.nombre
-                                                                        }
-                                                                    </p>
-                                                                    <div className="flex flex-wrap gap-1">
-                                                                        {vt.valores.map(
-                                                                            (
-                                                                                vl,
-                                                                            ) => (
-                                                                                <Badge
-                                                                                    key={
-                                                                                        vl.id
-                                                                                    }
-                                                                                    variant="secondary"
-                                                                                    className="text-[10px]"
-                                                                                >
-                                                                                    {
-                                                                                        vl.valor
-                                                                                    }
-                                                                                </Badge>
-                                                                            ),
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            ),
-                                                        )}
-                                                    </div>
-                                                )}
+                                                    )}
 
-                                                {/* Inline New Variant Creator */}
-                                                <div className="space-y-3 rounded-lg border border-dashed border-emerald-300 bg-white p-4">
-                                                    <Label className="text-xs font-bold text-emerald-600">
-                                                        {variantesDisponibles.length >
-                                                        0
-                                                            ? 'O crear nueva variante'
-                                                            : 'Crear nueva variante'}
-                                                    </Label>
-                                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                                        <div>
-                                                            <Label className="text-[9px] font-bold text-muted-foreground">
-                                                                Nombre
-                                                            </Label>
-                                                            <Input
-                                                                value={
-                                                                    newVariantName
-                                                                }
-                                                                onChange={(e) =>
-                                                                    setNewVariantName(
-                                                                        e.target
-                                                                            .value,
-                                                                    )
-                                                                }
-                                                                placeholder="Ej: Talla"
-                                                                className="h-9 border-none bg-emerald-50/50 text-xs"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <Label className="text-[9px] font-bold text-muted-foreground">
-                                                                Tipo
-                                                            </Label>
-                                                            <Select
-                                                                value={
-                                                                    newVariantType
-                                                                }
-                                                                onValueChange={(
-                                                                    v: any,
-                                                                ) =>
-                                                                    setNewVariantType(
-                                                                        v,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <SelectTrigger className="h-9 border-none bg-emerald-50/50 text-xs">
-                                                                    <SelectValue />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    <SelectItem value="texto">
-                                                                        Texto
-                                                                    </SelectItem>
-                                                                    <SelectItem value="color">
-                                                                        Color
-                                                                    </SelectItem>
-                                                                    <SelectItem value="numero">
-                                                                        Número
-                                                                    </SelectItem>
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </div>
-                                                        <div>
-                                                            <Label className="text-[9px] font-bold text-muted-foreground">
-                                                                Valores
-                                                            </Label>
-                                                            <div className="flex gap-1">
+                                                    {/* Inline New Variant Creator */}
+                                                    <div className="space-y-3 rounded-lg border border-dashed border-emerald-300 bg-white p-4">
+                                                        <Label className="text-xs font-bold text-emerald-600">
+                                                            {variantesDisponibles.length >
+                                                            0
+                                                                ? 'O crear nueva variante'
+                                                                : 'Crear nueva variante'}
+                                                        </Label>
+                                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                                            <div>
+                                                                <Label className="text-[9px] font-bold text-muted-foreground">
+                                                                    Nombre
+                                                                </Label>
                                                                 <Input
                                                                     value={
-                                                                        newVariantValueInput
+                                                                        newVariantName
                                                                     }
                                                                     onChange={(
                                                                         e,
                                                                     ) =>
-                                                                        setNewVariantValueInput(
+                                                                        setNewVariantName(
                                                                             e
                                                                                 .target
                                                                                 .value,
                                                                         )
                                                                     }
-                                                                    onKeyDown={(
-                                                                        e,
-                                                                    ) =>
-                                                                        e.key ===
-                                                                            'Enter' &&
-                                                                        (e.preventDefault(),
-                                                                        addNewVariantValue())
-                                                                    }
-                                                                    placeholder="Agregar valor"
+                                                                    placeholder="Ej: Talla"
                                                                     className="h-9 border-none bg-emerald-50/50 text-xs"
                                                                 />
-                                                                <Button
-                                                                    type="button"
-                                                                    size="icon"
-                                                                    variant="outline"
-                                                                    className="h-9 w-9 shrink-0"
-                                                                    onClick={
-                                                                        addNewVariantValue
+                                                            </div>
+                                                            <div>
+                                                                <Label className="text-[9px] font-bold text-muted-foreground">
+                                                                    Tipo
+                                                                </Label>
+                                                                <Select
+                                                                    value={
+                                                                        newVariantType
+                                                                    }
+                                                                    onValueChange={(
+                                                                        v: any,
+                                                                    ) =>
+                                                                        setNewVariantType(
+                                                                            v,
+                                                                        )
                                                                     }
                                                                 >
-                                                                    <Plus className="h-3 w-3" />
-                                                                </Button>
+                                                                    <SelectTrigger className="h-9 border-none bg-emerald-50/50 text-xs">
+                                                                        <SelectValue />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="texto">
+                                                                            Texto
+                                                                        </SelectItem>
+                                                                        <SelectItem value="color">
+                                                                            Color
+                                                                        </SelectItem>
+                                                                        <SelectItem value="numero">
+                                                                            Número
+                                                                        </SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </div>
+                                                            <div>
+                                                                <Label className="text-[9px] font-bold text-muted-foreground">
+                                                                    Valores
+                                                                </Label>
+                                                                <div className="flex gap-1">
+                                                                    <Input
+                                                                        value={
+                                                                            newVariantValueInput
+                                                                        }
+                                                                        onChange={(
+                                                                            e,
+                                                                        ) =>
+                                                                            setNewVariantValueInput(
+                                                                                e
+                                                                                    .target
+                                                                                    .value,
+                                                                            )
+                                                                        }
+                                                                        onKeyDown={(
+                                                                            e,
+                                                                        ) =>
+                                                                            e.key ===
+                                                                                'Enter' &&
+                                                                            (e.preventDefault(),
+                                                                            addNewVariantValue())
+                                                                        }
+                                                                        placeholder="Agregar valor"
+                                                                        className="h-9 border-none bg-emerald-50/50 text-xs"
+                                                                    />
+                                                                    <Button
+                                                                        type="button"
+                                                                        size="icon"
+                                                                        variant="outline"
+                                                                        className="h-9 w-9 shrink-0"
+                                                                        onClick={
+                                                                            addNewVariantValue
+                                                                        }
+                                                                    >
+                                                                        <Plus className="h-3 w-3" />
+                                                                    </Button>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    {newVariantValues.length >
-                                                        0 && (
-                                                        <div className="flex flex-wrap gap-1.5">
-                                                            {newVariantValues.map(
-                                                                (val) => (
-                                                                    <Badge
-                                                                        key={
-                                                                            val
-                                                                        }
-                                                                        variant="secondary"
-                                                                        className="flex items-center gap-1 pr-1 text-[10px]"
-                                                                    >
-                                                                        {val}
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() =>
-                                                                                removeNewVariantValue(
-                                                                                    val,
-                                                                                )
+                                                        {newVariantValues.length >
+                                                            0 && (
+                                                            <div className="flex flex-wrap gap-1.5">
+                                                                {newVariantValues.map(
+                                                                    (val) => (
+                                                                        <Badge
+                                                                            key={
+                                                                                val
                                                                             }
+                                                                            variant="secondary"
+                                                                            className="flex items-center gap-1 pr-1 text-[10px]"
                                                                         >
-                                                                            <XCircle className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                                                                        </button>
-                                                                    </Badge>
-                                                                ),
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {/* SKU Combinations Table */}
-                                                {skuRows.length > 0 && (
-                                                    <div className="space-y-3">
-                                                        <div className="flex items-center justify-between">
-                                                            <Label className="text-xs font-bold text-emerald-600">
-                                                                Combinaciones
-                                                                SKU generadas (
-                                                                {skuRows.length}
-                                                                )
-                                                            </Label>
-                                                            <Button
-                                                                type="button"
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="h-7 text-[10px]"
-                                                                onClick={
-                                                                    generateSkuCombinations
-                                                                }
-                                                            >
-                                                                <Layers className="mr-1 h-3 w-3" />{' '}
-                                                                Regenerar
-                                                            </Button>
-                                                        </div>
-                                                        <div className="overflow-x-auto rounded-lg border border-emerald-200">
-                                                            <table className="w-full text-left text-xs">
-                                                                <thead className="bg-emerald-100 text-[9px] font-bold text-emerald-700 uppercase">
-                                                                    <tr>
-                                                                        {getSelectedVariants.map(
-                                                                            (
-                                                                                vt,
-                                                                            ) => (
-                                                                                <th
-                                                                                    key={
-                                                                                        vt.id
-                                                                                    }
-                                                                                    className="px-3 py-2"
-                                                                                >
-                                                                                    {
-                                                                                        vt.nombre
-                                                                                    }
-                                                                                </th>
-                                                                            ),
-                                                                        )}
-                                                                        <th className="px-3 py-2">
-                                                                            SKU
-                                                                        </th>
-                                                                        <th className="px-3 py-2 text-right">
-                                                                            Precio
-                                                                            Vta
-                                                                        </th>
-                                                                        <th className="px-3 py-2 text-right">
-                                                                            Precio
-                                                                            Comp
-                                                                        </th>
-                                                                        <th className="px-3 py-2 text-right">
-                                                                            Stock
-                                                                        </th>
-                                                                        <th className="px-3 py-2 text-right">
-                                                                            Stock
-                                                                            Mín
-                                                                        </th>
-                                                                        <th className="px-3 py-2">
-                                                                            Almacén
-                                                                        </th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody className="divide-y divide-emerald-100 bg-white">
-                                                                    {skuRows.map(
-                                                                        (
-                                                                            row,
-                                                                            i,
-                                                                        ) => (
-                                                                            <tr
-                                                                                key={
-                                                                                    i
+                                                                            {
+                                                                                val
+                                                                            }
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() =>
+                                                                                    removeNewVariantValue(
+                                                                                        val,
+                                                                                    )
                                                                                 }
-                                                                                className="hover:bg-emerald-50/50"
                                                                             >
-                                                                                {row.labels.map(
-                                                                                    (
-                                                                                        label,
-                                                                                        j,
-                                                                                    ) => (
-                                                                                        <td
-                                                                                            key={
-                                                                                                j
-                                                                                            }
-                                                                                            className="px-3 py-2 font-medium text-emerald-800"
-                                                                                        >
-                                                                                            {label.split(
-                                                                                                ': ',
-                                                                                            )[1] ||
-                                                                                                label}
-                                                                                        </td>
-                                                                                    ),
-                                                                                )}
-                                                                                <td className="px-3 py-2">
-                                                                                    <div className="flex items-center gap-1">
+                                                                                <XCircle className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                                                                            </button>
+                                                                        </Badge>
+                                                                    ),
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* SKU Combinations Table */}
+                                                    {skuRows.length > 0 && (
+                                                        <div className="space-y-3">
+                                                            <div className="flex items-center justify-between">
+                                                                <Label className="text-xs font-bold text-emerald-600">
+                                                                    Combinaciones
+                                                                    SKU
+                                                                    generadas (
+                                                                    {
+                                                                        skuRows.length
+                                                                    }
+                                                                    )
+                                                                </Label>
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    className="h-7 text-[10px]"
+                                                                    onClick={
+                                                                        generateSkuCombinations
+                                                                    }
+                                                                >
+                                                                    <Layers className="mr-1 h-3 w-3" />{' '}
+                                                                    Regenerar
+                                                                </Button>
+                                                            </div>
+                                                            <div className="overflow-x-auto rounded-lg border border-emerald-200">
+                                                                <table className="w-full text-left text-xs">
+                                                                    <thead className="bg-emerald-100 text-[9px] font-bold text-emerald-700 uppercase">
+                                                                        <tr>
+                                                                            {getSelectedVariants.map(
+                                                                                (
+                                                                                    vt,
+                                                                                ) => (
+                                                                                    <th
+                                                                                        key={
+                                                                                            vt.id
+                                                                                        }
+                                                                                        className="px-3 py-2"
+                                                                                    >
+                                                                                        {
+                                                                                            vt.nombre
+                                                                                        }
+                                                                                    </th>
+                                                                                ),
+                                                                            )}
+                                                                            <th className="px-3 py-2">
+                                                                                SKU
+                                                                            </th>
+                                                                            <th className="px-3 py-2 text-right">
+                                                                                Precio
+                                                                                Vta
+                                                                            </th>
+                                                                            <th className="px-3 py-2 text-right">
+                                                                                Precio
+                                                                                Comp
+                                                                            </th>
+                                                                            <th className="px-3 py-2 text-right">
+                                                                                Stock
+                                                                            </th>
+                                                                            <th className="px-3 py-2 text-right">
+                                                                                Stock
+                                                                                Mín
+                                                                            </th>
+                                                                            <th className="px-3 py-2">
+                                                                                Almacén
+                                                                            </th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody className="divide-y divide-emerald-100 bg-white">
+                                                                        {skuRows.map(
+                                                                            (
+                                                                                row,
+                                                                                i,
+                                                                            ) => (
+                                                                                <tr
+                                                                                    key={
+                                                                                        i
+                                                                                    }
+                                                                                    className="hover:bg-emerald-50/50"
+                                                                                >
+                                                                                    {row.labels.map(
+                                                                                        (
+                                                                                            label,
+                                                                                            j,
+                                                                                        ) => (
+                                                                                            <td
+                                                                                                key={
+                                                                                                    j
+                                                                                                }
+                                                                                                className="px-3 py-2 font-medium text-emerald-800"
+                                                                                            >
+                                                                                                {label.split(
+                                                                                                    ': ',
+                                                                                                )[1] ||
+                                                                                                    label}
+                                                                                            </td>
+                                                                                        ),
+                                                                                    )}
+                                                                                    <td className="px-3 py-2">
+                                                                                        <div className="flex items-center gap-1">
+                                                                                            <Input
+                                                                                                value={
+                                                                                                    row.sku
+                                                                                                }
+                                                                                                onChange={(
+                                                                                                    e,
+                                                                                                ) =>
+                                                                                                    updateSkuRow(
+                                                                                                        i,
+                                                                                                        'sku',
+                                                                                                        e
+                                                                                                            .target
+                                                                                                            .value,
+                                                                                                    )
+                                                                                                }
+                                                                                                className="h-7 w-28 border-none bg-emerald-50/50 font-mono text-[10px] font-bold"
+                                                                                            />
+                                                                                            <Button
+                                                                                                type="button"
+                                                                                                variant="ghost"
+                                                                                                size="icon"
+                                                                                                className="h-7 w-7 shrink-0"
+                                                                                                aria-label={`Escanear SKU de la variante ${row.labels.join(', ')}`}
+                                                                                                title="Escanear SKU con la cámara"
+                                                                                                onClick={() =>
+                                                                                                    openSkuScanner(
+                                                                                                        i,
+                                                                                                    )
+                                                                                                }
+                                                                                            >
+                                                                                                <Camera className="h-3.5 w-3.5" />
+                                                                                            </Button>
+                                                                                        </div>
+                                                                                    </td>
+                                                                                    <td className="px-3 py-2 text-right">
                                                                                         <Input
+                                                                                            type="number"
                                                                                             value={
-                                                                                                row.sku
+                                                                                                row.precio_venta
                                                                                             }
                                                                                             onChange={(
                                                                                                 e,
                                                                                             ) =>
                                                                                                 updateSkuRow(
                                                                                                     i,
-                                                                                                    'sku',
-                                                                                                    e
-                                                                                                        .target
-                                                                                                        .value,
+                                                                                                    'precio_venta',
+                                                                                                    parseInt(
+                                                                                                        e
+                                                                                                            .target
+                                                                                                            .value,
+                                                                                                    ) ||
+                                                                                                        0,
                                                                                                 )
                                                                                             }
-                                                                                            className="h-7 w-28 border-none bg-emerald-50/50 font-mono text-[10px] font-bold"
+                                                                                            className="ml-auto h-7 w-20 border-none bg-green-50/50 text-right text-[10px] font-bold"
                                                                                         />
-                                                                                        <Button
-                                                                                            type="button"
-                                                                                            variant="ghost"
-                                                                                            size="icon"
-                                                                                            className="h-7 w-7 shrink-0"
-                                                                                            aria-label={`Escanear SKU de la variante ${row.labels.join(', ')}`}
-                                                                                            title="Escanear SKU con la cámara"
-                                                                                            onClick={() =>
-                                                                                                openSkuScanner(
+                                                                                    </td>
+                                                                                    <td className="px-3 py-2 text-right">
+                                                                                        <Input
+                                                                                            type="number"
+                                                                                            value={
+                                                                                                row.precio_compra
+                                                                                            }
+                                                                                            onChange={(
+                                                                                                e,
+                                                                                            ) =>
+                                                                                                updateSkuRow(
                                                                                                     i,
+                                                                                                    'precio_compra',
+                                                                                                    parseInt(
+                                                                                                        e
+                                                                                                            .target
+                                                                                                            .value,
+                                                                                                    ) ||
+                                                                                                        0,
+                                                                                                )
+                                                                                            }
+                                                                                            className="ml-auto h-7 w-20 border-none bg-primary/5 text-right text-[10px] font-bold"
+                                                                                        />
+                                                                                    </td>
+                                                                                    <td className="px-3 py-2 text-right">
+                                                                                        <Input
+                                                                                            type="number"
+                                                                                            value={
+                                                                                                row.stock
+                                                                                            }
+                                                                                            onChange={(
+                                                                                                e,
+                                                                                            ) =>
+                                                                                                updateSkuRow(
+                                                                                                    i,
+                                                                                                    'stock',
+                                                                                                    parseInt(
+                                                                                                        e
+                                                                                                            .target
+                                                                                                            .value,
+                                                                                                    ) ||
+                                                                                                        0,
+                                                                                                )
+                                                                                            }
+                                                                                            className="ml-auto h-7 w-16 border-none bg-emerald-50/50 text-right text-[10px] font-bold"
+                                                                                        />
+                                                                                    </td>
+                                                                                    <td className="px-3 py-2 text-right">
+                                                                                        <Input
+                                                                                            type="number"
+                                                                                            value={
+                                                                                                row.stock_minimo
+                                                                                            }
+                                                                                            onChange={(
+                                                                                                e,
+                                                                                            ) =>
+                                                                                                updateSkuRow(
+                                                                                                    i,
+                                                                                                    'stock_minimo',
+                                                                                                    parseInt(
+                                                                                                        e
+                                                                                                            .target
+                                                                                                            .value,
+                                                                                                    ) ||
+                                                                                                        0,
+                                                                                                )
+                                                                                            }
+                                                                                            className="ml-auto h-7 w-16 border-none bg-amber-50/50 text-right text-[10px] font-bold"
+                                                                                        />
+                                                                                    </td>
+                                                                                    <td className="px-3 py-2">
+                                                                                        <Select
+                                                                                            value={
+                                                                                                row.almacen_id
+                                                                                            }
+                                                                                            onValueChange={(
+                                                                                                v,
+                                                                                            ) =>
+                                                                                                updateSkuRow(
+                                                                                                    i,
+                                                                                                    'almacen_id',
+                                                                                                    v,
                                                                                                 )
                                                                                             }
                                                                                         >
-                                                                                            <Camera className="h-3.5 w-3.5" />
-                                                                                        </Button>
-                                                                                    </div>
-                                                                                </td>
-                                                                                <td className="px-3 py-2 text-right">
-                                                                                    <Input
-                                                                                        type="number"
-                                                                                        value={
-                                                                                            row.precio_venta
-                                                                                        }
-                                                                                        onChange={(
-                                                                                            e,
-                                                                                        ) =>
-                                                                                            updateSkuRow(
-                                                                                                i,
-                                                                                                'precio_venta',
-                                                                                                parseInt(
-                                                                                                    e
-                                                                                                        .target
-                                                                                                        .value,
-                                                                                                ) ||
-                                                                                                    0,
-                                                                                            )
-                                                                                        }
-                                                                                        className="ml-auto h-7 w-20 border-none bg-green-50/50 text-right text-[10px] font-bold"
-                                                                                    />
-                                                                                </td>
-                                                                                <td className="px-3 py-2 text-right">
-                                                                                    <Input
-                                                                                        type="number"
-                                                                                        value={
-                                                                                            row.precio_compra
-                                                                                        }
-                                                                                        onChange={(
-                                                                                            e,
-                                                                                        ) =>
-                                                                                            updateSkuRow(
-                                                                                                i,
-                                                                                                'precio_compra',
-                                                                                                parseInt(
-                                                                                                    e
-                                                                                                        .target
-                                                                                                        .value,
-                                                                                                ) ||
-                                                                                                    0,
-                                                                                            )
-                                                                                        }
-                                                                                        className="ml-auto h-7 w-20 border-none bg-primary/5 text-right text-[10px] font-bold"
-                                                                                    />
-                                                                                </td>
-                                                                                <td className="px-3 py-2 text-right">
-                                                                                    <Input
-                                                                                        type="number"
-                                                                                        value={
-                                                                                            row.stock
-                                                                                        }
-                                                                                        onChange={(
-                                                                                            e,
-                                                                                        ) =>
-                                                                                            updateSkuRow(
-                                                                                                i,
-                                                                                                'stock',
-                                                                                                parseInt(
-                                                                                                    e
-                                                                                                        .target
-                                                                                                        .value,
-                                                                                                ) ||
-                                                                                                    0,
-                                                                                            )
-                                                                                        }
-                                                                                        className="ml-auto h-7 w-16 border-none bg-emerald-50/50 text-right text-[10px] font-bold"
-                                                                                    />
-                                                                                </td>
-                                                                                <td className="px-3 py-2 text-right">
-                                                                                    <Input
-                                                                                        type="number"
-                                                                                        value={
-                                                                                            row.stock_minimo
-                                                                                        }
-                                                                                        onChange={(
-                                                                                            e,
-                                                                                        ) =>
-                                                                                            updateSkuRow(
-                                                                                                i,
-                                                                                                'stock_minimo',
-                                                                                                parseInt(
-                                                                                                    e
-                                                                                                        .target
-                                                                                                        .value,
-                                                                                                ) ||
-                                                                                                    0,
-                                                                                            )
-                                                                                        }
-                                                                                        className="ml-auto h-7 w-16 border-none bg-amber-50/50 text-right text-[10px] font-bold"
-                                                                                    />
-                                                                                </td>
-                                                                                <td className="px-3 py-2">
-                                                                                    <Select
-                                                                                        value={
-                                                                                            row.almacen_id
-                                                                                        }
-                                                                                        onValueChange={(
-                                                                                            v,
-                                                                                        ) =>
-                                                                                            updateSkuRow(
-                                                                                                i,
-                                                                                                'almacen_id',
-                                                                                                v,
-                                                                                            )
-                                                                                        }
-                                                                                    >
-                                                                                        <SelectTrigger className="h-7 w-32 border-none bg-muted/30 text-[10px]">
-                                                                                            <SelectValue placeholder="Almacén" />
-                                                                                        </SelectTrigger>
-                                                                                        <SelectContent>
-                                                                                            {almacenes.map(
-                                                                                                (
-                                                                                                    a,
-                                                                                                ) => (
-                                                                                                    <SelectItem
-                                                                                                        key={
-                                                                                                            a.id
-                                                                                                        }
-                                                                                                        value={a.id.toString()}
-                                                                                                    >
-                                                                                                        {
-                                                                                                            a.nombre
-                                                                                                        }
-                                                                                                    </SelectItem>
-                                                                                                ),
-                                                                                            )}
-                                                                                        </SelectContent>
-                                                                                    </Select>
-                                                                                </td>
-                                                                            </tr>
-                                                                        ),
-                                                                    )}
-                                                                </tbody>
-                                                            </table>
+                                                                                            <SelectTrigger className="h-7 w-32 border-none bg-muted/30 text-[10px]">
+                                                                                                <SelectValue placeholder="Almacén" />
+                                                                                            </SelectTrigger>
+                                                                                            <SelectContent>
+                                                                                                {almacenes.map(
+                                                                                                    (
+                                                                                                        a,
+                                                                                                    ) => (
+                                                                                                        <SelectItem
+                                                                                                            key={
+                                                                                                                a.id
+                                                                                                            }
+                                                                                                            value={a.id.toString()}
+                                                                                                        >
+                                                                                                            {
+                                                                                                                a.nombre
+                                                                                                            }
+                                                                                                        </SelectItem>
+                                                                                                    ),
+                                                                                                )}
+                                                                                            </SelectContent>
+                                                                                        </Select>
+                                                                                    </td>
+                                                                                </tr>
+                                                                            ),
+                                                                        )}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                )}
-
-                                                {getSelectedVariants.length ===
-                                                    0 &&
-                                                    !newVariantName.trim() && (
-                                                        <p className="py-4 text-center text-[11px] text-muted-foreground italic">
-                                                            Seleccione variantes
-                                                            existentes o cree
-                                                            una nueva para
-                                                            generar
-                                                            combinaciones SKU.
-                                                        </p>
                                                     )}
-                                            </div>
-                                        )}
-                                    </div>
 
-                                    {/* Right Column: Media */}
-                                    <div className="space-y-6 md:col-span-4">
-                                        <div className="space-y-4">
-                                            <Label className="flex items-center gap-2 text-xs font-black tracking-wider text-muted-foreground uppercase">
-                                                <ImageIcon className="h-4 w-4" />{' '}
-                                                Fotografías del Producto
-                                            </Label>
-
-                                            <ImageUploader
-                                                images={productImages}
-                                                onChange={setProductImages}
-                                                maxImages={
-                                                    PRODUCT_IMAGE_KEYS.length
-                                                }
-                                                maxFileSizeMb={2}
-                                                disabled={isSubmitting}
-                                                isSubmitting={isSubmitting}
-                                                error={imageError}
-                                                onError={setImageError}
-                                            />
-
-                                            <div className="space-y-4 rounded-2xl border border-muted-foreground/5 bg-muted/30 p-4">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <Video className="h-4 w-4 text-primary" />
-                                                        <span className="text-[10px] font-bold tracking-wide uppercase">
-                                                            Video Demo
-                                                        </span>
-                                                    </div>
-                                                    {editando?.video && (
-                                                        <Badge className="bg-primary/20 text-[8px] text-primary">
-                                                            Preexistente
-                                                        </Badge>
-                                                    )}
+                                                    {getSelectedVariants.length ===
+                                                        0 &&
+                                                        !newVariantName.trim() && (
+                                                            <p className="py-4 text-center text-[11px] text-muted-foreground italic">
+                                                                Seleccione
+                                                                variantes
+                                                                existentes o
+                                                                cree una nueva
+                                                                para generar
+                                                                combinaciones
+                                                                SKU.
+                                                            </p>
+                                                        )}
                                                 </div>
-                                                <Input
-                                                    type="file"
-                                                    accept="video/*"
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            'video',
-                                                            e.target
-                                                                .files?.[0] ||
-                                                                null,
-                                                        )
+                                            )}
+                                        </div>
+
+                                        {/* Right Column: Media */}
+                                        <div className="space-y-6 md:col-span-4">
+                                            <div className="space-y-4">
+                                                <Label className="flex items-center gap-2 text-xs font-black tracking-wider text-muted-foreground uppercase">
+                                                    <ImageIcon className="h-4 w-4" />{' '}
+                                                    Fotografías del Producto
+                                                </Label>
+
+                                                <ImageUploader
+                                                    images={productImages}
+                                                    onChange={setProductImages}
+                                                    maxImages={
+                                                        PRODUCT_IMAGE_KEYS.length
                                                     }
-                                                    className="h-8 border-none bg-transparent p-0 text-[10px]"
+                                                    maxFileSizeMb={2}
+                                                    disabled={isSubmitting}
+                                                    isSubmitting={isSubmitting}
+                                                    error={imageError}
+                                                    onError={setImageError}
                                                 />
-                                            </div>
 
-                                            <div className="flex flex-col gap-2">
-                                                <div className="flex items-center justify-between px-2">
-                                                    <Label className="text-[10px] font-bold uppercase">
-                                                        Estado de Visibilidad
-                                                    </Label>
-                                                    <Select
-                                                        value={
-                                                            data.activo
-                                                                ? '1'
-                                                                : '0'
-                                                        }
-                                                        onValueChange={(v) =>
+                                                <div className="space-y-4 rounded-2xl border border-muted-foreground/5 bg-muted/30 p-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <Video className="h-4 w-4 text-primary" />
+                                                            <span className="text-[10px] font-bold tracking-wide uppercase">
+                                                                Video Demo
+                                                            </span>
+                                                        </div>
+                                                        {editando?.video && (
+                                                            <Badge className="bg-primary/20 text-[8px] text-primary">
+                                                                Preexistente
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <Input
+                                                        type="file"
+                                                        accept="video/*"
+                                                        onChange={(e) =>
                                                             setData(
-                                                                'activo',
-                                                                v === '1',
+                                                                'video',
+                                                                e.target
+                                                                    .files?.[0] ||
+                                                                    null,
                                                             )
                                                         }
-                                                    >
-                                                        <SelectTrigger className="h-7 w-24 rounded-full border-none bg-muted/50 text-[10px] font-black uppercase">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="1">
-                                                                Activo
-                                                            </SelectItem>
-                                                            <SelectItem value="0">
-                                                                Inactivo
-                                                            </SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
+                                                        className="h-8 border-none bg-transparent p-0 text-[10px]"
+                                                    />
                                                 </div>
-                                                <div className="flex items-center justify-between px-2">
-                                                    <Label className="text-[10px] font-bold uppercase">
-                                                        Mostrar en Landing
-                                                    </Label>
-                                                    <Select
-                                                        value={
-                                                            data.mostrar_en_perfil
-                                                                ? '1'
-                                                                : '0'
-                                                        }
-                                                        onValueChange={(v) =>
-                                                            setData(
-                                                                'mostrar_en_perfil',
-                                                                v === '1',
-                                                            )
-                                                        }
-                                                    >
-                                                        <SelectTrigger className="h-7 w-24 rounded-full border-none bg-muted/50 text-[10px] font-black uppercase">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="1">
-                                                                Sí
-                                                            </SelectItem>
-                                                            <SelectItem value="0">
-                                                                No
-                                                            </SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
+
+                                                <div className="flex flex-col gap-2">
+                                                    <div className="flex items-center justify-between px-2">
+                                                        <Label className="text-[10px] font-bold uppercase">
+                                                            Estado de
+                                                            Visibilidad
+                                                        </Label>
+                                                        <Select
+                                                            value={
+                                                                data.activo
+                                                                    ? '1'
+                                                                    : '0'
+                                                            }
+                                                            onValueChange={(
+                                                                v,
+                                                            ) =>
+                                                                setData(
+                                                                    'activo',
+                                                                    v === '1',
+                                                                )
+                                                            }
+                                                        >
+                                                            <SelectTrigger className="h-7 w-24 rounded-full border-none bg-muted/50 text-[10px] font-black uppercase">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="1">
+                                                                    Activo
+                                                                </SelectItem>
+                                                                <SelectItem value="0">
+                                                                    Inactivo
+                                                                </SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div className="flex items-center justify-between px-2">
+                                                        <Label className="text-[10px] font-bold uppercase">
+                                                            Mostrar en Landing
+                                                        </Label>
+                                                        <Select
+                                                            value={
+                                                                data.mostrar_en_perfil
+                                                                    ? '1'
+                                                                    : '0'
+                                                            }
+                                                            onValueChange={(
+                                                                v,
+                                                            ) =>
+                                                                setData(
+                                                                    'mostrar_en_perfil',
+                                                                    v === '1',
+                                                                )
+                                                            }
+                                                        >
+                                                            <SelectTrigger className="h-7 w-24 rounded-full border-none bg-muted/50 text-[10px] font-black uppercase">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="1">
+                                                                    Sí
+                                                                </SelectItem>
+                                                                <SelectItem value="0">
+                                                                    No
+                                                                </SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <DialogFooter className="shrink-0 gap-2 border-t bg-muted/10 p-6">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                onClick={() => setIsOpen(false)}
-                                className="font-bold"
-                            >
-                                Cancelar
-                            </Button>
-                            <Button
-                                type="submit"
-                                disabled={processing || isSubmitting}
-                                className="rounded-full bg-primary px-10 font-bold shadow-lg shadow-primary/20 hover:bg-primary/90"
-                            >
-                                <Check className="mr-2 h-4 w-4" />{' '}
-                                {isSubmitting
-                                    ? 'Guardando...'
-                                    : editando
-                                      ? 'Actualizar Ficha'
-                                      : 'Guardar Producto'}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+                            <DialogFooter className="shrink-0 gap-2 border-t bg-muted/10 p-6">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => setIsOpen(false)}
+                                    className="font-bold"
+                                >
+                                    Cancelar
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={processing || isSubmitting}
+                                    className="rounded-full bg-primary px-10 font-bold shadow-lg shadow-primary/20 hover:bg-primary/90"
+                                >
+                                    <Check className="mr-2 h-4 w-4" />{' '}
+                                    {isSubmitting
+                                        ? 'Guardando...'
+                                        : editando
+                                          ? 'Actualizar Ficha'
+                                          : 'Guardar Producto'}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
 
-            <BarcodeScannerDialog
-                open={scannerOpen}
-                onOpenChange={(open) => {
-                    setScannerOpen(open);
+                <BarcodeScannerDialog
+                    open={scannerOpen}
+                    onOpenChange={(open) => {
+                        setScannerOpen(open);
 
-                    if (!open) {
-                        setScannerTarget(null);
+                        if (!open) {
+                            setScannerTarget(null);
+                        }
+                    }}
+                    onDetected={handleBarcodeDetected}
+                    title={
+                        scannerTarget === 'codigo'
+                            ? 'Escanear SKU del producto'
+                            : 'Escanear SKU de la variante'
                     }
-                }}
-                onDetected={handleBarcodeDetected}
-                title={
-                    scannerTarget === 'codigo'
-                        ? 'Escanear SKU del producto'
-                        : 'Escanear SKU de la variante'
-                }
-                description="Centra el código de barras del SKU dentro del recuadro."
-            />
+                    description="Centra el código de barras del SKU dentro del recuadro."
+                />
 
-            {/* View Dialog */}
-            <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-                <DialogContent className="max-h-[85vh] max-w-[90vw] overflow-y-auto border-none bg-white p-0 shadow-xl md:max-w-2xl">
-                    <DialogHeader className="relative overflow-hidden px-4 py-4 md:px-6 md:py-5">
-                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-900 opacity-90" />
-                        <div className="absolute top-0 right-0 p-3 text-white opacity-15 md:p-4">
-                            <Eye className="h-12 w-12 rotate-12 md:h-16 md:w-16" />
-                        </div>
-
-                        <div className="relative z-10 flex items-center justify-between pr-8 text-white">
-                            <div>
-                                <Badge className="mb-1 w-fit border-none bg-white/20 px-2 py-0.5 text-[9px] font-bold tracking-widest text-white uppercase">
-                                    Producto
-                                </Badge>
-                                <DialogTitle className="text-lg font-black tracking-tight text-white uppercase md:text-xl">
-                                    {viendo?.nombre}
-                                </DialogTitle>
+                {/* View Dialog */}
+                <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+                    <DialogContent className="max-h-[85vh] max-w-[90vw] overflow-y-auto border-none bg-white p-0 shadow-xl md:max-w-2xl">
+                        <DialogHeader className="relative overflow-hidden px-4 py-4 md:px-6 md:py-5">
+                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-900 opacity-90" />
+                            <div className="absolute top-0 right-0 p-3 text-white opacity-15 md:p-4">
+                                <Eye className="h-12 w-12 rotate-12 md:h-16 md:w-16" />
                             </div>
-                            <div
-                                className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${viendo?.activo ? 'bg-green-500' : 'bg-red-500'}`}
-                            >
-                                {viendo?.activo ? 'Activo' : 'Inactivo'}
-                            </div>
-                        </div>
-                    </DialogHeader>
 
-                    {viendo && (
-                        <div className="relative z-20 -mt-2 mb-3 flex max-h-[calc(85vh-100px)] flex-col gap-3 overflow-y-auto px-4 md:-mt-4 md:mb-4 md:gap-4 md:px-6">
-                            <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
-                                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2">
-                                    <p className="text-[8px] font-bold text-emerald-600 uppercase">
-                                        SKU
-                                    </p>
-                                    <p className="truncate text-xs font-semibold text-emerald-800">
-                                        {viendo.codigo}
-                                    </p>
+                            <div className="relative z-10 flex items-center justify-between pr-8 text-white">
+                                <div>
+                                    <Badge className="mb-1 w-fit border-none bg-white/20 px-2 py-0.5 text-[9px] font-bold tracking-widest text-white uppercase">
+                                        Producto
+                                    </Badge>
+                                    <DialogTitle className="text-lg font-black tracking-tight text-white uppercase md:text-xl">
+                                        {viendo?.nombre}
+                                    </DialogTitle>
                                 </div>
-                                <div className="rounded-lg border border-gray-200 bg-gray-50 p-2">
-                                    <p className="text-[8px] font-bold text-gray-600 uppercase">
-                                        Categoría
-                                    </p>
-                                    <p className="truncate text-xs font-semibold text-gray-800">
-                                        {viendo.categoria?.nombre ||
-                                            'Sin categoría'}
-                                    </p>
+                                <div
+                                    className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${viendo?.activo ? 'bg-green-500' : 'bg-red-500'}`}
+                                >
+                                    {viendo?.activo ? 'Activo' : 'Inactivo'}
                                 </div>
-                                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2">
-                                    <p className="text-[8px] font-bold text-emerald-600 uppercase">
-                                        Precio
-                                    </p>
-                                    <p className="truncate text-xs font-semibold text-emerald-800">
-                                        {formatCurrency(
-                                            viendo.precio_venta || 0,
-                                        )}
-                                    </p>
-                                </div>
-                                <div className="rounded-lg border border-amber-200 bg-amber-50 p-2">
-                                    <p className="text-[8px] font-bold text-amber-600 uppercase">
-                                        Stock Mín
-                                    </p>
-                                    <p className="truncate text-xs font-semibold text-amber-800">
-                                        {viendo.stock_minimo ?? 0}
-                                    </p>
-                                </div>
-                                {viendo.fecha_vencimiento && (
-                                    <div className="rounded-lg border border-purple-200 bg-purple-50 p-2">
-                                        <p className="text-[8px] font-bold text-purple-600 uppercase">
-                                            Vencimiento
+                            </div>
+                        </DialogHeader>
+
+                        {viendo && (
+                            <div className="relative z-20 -mt-2 mb-3 flex max-h-[calc(85vh-100px)] flex-col gap-3 overflow-y-auto px-4 md:-mt-4 md:mb-4 md:gap-4 md:px-6">
+                                <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+                                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2">
+                                        <p className="text-[8px] font-bold text-emerald-600 uppercase">
+                                            SKU
                                         </p>
-                                        <p className="truncate text-xs font-semibold text-purple-800">
-                                            {viendo.fecha_vencimiento}
+                                        <p className="truncate text-xs font-semibold text-emerald-800">
+                                            {viendo.codigo}
                                         </p>
                                     </div>
-                                )}
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                                <div>
-                                    {viendo.imagen ? (
-                                        <div className="aspect-square overflow-hidden rounded-lg border bg-gray-50">
-                                            <img
-                                                src={`/storage/${viendo.imagen}`}
-                                                alt={viendo.nombre}
-                                                className="h-full w-full object-contain"
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div className="flex aspect-video flex-col items-center justify-center rounded-xl border bg-gray-50 text-muted-foreground opacity-40">
-                                            <ImageIcon className="h-12 w-12" />
-                                            <span className="mt-2 text-[10px] font-bold tracking-widest uppercase">
-                                                Sin Imagen
-                                            </span>
+                                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-2">
+                                        <p className="text-[8px] font-bold text-gray-600 uppercase">
+                                            Categoría
+                                        </p>
+                                        <p className="truncate text-xs font-semibold text-gray-800">
+                                            {viendo.categoria?.nombre ||
+                                                'Sin categoría'}
+                                        </p>
+                                    </div>
+                                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2">
+                                        <p className="text-[8px] font-bold text-emerald-600 uppercase">
+                                            Precio
+                                        </p>
+                                        <p className="truncate text-xs font-semibold text-emerald-800">
+                                            {formatCurrency(
+                                                viendo.precio_venta || 0,
+                                            )}
+                                        </p>
+                                    </div>
+                                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-2">
+                                        <p className="text-[8px] font-bold text-amber-600 uppercase">
+                                            Stock Mín
+                                        </p>
+                                        <p className="truncate text-xs font-semibold text-amber-800">
+                                            {viendo.stock_minimo ?? 0}
+                                        </p>
+                                    </div>
+                                    {viendo.fecha_vencimiento && (
+                                        <div className="rounded-lg border border-purple-200 bg-purple-50 p-2">
+                                            <p className="text-[8px] font-bold text-purple-600 uppercase">
+                                                Vencimiento
+                                            </p>
+                                            <p className="truncate text-xs font-semibold text-purple-800">
+                                                {viendo.fecha_vencimiento}
+                                            </p>
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="space-y-3">
-                                    <Card className="border-none bg-gray-50/50 shadow-sm">
-                                        <CardHeader className="border-b border-gray-100 pb-2">
-                                            <div className="flex items-center gap-2">
-                                                <div className="rounded-md bg-emerald-100 p-1 text-emerald-700">
-                                                    <Package className="h-3 w-3" />
-                                                </div>
-                                                <CardTitle className="text-xs font-bold text-gray-800">
-                                                    Descripción
-                                                </CardTitle>
+                                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                    <div>
+                                        {viendo.imagen ? (
+                                            <div className="aspect-square overflow-hidden rounded-lg border bg-gray-50">
+                                                <img
+                                                    src={`/storage/${viendo.imagen}`}
+                                                    alt={viendo.nombre}
+                                                    className="h-full w-full object-contain"
+                                                />
                                             </div>
-                                        </CardHeader>
-                                        <CardContent className="p-3 text-xs leading-relaxed text-gray-600 italic">
-                                            {viendo.descripcion ||
-                                                'Sin descripción'}
-                                        </CardContent>
-                                    </Card>
+                                        ) : (
+                                            <div className="flex aspect-video flex-col items-center justify-center rounded-xl border bg-gray-50 text-muted-foreground opacity-40">
+                                                <ImageIcon className="h-12 w-12" />
+                                                <span className="mt-2 text-[10px] font-bold tracking-widest uppercase">
+                                                    Sin Imagen
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
 
-                                    <div className="flex items-start gap-2 rounded-lg border border-amber-100 bg-amber-50/50 p-3">
-                                        <div className="mt-0.5 rounded-full bg-amber-200 p-0.5">
-                                            <Check className="h-2 w-2 text-amber-700" />
-                                        </div>
-                                        <div className="space-y-0.5 text-[10px] font-medium text-amber-800/70">
-                                            <p>
-                                                Unidad:{' '}
-                                                <strong>
-                                                    {viendo.unidad_medida?.toUpperCase()}
-                                                </strong>
-                                            </p>
-                                            <p>
-                                                Stock Mín:{' '}
-                                                <strong>
-                                                    {Math.round(
-                                                        viendo.stock_minimo ||
-                                                            0,
-                                                    )}
-                                                </strong>
-                                            </p>
-                                            <p>
-                                                Precio Compra:{' '}
-                                                <strong>
-                                                    {formatCurrency(
-                                                        Math.round(
-                                                            viendo.precio_compra ||
-                                                                0,
-                                                        ),
-                                                    )}
-                                                </strong>
-                                            </p>
-                                            {viendo.envase_retornable && (
-                                                <p className="mt-1 flex items-center gap-1 text-primary">
-                                                    <Warehouse className="h-3 w-3" />
-                                                    Requiere Envase:{' '}
+                                    <div className="space-y-3">
+                                        <Card className="border-none bg-gray-50/50 shadow-sm">
+                                            <CardHeader className="border-b border-gray-100 pb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="rounded-md bg-emerald-100 p-1 text-emerald-700">
+                                                        <Package className="h-3 w-3" />
+                                                    </div>
+                                                    <CardTitle className="text-xs font-bold text-gray-800">
+                                                        Descripción
+                                                    </CardTitle>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent className="p-3 text-xs leading-relaxed text-gray-600 italic">
+                                                {viendo.descripcion ||
+                                                    'Sin descripción'}
+                                            </CardContent>
+                                        </Card>
+
+                                        <div className="flex items-start gap-2 rounded-lg border border-amber-100 bg-amber-50/50 p-3">
+                                            <div className="mt-0.5 rounded-full bg-amber-200 p-0.5">
+                                                <Check className="h-2 w-2 text-amber-700" />
+                                            </div>
+                                            <div className="space-y-0.5 text-[10px] font-medium text-amber-800/70">
+                                                <p>
+                                                    Unidad:{' '}
                                                     <strong>
-                                                        {viendo.envase_producto
-                                                            ?.nombre ||
-                                                            'Envase Físico (No definido)'}
+                                                        {viendo.unidad_medida?.toUpperCase()}
                                                     </strong>
                                                 </p>
-                                            )}
+                                                <p>
+                                                    Stock Mín:{' '}
+                                                    <strong>
+                                                        {Math.round(
+                                                            viendo.stock_minimo ||
+                                                                0,
+                                                        )}
+                                                    </strong>
+                                                </p>
+                                                <p>
+                                                    Precio Compra:{' '}
+                                                    <strong>
+                                                        {formatCurrency(
+                                                            Math.round(
+                                                                viendo.precio_compra ||
+                                                                    0,
+                                                            ),
+                                                        )}
+                                                    </strong>
+                                                </p>
+                                                {viendo.envase_retornable && (
+                                                    <p className="mt-1 flex items-center gap-1 text-primary">
+                                                        <Warehouse className="h-3 w-3" />
+                                                        Requiere Envase:{' '}
+                                                        <strong>
+                                                            {viendo
+                                                                .envase_producto
+                                                                ?.nombre ||
+                                                                'Envase Físico (No definido)'}
+                                                        </strong>
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Warehouse Stock Section */}
-                            <div className="space-y-2">
-                                <h4 className="text-[10px] font-black tracking-widest text-gray-500 uppercase">
-                                    Stock por Almacén
-                                </h4>
-                                <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-gray-50 text-[9px] font-bold text-gray-500 uppercase">
-                                            <tr>
-                                                <th className="px-4 py-2">
-                                                    Almacén
-                                                </th>
-                                                <th className="px-4 py-2 text-right">
-                                                    Cantidad
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-50 text-xs">
-                                            {viendo.inventarios &&
-                                            viendo.inventarios.length > 0 ? (
-                                                viendo.inventarios.map(
-                                                    (inv) => (
-                                                        <tr key={inv.id}>
-                                                            <td className="px-4 py-2 font-medium text-gray-700">
-                                                                {inv.almacen
-                                                                    ?.nombre ||
-                                                                    'General'}
-                                                            </td>
-                                                            <td className="px-4 py-2 text-right font-black text-emerald-600">
-                                                                {Math.round(
-                                                                    inv.cantidad,
-                                                                )}
-                                                            </td>
-                                                        </tr>
-                                                    ),
-                                                )
-                                            ) : (
+                                {/* Warehouse Stock Section */}
+                                <div className="space-y-2">
+                                    <h4 className="text-[10px] font-black tracking-widest text-gray-500 uppercase">
+                                        Stock por Almacén
+                                    </h4>
+                                    <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white">
+                                        <table className="w-full text-left">
+                                            <thead className="bg-gray-50 text-[9px] font-bold text-gray-500 uppercase">
                                                 <tr>
-                                                    <td
-                                                        colSpan={2}
-                                                        className="px-4 py-4 text-center text-gray-400 italic"
-                                                    >
-                                                        No hay información de
-                                                        stock disponible
-                                                    </td>
+                                                    <th className="px-4 py-2">
+                                                        Almacén
+                                                    </th>
+                                                    <th className="px-4 py-2 text-right">
+                                                        Cantidad
+                                                    </th>
                                                 </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            {/* Legacy Variants Section */}
-                            {viendo.variantes &&
-                                viendo.variantes.length > 0 && (
-                                    <div className="mt-4 space-y-2">
-                                        <h4 className="text-[10px] font-black tracking-widest text-purple-600 uppercase">
-                                            Tallas y Variantes Disponibles
-                                        </h4>
-                                        <div className="overflow-x-auto rounded-xl border border-purple-100 bg-white">
-                                            <table className="w-full text-left">
-                                                <thead className="bg-purple-50 text-[9px] font-bold text-purple-600 uppercase">
-                                                    <tr>
-                                                        <th className="px-4 py-2">
-                                                            Talla
-                                                        </th>
-                                                        <th className="px-4 py-2">
-                                                            SKU
-                                                        </th>
-                                                        <th className="px-4 py-2 text-right">
-                                                            Stock
-                                                        </th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-purple-50 text-xs">
-                                                    {viendo.variantes.map(
-                                                        (v) => (
-                                                            <tr key={v.id}>
-                                                                <td className="px-4 py-2 font-black text-purple-800">
-                                                                    {v.talla}
-                                                                </td>
-                                                                <td className="px-4 py-2 text-gray-500">
-                                                                    {v.codigo}
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-50 text-xs">
+                                                {viendo.inventarios &&
+                                                viendo.inventarios.length >
+                                                    0 ? (
+                                                    viendo.inventarios.map(
+                                                        (inv) => (
+                                                            <tr key={inv.id}>
+                                                                <td className="px-4 py-2 font-medium text-gray-700">
+                                                                    {inv.almacen
+                                                                        ?.nombre ||
+                                                                        'General'}
                                                                 </td>
                                                                 <td className="px-4 py-2 text-right font-black text-emerald-600">
                                                                     {Math.round(
-                                                                        v.inventarios?.reduce(
-                                                                            (
-                                                                                sum,
-                                                                                inv,
-                                                                            ) =>
-                                                                                sum +
-                                                                                inv.cantidad,
-                                                                            0,
-                                                                        ) || 0,
+                                                                        inv.cantidad,
                                                                     )}
                                                                 </td>
                                                             </tr>
                                                         ),
-                                                    )}
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                                    )
+                                                ) : (
+                                                    <tr>
+                                                        <td
+                                                            colSpan={2}
+                                                            className="px-4 py-4 text-center text-gray-400 italic"
+                                                        >
+                                                            No hay información
+                                                            de stock disponible
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
                                     </div>
-                                )}
-                        </div>
-                    )}
+                                </div>
 
-                    <DialogFooter className="border-t bg-gray-50 p-3">
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsViewOpen(false)}
-                            className="w-full font-bold sm:w-auto"
-                        >
-                            Cerrar
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                                {/* Legacy Variants Section */}
+                                {viendo.variantes &&
+                                    viendo.variantes.length > 0 && (
+                                        <div className="mt-4 space-y-2">
+                                            <h4 className="text-[10px] font-black tracking-widest text-purple-600 uppercase">
+                                                Tallas y Variantes Disponibles
+                                            </h4>
+                                            <div className="overflow-x-auto rounded-xl border border-purple-100 bg-white">
+                                                <table className="w-full text-left">
+                                                    <thead className="bg-purple-50 text-[9px] font-bold text-purple-600 uppercase">
+                                                        <tr>
+                                                            <th className="px-4 py-2">
+                                                                Talla
+                                                            </th>
+                                                            <th className="px-4 py-2">
+                                                                SKU
+                                                            </th>
+                                                            <th className="px-4 py-2 text-right">
+                                                                Stock
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-purple-50 text-xs">
+                                                        {viendo.variantes.map(
+                                                            (v) => (
+                                                                <tr key={v.id}>
+                                                                    <td className="px-4 py-2 font-black text-purple-800">
+                                                                        {
+                                                                            v.talla
+                                                                        }
+                                                                    </td>
+                                                                    <td className="px-4 py-2 text-gray-500">
+                                                                        {
+                                                                            v.codigo
+                                                                        }
+                                                                    </td>
+                                                                    <td className="px-4 py-2 text-right font-black text-emerald-600">
+                                                                        {Math.round(
+                                                                            v.inventarios?.reduce(
+                                                                                (
+                                                                                    sum,
+                                                                                    inv,
+                                                                                ) =>
+                                                                                    sum +
+                                                                                    inv.cantidad,
+                                                                                0,
+                                                                            ) ||
+                                                                                0,
+                                                                        )}
+                                                                    </td>
+                                                                </tr>
+                                                            ),
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
+                            </div>
+                        )}
+
+                        <DialogFooter className="border-t bg-gray-50 p-3">
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsViewOpen(false)}
+                                className="w-full font-bold sm:w-auto"
+                            >
+                                Cerrar
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </TooltipProvider>
         </AppLayout>
     );
 }

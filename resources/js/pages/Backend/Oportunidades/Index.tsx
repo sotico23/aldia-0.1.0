@@ -20,6 +20,9 @@ import {
 } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { BulkActions } from '@/components/shared/BulkActions';
+import { SectionPanel } from '@/components/shared/SectionPanel';
+import type { PanelTone } from '@/components/shared/SectionPanel';
+import { TruncatedText } from '@/components/shared/TruncatedText';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -48,6 +51,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import { formatCurrency, formatDateCLP } from '@/lib/utils';
@@ -114,6 +118,15 @@ const ETAPAS = [
         icon: X,
     },
 ];
+
+const ETAPA_TONES: Record<string, PanelTone> = {
+    prospeccion: 'slate',
+    analisis: 'emerald',
+    propuesta: 'violet',
+    negociacion: 'amber',
+    ganada: 'teal',
+    perdida: 'rose',
+};
 
 export default function Index({
     oportunidades,
@@ -278,466 +291,809 @@ export default function Index({
         return groups;
     }, [oportunidades.data]);
 
+    const gruposOportunidades = useMemo(
+        () =>
+            ETAPAS.map((etapa) => ({
+                ...etapa,
+                tone: (ETAPA_TONES[etapa.value] ?? 'slate') as PanelTone,
+                data: groupedOportunidades[etapa.value] ?? [],
+            })).filter((grupo) => grupo.data.length > 0),
+        [groupedOportunidades],
+    );
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Pipeline de Oportunidades" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <div className="mb-1 flex items-center gap-2">
-                            <Target className="h-5 w-5 text-primary" />
-                            <span className="text-[10px] font-black tracking-widest text-primary/70 uppercase">
-                                Sales Management System
-                            </span>
-                        </div>
-                        <h1 className="text-3xl font-black tracking-tight text-foreground">
-                            Oportunidades
-                        </h1>
-                        <p className="text-sm font-medium text-muted-foreground">
-                            Gestione su embudo de ventas y visualice sus
-                            ingresos proyectados
-                        </p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                        <div className="mr-2 flex gap-1 rounded-xl bg-muted/30 p-1">
-                            <Button
-                                variant={vistaKanban ? 'default' : 'ghost'}
-                                size="sm"
-                                onClick={() => switchView(true)}
-                                className="h-8 rounded-lg font-bold"
-                            >
-                                <Kanban className="h-4 w-4 md:mr-2" />
-                                <span className="hidden md:inline">Kanban</span>
-                            </Button>
-                            <Button
-                                variant={!vistaKanban ? 'default' : 'ghost'}
-                                size="sm"
-                                onClick={() => switchView(false)}
-                                className="h-8 rounded-lg font-bold"
-                            >
-                                <List className="h-4 w-4 md:mr-2" />
-                                <span className="hidden md:inline">Lista</span>
-                            </Button>
+            <TooltipProvider delayDuration={200}>
+                <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <div className="mb-1 flex items-center gap-2">
+                                <Target className="h-5 w-5 text-primary" />
+                                <span className="text-[10px] font-black tracking-widest text-primary/70 uppercase">
+                                    Sales Management System
+                                </span>
+                            </div>
+                            <h1 className="text-3xl font-black tracking-tight text-foreground">
+                                Oportunidades
+                            </h1>
+                            <p className="text-sm font-medium text-muted-foreground">
+                                Gestione su embudo de ventas y visualice sus
+                                ingresos proyectados
+                            </p>
                         </div>
 
-                        <BulkActions
-                            baseUrl="/oportunidades"
-                            filters={{
-                                search: searchTerm,
-                                cliente_id: clienteFilter,
-                                etapa: etapaFilter,
-                            }}
-                            modelName="Oportunidades"
-                        />
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="mr-2 flex gap-1 rounded-xl bg-muted/30 p-1">
+                                <Button
+                                    variant={vistaKanban ? 'default' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => switchView(true)}
+                                    className="h-8 rounded-lg font-bold"
+                                >
+                                    <Kanban className="h-4 w-4 md:mr-2" />
+                                    <span className="hidden md:inline">
+                                        Kanban
+                                    </span>
+                                </Button>
+                                <Button
+                                    variant={!vistaKanban ? 'default' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => switchView(false)}
+                                    className="h-8 rounded-lg font-bold"
+                                >
+                                    <List className="h-4 w-4 md:mr-2" />
+                                    <span className="hidden md:inline">
+                                        Lista
+                                    </span>
+                                </Button>
+                            </div>
 
-                        {canCreate && (
-                            <Button
-                                onClick={() => {
-                                    setEditando(null);
-                                    reset();
-                                    setIsOpen(true);
+                            <BulkActions
+                                baseUrl="/oportunidades"
+                                filters={{
+                                    search: searchTerm,
+                                    cliente_id: clienteFilter,
+                                    etapa: etapaFilter,
                                 }}
-                                className="h-9 rounded-full bg-primary px-5 font-bold shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
-                            >
-                                <Plus className="mr-2 h-4 w-4" /> Nueva
-                                Oportunidad
-                            </Button>
-                        )}
-                    </div>
-                </div>
-
-                <div className="grid gap-6">
-                    {/* Filters Bar */}
-                    <div className="flex flex-col gap-4 rounded-3xl border border-muted/50 bg-muted/40 p-4 md:flex-row md:items-center">
-                        <div className="relative flex-1">
-                            <Search className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                placeholder="Buscar por nombre o descripción..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="h-11 rounded-2xl border-none bg-background pl-12 shadow-sm focus-visible:ring-primary/20"
+                                modelName="Oportunidades"
                             />
-                        </div>
-                        <div className="flex gap-2">
-                            <Select
-                                value={clienteFilter}
-                                onValueChange={setClienteFilter}
-                            >
-                                <SelectTrigger className="h-11 min-w-[140px] rounded-2xl border-none bg-background font-bold shadow-sm md:w-[200px]">
-                                    <SelectValue placeholder="Cliente" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        Todos los clientes
-                                    </SelectItem>
-                                    {clientes.map((c) => (
-                                        <SelectItem
-                                            key={c.id}
-                                            value={c.id.toString()}
-                                        >
-                                            {c.nombre}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <Select
-                                value={etapaFilter}
-                                onValueChange={setEtapaFilter}
-                            >
-                                <SelectTrigger className="h-11 min-w-[140px] rounded-2xl border-none bg-background font-bold shadow-sm md:w-[160px]">
-                                    <SelectValue placeholder="Etapa" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        Todas las etapas
-                                    </SelectItem>
-                                    {ETAPAS.map((e) => (
-                                        <SelectItem
-                                            key={e.value}
-                                            value={e.value}
-                                        >
-                                            {e.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-11 w-11 rounded-2xl border-none bg-background text-muted-foreground shadow-sm"
-                                onClick={() => {
-                                    setSearchTerm('');
-                                    setClienteFilter('all');
-                                    setEtapaFilter('all');
-                                }}
-                            >
-                                <X className="h-5 w-5" />
-                            </Button>
+
+                            {canCreate && (
+                                <Button
+                                    onClick={() => {
+                                        setEditando(null);
+                                        reset();
+                                        setIsOpen(true);
+                                    }}
+                                    className="h-9 rounded-full bg-primary px-5 font-bold shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
+                                >
+                                    <Plus className="mr-2 h-4 w-4" /> Nueva
+                                    Oportunidad
+                                </Button>
+                            )}
                         </div>
                     </div>
 
-                    {vistaKanban ? (
-                        <div className="flex min-h-[65vh] items-start gap-5 overflow-x-auto pb-6">
-                            {ETAPAS.map((etapa) => {
-                                const opsEnEtapa =
-                                    groupedOportunidades[etapa.value] || [];
-                                const totalValor = opsEnEtapa.reduce(
-                                    (sum, o) => sum + Number(o.valor),
-                                    0,
-                                );
-                                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                                const totalPonderado = opsEnEtapa.reduce(
-                                    (sum, o) =>
-                                        sum +
-                                        Number(o.valor) *
-                                            (o.probabilidad / 100),
-                                    0,
-                                );
-
-                                return (
-                                    <div
-                                        key={etapa.value}
-                                        className="flex w-[320px] shrink-0 flex-col gap-4"
-                                        onDragOver={handleDragOver}
-                                        onDrop={(e) =>
-                                            handleDrop(e, etapa.value)
-                                        }
-                                    >
-                                        <div
-                                            className={`rounded-3xl p-4 ${etapa.color} flex flex-col gap-1 border-2 border-transparent`}
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <etapa.icon className="h-4 w-4" />
-                                                    <span className="text-[11px] font-black tracking-widest uppercase">
-                                                        {etapa.label}
-                                                    </span>
-                                                </div>
-                                                <Badge className="border-none bg-background/50 text-[10px] font-black text-inherit hover:bg-background/60">
-                                                    {opsEnEtapa.length}
-                                                </Badge>
-                                            </div>
-                                            <div className="mt-1 text-[10px] font-bold opacity-70">
-                                                {formatCurrency(totalValor)}{' '}
-                                                Proyectados
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-col gap-3">
-                                            {opsEnEtapa.map((op) => (
-                                                <div
-                                                    key={op.id}
-                                                    draggable
-                                                    onDragStart={(e) =>
-                                                        handleDragStart(
-                                                            e,
-                                                            op.id,
-                                                        )
-                                                    }
-                                                    className="group cursor-grab rounded-3xl border border-muted bg-background p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-xl active:cursor-grabbing"
-                                                >
-                                                    <div className="mb-3 flex items-start justify-between">
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="truncate text-sm font-bold tracking-tight transition-colors group-hover:text-primary">
-                                                                {op.nombre}
-                                                            </div>
-                                                            <div className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
-                                                                <Building2 className="h-2.5 w-2.5" />
-                                                                <span className="truncate">
-                                                                    {op.cliente
-                                                                        ?.nombre ||
-                                                                        'General'}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-muted bg-muted/50 text-[10px] font-black text-primary">
-                                                            {op.probabilidad}%
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="mt-4 flex items-center justify-between">
-                                                        <div className="flex items-center gap-1 text-[10px] font-black text-primary">
-                                                            <DollarSign className="h-3 w-3" />
-                                                            {formatCurrency(
-                                                                op.valor,
-                                                            )}
-                                                        </div>
-                                                        {op.fecha_cierre_estimada && (
-                                                            <div className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground">
-                                                                <Clock className="h-2.5 w-2.5" />
-                                                                {formatDateCLP(
-                                                                    op.fecha_cierre_estimada,
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-muted/30">
-                                                        <div
-                                                            className="h-full bg-primary transition-all duration-500"
-                                                            style={{
-                                                                width: `${op.probabilidad}%`,
-                                                            }}
-                                                        />
-                                                    </div>
-
-                                                    <div className="mt-4 flex justify-end gap-1 border-t border-muted/50 pt-4 opacity-0 transition-opacity group-hover:opacity-100">
-                                                        {canEdit && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 rounded-xl text-primary hover:bg-primary/10"
-                                                                onClick={() =>
-                                                                    handleEdit(
-                                                                        op,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                        {canDelete && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 rounded-xl text-destructive hover:bg-destructive/10"
-                                                                onClick={() =>
-                                                                    handleDelete(
-                                                                        op.id,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            {opsEnEtapa.length === 0 && (
-                                                <div className="rounded-3xl border-2 border-dashed border-muted p-10 text-center">
-                                                    <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                                                        Sin Oportunidades
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                    <div className="grid gap-6">
+                        {/* Filters Bar */}
+                        <div className="flex flex-col gap-4 rounded-3xl border border-muted/50 bg-muted/40 p-4 md:flex-row md:items-center">
+                            <div className="relative flex-1">
+                                <Search className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    placeholder="Buscar por nombre o descripción..."
+                                    value={searchTerm}
+                                    onChange={(e) =>
+                                        setSearchTerm(e.target.value)
+                                    }
+                                    className="h-11 rounded-2xl border-none bg-background pl-12 shadow-sm focus-visible:ring-primary/20"
+                                />
+                            </div>
+                            <div className="flex gap-2">
+                                <Select
+                                    value={clienteFilter}
+                                    onValueChange={setClienteFilter}
+                                >
+                                    <SelectTrigger className="h-11 min-w-[140px] rounded-2xl border-none bg-background font-bold shadow-sm md:w-[200px]">
+                                        <SelectValue placeholder="Cliente" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            Todos los clientes
+                                        </SelectItem>
+                                        {clientes.map((c) => (
+                                            <SelectItem
+                                                key={c.id}
+                                                value={c.id.toString()}
+                                            >
+                                                {c.nombre}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Select
+                                    value={etapaFilter}
+                                    onValueChange={setEtapaFilter}
+                                >
+                                    <SelectTrigger className="h-11 min-w-[140px] rounded-2xl border-none bg-background font-bold shadow-sm md:w-[160px]">
+                                        <SelectValue placeholder="Etapa" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            Todas las etapas
+                                        </SelectItem>
+                                        {ETAPAS.map((e) => (
+                                            <SelectItem
+                                                key={e.value}
+                                                value={e.value}
+                                            >
+                                                {e.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-11 w-11 rounded-2xl border-none bg-background text-muted-foreground shadow-sm"
+                                    onClick={() => {
+                                        setSearchTerm('');
+                                        setClienteFilter('all');
+                                        setEtapaFilter('all');
+                                    }}
+                                >
+                                    <X className="h-5 w-5" />
+                                </Button>
+                            </div>
                         </div>
-                    ) : (
-                        <Card className="overflow-hidden border-none shadow-xl shadow-foreground/5">
-                            <CardHeader className="flex flex-row items-center justify-between px-6 py-4">
-                                <CardTitle>Oportunidades</CardTitle>
-                                <div className="flex items-center gap-1 rounded-lg bg-muted/30 p-1">
-                                    <Button
-                                        variant={
-                                            viewMode === 'table'
-                                                ? 'default'
-                                                : 'ghost'
-                                        }
-                                        size="sm"
-                                        onClick={() => setViewMode('table')}
-                                        className="h-8 w-8 p-0"
-                                    >
-                                        <List className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                        variant={
-                                            viewMode === 'cards'
-                                                ? 'default'
-                                                : 'ghost'
-                                        }
-                                        size="sm"
-                                        onClick={() => setViewMode('cards')}
-                                        className="h-8 w-8 p-0"
-                                    >
-                                        <LayoutGrid className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </CardHeader>
-                            {viewMode === 'table' ? (
-                                <CardContent className="p-0">
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full">
-                                            <thead>
-                                                <tr className="border-b bg-muted/5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                                                    <th className="px-6 py-4 text-left">
-                                                        Oportunidad / Cliente
-                                                    </th>
-                                                    <th className="px-6 py-4 text-right">
-                                                        Valor Estimado
-                                                    </th>
-                                                    <th className="px-6 py-4 text-center">
-                                                        Etapa / Prob.
-                                                    </th>
-                                                    <th className="px-6 py-4 text-center">
-                                                        Cierre Estimado
-                                                    </th>
-                                                    <th className="px-6 py-4 text-right">
-                                                        Acciones
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-muted/50">
-                                                {oportunidades.data.map(
-                                                    (op) => (
-                                                        <tr
-                                                            key={op.id}
-                                                            className="group transition-colors hover:bg-muted/30"
-                                                        >
-                                                            <td className="px-6 py-4">
-                                                                <div>
-                                                                    <div className="text-sm font-bold tracking-tight text-foreground">
-                                                                        {
-                                                                            op.nombre
-                                                                        }
-                                                                    </div>
-                                                                    <div className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
-                                                                        <Building2 className="h-2.5 w-2.5" />
+
+                        {vistaKanban ? (
+                            <div className="flex min-h-[65vh] items-start gap-5 overflow-x-auto pb-6">
+                                {ETAPAS.map((etapa) => {
+                                    const opsEnEtapa =
+                                        groupedOportunidades[etapa.value] || [];
+                                    const totalValor = opsEnEtapa.reduce(
+                                        (sum, o) => sum + Number(o.valor),
+                                        0,
+                                    );
+                                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                                    const totalPonderado = opsEnEtapa.reduce(
+                                        (sum, o) =>
+                                            sum +
+                                            Number(o.valor) *
+                                                (o.probabilidad / 100),
+                                        0,
+                                    );
+
+                                    return (
+                                        <div
+                                            key={etapa.value}
+                                            className="flex w-[320px] shrink-0 flex-col gap-4"
+                                            onDragOver={handleDragOver}
+                                            onDrop={(e) =>
+                                                handleDrop(e, etapa.value)
+                                            }
+                                        >
+                                            <div
+                                                className={`rounded-3xl p-4 ${etapa.color} flex flex-col gap-1 border-2 border-transparent`}
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <etapa.icon className="h-4 w-4" />
+                                                        <span className="text-[11px] font-black tracking-widest uppercase">
+                                                            {etapa.label}
+                                                        </span>
+                                                    </div>
+                                                    <Badge className="border-none bg-background/50 text-[10px] font-black text-inherit hover:bg-background/60">
+                                                        {opsEnEtapa.length}
+                                                    </Badge>
+                                                </div>
+                                                <div className="mt-1 text-[10px] font-bold opacity-70">
+                                                    {formatCurrency(totalValor)}{' '}
+                                                    Proyectados
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-col gap-3">
+                                                {opsEnEtapa.map((op) => (
+                                                    <div
+                                                        key={op.id}
+                                                        draggable
+                                                        onDragStart={(e) =>
+                                                            handleDragStart(
+                                                                e,
+                                                                op.id,
+                                                            )
+                                                        }
+                                                        className="group cursor-grab rounded-3xl border border-muted bg-background p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-xl active:cursor-grabbing"
+                                                    >
+                                                        <div className="mb-3 flex items-start justify-between">
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="truncate text-sm font-bold tracking-tight transition-colors group-hover:text-primary">
+                                                                    {op.nombre}
+                                                                </div>
+                                                                <div className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+                                                                    <Building2 className="h-2.5 w-2.5" />
+                                                                    <span className="truncate">
                                                                         {op
                                                                             .cliente
                                                                             ?.nombre ||
                                                                             'General'}
-                                                                    </div>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-4 text-right">
-                                                                <div className="text-sm font-black text-primary">
-                                                                    {formatCurrency(
-                                                                        op.valor,
-                                                                    )}
-                                                                </div>
-                                                                <div className="text-[10px] text-muted-foreground">
-                                                                    Ponderado:{' '}
-                                                                    {formatCurrency(
-                                                                        op.valor *
-                                                                            (op.probabilidad /
-                                                                                100),
-                                                                    )}
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-4 text-center">
-                                                                <div className="flex flex-col items-center gap-1">
-                                                                    <Badge
-                                                                        variant="outline"
-                                                                        className={`${getEtapaConfig(op.etapa).color} rounded-full border px-2 py-0.5 text-[8px] font-black uppercase`}
-                                                                    >
-                                                                        {
-                                                                            getEtapaConfig(
-                                                                                op.etapa,
-                                                                            )
-                                                                                .label
-                                                                        }
-                                                                    </Badge>
-                                                                    <div className="text-[10px] font-black text-primary">
-                                                                        {
-                                                                            op.probabilidad
-                                                                        }
-                                                                        %
-                                                                        Confianza
-                                                                    </div>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-4 text-center">
-                                                                {op.fecha_cierre_estimada ? (
-                                                                    <div className="flex flex-col items-center">
-                                                                        <span className="text-xs font-bold text-foreground">
-                                                                            {formatDateCLP(
-                                                                                op.fecha_cierre_estimada,
-                                                                            )}
-                                                                        </span>
-                                                                        <span className="text-[9px] font-bold text-muted-foreground uppercase">
-                                                                            Proyectado
-                                                                        </span>
-                                                                    </div>
-                                                                ) : (
-                                                                    <span className="text-xs text-muted-foreground italic">
-                                                                        No
-                                                                        definida
                                                                     </span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-muted bg-muted/50 text-[10px] font-black text-primary">
+                                                                {
+                                                                    op.probabilidad
+                                                                }
+                                                                %
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="mt-4 flex items-center justify-between">
+                                                            <div className="flex items-center gap-1 text-[10px] font-black text-primary">
+                                                                <DollarSign className="h-3 w-3" />
+                                                                {formatCurrency(
+                                                                    op.valor,
                                                                 )}
-                                                            </td>
-                                                            <td className="px-6 py-4 text-right">
-                                                                <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                                                                    {canEdit && (
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-8 w-8 rounded-xl text-primary hover:bg-primary/10"
-                                                                            onClick={() =>
-                                                                                handleEdit(
-                                                                                    op,
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            <Pencil className="h-4 w-4" />
-                                                                        </Button>
-                                                                    )}
-                                                                    {canDelete && (
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-8 w-8 rounded-xl text-destructive hover:bg-destructive/10"
-                                                                            onClick={() =>
-                                                                                handleDelete(
-                                                                                    op.id,
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            <Trash2 className="h-4 w-4" />
-                                                                        </Button>
+                                                            </div>
+                                                            {op.fecha_cierre_estimada && (
+                                                                <div className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground">
+                                                                    <Clock className="h-2.5 w-2.5" />
+                                                                    {formatDateCLP(
+                                                                        op.fecha_cierre_estimada,
                                                                     )}
                                                                 </div>
-                                                            </td>
-                                                        </tr>
-                                                    ),
+                                                            )}
+                                                        </div>
+
+                                                        <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-muted/30">
+                                                            <div
+                                                                className="h-full bg-primary transition-all duration-500"
+                                                                style={{
+                                                                    width: `${op.probabilidad}%`,
+                                                                }}
+                                                            />
+                                                        </div>
+
+                                                        <div className="mt-4 flex justify-end gap-1 border-t border-muted/50 pt-4 opacity-0 transition-opacity group-hover:opacity-100">
+                                                            {canEdit && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 rounded-xl text-primary hover:bg-primary/10"
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            op,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {canDelete && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 rounded-xl text-destructive hover:bg-destructive/10"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            op.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {opsEnEtapa.length === 0 && (
+                                                    <div className="rounded-3xl border-2 border-dashed border-muted p-10 text-center">
+                                                        <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                                                            Sin Oportunidades
+                                                        </p>
+                                                    </div>
                                                 )}
-                                            </tbody>
-                                        </table>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <Card className="overflow-hidden border-none shadow-xl shadow-foreground/5">
+                                <CardHeader className="flex flex-row items-center justify-between px-6 py-4">
+                                    <CardTitle>Oportunidades</CardTitle>
+                                    <div className="flex items-center gap-1 rounded-lg bg-muted/30 p-1">
+                                        <Button
+                                            variant={
+                                                viewMode === 'table'
+                                                    ? 'default'
+                                                    : 'ghost'
+                                            }
+                                            size="sm"
+                                            onClick={() => setViewMode('table')}
+                                            className="h-8 w-8 p-0"
+                                        >
+                                            <List className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            variant={
+                                                viewMode === 'cards'
+                                                    ? 'default'
+                                                    : 'ghost'
+                                            }
+                                            size="sm"
+                                            onClick={() => setViewMode('cards')}
+                                            className="h-8 w-8 p-0"
+                                        >
+                                            <LayoutGrid className="h-4 w-4" />
+                                        </Button>
                                     </div>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    {gruposOportunidades.length === 0 ? (
+                                        <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
+                                            <LayoutGrid className="mb-2 h-8 w-8" />
+                                            <p className="text-sm">
+                                                No se encontraron oportunidades
+                                                con los filtros aplicados
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col gap-3 p-3 sm:p-4">
+                                            {gruposOportunidades.map(
+                                                (grupo) => (
+                                                    <SectionPanel
+                                                        key={grupo.value}
+                                                        title={grupo.label}
+                                                        description={`Panel de oportunidades en etapa ${grupo.label.toLowerCase()}.`}
+                                                        icon={grupo.icon}
+                                                        tone={grupo.tone}
+                                                        count={
+                                                            grupo.data.length
+                                                        }
+                                                        badges={
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="bg-white/70 text-[10px]"
+                                                            >
+                                                                {formatCurrency(
+                                                                    grupo.data.reduce(
+                                                                        (
+                                                                            sum,
+                                                                            op,
+                                                                        ) =>
+                                                                            sum +
+                                                                            Number(
+                                                                                op.valor,
+                                                                            ),
+                                                                        0,
+                                                                    ),
+                                                                )}
+                                                            </Badge>
+                                                        }
+                                                    >
+                                                        {viewMode ===
+                                                        'table' ? (
+                                                            <>
+                                                                <div className="hidden overflow-x-auto md:block">
+                                                                    <table className="w-full">
+                                                                        <thead>
+                                                                            <tr className="border-b bg-muted/5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                                                                                <th className="px-6 py-4 text-left">
+                                                                                    Oportunidad
+                                                                                    /
+                                                                                    Cliente
+                                                                                </th>
+                                                                                <th className="px-6 py-4 text-left">
+                                                                                    Descripción
+                                                                                </th>
+                                                                                <th className="px-6 py-4 text-right">
+                                                                                    Valor
+                                                                                    Estimado
+                                                                                </th>
+                                                                                <th className="px-6 py-4 text-center">
+                                                                                    Etapa
+                                                                                    /
+                                                                                    Prob.
+                                                                                </th>
+                                                                                <th className="px-6 py-4 text-center">
+                                                                                    Cierre
+                                                                                    Estimado
+                                                                                </th>
+                                                                                <th className="px-6 py-4 text-right">
+                                                                                    Acciones
+                                                                                </th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody className="divide-y divide-muted/50">
+                                                                            {grupo.data.map(
+                                                                                (
+                                                                                    op,
+                                                                                ) => (
+                                                                                    <tr
+                                                                                        key={
+                                                                                            op.id
+                                                                                        }
+                                                                                        className="group transition-colors hover:bg-muted/30"
+                                                                                    >
+                                                                                        <td className="px-6 py-4">
+                                                                                            <div>
+                                                                                                <div className="text-sm font-bold tracking-tight text-foreground">
+                                                                                                    {
+                                                                                                        op.nombre
+                                                                                                    }
+                                                                                                </div>
+                                                                                                <div className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+                                                                                                    <Building2 className="h-2.5 w-2.5" />
+                                                                                                    {op
+                                                                                                        .cliente
+                                                                                                        ?.nombre ||
+                                                                                                        'General'}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </td>
+                                                                                        <td className="max-w-[260px] px-6 py-4">
+                                                                                            <TruncatedText
+                                                                                                text={
+                                                                                                    op.descripcion
+                                                                                                }
+                                                                                                emptyLabel="Sin descripción"
+                                                                                                onExpand={() =>
+                                                                                                    handleEdit(
+                                                                                                        op,
+                                                                                                    )
+                                                                                                }
+                                                                                            />
+                                                                                        </td>
+                                                                                        <td className="px-6 py-4 text-right">
+                                                                                            <div className="text-sm font-black text-primary">
+                                                                                                {formatCurrency(
+                                                                                                    op.valor,
+                                                                                                )}
+                                                                                            </div>
+                                                                                            <div className="text-[10px] text-muted-foreground">
+                                                                                                Ponderado:{' '}
+                                                                                                {formatCurrency(
+                                                                                                    op.valor *
+                                                                                                        (op.probabilidad /
+                                                                                                            100),
+                                                                                                )}
+                                                                                            </div>
+                                                                                        </td>
+                                                                                        <td className="px-6 py-4 text-center">
+                                                                                            <div className="flex flex-col items-center gap-1">
+                                                                                                <Badge
+                                                                                                    variant="outline"
+                                                                                                    className={`${getEtapaConfig(op.etapa).color} rounded-full border px-2 py-0.5 text-[8px] font-black uppercase`}
+                                                                                                >
+                                                                                                    {
+                                                                                                        getEtapaConfig(
+                                                                                                            op.etapa,
+                                                                                                        )
+                                                                                                            .label
+                                                                                                    }
+                                                                                                </Badge>
+                                                                                                <div className="text-[10px] font-black text-primary">
+                                                                                                    {
+                                                                                                        op.probabilidad
+                                                                                                    }
+
+                                                                                                    %
+                                                                                                    Confianza
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </td>
+                                                                                        <td className="px-6 py-4 text-center">
+                                                                                            {op.fecha_cierre_estimada ? (
+                                                                                                <div className="flex flex-col items-center">
+                                                                                                    <span className="text-xs font-bold text-foreground">
+                                                                                                        {formatDateCLP(
+                                                                                                            op.fecha_cierre_estimada,
+                                                                                                        )}
+                                                                                                    </span>
+                                                                                                    <span className="text-[9px] font-bold text-muted-foreground uppercase">
+                                                                                                        Proyectado
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            ) : (
+                                                                                                <span className="text-xs text-muted-foreground italic">
+                                                                                                    No
+                                                                                                    definida
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </td>
+                                                                                        <td className="px-6 py-4 text-right">
+                                                                                            <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                                                                                {canEdit && (
+                                                                                                    <Button
+                                                                                                        variant="ghost"
+                                                                                                        size="icon"
+                                                                                                        className="h-8 w-8 rounded-xl text-primary hover:bg-primary/10"
+                                                                                                        onClick={() =>
+                                                                                                            handleEdit(
+                                                                                                                op,
+                                                                                                            )
+                                                                                                        }
+                                                                                                    >
+                                                                                                        <Pencil className="h-4 w-4" />
+                                                                                                    </Button>
+                                                                                                )}
+                                                                                                {canDelete && (
+                                                                                                    <Button
+                                                                                                        variant="ghost"
+                                                                                                        size="icon"
+                                                                                                        className="h-8 w-8 rounded-xl text-destructive hover:bg-destructive/10"
+                                                                                                        onClick={() =>
+                                                                                                            handleDelete(
+                                                                                                                op.id,
+                                                                                                            )
+                                                                                                        }
+                                                                                                    >
+                                                                                                        <Trash2 className="h-4 w-4" />
+                                                                                                    </Button>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                ),
+                                                                            )}
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                                <div className="grid gap-2 p-2 sm:p-3 md:hidden">
+                                                                    {grupo.data.map(
+                                                                        (
+                                                                            op,
+                                                                        ) => (
+                                                                            <div
+                                                                                key={
+                                                                                    op.id
+                                                                                }
+                                                                                className="rounded-xl border bg-card p-3 shadow-sm"
+                                                                            >
+                                                                                <div className="flex items-start justify-between gap-2">
+                                                                                    <div className="min-w-0">
+                                                                                        <p className="truncate text-sm font-bold">
+                                                                                            {
+                                                                                                op.nombre
+                                                                                            }
+                                                                                        </p>
+                                                                                        <p className="truncate text-[10px] text-muted-foreground">
+                                                                                            {op
+                                                                                                .cliente
+                                                                                                ?.nombre ||
+                                                                                                'General'}
+                                                                                        </p>
+                                                                                    </div>
+                                                                                    <Badge
+                                                                                        variant="outline"
+                                                                                        className={`${getEtapaConfig(op.etapa).color} rounded-full border px-2 py-0.5 text-[8px] font-black uppercase`}
+                                                                                    >
+                                                                                        {
+                                                                                            getEtapaConfig(
+                                                                                                op.etapa,
+                                                                                            )
+                                                                                                .label
+                                                                                        }
+                                                                                    </Badge>
+                                                                                </div>
+                                                                                <div className="mt-1">
+                                                                                    <TruncatedText
+                                                                                        text={
+                                                                                            op.descripcion
+                                                                                        }
+                                                                                        emptyLabel="Sin descripción"
+                                                                                        lines={
+                                                                                            2
+                                                                                        }
+                                                                                        onExpand={() =>
+                                                                                            handleEdit(
+                                                                                                op,
+                                                                                            )
+                                                                                        }
+                                                                                    />
+                                                                                </div>
+                                                                                <div className="mt-2 flex items-center justify-between border-t pt-2">
+                                                                                    <span className="text-xs font-black text-primary">
+                                                                                        {formatCurrency(
+                                                                                            op.valor,
+                                                                                        )}
+                                                                                    </span>
+                                                                                    <div className="flex items-center gap-1">
+                                                                                        <Badge
+                                                                                            variant="outline"
+                                                                                            className={`${getEtapaConfig(op.etapa).color} border text-[8px]`}
+                                                                                        >
+                                                                                            {
+                                                                                                getEtapaConfig(
+                                                                                                    op.etapa,
+                                                                                                )
+                                                                                                    .label
+                                                                                            }
+                                                                                        </Badge>
+                                                                                        <div className="text-[10px] font-black text-primary">
+                                                                                            {
+                                                                                                op.probabilidad
+                                                                                            }
+
+                                                                                            %
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="mt-2 flex justify-end gap-1">
+                                                                                    {canEdit && (
+                                                                                        <Button
+                                                                                            variant="ghost"
+                                                                                            size="icon"
+                                                                                            className="h-8 w-8 text-primary hover:bg-primary/10"
+                                                                                            onClick={() =>
+                                                                                                handleEdit(
+                                                                                                    op,
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            <Pencil className="h-4 w-4" />
+                                                                                        </Button>
+                                                                                    )}
+                                                                                    {canDelete && (
+                                                                                        <Button
+                                                                                            variant="ghost"
+                                                                                            size="icon"
+                                                                                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                                                                            onClick={() =>
+                                                                                                handleDelete(
+                                                                                                    op.id,
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            <Trash2 className="h-4 w-4" />
+                                                                                        </Button>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        ),
+                                                                    )}
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <div className="grid gap-2 p-2 sm:p-3 lg:grid-cols-3">
+                                                                {grupo.data.map(
+                                                                    (op) => (
+                                                                        <Card
+                                                                            key={
+                                                                                op.id
+                                                                            }
+                                                                        >
+                                                                            <CardHeader className="pb-2">
+                                                                                <div className="flex items-start justify-between">
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <div
+                                                                                            className={`rounded-lg p-2 ${getEtapaConfig(op.etapa).color}`}
+                                                                                        >
+                                                                                            {(() => {
+                                                                                                const Icon =
+                                                                                                    getEtapaConfig(
+                                                                                                        op.etapa,
+                                                                                                    ).icon;
+                                                                                                return (
+                                                                                                    <Icon className="h-4 w-4" />
+                                                                                                );
+                                                                                            })()}
+                                                                                        </div>
+                                                                                        <div>
+                                                                                            <CardTitle className="text-sm">
+                                                                                                {
+                                                                                                    op.nombre
+                                                                                                }
+                                                                                            </CardTitle>
+                                                                                            <CardDescription className="flex items-center gap-1 text-xs">
+                                                                                                <Building2 className="h-3 w-3" />
+                                                                                                {op
+                                                                                                    .cliente
+                                                                                                    ?.nombre ||
+                                                                                                    'General'}
+                                                                                            </CardDescription>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </CardHeader>
+                                                                            <CardContent>
+                                                                                <div className="space-y-2 text-sm">
+                                                                                    <div className="flex items-center justify-between">
+                                                                                        <span className="text-muted-foreground">
+                                                                                            Valor
+                                                                                        </span>
+                                                                                        <span className="font-black text-primary">
+                                                                                            {formatCurrency(
+                                                                                                op.valor,
+                                                                                            )}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <div className="flex items-center justify-between">
+                                                                                        <span className="text-muted-foreground">
+                                                                                            Confianza
+                                                                                        </span>
+                                                                                        <span className="font-bold">
+                                                                                            {
+                                                                                                op.probabilidad
+                                                                                            }
+
+                                                                                            %
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <div className="flex items-center justify-between">
+                                                                                        <span className="text-muted-foreground">
+                                                                                            Etapa
+                                                                                        </span>
+                                                                                        <Badge
+                                                                                            variant="outline"
+                                                                                            className={`${getEtapaConfig(op.etapa).color} border text-[10px]`}
+                                                                                        >
+                                                                                            {
+                                                                                                getEtapaConfig(
+                                                                                                    op.etapa,
+                                                                                                )
+                                                                                                    .label
+                                                                                            }
+                                                                                        </Badge>
+                                                                                    </div>
+                                                                                    {op.fecha_cierre_estimada && (
+                                                                                        <div className="flex items-center justify-between">
+                                                                                            <span className="text-muted-foreground">
+                                                                                                Cierre
+                                                                                            </span>
+                                                                                            <span className="font-medium">
+                                                                                                {formatDateCLP(
+                                                                                                    op.fecha_cierre_estimada,
+                                                                                                )}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="mt-3 flex justify-end gap-1 border-t pt-2">
+                                                                                    {canEdit && (
+                                                                                        <Button
+                                                                                            variant="ghost"
+                                                                                            size="sm"
+                                                                                            className="h-8 w-8 p-0 text-primary"
+                                                                                            onClick={() =>
+                                                                                                handleEdit(
+                                                                                                    op,
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            <Pencil className="h-4 w-4" />
+                                                                                        </Button>
+                                                                                    )}
+                                                                                    {canDelete && (
+                                                                                        <Button
+                                                                                            variant="ghost"
+                                                                                            size="sm"
+                                                                                            className="h-8 w-8 p-0 text-destructive"
+                                                                                            onClick={() =>
+                                                                                                handleDelete(
+                                                                                                    op.id,
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            <Trash2 className="h-4 w-4" />
+                                                                                        </Button>
+                                                                                    )}
+                                                                                </div>
+                                                                            </CardContent>
+                                                                        </Card>
+                                                                    ),
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </SectionPanel>
+                                                ),
+                                            )}
+                                        </div>
+                                    )}
                                     <div className="border-t border-muted/50 p-4">
                                         <Pagination
                                             links={oportunidades.links}
@@ -745,148 +1101,11 @@ export default function Index({
                                         />
                                     </div>
                                 </CardContent>
-                            ) : (
-                                <CardContent className="p-4">
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                        {oportunidades.data.map((op) => (
-                                            <Card key={op.id}>
-                                                <CardHeader className="pb-2">
-                                                    <div className="flex items-start justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                            <div
-                                                                className={`rounded-lg p-2 ${getEtapaConfig(op.etapa).color}`}
-                                                            >
-                                                                {(() => {
-                                                                    const Icon =
-                                                                        getEtapaConfig(
-                                                                            op.etapa,
-                                                                        ).icon;
-                                                                    return (
-                                                                        <Icon className="h-4 w-4" />
-                                                                    );
-                                                                })()}
-                                                            </div>
-                                                            <div>
-                                                                <CardTitle className="text-sm">
-                                                                    {op.nombre}
-                                                                </CardTitle>
-                                                                <CardDescription className="flex items-center gap-1 text-xs">
-                                                                    <Building2 className="h-3 w-3" />
-                                                                    {op.cliente
-                                                                        ?.nombre ||
-                                                                        'General'}
-                                                                </CardDescription>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    <div className="space-y-2 text-sm">
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-muted-foreground">
-                                                                Valor
-                                                            </span>
-                                                            <span className="font-black text-primary">
-                                                                {formatCurrency(
-                                                                    op.valor,
-                                                                )}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-muted-foreground">
-                                                                Confianza
-                                                            </span>
-                                                            <span className="font-bold">
-                                                                {
-                                                                    op.probabilidad
-                                                                }
-                                                                %
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-muted-foreground">
-                                                                Etapa
-                                                            </span>
-                                                            <Badge
-                                                                variant="outline"
-                                                                className={`${getEtapaConfig(op.etapa).color} border text-[10px]`}
-                                                            >
-                                                                {
-                                                                    getEtapaConfig(
-                                                                        op.etapa,
-                                                                    ).label
-                                                                }
-                                                            </Badge>
-                                                        </div>
-                                                        {op.fecha_cierre_estimada && (
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="text-muted-foreground">
-                                                                    Cierre
-                                                                </span>
-                                                                <span className="font-medium">
-                                                                    {formatDateCLP(
-                                                                        op.fecha_cierre_estimada,
-                                                                    )}
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="mt-3 flex justify-end gap-1 border-t pt-2">
-                                                        {canEdit && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-8 w-8 p-0 text-primary"
-                                                                onClick={() =>
-                                                                    handleEdit(
-                                                                        op,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                        {canDelete && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-8 w-8 p-0 text-destructive"
-                                                                onClick={() =>
-                                                                    handleDelete(
-                                                                        op.id,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        ))}
-                                    </div>
-                                    {oportunidades.data.length === 0 && (
-                                        <div className="flex flex-col items-center justify-center py-12 text-center">
-                                            <div className="mb-4 rounded-full bg-muted/30 p-4">
-                                                <LayoutGrid className="h-8 w-8 text-muted-foreground" />
-                                            </div>
-                                            <p className="text-muted-foreground">
-                                                No se encontraron oportunidades
-                                            </p>
-                                        </div>
-                                    )}
-                                    <div className="mt-4 border-t border-muted/50 pt-4">
-                                        <Pagination
-                                            links={oportunidades.links}
-                                            meta={oportunidades.meta}
-                                        />
-                                    </div>
-                                </CardContent>
-                            )}
-                        </Card>
-                    )}
+                            </Card>
+                        )}
+                    </div>
                 </div>
-            </div>
+            </TooltipProvider>
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent className="max-h-[95vh] max-w-[95vw] overflow-y-auto border-none p-0 shadow-2xl md:max-w-3xl">
