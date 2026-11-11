@@ -90,13 +90,16 @@ interface VarianteTipo {
     valores: VarianteValor[];
 }
 interface SkuRow {
+    id?: number;
     sku: string;
+    imagen: File | null;
+    imagen_preview: string | null;
     precio_venta: number;
     precio_compra: number;
     stock: number;
     stock_minimo: number;
     almacen_id: string;
-    variante_valores: number[];
+    variante_valores: (number | string)[];
     labels: string[];
 }
 interface Producto {
@@ -131,6 +134,7 @@ interface Producto {
     skus?: {
         id: number;
         sku: string;
+        imagen: string | null;
         precio_venta: number;
         precio_compra: number;
         stock: number;
@@ -210,7 +214,10 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 function buildSkuRows(
-    selectedVariants: VarianteTipo[],
+    selectedVariants: {
+        nombre: string;
+        valores: { id: number | string; valor: string }[];
+    }[],
     baseSku: string,
     precioVenta: number,
     precioCompra: number,
@@ -245,6 +252,8 @@ function buildSkuRows(
 
         return {
             sku: i === 0 ? skuBase : `${skuBase}-${suffix}`,
+            imagen: null,
+            imagen_preview: null,
             precio_venta: precioVenta,
             precio_compra: precioCompra,
             stock: 0,
@@ -458,6 +467,23 @@ export default function Index({
             selectedVariantIds.includes(v.id),
         );
     }, [selectedVariantIds, variantesDisponibles]);
+    const skuVariantDefinitions = useMemo(
+        () => [
+            ...getSelectedVariants,
+            ...(newVariantName.trim() && newVariantValues.length > 0
+                ? [
+                      {
+                          nombre: newVariantName.trim(),
+                          valores: newVariantValues.map((valor, index) => ({
+                              id: `inline:0:${index}`,
+                              valor,
+                          })),
+                      },
+                  ]
+                : []),
+        ],
+        [getSelectedVariants, newVariantName, newVariantValues],
+    );
 
     const margenAbsoluto =
         Number(data.precio_venta) - Number(data.precio_compra);
@@ -468,9 +494,13 @@ export default function Index({
     const productoSeVendePorMedida =
         data.medida_pesable || data.unidad_medida !== 'unidad';
 
+    const inlineVariantSignature =
+        newVariantName.trim() && newVariantValues.length > 0
+            ? `|${newVariantName.trim()}:${newVariantType}:${newVariantValues.join('|')}`
+            : '';
     const currentSkuSignature =
-        data.tiene_variantes && selectedVariantIds.length > 0
-            ? `${selectedVariantIds.join(',')}|${data.codigo || data.nombre}`
+        data.tiene_variantes && skuVariantDefinitions.length > 0
+            ? `${selectedVariantIds.join(',')}|${data.codigo || data.nombre}${inlineVariantSignature}`
             : null;
 
     if (currentSkuSignature !== skuSignature) {
@@ -478,7 +508,7 @@ export default function Index({
         setSkuRows(
             currentSkuSignature
                 ? buildSkuRows(
-                      getSelectedVariants,
+                      skuVariantDefinitions,
                       data.codigo || data.nombre,
                       data.precio_venta,
                       data.precio_compra,
@@ -494,7 +524,7 @@ export default function Index({
         setSkuRows(
             currentSkuSignature
                 ? buildSkuRows(
-                      getSelectedVariants,
+                      skuVariantDefinitions,
                       data.codigo || data.nombre,
                       data.precio_venta,
                       data.precio_compra,
@@ -601,8 +631,10 @@ export default function Index({
     };
 
     const handleImageSubmitError = (submitErrors: Record<string, string>) => {
-        const imageErrorKey = Object.keys(submitErrors).find((key) =>
-            key.startsWith('imagen'),
+        const imageErrorKey = Object.keys(submitErrors).find(
+            (key) =>
+                key.startsWith('imagen') ||
+                (key.startsWith('skus.') && key.endsWith('.imagen')),
         );
 
         if (imageErrorKey) {
@@ -614,6 +646,15 @@ export default function Index({
         e.preventDefault();
 
         if (isSubmitting) {
+            return;
+        }
+
+        if (
+            data.tiene_variantes &&
+            (selectedVariantIds.length > 0 || newVariantName.trim()) &&
+            skuRows.length === 0
+        ) {
+            toast.error('Agrega valores a las variantes antes de guardar.');
             return;
         }
 
@@ -655,14 +696,8 @@ export default function Index({
                     formData.append(key, '');
                     return;
                 }
-                if (
-                    key === 'variantes' &&
-                    Array.isArray(value) &&
-                    value.length > 0
-                ) {
-                    // Check if these are System A (talla-based) or System B variants
-                    const isLegacy = 'talla' in value[0];
-                    if (isLegacy) {
+                if (key === 'variantes' && Array.isArray(value)) {
+                    if (value.length > 0 && 'talla' in value[0]) {
                         value.forEach((v, index) => {
                             formData.append(
                                 `variantes_legacy[${index}][talla]`,
@@ -682,6 +717,7 @@ export default function Index({
                             );
                         });
                     }
+
                     return;
                 }
                 if (key === 'warehouse_ids' && Array.isArray(value)) {
@@ -715,7 +751,7 @@ export default function Index({
 
             // Append variant data
             if (data.tiene_variantes) {
-                if (newVariantName.trim()) {
+                if (newVariantName.trim() && newVariantValues.length > 0) {
                     formData.append(
                         `variantes[0][nombre]`,
                         newVariantName.trim(),
@@ -729,7 +765,13 @@ export default function Index({
                     formData.append(`variante_ids[${vi}]`, String(vid));
                 });
                 skuRows.forEach((sku, si) => {
+                    if (editando && sku.id !== undefined) {
+                        formData.append(`skus[${si}][id]`, String(sku.id));
+                    }
                     formData.append(`skus[${si}][sku]`, sku.sku);
+                    if (sku.imagen) {
+                        formData.append(`skus[${si}][imagen]`, sku.imagen);
+                    }
                     formData.append(
                         `skus[${si}][precio_venta]`,
                         String(sku.precio_venta),
@@ -830,7 +872,7 @@ export default function Index({
             });
 
             if (data.tiene_variantes) {
-                if (newVariantName.trim()) {
+                if (newVariantName.trim() && newVariantValues.length > 0) {
                     formData.append(
                         `variantes[0][nombre]`,
                         newVariantName.trim(),
@@ -845,6 +887,9 @@ export default function Index({
                 });
                 skuRows.forEach((sku, si) => {
                     formData.append(`skus[${si}][sku]`, sku.sku);
+                    if (sku.imagen) {
+                        formData.append(`skus[${si}][imagen]`, sku.imagen);
+                    }
                     formData.append(
                         `skus[${si}][precio_venta]`,
                         String(sku.precio_venta),
@@ -959,7 +1004,12 @@ export default function Index({
             const rows: SkuRow[] = producto.skus.map((sku) => {
                 const vvIds = sku.valores.map((v) => v.variante_valor_id);
                 return {
+                    id: sku.id,
                     sku: sku.sku,
+                    imagen: null,
+                    imagen_preview: sku.imagen
+                        ? getProductImageUrl(sku.imagen)
+                        : null,
                     precio_venta: sku.precio_venta || producto.precio_venta,
                     precio_compra: sku.precio_compra || producto.precio_compra,
                     stock: sku.stock,
@@ -1031,20 +1081,55 @@ export default function Index({
 
     const addNewVariantValue = () => {
         const val = newVariantValueInput.trim();
-        if (val && !newVariantValues.includes(val)) {
-            setNewVariantValues([...newVariantValues, val]);
-            setNewVariantValueInput('');
+        if (!val) {
+            return;
         }
+
+        setNewVariantValues((values) =>
+            values.some(
+                (existingValue) =>
+                    existingValue.toLocaleLowerCase() ===
+                    val.toLocaleLowerCase(),
+            )
+                ? values
+                : [...values, val],
+        );
+        setNewVariantValueInput('');
     };
 
     const removeNewVariantValue = (val: string) => {
-        setNewVariantValues(newVariantValues.filter((v) => v !== val));
+        setNewVariantValues((values) =>
+            values.filter((value) => value !== val),
+        );
     };
 
     const updateSkuRow = (index: number, field: keyof SkuRow, value: any) => {
         setSkuRows((prev) =>
             prev.map((row, i) =>
                 i === index ? { ...row, [field]: value } : row,
+            ),
+        );
+    };
+
+    const updateSkuImage = (index: number, image: File | null) => {
+        if (!image) {
+            return;
+        }
+
+        const previousPreview = skuRows[index]?.imagen_preview;
+        if (previousPreview?.startsWith('blob:')) {
+            URL.revokeObjectURL(previousPreview);
+        }
+
+        setSkuRows((rows) =>
+            rows.map((row, rowIndex) =>
+                rowIndex === index
+                    ? {
+                          ...row,
+                          imagen: image,
+                          imagen_preview: URL.createObjectURL(image),
+                      }
+                    : row,
             ),
         );
     };
@@ -2856,13 +2941,17 @@ export default function Index({
                                                                 <table className="w-full text-left text-xs">
                                                                     <thead className="bg-emerald-100 text-[9px] font-bold text-emerald-700 uppercase">
                                                                         <tr>
-                                                                            {getSelectedVariants.map(
+                                                                            {skuVariantDefinitions.map(
                                                                                 (
                                                                                     vt,
+                                                                                    variantIndex,
                                                                                 ) => (
                                                                                     <th
                                                                                         key={
-                                                                                            vt.id
+                                                                                            'id' in
+                                                                                            vt
+                                                                                                ? vt.id
+                                                                                                : `${vt.nombre}-${variantIndex}`
                                                                                         }
                                                                                         className="px-3 py-2"
                                                                                     >
@@ -2872,6 +2961,9 @@ export default function Index({
                                                                                     </th>
                                                                                 ),
                                                                             )}
+                                                                            <th className="px-3 py-2">
+                                                                                Imagen
+                                                                            </th>
                                                                             <th className="px-3 py-2">
                                                                                 SKU
                                                                             </th>
@@ -2925,6 +3017,36 @@ export default function Index({
                                                                                             </td>
                                                                                         ),
                                                                                     )}
+                                                                                    <td className="px-3 py-2">
+                                                                                        <div className="flex min-w-36 items-center gap-2">
+                                                                                            {row.imagen_preview && (
+                                                                                                <img
+                                                                                                    src={
+                                                                                                        row.imagen_preview
+                                                                                                    }
+                                                                                                    alt={`Imagen de ${row.labels.join(', ')}`}
+                                                                                                    className="h-10 w-10 shrink-0 rounded border object-contain"
+                                                                                                />
+                                                                                            )}
+                                                                                            <Input
+                                                                                                type="file"
+                                                                                                accept="image/jpeg,image/png,image/webp"
+                                                                                                aria-label={`Imagen para ${row.labels.join(', ')}`}
+                                                                                                className="h-8 min-w-28 text-[10px]"
+                                                                                                onChange={(
+                                                                                                    event,
+                                                                                                ) =>
+                                                                                                    updateSkuImage(
+                                                                                                        i,
+                                                                                                        event
+                                                                                                            .target
+                                                                                                            .files?.[0] ??
+                                                                                                            null,
+                                                                                                    )
+                                                                                                }
+                                                                                            />
+                                                                                        </div>
+                                                                                    </td>
                                                                                     <td className="px-3 py-2">
                                                                                         <div className="flex items-center gap-1">
                                                                                             <Input

@@ -17,6 +17,7 @@ class SkuVariante extends Model
     protected $fillable = [
         'producto_id',
         'sku',
+        'imagen',
         'precio_venta',
         'precio_compra',
         'stock',

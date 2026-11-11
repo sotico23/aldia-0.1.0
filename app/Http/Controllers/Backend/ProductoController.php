@@ -16,10 +16,12 @@ use App\Models\SkuVariante;
 use App\Models\SkuVarianteValor;
 use App\Models\Variante;
 use App\Models\VarianteValor;
+use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -82,6 +84,31 @@ class ProductoController extends Controller implements HasMiddleware
         }
 
         return $messages;
+    }
+
+    private function skuVariantValueValidationRule(Request $request): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail) use ($request): void {
+            if (is_numeric($value) && (int) $value > 0) {
+                if (VarianteValor::query()->whereKey((int) $value)->exists()) {
+                    return;
+                }
+
+                $fail('El valor de variante seleccionado no existe.');
+
+                return;
+            }
+
+            if (is_string($value) && preg_match('/^inline:(\d+):(\d+)$/', $value, $matches) === 1) {
+                $inlineValue = $request->input("variantes.{$matches[1]}.valores.{$matches[2]}");
+
+                if (is_string($inlineValue) && trim($inlineValue) !== '') {
+                    return;
+                }
+            }
+
+            $fail('El valor de variante seleccionado no es válido.');
+        };
     }
 
     /**
@@ -279,7 +306,11 @@ class ProductoController extends Controller implements HasMiddleware
             'variantes.*.tipo' => 'required|in:texto,color,numero',
             'variantes.*.valores' => 'required|array|min:1',
             'variantes.*.valores.*' => 'required|string|max:255',
-            'skus' => 'nullable|array',
+            'skus' => [
+                'nullable',
+                'array',
+                Rule::requiredIf(fn () => $request->boolean('tiene_variantes') && ($request->filled('variante_ids') || $request->filled('variantes'))),
+            ],
             'skus.*.sku' => 'required|string|unique:sku_variantes,sku',
             'skus.*.precio_venta' => 'nullable|numeric|min:0',
             'skus.*.precio_compra' => 'nullable|numeric|min:0',
@@ -287,7 +318,8 @@ class ProductoController extends Controller implements HasMiddleware
             'skus.*.stock_minimo' => 'nullable|numeric|min:0',
             'skus.*.almacen_id' => 'nullable|exists:almacenes,id',
             'skus.*.variante_valores' => 'required|array',
-            'skus.*.variante_valores.*' => 'required|exists:variante_valores,id',
+            'skus.*.variante_valores.*' => ['required', $this->skuVariantValueValidationRule($request)],
+            'skus.*.imagen' => ['nullable', 'image', 'mimetypes:image/jpeg,image/png,image/webp', 'max:'.self::MAX_IMAGE_KB],
             // Legacy System A (deprecated - kept for existing products)
             'variantes_legacy' => 'nullable|array',
             'variantes_legacy.*.talla' => 'required|string',
@@ -359,22 +391,24 @@ class ProductoController extends Controller implements HasMiddleware
         $producto = Producto::create(array_merge($data, $imagenes));
 
         // New variant system (System B)
-        if ($request->boolean('tiene_variantes') && ($request->filled('skus') || $request->filled('variante_ids') || $request->filled('variantes'))) {
+        if ($request->boolean('tiene_variantes') && (! empty($validated['skus']) || ! empty($validated['variante_ids']) || ! empty($validated['variantes']))) {
             $ownerId = Auth::user()->getOwnerId();
-            $varianteIds = $request->variante_ids ?? [];
+            $varianteIds = $validated['variante_ids'] ?? [];
+            $inlineValueIds = [];
 
             // Create inline variant types
-            foreach ($request->variantes ?? [] as $vData) {
+            foreach ($validated['variantes'] ?? [] as $variantIndex => $vData) {
                 $variante = Variante::create([
                     'owner_id' => $ownerId,
                     'nombre' => $vData['nombre'],
                     'tipo' => $vData['tipo'],
                 ]);
-                foreach ($vData['valores'] as $valor) {
-                    VarianteValor::create([
+                foreach ($vData['valores'] as $valueIndex => $valor) {
+                    $varianteValor = VarianteValor::create([
                         'variante_id' => $variante->id,
                         'valor' => $valor,
                     ]);
+                    $inlineValueIds["inline:{$variantIndex}:{$valueIndex}"] = $varianteValor->id;
                 }
                 $varianteIds[] = $variante->id;
             }
@@ -389,10 +423,12 @@ class ProductoController extends Controller implements HasMiddleware
             }
 
             // Create SKUs
-            foreach ($request->skus ?? [] as $skuData) {
+            foreach ($validated['skus'] ?? [] as $skuIndex => $skuData) {
+                $skuImage = $request->file("skus.{$skuIndex}.imagen");
                 $sku = SkuVariante::create([
                     'producto_id' => $producto->id,
                     'sku' => $skuData['sku'],
+                    'imagen' => $skuImage?->store('productos/variantes', 'public'),
                     'precio_venta' => $skuData['precio_venta'] ?? null,
                     'precio_compra' => $skuData['precio_compra'] ?? null,
                     'stock' => $skuData['stock'] ?? 0,
@@ -411,7 +447,7 @@ class ProductoController extends Controller implements HasMiddleware
                 foreach ($skuData['variante_valores'] as $vvId) {
                     SkuVarianteValor::create([
                         'sku_variante_id' => $sku->id,
-                        'variante_valor_id' => $vvId,
+                        'variante_valor_id' => $inlineValueIds[$vvId] ?? (int) $vvId,
                     ]);
                 }
             }
@@ -494,15 +530,21 @@ class ProductoController extends Controller implements HasMiddleware
             'variantes.*.tipo' => 'required|in:texto,color,numero',
             'variantes.*.valores' => 'required|array|min:1',
             'variantes.*.valores.*' => 'required|string|max:255',
-            'skus' => 'nullable|array',
+            'skus' => [
+                'nullable',
+                'array',
+                Rule::requiredIf(fn () => $request->boolean('tiene_variantes') && ($request->filled('variante_ids') || $request->filled('variantes'))),
+            ],
             'skus.*.sku' => 'required|string|unique:sku_variantes,sku,'.$producto->id.',producto_id',
             'skus.*.precio_venta' => 'nullable|numeric|min:0',
             'skus.*.precio_compra' => 'nullable|numeric|min:0',
             'skus.*.stock' => 'nullable|numeric|min:0',
             'skus.*.stock_minimo' => 'nullable|numeric|min:0',
             'skus.*.almacen_id' => 'nullable|exists:almacenes,id',
+            'skus.*.id' => ['nullable', 'integer', Rule::exists('sku_variantes', 'id')->where('producto_id', $producto->id)],
             'skus.*.variante_valores' => 'required|array',
-            'skus.*.variante_valores.*' => 'required|exists:variante_valores,id',
+            'skus.*.variante_valores.*' => ['required', $this->skuVariantValueValidationRule($request)],
+            'skus.*.imagen' => ['nullable', 'image', 'mimetypes:image/jpeg,image/png,image/webp', 'max:'.self::MAX_IMAGE_KB],
             // Legacy System A (deprecated - kept for existing products)
             'variantes_legacy' => 'nullable|array',
             'variantes_legacy.*.talla' => 'required|string',
@@ -604,8 +646,10 @@ class ProductoController extends Controller implements HasMiddleware
         }
 
         // Handle variant changes
-        if ($request->boolean('tiene_variantes') && ($request->filled('variante_ids') || $request->filled('variantes') || $request->filled('skus'))) {
+        if ($request->boolean('tiene_variantes') && (! empty($validated['variante_ids']) || ! empty($validated['variantes']) || ! empty($validated['skus']))) {
             $ownerId = Auth::user()->getOwnerId();
+            $existingSkuImages = $producto->skus()->pluck('imagen', 'id')->filter()->all();
+            $usedSkuImages = [];
 
             // Clear existing SKUs and variant links
             $producto->skus()->each(function ($sku) {
@@ -615,18 +659,20 @@ class ProductoController extends Controller implements HasMiddleware
             $producto->productoVariantes()->delete();
 
             // Create inline variant types
-            $varianteIds = $request->variante_ids ?? [];
-            foreach ($request->variantes ?? [] as $vData) {
+            $varianteIds = $validated['variante_ids'] ?? [];
+            $inlineValueIds = [];
+            foreach ($validated['variantes'] ?? [] as $variantIndex => $vData) {
                 $variante = Variante::create([
                     'owner_id' => $ownerId,
                     'nombre' => $vData['nombre'],
                     'tipo' => $vData['tipo'],
                 ]);
-                foreach ($vData['valores'] as $valor) {
-                    VarianteValor::create([
+                foreach ($vData['valores'] as $valueIndex => $valor) {
+                    $varianteValor = VarianteValor::create([
                         'variante_id' => $variante->id,
                         'valor' => $valor,
                     ]);
+                    $inlineValueIds["inline:{$variantIndex}:{$valueIndex}"] = $varianteValor->id;
                 }
                 $varianteIds[] = $variante->id;
             }
@@ -641,10 +687,21 @@ class ProductoController extends Controller implements HasMiddleware
             }
 
             // Create SKUs
-            foreach ($request->skus ?? [] as $skuData) {
+            foreach ($validated['skus'] ?? [] as $skuIndex => $skuData) {
+                $skuImage = $request->file("skus.{$skuIndex}.imagen");
+                $retainedImage = isset($skuData['id'])
+                    ? ($existingSkuImages[$skuData['id']] ?? null)
+                    : null;
+                $imagePath = $skuImage?->store('productos/variantes', 'public') ?? $retainedImage;
+
+                if ($imagePath) {
+                    $usedSkuImages[] = $imagePath;
+                }
+
                 $sku = SkuVariante::create([
                     'producto_id' => $producto->id,
                     'sku' => $skuData['sku'],
+                    'imagen' => $imagePath,
                     'precio_venta' => $skuData['precio_venta'] ?? null,
                     'precio_compra' => $skuData['precio_compra'] ?? null,
                     'stock' => $skuData['stock'] ?? 0,
@@ -654,9 +711,13 @@ class ProductoController extends Controller implements HasMiddleware
                 foreach ($skuData['variante_valores'] as $vvId) {
                     SkuVarianteValor::create([
                         'sku_variante_id' => $sku->id,
-                        'variante_valor_id' => $vvId,
+                        'variante_valor_id' => $inlineValueIds[$vvId] ?? (int) $vvId,
                     ]);
                 }
+            }
+
+            foreach (array_diff(array_unique(array_values($existingSkuImages)), array_unique($usedSkuImages)) as $unusedImage) {
+                Storage::disk('public')->delete($unusedImage);
             }
         } elseif ($request->boolean('tiene_variantes') && $request->filled('variantes_legacy')) {
             // Legacy System A (deprecated)
@@ -694,6 +755,9 @@ class ProductoController extends Controller implements HasMiddleware
             if ($producto->tiene_variantes) {
                 $producto->skus()->each(function ($sku) {
                     $sku->valores()->delete();
+                    if ($sku->imagen) {
+                        Storage::disk('public')->delete($sku->imagen);
+                    }
                     $sku->delete();
                 });
                 $producto->productoVariantes()->delete();

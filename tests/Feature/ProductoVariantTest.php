@@ -6,6 +6,8 @@ use App\Models\Producto;
 use App\Models\User;
 use App\Models\Variante;
 use App\Models\VarianteValor;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
 
 function giveProductoPermissions(User $user): void
@@ -164,11 +166,149 @@ test('crea producto con variantes inline', function () {
                 'valores' => ['Rojo', 'Azul'],
             ],
         ],
+        'skus' => [
+            [
+                'sku' => 'PRO-INLINE-01-ROJO',
+                'variante_valores' => ['inline:0:0'],
+            ],
+            [
+                'sku' => 'PRO-INLINE-01-AZUL',
+                'variante_valores' => ['inline:0:1'],
+            ],
+        ],
     ]))->assertSessionDoesntHaveErrors();
 
-    $producto = Producto::where('codigo', 'PRO-INLINE-01')->first();
+    $producto = Producto::where('codigo', 'PRO-INLINE-01')->with('skus')->first();
     expect($producto)->not->toBeNull();
-    expect((bool) $producto->tiene_variantes)->toBeTrue();
+    expect((bool) $producto->tiene_variantes)->toBeTrue()
+        ->and($producto->skus)->toHaveCount(2);
+});
+
+test('crea combinaciones de color con valores inline, precios e imágenes independientes', function () {
+    Storage::fake('public');
+
+    $this->post(route('productos.store'), defaultProductData([
+        'codigo' => 'PRO-COLOR-01',
+        'nombre' => 'Audífonos Oreja de Gato',
+        'stock' => 0,
+        'tiene_variantes' => '1',
+        'variantes' => [
+            [
+                'nombre' => 'Color',
+                'tipo' => 'color',
+                'valores' => ['Rosado', 'Azul Claro'],
+            ],
+        ],
+        'skus' => [
+            [
+                'sku' => 'PRO-COLOR-01-ROSADO',
+                'precio_venta' => 15000,
+                'precio_compra' => 9000,
+                'stock' => 2,
+                'stock_minimo' => 0,
+                'variante_valores' => ['inline:0:0'],
+                'imagen' => UploadedFile::fake()->image('rosado.png'),
+            ],
+            [
+                'sku' => 'PRO-COLOR-01-AZUL',
+                'precio_venta' => 16000,
+                'precio_compra' => 9500,
+                'stock' => 3,
+                'stock_minimo' => 0,
+                'variante_valores' => ['inline:0:1'],
+                'imagen' => UploadedFile::fake()->image('azul.png'),
+            ],
+        ],
+    ]))->assertSessionDoesntHaveErrors();
+
+    $producto = Producto::where('codigo', 'PRO-COLOR-01')->firstOrFail();
+    $skus = $producto->skus()->with('valores.varianteValor')->get();
+
+    expect($skus)->toHaveCount(2);
+
+    $rosado = $skus->firstWhere('sku', 'PRO-COLOR-01-ROSADO');
+    $azul = $skus->firstWhere('sku', 'PRO-COLOR-01-AZUL');
+
+    expect((float) $rosado->precio_venta)->toBe(15000.0)
+        ->and($rosado->valores->first()->varianteValor->valor)->toBe('Rosado')
+        ->and(Storage::disk('public')->exists($rosado->imagen))->toBeTrue()
+        ->and((float) $azul->precio_venta)->toBe(16000.0)
+        ->and($azul->valores->first()->varianteValor->valor)->toBe('Azul Claro')
+        ->and(Storage::disk('public')->exists($azul->imagen))->toBeTrue()
+        ->and($rosado->imagen)->not->toBe($azul->imagen);
+});
+
+test('preserva las imágenes de SKU al actualizar las variantes del producto', function () {
+    Storage::fake('public');
+
+    $this->post(route('productos.store'), defaultProductData([
+        'codigo' => 'PRO-COLOR-EDIT-01',
+        'nombre' => 'Audífonos',
+        'stock' => 0,
+        'tiene_variantes' => '1',
+        'variantes' => [
+            [
+                'nombre' => 'Color',
+                'tipo' => 'color',
+                'valores' => ['Rosado'],
+            ],
+        ],
+        'skus' => [
+            [
+                'sku' => 'PRO-COLOR-EDIT-01-ROSADO',
+                'precio_venta' => 15000,
+                'precio_compra' => 9000,
+                'stock' => 2,
+                'stock_minimo' => 0,
+                'variante_valores' => ['inline:0:0'],
+                'imagen' => UploadedFile::fake()->image('rosado.png'),
+            ],
+        ],
+    ]))->assertSessionDoesntHaveErrors();
+
+    $producto = Producto::where('codigo', 'PRO-COLOR-EDIT-01')->firstOrFail();
+    $sku = $producto->skus()->firstOrFail();
+    $imagePath = $sku->imagen;
+    $variantValueId = $sku->valores()->value('variante_valor_id');
+    $variantId = VarianteValor::findOrFail($variantValueId)->variante_id;
+
+    $this->put(route('productos.update', $producto), [
+        'codigo' => $producto->codigo,
+        'nombre' => $producto->nombre,
+        'descripcion' => '',
+        'tiene_variantes' => '1',
+        'variante_ids' => [$variantId],
+        'skus' => [
+            [
+                'id' => $sku->id,
+                'sku' => $sku->sku,
+                'precio_venta' => 15000,
+                'precio_compra' => 9000,
+                'stock' => 2,
+                'stock_minimo' => 0,
+                'variante_valores' => [$variantValueId],
+            ],
+        ],
+    ])->assertSessionDoesntHaveErrors();
+
+    $updatedSku = $producto->skus()->firstOrFail();
+
+    expect($updatedSku->imagen)->toBe($imagePath)
+        ->and(Storage::disk('public')->exists($imagePath))->toBeTrue();
+});
+
+test('requiere combinaciones SKU cuando se configuran tipos de variante', function () {
+    $variante = Variante::create([
+        'owner_id' => $this->user->getOwnerId(),
+        'nombre' => 'Color',
+        'tipo' => 'color',
+    ]);
+
+    $this->post(route('productos.store'), defaultProductData([
+        'codigo' => 'PRO-COLOR-EMPTY-01',
+        'tiene_variantes' => '1',
+        'variante_ids' => [$variante->id],
+    ]))->assertSessionHasErrors('skus');
 });
 
 test('valida errores en variantes invalidas', function () {
