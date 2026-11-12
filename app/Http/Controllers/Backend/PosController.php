@@ -76,8 +76,31 @@ class PosController extends Controller implements HasMiddleware
         ])
             ->where('activo', true)
             ->where('owner_id', $ownerId)
-            ->get()
+            ->get([
+                'id',
+                'nombre',
+                'descripcion',
+                'codigo',
+                'precio_venta',
+                'precio_con_variantes',
+                'stock_minimo',
+                'unidad_medida',
+                'peso_base',
+                'contenido_por_unidad',
+                'medida_pesable',
+                'imagen',
+                'tiene_variantes',
+                'envase_retornable',
+                'envase_producto_id',
+                'owner_id',
+            ])
             ->map(function ($producto) {
+                // El stock se calcula desde las relaciones ya eager-loadadas para evitar
+                // consultas N+1 que dispara el accessor stock_total (una query por producto).
+                $stock = $producto->tiene_variantes
+                    ? (float) $producto->skus->sum('stock')
+                    : (float) $producto->inventarios->sum('cantidad');
+
                 return [
                     'id' => $producto->id,
                     'nombre' => $producto->nombre,
@@ -85,7 +108,7 @@ class PosController extends Controller implements HasMiddleware
                     'codigo' => $producto->codigo,
                     'precio_venta' => $producto->precio_venta,
                     'precio_con_variantes' => $producto->precio_con_variantes,
-                    'stock' => $producto->stock_total,
+                    'stock' => $stock,
                     'stock_minimo' => $producto->stock_minimo,
                     'unidad_medida' => $producto->unidad_medida,
                     'peso_base' => $producto->peso_base,
@@ -112,8 +135,8 @@ class PosController extends Controller implements HasMiddleware
                             'stock' => $sku->stock,
                             'variantes' => $sku->valores->map(function ($v) {
                                 return [
-                                    'variante' => $v->varianteValor->variante->nombre,
-                                    'valor' => $v->varianteValor->valor,
+                                    'variante' => optional($v->varianteValor?->variante)->nombre ?? null,
+                                    'valor' => $v->varianteValor?->valor ?? null,
                                 ];
                             })->toArray(),
                         ];
