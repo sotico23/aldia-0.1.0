@@ -3686,6 +3686,20 @@ export default function Index({
                                             {viendo.stock_minimo ?? 0}
                                         </p>
                                     </div>
+                                    <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-2">
+                                        <p className="text-[8px] font-bold text-indigo-600 uppercase">
+                                            Ganancia Vendedor
+                                        </p>
+                                        <p className="truncate text-xs font-semibold text-indigo-800">
+                                            {formatCurrency(
+                                                Number(
+                                                    viendo
+                                                        .comision_cajero_por_unidad ||
+                                                    0,
+                                                ),
+                                            )}
+                                        </p>
+                                    </div>
                                     {viendo.fecha_vencimiento && (
                                         <div className="rounded-lg border border-purple-200 bg-purple-50 p-2">
                                             <p className="text-[8px] font-bold text-purple-600 uppercase">
