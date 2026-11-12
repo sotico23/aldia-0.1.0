@@ -27,6 +27,9 @@ import {
     Wallet,
     Camera,
     Tags,
+    Info,
+    AlertCircle,
+    Loader2,
 } from 'lucide-react';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
@@ -339,6 +342,14 @@ export default function Index({
     const [barcodeProduct, setBarcodeProduct] =
         useState<BarcodeProductData | null>(null);
     const barcodeLookupRequest = useRef(0);
+    const skuLookupRequest = useRef(0);
+    const [skuHydrationLoading, setSkuHydrationLoading] = useState(false);
+    const [skuHydrationNotice, setSkuHydrationNotice] = useState<{
+        type: 'info' | 'success';
+        message: string;
+    } | null>(null);
+    const [pendingSkuData, setPendingSkuData] = useState<any>(null);
+    const [showSkuConfirm, setShowSkuConfirm] = useState(false);
 
     const {
         data,
@@ -459,6 +470,176 @@ export default function Index({
             if (requestId === barcodeLookupRequest.current) {
                 setBarcodeLookupLoading(false);
             }
+        }
+    };
+
+    /**
+     * Consulta el SKU / código de barras en la base de datos del tenant y,
+     * si existe, hidrata (autorrellena) el formulario con los datos del producto.
+     * Si no existe, muestra un aviso sutil y deja el formulario listo para llenar manualmente.
+     * Cuando el código es un EAN numérico y no está en el catálogo local, intenta
+     * Open Food Facts como catálogo general de referencia.
+     */
+    const hydrateFromSku = async (rawCode: string) => {
+        const code = rawCode.trim();
+        const requestId = ++skuLookupRequest.current;
+
+        if (!code) {
+            setSkuHydrationLoading(false);
+            return;
+        }
+
+        setSkuHydrationLoading(true);
+        setSkuHydrationNotice(null);
+        setBarcodeProduct(null);
+
+        try {
+            const response = await axios.get<{
+                encontrado: boolean;
+                origen: string;
+                datos: any;
+                mensaje: string;
+            }>(`/api/v1/productos/lookup-sku/${encodeURIComponent(code)}`);
+
+            const result = response.data;
+
+            if (requestId !== skuLookupRequest.current) {
+                return;
+            }
+
+            if (!result.encontrado || !result.datos) {
+                setSkuHydrationNotice({
+                    type: 'info',
+                    message:
+                        result.mensaje ||
+                        'SKU no registrado en tu catálogo. Puedes completar el producto manualmente.',
+                });
+
+                // Fallback a catálogo general (Open Food Facts) solo para EAN numérico
+                if (/^(?:\d{8}|\d{12,14})$/.test(code) && !editando) {
+                    void lookupBarcode(code);
+                }
+
+                return;
+            }
+
+            const d = result.datos;
+
+            const hasExistingData = formHasData;
+
+            if (hasExistingData) {
+                // No sobrescribir datos que el usuario ya digitó sin confirmación.
+                setPendingSkuData(d);
+                setShowSkuConfirm(true);
+                return;
+            }
+
+            applySkuHydration(d);
+
+            setSkuHydrationNotice({
+                type: 'success',
+                message:
+                    result.mensaje ||
+                    'Producto encontrado y datos precargados. Revisa y ajusta antes de guardar.',
+            });
+            toast.success(result.mensaje || 'Producto encontrado y datos precargados.');
+        } catch (error) {
+            if (requestId !== skuLookupRequest.current) {
+                return;
+            }
+
+            setSkuHydrationNotice({
+                type: 'info',
+                message:
+                    'No se pudo consultar el SKU. Puedes completar el producto manualmente.',
+            });
+            toast.error('No se pudo consultar el SKU.');
+        } finally {
+            if (requestId === skuLookupRequest.current) {
+                setSkuHydrationLoading(false);
+            }
+        }
+    };
+
+    const handleCodigoLookup = (code: string) => {
+        void hydrateFromSku(code);
+    };
+
+    /**
+     * Detecta si el formulario ya tiene datos digitados por el usuario para
+     * evitar sobrescribirlos sin confirmación al hacer autocompletado por SKU.
+     */
+    const formHasData = useMemo(() => {
+        return Boolean(
+            data.nombre.trim() ||
+            data.descripcion.trim() ||
+            data.categoria_id ||
+            Number(data.precio_compra) > 0 ||
+            Number(data.precio_venta) > 0 ||
+            data.stock_minimo > 0 ||
+            data.warehouse_ids.length > 0
+        );
+    }, [data]);
+
+    /**
+     * Aplica los datos de hidratación de un SKU encontrado al formulario,
+     * sin tocar el campo código (ya está seteado).
+     */
+    const applySkuHydration = (d: any): void => {
+        setData('nombre', d.nombre || data.nombre);
+        if (!data.descripcion.trim()) {
+            setData('descripcion', d.descripcion || '');
+        }
+        setData('categoria_id', d.categoria_id?.toString() ?? '');
+        setData('precio_compra', d.precio_compra ?? 0);
+        setData('precio_venta', d.precio_venta ?? 0);
+        setData('stock_minimo', d.stock_minimo ?? 0);
+        setData('unidad_medida', d.unidad_medida ?? 'unidad');
+        setData('medida_pesable', d.medida_pesable ?? false);
+        setData('tiene_variantes', d.tiene_variantes ?? false);
+
+        // Almacenes con stock
+        if (d.inventarios?.length) {
+            setData(
+                'warehouse_ids',
+                d.inventarios
+                    .map((inv: any) => inv.almacen_id)
+                    .filter(Boolean),
+            );
+        }
+
+        // Imágenes existentes del producto
+        const images: ImageUploaderImage[] = [];
+        ['imagen', 'imagen2', 'imagen3', 'imagen4', 'imagen5'].forEach(
+            (key, idx) => {
+                if (d[key]) {
+                    images.push({
+                        id: `existing-sku-${idx}`,
+                        preview: d[key],
+                        existingPath: d[key],
+                        existingKey: key,
+                    });
+                }
+            },
+        );
+        setProductImages(images);
+
+        // Variantes / SKUs (System B)
+        if (d.tiene_variantes && d.skus?.length) {
+            const rows: SkuRow[] = d.skus.map((sku: any, i: number) => ({
+                id: sku.id,
+                sku: sku.sku,
+                imagen: null,
+                imagen_preview: sku.imagen,
+                precio_venta: sku.precio_venta ?? d.precio_venta,
+                precio_compra: sku.precio_compra ?? d.precio_compra,
+                stock: sku.stock ?? 0,
+                stock_minimo: sku.stock_minimo ?? d.stock_minimo,
+                almacen_id: '',
+                variante_valores: sku.variante_valores ?? [],
+                labels: sku.labels ?? [],
+            }));
+            setSkuRows(rows);
         }
     };
 
@@ -1941,10 +2122,18 @@ export default function Index({
                                                                 );
                                                             }}
                                                             onBlur={() =>
-                                                                void lookupBarcode(
+                                                                void handleCodigoLookup(
                                                                     data.codigo,
                                                                 )
                                                             }
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                    e.preventDefault();
+                                                                    void handleCodigoLookup(
+                                                                        data.codigo,
+                                                                    );
+                                                                }
+                                                            }}
                                                             placeholder="Ej: PRO-001"
                                                             className="h-11 flex-1 border-none bg-muted/30 font-black focus-visible:ring-primary/20"
                                                         />
@@ -1974,6 +2163,31 @@ export default function Index({
                                                         escanéalo para buscar
                                                         datos del producto.
                                                     </p>
+                                                    {skuHydrationNotice && (
+                                                        <p
+                                                            className={`text-xs ${
+                                                                skuHydrationNotice.type === 'success'
+                                                                    ? 'text-emerald-700 font-bold'
+                                                                    : 'text-amber-700 font-bold'
+                                                            } flex items-center gap-1.5 mb-1`}
+                                                        >
+                                                            {skuHydrationNotice.type === 'success' ? (
+                                                                <Info className="h-3.5 w-3.5" />
+                                                            ) : (
+                                                                <AlertCircle className="h-3.5 w-3.5" />
+                                                            )}
+                                                            {skuHydrationNotice.message}
+                                                        </p>
+                                                    )}
+                                                    {skuHydrationLoading && (
+                                                        <p
+                                                            className="text-xs text-muted-foreground flex items-center gap-1.5 mb-1"
+                                                            role="status"
+                                                        >
+                                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                            Consultando SKU...
+                                                        </p>
+                                                    )}
                                                     {barcodeLookupLoading && (
                                                         <p
                                                             className="text-xs text-muted-foreground"

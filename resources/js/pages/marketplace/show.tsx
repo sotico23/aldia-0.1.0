@@ -24,6 +24,8 @@ import {
     Package,
     Tag,
     ExternalLink,
+    Info,
+    ShieldCheck,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -745,9 +747,9 @@ export default function MarketplaceShow({
         >
             <Head title={store.title} />
 
-            {/* Facebook-style Header Area */}
+            {/* Header Area */}
             <div className="border-b border-slate-200 bg-white shadow-sm">
-                <div className="mx-auto max-w-6xl">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     {/* Cover Photo */}
                     <div className="group relative h-64 w-full overflow-hidden rounded-b-xl bg-gradient-to-r from-slate-200 to-slate-300 sm:h-80 md:h-96">
                         {store.user.cover_photo_url && (
@@ -934,158 +936,196 @@ export default function MarketplaceShow({
                 </div>
             </div>
 
-            {/* Main Content Area - Gray Background like Facebook */}
-            <div className="min-h-screen bg-[#f0f2f5] pt-6 pb-12">
-                <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 lg:flex-row">
-                    {/* Left Column (Intro & Categories) */}
-                    <div className="w-full flex-shrink-0 space-y-4 lg:w-[360px]">
-                        {/* Intro Card */}
-                        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                            <h2 className="mb-4 text-lg font-bold text-slate-900">
-                                Detalles
-                            </h2>
-                            <div className="space-y-4">
-                                {store.description && (
-                                    <div className="border-b border-slate-100 pb-4 text-center text-sm text-slate-800">
-                                        "{store.description}"
-                                    </div>
-                                )}
-
-                                {store.user.region && (
-                                    <div className="flex items-center gap-3 text-sm text-slate-800">
-                                        <MapPin className="h-5 w-5 text-slate-400" />
-                                        <span>
-                                            Vive en{' '}
-                                            <span className="font-semibold">
-                                                {store.user.comuna ||
-                                                    store.user.region}
-                                            </span>
-                                        </span>
-                                    </div>
-                                )}
-
-                                {/* Store Badges */}
-                                <div className="mt-2 flex flex-wrap items-center gap-2">
-                                    {store.is_verified && (
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <span
-                                                    className="flex cursor-help items-center gap-1"
-                                                    aria-label="Tienda verificada"
-                                                >
-                                                    <CheckCircle2 className="h-4 w-4 fill-emerald-500 text-emerald-500" />
-                                                </span>
-                                            </TooltipTrigger>
-                                            <TooltipContent
-                                                side="top"
-                                                align="center"
-                                                className="border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700"
-                                            >
-                                                Tienda verificada por la
-                                                plataforma
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    )}
+            {/* Main Content Area - 3-Column Layout */}
+            <div className="min-h-screen bg-[#f8fafc] pt-6 pb-16">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                        {/* Columna Izquierda (3 cols / ~25%): Detalles / Información & Categorías */}
+                        <aside className="w-full lg:col-span-3 space-y-5">
+                            {/* Bloque: Detalles / Información */}
+                            <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm transition-all hover:shadow-md">
+                                <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
+                                    <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
+                                        <Info className="h-4 w-4 text-primary" />
+                                        Detalles / Información
+                                    </h2>
                                     {store.is_official && (
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <span
-                                                    className="flex cursor-help items-center gap-1"
-                                                    aria-label="Tienda Oficial"
-                                                >
-                                                    <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200/60">
+                                            <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                                            Oficial
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="space-y-3.5">
+                                    {/* Descripción / Mensaje Institucional o Bienvenida */}
+                                    <div className="rounded-lg bg-slate-50 p-3.5 border border-slate-100">
+                                        <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                                            <Store className="h-3.5 w-3.5 text-primary" />
+                                            Sobre la tienda
+                                        </div>
+                                        <p className="text-sm leading-relaxed text-slate-700 italic break-words">
+                                            {store.description
+                                                ? `"${store.description}"`
+                                                : `Bienvenido a la tienda oficial de ${store.title}. Encuentra productos y servicios con garantía y atención directa.`}
+                                        </p>
+                                    </div>
+
+                                    {/* Insignias de confianza, políticas y contacto */}
+                                    <div className="space-y-2.5 pt-1 text-xs text-slate-600">
+                                        {store.is_official && (
+                                            <div className="flex items-start gap-2.5">
+                                                <ShieldCheck className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
+                                                <span className="leading-tight">
+                                                    <strong className="text-slate-800">Tienda Oficial:</strong> Compra protegida y productos certificados.
                                                 </span>
-                                            </TooltipTrigger>
-                                            <TooltipContent
-                                                side="top"
-                                                align="center"
-                                                className="border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-700"
-                                            >
-                                                Tienda Oficial verificada
-                                            </TooltipContent>
-                                        </Tooltip>
+                                            </div>
+                                        )}
+
+                                        {store.is_verified && (
+                                            <div className="flex items-start gap-2.5">
+                                                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500 mt-0.5" />
+                                                <span className="leading-tight">
+                                                    <strong className="text-slate-800">Identidad Verificada:</strong> Comercio registrado y validado en RedCliente.
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {(store.user.region || store.user.comuna) && (
+                                            <div className="flex items-start gap-2.5">
+                                                <MapPin className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
+                                                <span className="leading-tight">
+                                                    <strong className="text-slate-800">Ubicación:</strong>{' '}
+                                                    <span className="text-slate-700">
+                                                        {[store.user.comuna, store.user.region].filter(Boolean).join(', ')}
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {store.email && (
+                                            <div className="flex items-start gap-2.5">
+                                                <Mail className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
+                                                <span className="truncate leading-tight">
+                                                    <strong className="text-slate-800">Email:</strong>{' '}
+                                                    <a
+                                                        href={`mailto:${store.email}`}
+                                                        className="text-primary hover:underline"
+                                                    >
+                                                        {store.email}
+                                                    </a>
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {store.phone && (
+                                            <div className="flex items-start gap-2.5">
+                                                <Phone className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
+                                                <span className="leading-tight">
+                                                    <strong className="text-slate-800">Teléfono:</strong>{' '}
+                                                    <span className="text-slate-700">{store.phone}</span>
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Bloque: Categorías */}
+                            <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+                                <div className="mb-3.5 flex items-center justify-between border-b border-slate-100 pb-2.5">
+                                    <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
+                                        <Tag className="h-4 w-4 text-primary" />
+                                        Categorías
+                                    </h2>
+                                    {store.categorias.length > 0 && (
+                                        <Link
+                                            href={marketplaceCategories(store.slug).url}
+                                            className="text-xs font-semibold text-primary hover:underline"
+                                        >
+                                            Ver todas ({store.categorias.length})
+                                        </Link>
                                     )}
                                 </div>
 
-                                {store.email && (
-                                    <div className="flex items-center gap-3 text-sm text-slate-800">
-                                        <Mail className="h-5 w-5 text-slate-400" />
-                                        <span>{store.email}</span>
+                                {store.categorias.length > 0 ? (
+                                    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-2">
+                                        {store.categorias.slice(0, 6).map((cat) => (
+                                            <Link
+                                                key={cat.id}
+                                                href={`/tienda/${store.slug}/categoria/${cat.id}`}
+                                                className="group relative aspect-square overflow-hidden rounded-lg border border-slate-100 bg-slate-100 transition-all hover:shadow-md"
+                                            >
+                                                <img
+                                                    src={
+                                                        cat.imagen
+                                                            ? `/storage/${cat.imagen}`
+                                                            : '/placeholder.png'
+                                                    }
+                                                    alt={cat.nombre}
+                                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                                                <span className="absolute right-2 bottom-2 left-2 truncate text-xs font-bold text-white drop-shadow-sm">
+                                                    {cat.nombre}
+                                                </span>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="py-6 text-center text-slate-400">
+                                        <Tag className="mx-auto mb-2 h-8 w-8 opacity-40" />
+                                        <p className="text-xs">No hay categorías disponibles</p>
                                     </div>
                                 )}
                             </div>
-                        </div>
+                        </aside>
 
-                        {/* Categories Card */}
-                        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                            <h2 className="mb-4 flex items-center justify-between text-lg font-bold text-slate-900">
-                                Categorías
-                                <Link
-                                    href={marketplaceCategories(store.slug).url}
-                                    className="text-sm font-normal text-primary hover:underline"
-                                >
-                                    Ver todas
-                                </Link>
-                            </h2>
-                            <div className="grid grid-cols-2 gap-2">
-                                {store.categorias.map((cat) => (
-                                    <Link
-                                        key={cat.id}
-                                        href={`/tienda/${store.slug}/categoria/${cat.id}`}
-                                        className="group relative aspect-square overflow-hidden rounded-lg border border-slate-100"
-                                    >
-                                        <img
-                                            src={
-                                                cat.imagen
-                                                    ? `/storage/${cat.imagen}`
-                                                    : '/placeholder.png'
-                                            }
-                                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                                        <span className="absolute right-2 bottom-2 left-2 truncate text-xs font-bold text-white">
-                                            {cat.nombre}
-                                        </span>
-                                    </Link>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                        {/* Columna Central (6 cols / ~50%): Catálogo de Productos */}
+                        <main className="w-full lg:col-span-6 space-y-5">
+                            {tabActivo === 'productos' && (
+                                <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+                                    <div className="flex flex-col gap-4">
+                                        {/* Header del Catálogo con botón superior "Ver todos los productos" */}
+                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-3">
+                                            <div>
+                                                <h2 className="text-lg font-bold text-slate-900">
+                                                    Catálogo de Productos
+                                                </h2>
+                                                <p className="text-xs text-slate-500">
+                                                    {store.productos.length}{' '}
+                                                    {store.productos.length === 1
+                                                        ? 'producto disponible'
+                                                        : 'productos disponibles'}
+                                                </p>
+                                            </div>
 
-                    {/* Middle Column */}
-                    <div className="flex-1 space-y-4">
-                        {tabActivo === 'productos' && (
-                            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                                <div className="flex flex-col gap-4">
-                                    <div className="flex items-center justify-between">
-                                        <h2 className="text-lg font-bold text-slate-900">
-                                            Catálogo de Productos
-                                        </h2>
-                                        {store.productos.length >
-                                            PRODUCTOS_VISTA_PREVIA && (
-                                            <Button
-                                                type="button"
-                                                size="sm"
-                                                onClick={() =>
-                                                    setCatalogoAbierto(true)
-                                                }
-                                                className="flex items-center gap-1.5 text-sm font-semibold transition-colors hover:bg-primary/50"
-                                            >
-                                                Ver todos los productos
-                                                <ExternalLink className="h-3 w-3" />
-                                            </Button>
-                                        )}
-                                    </div>
-                                    {/* Vista previa limitada con altura controlada y scroll */}
-                                    <div
-                                        className={cn(
-                                            'grid gap-4 sm:grid-cols-2 lg:grid-cols-3',
-                                            store.productos.length >
-                                                PRODUCTOS_VISTA_PREVIA
-                                                ? 'custom-scrollbar max-h-[520px] overflow-y-auto pr-2'
-                                                : '',
-                                        )}
-                                    >
+                                            {store.productos.length > 0 && (
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        setCatalogoAbierto(true)
+                                                    }
+                                                    className="flex items-center gap-1.5 text-xs font-semibold border-slate-200 text-slate-700 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-colors self-start sm:self-auto shadow-xs"
+                                                >
+                                                    <Package className="h-3.5 w-3.5 text-primary" />
+                                                    Ver todos los productos
+                                                    <ExternalLink className="h-3 w-3 opacity-60" />
+                                                </Button>
+                                            )}
+                                        </div>
+
+                                        {/* Vista previa limitada con altura controlada y scroll */}
+                                        <div
+                                            className={cn(
+                                                'grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3',
+                                                store.productos.length >
+                                                    PRODUCTOS_VISTA_PREVIA
+                                                    ? 'custom-scrollbar max-h-[640px] xl:max-h-[720px] overflow-y-auto pr-1'
+                                                    : '',
+                                            )}
+                                        >
                                         {store.productos
                                             .slice(0, PRODUCTOS_VISTA_PREVIA)
                                             .map((p) => (
@@ -1327,13 +1367,14 @@ export default function MarketplaceShow({
                                 )}
                             </div>
                         )}
-                    </div>
+                    </main>
 
                     {/* Right Column (Cart Widget) */}
-                    <div className="w-full flex-shrink-0 lg:w-[320px]">
-                        <div className="sticky top-20 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                            <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-2">
-                                <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+                    <aside className="w-full lg:col-span-3">
+                        <div className="sticky top-20 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm transition-all hover:shadow-md">
+                            <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
+                                <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
+                                    <ShoppingCart className="h-4 w-4 text-primary" />
                                     Tu Pedido
                                     {totalItems > 0 && (
                                         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-black text-primary">
@@ -2165,70 +2206,90 @@ export default function MarketplaceShow({
                                             </div>
                                         </SheetContent>
                                     </Sheet>
-                                    {/* Sheet: Catálogo completo ("Ver todos los productos") */}
-                                    <Sheet
-                                        open={catalogoAbierto}
-                                        onOpenChange={setCatalogoAbierto}
-                                    >
-                                        <SheetTrigger asChild>
-                                            <button
-                                                type="button"
-                                                className="hidden"
-                                            />
-                                        </SheetTrigger>
-                                        <SheetContent className="rounded-xl border border-slate-200 bg-white shadow-xl sm:max-w-[720px]">
-                                            <SheetHeader className="flex items-center justify-between border-b pb-4">
-                                                <SheetTitle className="text-lg font-bold text-slate-900">
-                                                    Catálogo Completo
-                                                </SheetTitle>
-                                                <p className="text-xs text-slate-500">
-                                                    {store.productos.length}{' '}
-                                                    productos disponibles
-                                                </p>
-                                            </SheetHeader>
-                                            <div className="p-4">
-                                                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                                    {store.productos.map(
-                                                        (p) => (
-                                                            <ProductCard
-                                                                key={p.id}
-                                                                producto={p}
-                                                            />
-                                                        ),
-                                                    )}
-                                                    {store.productos.length ===
-                                                        0 && (
-                                                        <div className="col-span-full py-8 text-center text-slate-400">
-                                                            <Package className="mx-auto mb-3 h-10 w-10 opacity-50" />
-                                                            <p className="text-sm">
-                                                                No hay productos
-                                                                disponibles
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <SheetFooter className="border-t pt-3">
-                                                <Button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setCatalogoAbierto(
-                                                            false,
-                                                        )
-                                                    }
-                                                    className="w-full"
-                                                >
-                                                    Ver menos
-                                                </Button>
-                                            </SheetFooter>
-                                        </SheetContent>
-                                    </Sheet>
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </aside>
                 </div>
             </div>
+        </div>
+
+        {/* Sheet: Catálogo completo ("Ver todos los productos") */}
+        <Sheet
+            open={catalogoAbierto}
+            onOpenChange={setCatalogoAbierto}
+        >
+            <SheetTrigger asChild>
+                <button
+                    type="button"
+                    className="hidden"
+                />
+            </SheetTrigger>
+            <SheetContent className="rounded-xl border border-slate-200 bg-white shadow-xl sm:max-w-[760px] p-0 flex flex-col">
+                <SheetHeader className="flex items-center justify-between border-b px-6 py-4">
+                    <div>
+                        <SheetTitle className="text-lg font-bold text-slate-900">
+                            Catálogo Completo
+                        </SheetTitle>
+                        <p className="text-xs text-slate-500">
+                            {store.productos.length}{' '}
+                            {store.productos.length === 1
+                                ? 'producto disponible'
+                                : 'productos disponibles'}
+                        </p>
+                    </div>
+                </SheetHeader>
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                        {store.productos.map((p) => (
+                            <ProductCard
+                                key={p.id}
+                                producto={p}
+                            />
+                        ))}
+                        {store.productos.length === 0 && (
+                            <div className="col-span-full py-12 text-center text-slate-400">
+                                <Package className="mx-auto mb-3 h-10 w-10 opacity-50" />
+                                <p className="text-sm font-medium">
+                                    No hay productos disponibles actualmente
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+                <SheetFooter className="border-t px-6 py-3">
+                    <Button
+                        type="button"
+                        onClick={() => setCatalogoAbierto(false)}
+                        className="w-full"
+                    >
+                        Cerrar Catálogo
+                    </Button>
+                </SheetFooter>
+            </SheetContent>
+        </Sheet>
+
+            {/* Botón flotante móvil para carrito de compras */}
+            {totalItems > 0 && (
+                <div className="fixed bottom-4 inset-x-4 z-40 lg:hidden">
+                    <Button
+                        type="button"
+                        onClick={() => setCarritoAbierto(true)}
+                        className="w-full h-13 rounded-xl bg-primary text-white font-bold shadow-xl flex items-center justify-between px-5 hover:bg-primary/95 transition-all"
+                    >
+                        <div className="flex items-center gap-2.5">
+                            <div className="relative">
+                                <ShoppingCart className="h-5 w-5" />
+                                <span className="absolute -top-1.5 -right-1.5 bg-white text-primary text-[10px] font-black h-4 w-4 rounded-full flex items-center justify-center">
+                                    {totalItems}
+                                </span>
+                            </div>
+                            <span className="text-sm">Ver Pedido</span>
+                        </div>
+                        <span className="text-base font-black">${totalCarrito.toLocaleString()}</span>
+                    </Button>
+                </div>
+            )}
 
             <Dialog
                 open={productoDetalle !== null}

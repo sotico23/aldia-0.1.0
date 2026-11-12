@@ -7,6 +7,7 @@ use App\Http\Controllers\Backend\ClienteController;
 use App\Http\Controllers\Backend\OportunidadController;
 use App\Http\Controllers\Backend\ProductoBarcodeController;
 use App\Http\Controllers\Backend\ProductoController;
+use App\Http\Controllers\Backend\ProductoSkuLookupController;
 use App\Http\Controllers\Backend\ProspectoController;
 use App\Http\Controllers\Backend\TicketController;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +43,10 @@ Route::middleware(['permission:comercial.productos.viewAny'])->group(function ()
         ->middleware(['permission:comercial.productos.create', 'throttle:30,1'])
         ->where('ean', '[0-9]+')
         ->name('api.v1.productos.barcode');
+    Route::get('api/v1/productos/lookup-sku/{codigo}', ProductoSkuLookupController::class)
+        ->middleware(['permission:comercial.productos.create', 'throttle:30,1'])
+        ->where('codigo', '[0-9A-Za-z\-]+')
+        ->name('api.v1.productos.lookup-sku');
     Route::get('productos/export-csv', [ProductoController::class, 'exportCsv'])->name('productos.export-csv');
     Route::get('productos/export-excel', [ProductoController::class, 'exportExcel'])->name('productos.exportExcel');
     Route::post('productos/import', [ProductoController::class, 'importCsv'])->name('productos.import');
