@@ -58,9 +58,9 @@ class DashboardController extends Controller
             $baseCompras = Compra::withoutGlobalScope(OwnerScope::class);
             $baseProductos = Producto::withoutGlobalScope(OwnerScope::class);
         } else {
-            $baseVentas = Venta::query()->where('estado', 'pagada');
-            $baseCompras = Compra::query();
-            $baseProductos = Producto::query();
+            $baseVentas = Venta::query()->where('estado', 'pagada')->where('owner_id', $ownerId);
+            $baseCompras = Compra::query()->where('owner_id', $ownerId);
+            $baseProductos = Producto::query()->where('owner_id', $ownerId);
         }
 
         $ventasStats = (clone $baseVentas)
@@ -95,7 +95,7 @@ class DashboardController extends Controller
         $porPagar = (clone $baseCompras)->where('estado', 'pendiente')->sum('total');
 
         $baseStockCritico = (clone $baseProductos)
-            ->whereRaw('stock_minimo >= (select COALESCE(sum(cantidad), 0) from inventarios where producto_id = productos.id)');
+            ->whereRaw('stock_minimo >= (select COALESCE(sum(cantidad), 0) from inventarios where producto_id = productos.id and owner_id = ?)', [$ownerId]);
 
         $stockCritico = (clone $baseStockCritico)->count();
         $productosCriticos = (clone $baseStockCritico)
@@ -299,23 +299,24 @@ class DashboardController extends Controller
         // --- Inventario Data (RendimientoInventarioWidget) ---
         $baseInvProductos = $esSuperAdmin
             ? Producto::withoutGlobalScope(OwnerScope::class)
-            : Producto::query();
+            : Producto::query()->where('owner_id', $ownerId);
 
         $totalProductos = (clone $baseInvProductos)->count();
         $productosActivos = (clone $baseInvProductos)->where('activo', true)->count();
 
         $baseInventarios = $esSuperAdmin
             ? Inventario::withoutGlobalScope(OwnerScope::class)
-            : Inventario::query();
+            : Inventario::query()->where('owner_id', $ownerId);
 
         $baseAlmacenes = $esSuperAdmin
             ? Almacen::withoutGlobalScope(OwnerScope::class)
-            : Almacen::query();
+            : Almacen::query()->where('owner_id', $ownerId);
 
         $almacenesActivos = (clone $baseAlmacenes)->where('activo', true)->count();
 
         $stockValue = (clone $baseInventarios)
             ->join('productos', 'inventarios.producto_id', '=', 'productos.id')
+            ->where('productos.owner_id', $ownerId)
             ->sum(DB::raw('COALESCE(inventarios.cantidad, 0) * COALESCE(productos.precio_compra, 0)'));
 
         $criticalStockCount = (clone $baseInventarios)
@@ -335,7 +336,7 @@ class DashboardController extends Controller
 
         $baseMovements = $esSuperAdmin
             ? InventoryMovement::withoutGlobalScope(OwnerScope::class)
-            : InventoryMovement::query();
+            : InventoryMovement::query()->where('owner_id', $ownerId);
 
         $recentMovements = (clone $baseMovements)
             ->with(['product:id,nombre', 'sourceWarehouse:id,nombre', 'destinationWarehouse:id,nombre'])
