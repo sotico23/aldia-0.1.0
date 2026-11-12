@@ -1330,7 +1330,8 @@ export default function Index({
         if (scannerTarget === 'codigo') {
             setData('codigo', scannedCode);
             setBarcodeProduct(null);
-            void lookupBarcode(scannedCode);
+            setSkuHydrationNotice(null);
+            void hydrateFromSku(scannedCode);
 
             return;
         }
@@ -3903,6 +3904,52 @@ export default function Index({
                                 className="w-full font-bold sm:w-auto"
                             >
                                 Cerrar
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Confirmación antes de sobrescribir datos por SKU */}
+                <Dialog open={showSkuConfirm} onOpenChange={setShowSkuConfirm}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>¿Aplicar datos del producto encontrado?</DialogTitle>
+                            <DialogDescription>
+                                Ya hay datos digitados en este formulario. Al aplicar
+                                se sobrescribirán nombre, categoría, precios, stock,
+                                unidad de medida, imágenes y variantes del SKU{' '}
+                                <strong>{pendingSkuData?.codigo}</strong>. Los campos
+                                que ya tengas llenados se reemplazarán.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setPendingSkuData(null);
+                                    setShowSkuConfirm(false);
+                                }}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    if (pendingSkuData) {
+                                        applySkuHydration(pendingSkuData);
+                                        setSkuHydrationNotice({
+                                            type: 'success',
+                                            message:
+                                                'Datos aplicados desde el SKU encontrado. Revisa y ajusta antes de guardar.',
+                                        });
+                                        toast.success(
+                                            'Datos aplicados desde el SKU encontrado.',
+                                        );
+                                    }
+                                    setPendingSkuData(null);
+                                    setShowSkuConfirm(false);
+                                }}
+                            >
+                                Aplicar datos
                             </Button>
                         </DialogFooter>
                     </DialogContent>
