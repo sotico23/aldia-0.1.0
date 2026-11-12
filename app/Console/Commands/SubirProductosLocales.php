@@ -1,16 +1,16 @@
-namespace App\Console\Commands;
-
 <?php
+
+namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use App\Models\Product; // Asegúrate de ajustar tu modelo si tiene otro nombre o namespace
+use App\Models\Producto; // Asegúrate de que tu modelo coincida
 
 class SubirProductosLocales extends Command
 {
     protected $signature = 'productos:subir';
-    protected $description = 'Sube productos, asigna almacén Santiago, stock mínimo 10, calcula comisión por rangos y añade enlace a RedCliente Store';
+    protected $description = 'Sube productos masivamente, asigna almacén Santiago, stock mínimo 10, comisiones por rangos y enlace a RedCliente Store';
 
     public function handle()
     {
@@ -49,27 +49,31 @@ class SubirProductosLocales extends Command
             // 3. Parafrasear, añadir emojis e invitación a la tienda
             $descripcionMejorada = $this->parafrasearConEmojis($titulo, $descripcionOriginal);
 
-            // 4. Vincular la imagen exacta de forma segura
+            // 4. Vincular la imagen exacta de forma segura en storage/app/public/productos
             $imagenRelativa = null;
             if (File::exists($carpetaImagenes)) {
                 $archivosImg = File::files($carpetaImagenes);
                 foreach ($archivosImg as $img) {
                     if (pathinfo($img->getFilename(), PATHINFO_FILENAME) === $nombreArchivoSinExt) {
-                        $nombreImgDestino = 'productos/' . time() . '_' . $img->getFilename();
+                        // Siguiendo la ruta estándar del controlador: storage/app/public/productos
+                        $nombreArchivoUnico = time() . '_' . $img->getFilename();
+                        $destinoStorage = storage_path('app/public/productos/' . $nombreArchivoUnico);
                         
-                        if (!File::exists(public_path('storage/productos'))) {
-                            File::makeDirectory(public_path('storage/productos'), 0755, true, true);
+                        if (!File::exists(storage_path('app/public/productos'))) {
+                            File::makeDirectory(storage_path('app/public/productos'), 0755, true, true);
                         }
 
-                        File::copy($img->getPathname(), public_path($nombreImgDestino));
-                        $imagenRelativa = $nombreImgDestino;
+                        File::copy($img->getPathname(), $destinoStorage);
+                        
+                        // Guardamos la ruta relativa para el campo de imagen de la BD
+                        $imagenRelativa = 'productos/' . $nombreArchivoUnico;
                         break;
                     }
                 }
             }
 
-            // 5. Guardar en Base de Datos aplicando las reglas solicitadas
-            Product::updateOrCreate(
+            // 5. Guardar en Base de Datos aplicando la estructura del ciclo de vida del producto
+            \App\Models\Producto::updateOrCreate(
                 ['name' => trim($titulo)],
                 [
                     'slug' => Str::slug($titulo),
@@ -77,14 +81,18 @@ class SubirProductosLocales extends Command
                     'description' => $descripcionMejorada,
                     'image' => $imagenRelativa,
                     'source_link' => trim($enlace),
-                    'warehouse' => 'Santiago',       // Asigna almacén Santiago
-                    'min_stock' => 10,               // Stock mínimo de 10 por defecto
-                    'cashier_commission' => $comisionCajero // Comisión calculada por rangos
+                    'warehouse' => 'Santiago',           // Almacén Santiago requerido
+                    'min_stock' => 10,                   // Stock mínimo por defecto
+                    'cashier_commission' => $comisionCajero, // Comisión calculada por rangos
+                    // Si tu controlador asigna valores por defecto para owner_id o user_id, 
+                    // puedes descomentar e incluir los IDs correspondientes aquí si tu BD los exige:
+                    // 'owner_id' => 1,
+                    // 'user_id' => 1,
                 ]
             );
         }
 
-        $this->info('¡Proceso completado con éxito! Almacén Santiago, stock mínimo 10 y comisiones asignadas correctamente.');
+        $this->info('¡Proceso completado con éxito! Todos los productos se subieron alineados al flujo de Santiago.');
     }
 
     /**
@@ -102,7 +110,7 @@ class SubirProductosLocales extends Command
             return 2850.00;
         }
         
-        return 0.00; // Por defecto si el precio está fuera de rango
+        return 0.00;
     }
 
     /**
