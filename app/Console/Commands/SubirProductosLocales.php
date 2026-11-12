@@ -66,9 +66,9 @@ class SubirProductosLocales extends Command
                 }
             }
 
-            // 4. Guardar en Base de Datos usando estrictamente los campos reales de la tabla
+            // 4. Guardar en Base de Datos incluyendo peso_base para evitar el error 1364
             \App\Models\Producto::updateOrCreate(
-                ['nombre' => trim($titulo)], // Usando el campo 'nombre' real
+                ['nombre' => trim($titulo)],
                 [
                     'descripcion' => $descripcionMejorada,
                     'precio_venta' => $precioFinal,
@@ -76,13 +76,13 @@ class SubirProductosLocales extends Command
                     'imagen' => $imagenRelativa,
                     'activo' => true,
                     'unidad_medida' => 'unidad',
-                    // Si requieres guardar código basado en el slug o identificador:
+                    'peso_base' => 0.00, // <--- Requerido por la base de datos
                     'codigo' => Str::slug($titulo) . '-' . rand(100, 999),
                 ]
             );
         }
 
-        $this->info('¡Proceso completado con éxito! Todos los productos se subieron usando los campos reales.');
+        $this->info('¡Proceso completado con éxito! Todos los productos se subieron correctamente.');
     }
 
     /**
