@@ -3,12 +3,12 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use App\Models\Product;
+use App\Models\Product; // Asegúrate de ajustar tu modelo si tiene otro nombre o namespace
 
 class SubirProductosLocales extends Command
 {
     protected $signature = 'productos:subir';
-    protected $description = 'Sube productos, parafrasea descripciones, añade emojis, vincula fotos e incluye el enlace a RedCliente Store';
+    protected $description = 'Sube productos, asigna almacén Santiago, stock mínimo 10, calcula comisión por rangos y añade enlace a RedCliente Store';
 
     public function handle()
     {
@@ -31,19 +31,23 @@ class SubirProductosLocales extends Command
 
             $contenido = File::get($pathTxt);
 
-            // 1. Extraer los datos básicos
+            // 1. Extraer los datos básicos del archivo txt
             $titulo = $this->extraerSeccion($contenido, 'TÍTULO:', 'PRECIO:');
             $precioStr = $this->extraerSeccion($contenido, 'PRECIO:', 'ENLACE:');
             $enlace = $this->extraerSeccion($contenido, 'ENLACE:', 'DESCRIPCIÓN:');
             $descripcionOriginal = $this->extraerSeccion($contenido, 'DESCRIPCIÓN:', null);
 
+            // Limpiar precio
             $precioLimpio = preg_replace('/[^0-9.]/', '', $precioStr);
-            $precioFinal = is_numeric($precioLimpio) ? $precioLimpio : 0.00;
+            $precioFinal = is_numeric($precioLimpio) ? floatval($precioLimpio) : 0.00;
 
-            // 2. Parafrasear, añadir emojis e invitación a la tienda
+            // 2. Calcular la comisión del cajero según el rango de precios de Santiago
+            $comisionCajero = $this->calcularComisionSantiago($precioFinal);
+
+            // 3. Parafrasear, añadir emojis e invitación a la tienda
             $descripcionMejorada = $this->parafrasearConEmojis($titulo, $descripcionOriginal);
 
-            // 3. Vincular la imagen exacta de forma segura
+            // 4. Vincular la imagen exacta de forma segura
             $imagenRelativa = null;
             if (File::exists($carpetaImagenes)) {
                 $archivosImg = File::files($carpetaImagenes);
@@ -62,7 +66,7 @@ class SubirProductosLocales extends Command
                 }
             }
 
-            // 4. Guardar en Base de Datos
+            // 5. Guardar en Base de Datos aplicando las reglas solicitadas
             Product::updateOrCreate(
                 ['name' => trim($titulo)],
                 [
@@ -70,12 +74,33 @@ class SubirProductosLocales extends Command
                     'price' => $precioFinal,
                     'description' => $descripcionMejorada,
                     'image' => $imagenRelativa,
-                    'source_link' => trim($enlace)
+                    'source_link' => trim($enlace),
+                    'warehouse' => 'Santiago',       // Asigna almacén Santiago
+                    'min_stock' => 10,               // Stock mínimo de 10 por defecto
+                    'cashier_commission' => $comisionCajero // Comisión calculada por rangos
                 ]
             );
         }
 
-        $this->info('¡Proceso completado! Productos subidos con descripciones renovadas, emojis y enlace a RedCliente Store.');
+        $this->info('¡Proceso completado con éxito! Almacén Santiago, stock mínimo 10 y comisiones asignadas correctamente.');
+    }
+
+    /**
+     * Calcula la comisión del cajero basándose en los rangos de la tabla de Santiago
+     */
+    private function calcularComisionSantiago($precio)
+    {
+        if ($precio >= 1000 && $precio <= 10500) {
+            return 1350.00;
+        } elseif ($precio >= 11000 && $precio <= 22500) {
+            return 1850.00;
+        } elseif ($precio >= 23000 && $precio <= 32500) {
+            return 2350.00;
+        } elseif ($precio >= 33000) {
+            return 2850.00;
+        }
+        
+        return 0.00; // Por defecto si el precio está fuera de rango
     }
 
     /**
@@ -89,7 +114,6 @@ class SubirProductosLocales extends Command
             $descripcionLimpia = "Un producto excelente y de gran utilidad diseñado para facilitarte el día a día.";
         }
 
-        // Estructura comercial con emojis y llamada a la acción integrada
         $paratexto = "🔥 **¡No te quedes sin el tuyo!**\n\n";
         $paratexto .= "🌟 **Producto:** {$titulo}\n\n";
         $paratexto .= "📝 **Descripción:** {$descripcionLimpia}\n\n";
