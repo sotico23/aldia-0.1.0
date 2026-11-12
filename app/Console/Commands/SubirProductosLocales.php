@@ -5,12 +5,12 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use App\Models\Producto; // Asegúrate de que tu modelo coincida
+use App\Models\Product;
 
 class SubirProductosLocales extends Command
 {
     protected $signature = 'productos:subir';
-    protected $description = 'Sube productos masivamente, asigna almacén Santiago, stock mínimo 10, comisiones por rangos y enlace a RedCliente Store';
+    protected $description = 'Sube productos masivamente adaptados al esquema real de la base de datos';
 
     public function handle()
     {
@@ -43,19 +43,15 @@ class SubirProductosLocales extends Command
             $precioLimpio = preg_replace('/[^0-9.]/', '', $precioStr);
             $precioFinal = is_numeric($precioLimpio) ? floatval($precioLimpio) : 0.00;
 
-            // 2. Calcular la comisión del cajero según el rango de precios de Santiago
-            $comisionCajero = $this->calcularComisionSantiago($precioFinal);
-
-            // 3. Parafrasear, añadir emojis e invitación a la tienda
+            // 2. Parafrasear, añadir emojis e invitación a la tienda
             $descripcionMejorada = $this->parafrasearConEmojis($titulo, $descripcionOriginal);
 
-            // 4. Vincular la imagen exacta de forma segura en storage/app/public/productos
+            // 3. Vincular la imagen exacta de forma segura en storage/app/public/productos
             $imagenRelativa = null;
             if (File::exists($carpetaImagenes)) {
                 $archivosImg = File::files($carpetaImagenes);
                 foreach ($archivosImg as $img) {
                     if (pathinfo($img->getFilename(), PATHINFO_FILENAME) === $nombreArchivoSinExt) {
-                        // Siguiendo la ruta estándar del controlador: storage/app/public/productos
                         $nombreArchivoUnico = time() . '_' . $img->getFilename();
                         $destinoStorage = storage_path('app/public/productos/' . $nombreArchivoUnico);
                         
@@ -64,53 +60,29 @@ class SubirProductosLocales extends Command
                         }
 
                         File::copy($img->getPathname(), $destinoStorage);
-                        
-                        // Guardamos la ruta relativa para el campo de imagen de la BD
                         $imagenRelativa = 'productos/' . $nombreArchivoUnico;
                         break;
                     }
                 }
             }
 
-            // 5. Guardar en Base de Datos aplicando la estructura del ciclo de vida del producto
+            // 4. Guardar en Base de Datos usando estrictamente los campos reales de la tabla
             \App\Models\Producto::updateOrCreate(
-                ['name' => trim($titulo)],
+                ['nombre' => trim($titulo)], // Usando el campo 'nombre' real
                 [
-                    'slug' => Str::slug($titulo),
-                    'price' => $precioFinal,
-                    'description' => $descripcionMejorada,
-                    'image' => $imagenRelativa,
-                    'source_link' => trim($enlace),
-                    'warehouse' => 'Santiago',           // Almacén Santiago requerido
-                    'min_stock' => 10,                   // Stock mínimo por defecto
-                    'cashier_commission' => $comisionCajero, // Comisión calculada por rangos
-                    // Si tu controlador asigna valores por defecto para owner_id o user_id, 
-                    // puedes descomentar e incluir los IDs correspondientes aquí si tu BD los exige:
-                    // 'owner_id' => 1,
-                    // 'user_id' => 1,
+                    'descripcion' => $descripcionMejorada,
+                    'precio_venta' => $precioFinal,
+                    'stock_minimo' => 10,
+                    'imagen' => $imagenRelativa,
+                    'activo' => true,
+                    'unidad_medida' => 'unidad',
+                    // Si requieres guardar código basado en el slug o identificador:
+                    'codigo' => Str::slug($titulo) . '-' . rand(100, 999),
                 ]
             );
         }
 
-        $this->info('¡Proceso completado con éxito! Todos los productos se subieron alineados al flujo de Santiago.');
-    }
-
-    /**
-     * Calcula la comisión del cajero basándose en los rangos de la tabla de Santiago
-     */
-    private function calcularComisionSantiago($precio)
-    {
-        if ($precio >= 1000 && $precio <= 10500) {
-            return 1350.00;
-        } elseif ($precio >= 11000 && $precio <= 22500) {
-            return 1850.00;
-        } elseif ($precio >= 23000 && $precio <= 32500) {
-            return 2350.00;
-        } elseif ($precio >= 33000) {
-            return 2850.00;
-        }
-        
-        return 0.00;
+        $this->info('¡Proceso completado con éxito! Todos los productos se subieron usando los campos reales.');
     }
 
     /**
