@@ -1,5 +1,7 @@
 namespace App\Console\Commands;
 
+<?php
+
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
