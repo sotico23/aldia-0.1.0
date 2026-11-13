@@ -44,15 +44,13 @@ class MarketplaceController extends Controller
             }])
             ->firstOrFail();
 
-        // Cargar todos los productos activos y visibles del perfil sin el filtro
-        // de OwnerScope (que restringiría por owner_id y limitaría el catálogo).
+        // Cargar TODOS los productos del perfil sin filtros de activo/mostrar_en_perfil
+        // ni el filtro de OwnerScope (que restringiría por owner_id).
         $productos = Producto::withoutGlobalScope(OwnerScope::class)
             ->where('public_profile_id', $publicProfile->id)
-            ->where('activo', true)
-            ->where('mostrar_en_perfil', true)
             ->with([
                 'inventarios' => fn ($inventariosQuery) => $inventariosQuery->withoutGlobalScope(OwnerScope::class),
-                'skus' => fn ($skusQuery) => $skusQuery->withoutGlobalScope(OwnerScope::class)->where('activo', true),
+                'skus' => fn ($skusQuery) => $skusQuery->withoutGlobalScope(OwnerScope::class),
                 'skus.valores' => fn ($valoresQuery) => $valoresQuery->withoutGlobalScope(OwnerScope::class),
                 'skus.valores.varianteValor' => fn ($varianteValorQuery) => $varianteValorQuery->withoutGlobalScope(OwnerScope::class),
             ])
@@ -95,6 +93,7 @@ class MarketplaceController extends Controller
 
         return Inertia::render('marketplace/show', [
             'store' => $publicProfile,
+            'productos' => $productos,
             'almacenes' => $almacenes,
             'userReaction' => $userReaction,
             'reviews' => $reviews,
