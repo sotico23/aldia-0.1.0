@@ -101,6 +101,8 @@ test('la tienda expone los datos completos del producto para la vista de detalle
             ->where('store.productos.0.inventarios.0.cantidad', 12)
             ->where('store.productos.0.skus.0.sku', 'PRO-STORE-01-ROJO')
             ->where('store.productos.0.skus.0.valores.0.variante_valor.valor', 'Rojo')
+            ->has('almacenes', 1)
+            ->where('almacenes.0.activo', true)
         );
 });
 

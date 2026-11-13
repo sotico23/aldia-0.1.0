@@ -23,9 +23,10 @@ import {
     Trash2,
     Package,
     Tag,
-    ExternalLink,
     Info,
     ShieldCheck,
+    Building2,
+    User as UserIcon,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -86,6 +87,17 @@ interface Categoria {
     nombre: string;
     descripcion: string | null;
     imagen: string | null;
+}
+
+interface Almacen {
+    id: number;
+    nombre: string;
+    codigo: string | null;
+    direccion: string | null;
+    telefono: string | null;
+    responsable: string | null;
+    tipo: string | null;
+    activo: boolean;
 }
 
 interface SkuValor {
@@ -166,6 +178,7 @@ interface StoreProfile {
     user: LocalUserType;
     categorias: Categoria[];
     productos: Producto[];
+    almacenes: Almacen[];
     created_at: string;
     likes_count: number;
     rating_total: number;
@@ -174,6 +187,7 @@ interface StoreProfile {
 
 export default function MarketplaceShow({
     store,
+    almacenes = [],
     userReaction,
     paymentConfig,
     reviews = [],
@@ -181,6 +195,7 @@ export default function MarketplaceShow({
     userReview = null,
 }: {
     store: StoreProfile;
+    almacenes?: Almacen[];
     userReaction?: UserReaction;
     paymentConfig?: {
         is_active: boolean;
@@ -224,10 +239,7 @@ export default function MarketplaceShow({
     );
     const [carritoAbierto, setCarritoAbierto] = useState(false);
     const [checkoutAbierto, setCheckoutAbierto] = useState(false);
-    const [catalogoAbierto, setCatalogoAbierto] = useState(false);
 
-    // Cantidad de productos mostrados en la vista previa del catálogo principal
-    const PRODUCTOS_VISTA_PREVIA = 8;
     const [productoDetalle, setProductoDetalle] = useState<Producto | null>(
         null,
     );
@@ -940,14 +952,14 @@ export default function MarketplaceShow({
             <div className="min-h-screen bg-[#f8fafc] pt-6 pb-16">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                        {/* Columna Izquierda (3 cols / ~25%): Detalles / Información & Categorías */}
+                        {/* Columna Izquierda (3 cols / ~25%): Almacenes y Ubicación & Categorías */}
                         <aside className="w-full lg:col-span-3 space-y-5">
-                            {/* Bloque: Detalles / Información */}
+                            {/* Bloque: Almacenes y Ubicación */}
                             <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm transition-all hover:shadow-md">
                                 <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
                                     <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
-                                        <Info className="h-4 w-4 text-primary" />
-                                        Detalles / Información
+                                        <Building2 className="h-4 w-4 text-primary" />
+                                        Almacenes y Ubicación
                                     </h2>
                                     {store.is_official && (
                                         <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200/60">
@@ -956,78 +968,75 @@ export default function MarketplaceShow({
                                         </span>
                                     )}
                                 </div>
-                                <div className="space-y-3.5">
-                                    {/* Descripción / Mensaje Institucional o Bienvenida */}
-                                    <div className="rounded-lg bg-slate-50 p-3.5 border border-slate-100">
-                                        <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                                            <Store className="h-3.5 w-3.5 text-primary" />
-                                            Sobre la tienda
-                                        </div>
-                                        <p className="text-sm leading-relaxed text-slate-700 italic break-words">
-                                            {store.description
-                                                ? `"${store.description}"`
-                                                : `Bienvenido a la tienda oficial de ${store.title}. Encuentra productos y servicios con garantía y atención directa.`}
+                                {almacenes.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {almacenes.map((almacen) => (
+                                            <div
+                                                key={almacen.id}
+                                                className="rounded-lg border border-slate-100 bg-slate-50 p-3.5 hover:bg-slate-100 transition-colors"
+                                            >
+                                                <div className="flex items-start gap-2.5 mb-1.5">
+                                                    <Building2 className="h-4 w-4 shrink-0 text-primary mt-0.5" />
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-sm font-bold text-slate-900 leading-tight">
+                                                            {almacen.nombre}
+                                                        </p>
+                                                        {almacen.codigo && (
+                                                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                                                {almacen.codigo}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {almacen.direccion && (
+                                                    <div className="flex items-start gap-2 mb-1.5">
+                                                        <MapPin className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
+                                                        <span className="text-sm text-slate-700 leading-tight break-words">
+                                                            {almacen.direccion}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {almacen.telefono && (
+                                                    <div className="flex items-start gap-2 mb-1.5">
+                                                        <Phone className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
+                                                        <span className="text-sm text-slate-700 leading-tight">
+                                                            {almacen.telefono}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {almacen.responsable && (
+                                                    <div className="flex items-start gap-2 mb-1.5">
+                                                        <UserIcon className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
+                                                        <span className="text-sm text-slate-700 leading-tight">
+                                                            <strong className="text-slate-800">Responsable:</strong>{' '}
+                                                            {almacen.responsable}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {almacen.tipo && (
+                                                    <div className="flex items-start gap-2">
+                                                        <Tag className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
+                                                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                                                            {almacen.tipo}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="py-6 text-center text-slate-400">
+                                        <Building2 className="mx-auto mb-2 h-8 w-8 opacity-40" />
+                                        <p className="text-xs">No hay almacenes disponibles</p>
+                                        <p className="text-[10px] text-slate-500 mt-1">
+                                            Esta tienda aún no tiene sucursales configuradas
                                         </p>
                                     </div>
-
-                                    {/* Insignias de confianza, políticas y contacto */}
-                                    <div className="space-y-2.5 pt-1 text-xs text-slate-600">
-                                        {store.is_official && (
-                                            <div className="flex items-start gap-2.5">
-                                                <ShieldCheck className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
-                                                <span className="leading-tight">
-                                                    <strong className="text-slate-800">Tienda Oficial:</strong> Compra protegida y productos certificados.
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {store.is_verified && (
-                                            <div className="flex items-start gap-2.5">
-                                                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500 mt-0.5" />
-                                                <span className="leading-tight">
-                                                    <strong className="text-slate-800">Identidad Verificada:</strong> Comercio registrado y validado en RedCliente.
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {(store.user.region || store.user.comuna) && (
-                                            <div className="flex items-start gap-2.5">
-                                                <MapPin className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
-                                                <span className="leading-tight">
-                                                    <strong className="text-slate-800">Ubicación:</strong>{' '}
-                                                    <span className="text-slate-700">
-                                                        {[store.user.comuna, store.user.region].filter(Boolean).join(', ')}
-                                                    </span>
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {store.email && (
-                                            <div className="flex items-start gap-2.5">
-                                                <Mail className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
-                                                <span className="truncate leading-tight">
-                                                    <strong className="text-slate-800">Email:</strong>{' '}
-                                                    <a
-                                                        href={`mailto:${store.email}`}
-                                                        className="text-primary hover:underline"
-                                                    >
-                                                        {store.email}
-                                                    </a>
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {store.phone && (
-                                            <div className="flex items-start gap-2.5">
-                                                <Phone className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
-                                                <span className="leading-tight">
-                                                    <strong className="text-slate-800">Teléfono:</strong>{' '}
-                                                    <span className="text-slate-700">{store.phone}</span>
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                                )}
                             </div>
 
                             {/* Bloque: Categorías */}
@@ -1085,7 +1094,7 @@ export default function MarketplaceShow({
                             {tabActivo === 'productos' && (
                                 <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
                                     <div className="flex flex-col gap-4">
-                                        {/* Header del Catálogo con botón superior "Ver todos los productos" */}
+                                        {/* Header del Catálogo */}
                                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-3">
                                             <div>
                                                 <h2 className="text-lg font-bold text-slate-900">
@@ -1098,51 +1107,25 @@ export default function MarketplaceShow({
                                                         : 'productos disponibles'}
                                                 </p>
                                             </div>
-
-                                            {store.productos.length > 0 && (
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        setCatalogoAbierto(true)
-                                                    }
-                                                    className="flex items-center gap-1.5 text-xs font-semibold border-slate-200 text-slate-700 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-colors self-start sm:self-auto shadow-xs"
-                                                >
-                                                    <Package className="h-3.5 w-3.5 text-primary" />
-                                                    Ver todos los productos
-                                                    <ExternalLink className="h-3 w-3 opacity-60" />
-                                                </Button>
-                                            )}
                                         </div>
 
-                                        {/* Vista previa limitada con altura controlada y scroll */}
-                                        <div
-                                            className={cn(
-                                                'grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3',
-                                                store.productos.length >
-                                                    PRODUCTOS_VISTA_PREVIA
-                                                    ? 'custom-scrollbar max-h-[640px] xl:max-h-[720px] overflow-y-auto pr-1'
-                                                    : '',
-                                            )}
-                                        >
-                                        {store.productos
-                                            .slice(0, PRODUCTOS_VISTA_PREVIA)
-                                            .map((p) => (
+                                        {/* Catálogo completo: todos los productos activos y con stock */}
+                                        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+                                            {store.productos.map((p) => (
                                                 <ProductCard
                                                     key={p.id}
                                                     producto={p}
                                                 />
                                             ))}
-                                        {store.productos.length === 0 && (
-                                            <div className="col-span-full py-8 text-center text-slate-400">
-                                                <Package className="mx-auto mb-3 h-10 w-10 opacity-50" />
-                                                <p className="text-sm">
-                                                    No hay productos disponibles
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
+                                            {store.productos.length === 0 && (
+                                                <div className="col-span-full py-8 text-center text-slate-400">
+                                                    <Package className="mx-auto mb-3 h-10 w-10 opacity-50" />
+                                                    <p className="text-sm">
+                                                        No hay productos disponibles
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
                                 </div>
                             </div>
                         )}
@@ -2213,61 +2196,6 @@ export default function MarketplaceShow({
                 </div>
             </div>
         </div>
-
-        {/* Sheet: Catálogo completo ("Ver todos los productos") */}
-        <Sheet
-            open={catalogoAbierto}
-            onOpenChange={setCatalogoAbierto}
-        >
-            <SheetTrigger asChild>
-                <button
-                    type="button"
-                    className="hidden"
-                />
-            </SheetTrigger>
-            <SheetContent className="rounded-xl border border-slate-200 bg-white shadow-xl sm:max-w-[760px] p-0 flex flex-col">
-                <SheetHeader className="flex items-center justify-between border-b px-6 py-4">
-                    <div>
-                        <SheetTitle className="text-lg font-bold text-slate-900">
-                            Catálogo Completo
-                        </SheetTitle>
-                        <p className="text-xs text-slate-500">
-                            {store.productos.length}{' '}
-                            {store.productos.length === 1
-                                ? 'producto disponible'
-                                : 'productos disponibles'}
-                        </p>
-                    </div>
-                </SheetHeader>
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
-                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                        {store.productos.map((p) => (
-                            <ProductCard
-                                key={p.id}
-                                producto={p}
-                            />
-                        ))}
-                        {store.productos.length === 0 && (
-                            <div className="col-span-full py-12 text-center text-slate-400">
-                                <Package className="mx-auto mb-3 h-10 w-10 opacity-50" />
-                                <p className="text-sm font-medium">
-                                    No hay productos disponibles actualmente
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-                <SheetFooter className="border-t px-6 py-3">
-                    <Button
-                        type="button"
-                        onClick={() => setCatalogoAbierto(false)}
-                        className="w-full"
-                    >
-                        Cerrar Catálogo
-                    </Button>
-                </SheetFooter>
-            </SheetContent>
-        </Sheet>
 
             {/* Botón flotante móvil para carrito de compras */}
             {totalItems > 0 && (

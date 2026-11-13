@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Almacen;
 use App\Models\Categoria;
 use App\Models\PaymentConfig;
 use App\Models\Pedido;
@@ -79,10 +80,17 @@ class MarketplaceController extends Controller
             ->latest()
             ->get();
 
+        $almacenes = Almacen::withoutGlobalScope(OwnerScope::class)
+            ->where('owner_id', $publicProfile->owner_id)
+            ->where('activo', true)
+            ->orderBy('nombre')
+            ->get();
+
         $paymentConfig = PaymentConfig::resolveForOwner($publicProfile->user_id);
 
         return Inertia::render('marketplace/show', [
             'store' => $publicProfile,
+            'almacenes' => $almacenes,
             'userReaction' => $userReaction,
             'reviews' => $reviews,
             'hasPurchased' => $hasPurchased,
