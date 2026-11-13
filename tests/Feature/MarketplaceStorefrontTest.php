@@ -106,6 +106,56 @@ test('la tienda expone los datos completos del producto para la vista de detalle
         );
 });
 
+test('la tienda lista todos los productos de su propietario sin aplicar filtros de visibilidad', function () {
+    $productoLegado = Producto::factory()->create([
+        'user_id' => $this->vendor->id,
+        'owner_id' => $this->vendor->id,
+        'categoria_id' => $this->categoria->id,
+        'public_profile_id' => null,
+        'codigo' => 'PRO-STORE-LEGACY',
+        'nombre' => 'Producto legado',
+    ]);
+
+    $productoNoVisible = Producto::factory()->create([
+        'user_id' => $this->vendor->id,
+        'owner_id' => $this->vendor->id,
+        'categoria_id' => $this->categoria->id,
+        'public_profile_id' => $this->publicProfile->id,
+        'codigo' => 'PRO-STORE-02',
+        'nombre' => 'Producto no visible',
+        'activo' => false,
+        'mostrar_en_perfil' => false,
+    ]);
+
+    Producto::factory()->count(13)->create([
+        'user_id' => $this->vendor->id,
+        'owner_id' => $this->vendor->id,
+        'categoria_id' => $this->categoria->id,
+        'public_profile_id' => $this->publicProfile->id,
+        'nombre' => 'zz producto masivo',
+    ]);
+
+    $productoDeOtroPropietario = Producto::factory()->create([
+        'user_id' => $this->buyer->id,
+        'owner_id' => $this->buyer->id,
+        'categoria_id' => $this->categoria->id,
+        'public_profile_id' => $this->publicProfile->id,
+        'codigo' => 'PRO-STORE-03',
+    ]);
+
+    $this->get(route('marketplace.show', $this->publicProfile->slug))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('marketplace/show')
+            ->has('store.productos', 16)
+            ->where('store.productos.1.id', $productoLegado->id)
+            ->where('store.productos.2.id', $productoNoVisible->id)
+            ->where('productos.0.id', $this->producto->id)
+            ->where('productos.1.id', $productoLegado->id)
+            ->where('productos.2.id', $productoNoVisible->id)
+        );
+});
+
 test('la ruta de todas las categorias lista las categorias visibles de la tienda', function () {
     $this->get(route('marketplace.categories', $this->publicProfile->slug))
         ->assertSuccessful()

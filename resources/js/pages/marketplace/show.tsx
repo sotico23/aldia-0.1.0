@@ -681,6 +681,7 @@ export default function MarketplaceShow({
                         )}
                         <div className="flex items-center justify-between rounded-lg bg-slate-100 p-1">
                             <Button
+                                type="button"
                                 variant="ghost"
                                 size="icon"
                                 className="h-7 w-7 rounded-md hover:bg-slate-200"
@@ -730,6 +731,7 @@ export default function MarketplaceShow({
                                 )}
                             </div>
                             <Button
+                                type="button"
                                 variant="ghost"
                                 size="icon"
                                 className="h-7 w-7 rounded-md hover:bg-slate-200"
@@ -748,6 +750,7 @@ export default function MarketplaceShow({
                             </Button>
                         </div>
                         <Button
+                            type="button"
                             className={`h-9 w-full rounded-lg text-sm font-semibold transition-colors ${productoAgregado === producto.id ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-primary text-white hover:bg-primary/90'}`}
                             onClick={() => agregarAlCarrito(producto.id)}
                             disabled={productoAgregado === producto.id}
@@ -969,10 +972,10 @@ export default function MarketplaceShow({
 
             {/* Main Content Area - 3-Column Layout */}
             <div className="min-h-screen bg-[#f8fafc] pt-6 pb-16">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                        {/* Columna Izquierda (3 cols / ~25%): Filtros unificados */}
-                        <aside className="w-full lg:col-span-3 space-y-5">
+                <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
+                        {/* Columna Izquierda (2 cols / ~17%): Filtros unificados */}
+                        <aside className="w-full space-y-5 lg:col-span-2">
                             {/* Bloque: Filtros (Almacenes y Categorías) */}
                             <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm transition-all hover:shadow-md">
                                 <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
@@ -1092,8 +1095,8 @@ export default function MarketplaceShow({
                             </div>
                         </aside>
 
-                        {/* Columna Central (9 cols / ~75%): Catálogo de Productos */}
-                        <main className="w-full lg:col-span-9 space-y-5">
+                        {/* Columna Central (10 cols / ~83%): Catálogo de Productos */}
+                        <main className="w-full space-y-5 lg:col-span-10">
                             {tabActivo === 'productos' && (
                                 <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
                                     <div className="flex flex-col gap-4">
@@ -1119,11 +1122,15 @@ export default function MarketplaceShow({
                                             >
                                                 <ShoppingCart className="h-3.5 w-3.5 text-primary" />
                                                 Ver Carrito
+                                                {totalItems > 0 && (
+                                                    <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                                                        {totalItems}
+                                                    </span>
+                                                )}
                                             </Button>
                                         </div>
 
-                                        {/* Catálogo completo: todos los productos activos y con stock (filtrados) */}
-                                        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                                             {productosFiltrados.map((p) => (
                                                 <ProductCard
                                                     key={p.id}
@@ -1548,7 +1555,7 @@ export default function MarketplaceShow({
                                 )}
                             </div>
 
-                            {totalItems > 0 && (
+                            {(totalItems > 0 || carritoAbierto) && (
                                 <div className="border-t border-slate-100 pt-4">
                                     <div className="mb-4 flex items-center justify-between">
                                         <span className="font-bold text-slate-700">

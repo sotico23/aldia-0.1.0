@@ -86,6 +86,36 @@ test('crear accepts integer quantity', function () {
     ]);
 });
 
+test('crear acepta productos legados sin perfil público del mismo propietario', function () {
+    $productoLegado = Producto::factory()->create([
+        'user_id' => $this->storeOwner->id,
+        'owner_id' => $this->storeOwner->id,
+        'categoria_id' => $this->categoria->id,
+        'public_profile_id' => null,
+        'nombre' => 'Producto legado',
+    ]);
+
+    $response = $this->actingAs($this->customer)
+        ->post(route('tienda.checkout', ['slug' => $this->publicProfile->slug]), [
+            'public_profile_id' => $this->publicProfile->id,
+            'items' => [
+                [
+                    'producto_id' => $productoLegado->id,
+                    'cantidad' => 1,
+                ],
+            ],
+            'nombre_cliente' => 'Cliente Test',
+        ]);
+
+    $response->assertSessionDoesntHaveErrors();
+    $response->assertStatus(302);
+
+    $this->assertDatabaseHas('pedido_items', [
+        'producto_id' => $productoLegado->id,
+        'cantidad' => 1,
+    ]);
+});
+
 test('crear rejects quantity below 0.001', function () {
     $response = $this->actingAs($this->customer)
         ->post(route('tienda.checkout', ['slug' => $this->publicProfile->slug]), [

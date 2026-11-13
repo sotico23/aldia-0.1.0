@@ -45,9 +45,12 @@ class PedidoController extends Controller
             'items.*.producto_id' => [
                 'required',
                 Rule::exists('productos', 'id')->where(function ($query) use ($publicProfile) {
-                    $query->where('public_profile_id', $publicProfile->id)
-                        ->where('owner_id', $publicProfile->owner_id)
-                        ->where('activo', true);
+                    $query->where('owner_id', $publicProfile->owner_id)
+                        ->where('activo', true)
+                        ->where(function ($profileQuery) use ($publicProfile) {
+                            $profileQuery->where('public_profile_id', $publicProfile->id)
+                                ->orWhereNull('public_profile_id');
+                        });
                 }),
             ],
             'items.*.cantidad' => 'required|numeric|min:0.001',
@@ -96,8 +99,11 @@ class PedidoController extends Controller
                 foreach ($validated['items'] as $item) {
                     $producto = Producto::withoutGlobalScope(OwnerScope::class)
                         ->whereKey($item['producto_id'])
-                        ->where('public_profile_id', $publicProfile->id)
                         ->where('owner_id', $publicProfile->owner_id)
+                        ->where(function ($query) use ($publicProfile) {
+                            $query->where('public_profile_id', $publicProfile->id)
+                                ->orWhereNull('public_profile_id');
+                        })
                         ->firstOrFail();
                     $cantidad = $item['cantidad'];
 
@@ -134,8 +140,11 @@ class PedidoController extends Controller
                 foreach ($validated['items'] as $item) {
                     $producto = Producto::withoutGlobalScope(OwnerScope::class)
                         ->whereKey($item['producto_id'])
-                        ->where('public_profile_id', $publicProfile->id)
                         ->where('owner_id', $publicProfile->owner_id)
+                        ->where(function ($query) use ($publicProfile) {
+                            $query->where('public_profile_id', $publicProfile->id)
+                                ->orWhereNull('public_profile_id');
+                        })
                         ->firstOrFail();
                     $cantidad = $item['cantidad'];
                     $precio = $producto->precio_venta;

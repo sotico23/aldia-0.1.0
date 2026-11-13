@@ -44,10 +44,13 @@ class MarketplaceController extends Controller
             }])
             ->firstOrFail();
 
-        // Cargar TODOS los productos del perfil sin filtros de activo/mostrar_en_perfil
-        // ni el filtro de OwnerScope (que restringiría por owner_id).
+        // Include legacy products without a profile, but never mix another tenant's catalog.
         $productos = Producto::withoutGlobalScope(OwnerScope::class)
-            ->where('public_profile_id', $publicProfile->id)
+            ->where('owner_id', $publicProfile->owner_id)
+            ->where(function ($query) use ($publicProfile) {
+                $query->where('public_profile_id', $publicProfile->id)
+                    ->orWhereNull('public_profile_id');
+            })
             ->with([
                 'inventarios' => fn ($inventariosQuery) => $inventariosQuery->withoutGlobalScope(OwnerScope::class),
                 'skus' => fn ($skusQuery) => $skusQuery->withoutGlobalScope(OwnerScope::class),
