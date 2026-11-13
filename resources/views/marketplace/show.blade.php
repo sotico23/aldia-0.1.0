@@ -9,10 +9,6 @@
         $filtroAlmacen = isset($filtroAlmacen) ? $filtroAlmacen : null;
         $filtroCategoria = isset($filtroCategoria) ? $filtroCategoria : null;
     @endphp
-    <head>
-        <title>{{ $store->title }}</title>
-    </head>
-
     {{-- Header Area --}}
     <div class="border-b border-slate-200 bg-white shadow-sm">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
