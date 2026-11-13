@@ -353,7 +353,7 @@ export default function MarketplaceShow({
     );
 
     const productosFiltrados = useMemo(() => {
-        return productosCargados.filter((p) => {
+        return (productosCargados ?? []).filter((p) => {
             if (filtroAlmacen && p.inventarios) {
                 const enAlmacen = p.inventarios.some(
                     (inv) => inv.almacen_id === filtroAlmacen,
