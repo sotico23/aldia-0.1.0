@@ -1435,26 +1435,18 @@ export default function PosIndex({
     };
 
     const productosFiltrados = useMemo(() => {
-        let filtered = productos;
-
-        // Filter by selected almacen (warehouse)
-        if (almacenId) {
-            filtered = filtered.filter((p) => {
-                const inv = p.inventarios?.find(
-                    (inv) => inv.almacen_id === parseInt(almacenId),
-                );
-                return inv && inv.cantidad > 0;
-            });
-        }
-
-        if (!busqueda) return filtered.slice(0, 12);
+        // El registro de POS debe listar TODOS los productos del inventario,
+        // independientemente del almacén seleccionado o del stock disponible.
+        // El almacén solo se usa para mostrar el stock disponible y las
+        // etiquetas de "Sin stock" / "Bajo stock" (ver getStockForAlmacen).
+        if (!busqueda) return productos;
         const lowerB = busqueda.toLowerCase();
-        return filtered.filter(
+        return productos.filter(
             (p) =>
                 p.nombre.toLowerCase().includes(lowerB) ||
                 (p.codigo && p.codigo.toLowerCase().includes(lowerB)),
         );
-    }, [busqueda, productos, almacenId]);
+    }, [busqueda, productos]);
 
     const posForm = useForm({
         cliente_id: '',
