@@ -1,5 +1,11 @@
 <div class="w-full space-y-5 lg:col-span-10">
-    @if ($store && tabActivo('productos'))
+    @php
+        $tabActivo = isset($tabActivo) ? $tabActivo : 'productos';
+        $filtroAlmacen = isset($filtroAlmacen) ? $filtroAlmacen : null;
+        $filtroCategoria = isset($filtroCategoria) ? $filtroCategoria : null;
+    @endphp
+
+    @if ($store && $tabActivo === 'productos')
         <div class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
             <div class="flex flex-col gap-4">
                 {/* Header del Catálogo */}
@@ -23,16 +29,18 @@
 
                 {/* Grid de productos */}
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                    @foreach ($productos as $producto)
-                        @include('livewire.partials.product-card', ['producto' => $producto])
-                    @empty
+                    @if ($productos->count() > 0)
+                        @foreach ($productos as $producto)
+                            @include('livewire.partials.product-card', ['producto' => $producto])
+                        @endforeach
+                    @else
                         <div class="col-span-full py-8 text-center text-slate-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto mb-3 h-10 w-10 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
                             </svg>
                             <p class="text-sm">No hay productos disponibles</p>
                         </div>
-                    @endforeach
+                    @endif
                 </div>
 
                 {/* Indicador de carga / paginación */}

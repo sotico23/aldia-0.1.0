@@ -14,6 +14,7 @@ class MarketplaceCatalog extends Component
     use WithPagination;
 
     public string $slug;
+    public string $tabActivo = 'productos';
     public ?int $filtroAlmacen = null;
     public ?int $filtroCategoria = null;
     public int $perPage = 24;
@@ -22,6 +23,7 @@ class MarketplaceCatalog extends Component
 
     protected $queryString = [
         'slug' => ['except' => ''],
+        'tabActivo' => ['except' => 'productos'],
         'filtroAlmacen' => ['except' => null],
         'filtroCategoria' => ['except' => null],
         'perPage' => ['except' => 24],
@@ -50,6 +52,23 @@ class MarketplaceCatalog extends Component
     public function cargarMas(): void
     {
         $this->perPage += 24;
+    }
+
+    public function setTab(string $tab): void
+    {
+        $this->tabActivo = $tab;
+    }
+
+    public function setFiltroAlmacen(?int $almacenId): void
+    {
+        $this->filtroAlmacen = $almacenId;
+        $this->resetPage();
+    }
+
+    public function setFiltroCategoria(?int $categoriaId): void
+    {
+        $this->filtroCategoria = $categoriaId;
+        $this->resetPage();
     }
 
     public function store(): ?PublicProfile
