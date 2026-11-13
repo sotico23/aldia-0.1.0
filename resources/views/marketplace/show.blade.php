@@ -4,6 +4,11 @@
         ['title' => $store->title, 'href' => '/tienda/' . $store->slug],
     ]"
 >
+    @php
+        $tabActivo = isset($tabActivo) ? $tabActivo : 'productos';
+        $filtroAlmacen = isset($filtroAlmacen) ? $filtroAlmacen : null;
+        $filtroCategoria = isset($filtroCategoria) ? $filtroCategoria : null;
+    @endphp
     <head>
         <title>{{ $store->title }}</title>
     </head>
