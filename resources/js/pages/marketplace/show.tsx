@@ -23,6 +23,7 @@ import {
     Trash2,
     Package,
     Tag,
+    Filter,
     Info,
     ShieldCheck,
     Building2,
@@ -123,6 +124,7 @@ interface Sku {
 
 interface Inventario {
     id: number;
+    almacen_id: number;
     cantidad: number;
     cantidad_minima: number;
 }
@@ -272,6 +274,8 @@ export default function MarketplaceShow({
     const [tabActivo, setTabActivo] = useState<
         'productos' | 'informacion' | 'opiniones'
     >('productos');
+    const [filtroAlmacen, setFiltroAlmacen] = useState<number | null>(null);
+    const [filtroCategoria, setFiltroCategoria] = useState<number | null>(null);
     const [opinionTexto, setOpinionTexto] = useState('');
     const [enviandoOpinion, setEnviandoOpinion] = useState(false);
     const [datosCheckout, setDatosCheckout] = useState({
@@ -333,6 +337,21 @@ export default function MarketplaceShow({
             ),
         [productosEnCarrito, carrito],
     );
+
+    const productosFiltrados = useMemo(() => {
+        return store.productos.filter((p) => {
+            if (filtroAlmacen && p.inventarios) {
+                const enAlmacen = p.inventarios.some(
+                    (inv) => inv.almacen_id === filtroAlmacen,
+                );
+                if (!enAlmacen) return false;
+            }
+            if (filtroCategoria && p.categoria_id !== filtroCategoria) {
+                return false;
+            }
+            return true;
+        });
+    }, [store.productos, filtroAlmacen, filtroCategoria]);
 
     const stockProducto = (producto: Producto | null): number => {
         if (!producto) {
@@ -952,145 +971,129 @@ export default function MarketplaceShow({
             <div className="min-h-screen bg-[#f8fafc] pt-6 pb-16">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                        {/* Columna Izquierda (3 cols / ~25%): Almacenes y Ubicación & Categorías */}
+                        {/* Columna Izquierda (3 cols / ~25%): Filtros unificados */}
                         <aside className="w-full lg:col-span-3 space-y-5">
-                            {/* Bloque: Almacenes y Ubicación */}
+                            {/* Bloque: Filtros (Almacenes y Categorías) */}
                             <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm transition-all hover:shadow-md">
                                 <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
                                     <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
-                                        <Building2 className="h-4 w-4 text-primary" />
-                                        Almacenes y Ubicación
+                                        <Filter className="h-4 w-4 text-primary" />
+                                        Filtros
                                     </h2>
-                                    {store.is_official && (
-                                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200/60">
-                                            <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-                                            Oficial
-                                        </span>
-                                    )}
-                                </div>
-                                {almacenes.length > 0 ? (
-                                    <div className="space-y-4">
-                                        {almacenes.map((almacen) => (
-                                            <div
-                                                key={almacen.id}
-                                                className="rounded-lg border border-slate-100 bg-slate-50 p-3.5 hover:bg-slate-100 transition-colors"
-                                            >
-                                                <div className="flex items-start gap-2.5 mb-1.5">
-                                                    <Building2 className="h-4 w-4 shrink-0 text-primary mt-0.5" />
-                                                    <div className="min-w-0 flex-1">
-                                                        <p className="text-sm font-bold text-slate-900 leading-tight">
-                                                            {almacen.nombre}
-                                                        </p>
-                                                        {almacen.codigo && (
-                                                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                                                {almacen.codigo}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {almacen.direccion && (
-                                                    <div className="flex items-start gap-2 mb-1.5">
-                                                        <MapPin className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
-                                                        <span className="text-sm text-slate-700 leading-tight break-words">
-                                                            {almacen.direccion}
-                                                        </span>
-                                                    </div>
-                                                )}
-
-                                                {almacen.telefono && (
-                                                    <div className="flex items-start gap-2 mb-1.5">
-                                                        <Phone className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
-                                                        <span className="text-sm text-slate-700 leading-tight">
-                                                            {almacen.telefono}
-                                                        </span>
-                                                    </div>
-                                                )}
-
-                                                {almacen.responsable && (
-                                                    <div className="flex items-start gap-2 mb-1.5">
-                                                        <UserIcon className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
-                                                        <span className="text-sm text-slate-700 leading-tight">
-                                                            <strong className="text-slate-800">Responsable:</strong>{' '}
-                                                            {almacen.responsable}
-                                                        </span>
-                                                    </div>
-                                                )}
-
-                                                {almacen.tipo && (
-                                                    <div className="flex items-start gap-2">
-                                                        <Tag className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
-                                                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                                                            {almacen.tipo}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="py-6 text-center text-slate-400">
-                                        <Building2 className="mx-auto mb-2 h-8 w-8 opacity-40" />
-                                        <p className="text-xs">No hay almacenes disponibles</p>
-                                        <p className="text-[10px] text-slate-500 mt-1">
-                                            Esta tienda aún no tiene sucursales configuradas
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Bloque: Categorías */}
-                            <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-                                <div className="mb-3.5 flex items-center justify-between border-b border-slate-100 pb-2.5">
-                                    <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
-                                        <Tag className="h-4 w-4 text-primary" />
-                                        Categorías
-                                    </h2>
-                                    {store.categorias.length > 0 && (
-                                        <Link
-                                            href={marketplaceCategories(store.slug).url}
-                                            className="text-xs font-semibold text-primary hover:underline"
+                                    {(filtroAlmacen || filtroCategoria) && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                setFiltroAlmacen(null);
+                                                setFiltroCategoria(null);
+                                            }}
+                                            className="h-8 px-2 text-xs font-bold text-slate-500 hover:text-primary hover:bg-primary/5"
                                         >
-                                            Ver todas ({store.categorias.length})
-                                        </Link>
+                                            Limpiar filtros
+                                        </Button>
                                     )}
                                 </div>
 
-                                {store.categorias.length > 0 ? (
-                                    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-2">
-                                        {store.categorias.slice(0, 6).map((cat) => (
-                                            <Link
-                                                key={cat.id}
-                                                href={`/tienda/${store.slug}/categoria/${cat.id}`}
-                                                className="group relative aspect-square overflow-hidden rounded-lg border border-slate-100 bg-slate-100 transition-all hover:shadow-md"
-                                            >
-                                                <img
-                                                    src={
-                                                        cat.imagen
-                                                            ? `/storage/${cat.imagen}`
-                                                            : '/placeholder.png'
-                                                    }
-                                                    alt={cat.nombre}
-                                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                                                <span className="absolute right-2 bottom-2 left-2 truncate text-xs font-bold text-white drop-shadow-sm">
-                                                    {cat.nombre}
-                                                </span>
-                                            </Link>
-                                        ))}
+                                {/* Filtro por Almacenes */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Building2 className="h-4 w-4 text-slate-500" />
+                                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                                            Almacenes
+                                        </span>
                                     </div>
-                                ) : (
-                                    <div className="py-6 text-center text-slate-400">
-                                        <Tag className="mx-auto mb-2 h-8 w-8 opacity-40" />
-                                        <p className="text-xs">No hay categorías disponibles</p>
+                                    {almacenes.length > 0 ? (
+                                        <div className="space-y-1.5">
+                                            <button
+                                                type="button"
+                                                onClick={() => setFiltroAlmacen(null)}
+                                                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-left transition-colors ${filtroAlmacen === null ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-100'}`}
+                                            >
+                                                <span className="font-medium">Todos los almacenes</span>
+                                                {filtroAlmacen === null && (
+                                                    <Check className="h-4 w-4 text-emerald-600" />
+                                                )}
+                                            </button>
+                                            {almacenes.map((almacen) => (
+                                                <button
+                                                    key={almacen.id}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setFiltroAlmacen(
+                                                            filtroAlmacen === almacen.id
+                                                                ? null
+                                                                : almacen.id,
+                                                        )
+                                                    }
+                                                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-left transition-colors ${filtroAlmacen === almacen.id ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-100'}`}
+                                                >
+                                                    <span className="font-medium truncate">
+                                                        {almacen.nombre}
+                                                    </span>
+                                                    {filtroAlmacen === almacen.id && (
+                                                        <Check className="h-4 w-4 text-emerald-600" />
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="py-4 text-center text-slate-400">
+                                            <p className="text-xs">No hay almacenes disponibles</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Filtro por Categorías */}
+                                {store.categorias.length > 0 && (
+                                    <div className="mt-5 space-y-3 pt-4 border-t border-slate-100">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Tag className="h-4 w-4 text-slate-500" />
+                                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                                                Categorías
+                                            </span>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <button
+                                                type="button"
+                                                onClick={() => setFiltroCategoria(null)}
+                                                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-left transition-colors ${filtroCategoria === null ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-100'}`}
+                                            >
+                                                <span className="font-medium">Todas las categorías</span>
+                                                {filtroCategoria === null && (
+                                                    <Check className="h-4 w-4 text-emerald-600" />
+                                                )}
+                                            </button>
+                                            {store.categorias.map((cat) => (
+                                                <button
+                                                    key={cat.id}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setFiltroCategoria(
+                                                            filtroCategoria === cat.id
+                                                                ? null
+                                                                : cat.id,
+                                                        )
+                                                    }
+                                                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-left transition-colors ${filtroCategoria === cat.id ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-100'}`}
+                                                >
+                                                    <span className="font-medium truncate">
+                                                        {cat.nombre}
+                                                    </span>
+                                                    {filtroCategoria === cat.id && (
+                                                        <Check className="h-4 w-4 text-emerald-600" />
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                             </div>
                         </aside>
 
-                        {/* Columna Central (6 cols / ~50%): Catálogo de Productos */}
-                        <main className="w-full lg:col-span-6 space-y-5">
+                        {/* Columna Central (9 cols / ~75%): Catálogo de Productos */}
+                        <main className="w-full lg:col-span-9 space-y-5">
                             {tabActivo === 'productos' && (
                                 <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
                                     <div className="flex flex-col gap-4">
@@ -1101,23 +1104,33 @@ export default function MarketplaceShow({
                                                     Catálogo de Productos
                                                 </h2>
                                                 <p className="text-xs text-slate-500">
-                                                    {store.productos.length}{' '}
-                                                    {store.productos.length === 1
+                                                    {productosFiltrados.length}{' '}
+                                                    {productosFiltrados.length === 1
                                                         ? 'producto disponible'
                                                         : 'productos disponibles'}
                                                 </p>
                                             </div>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setCarritoAbierto(true)}
+                                                className="flex items-center gap-1.5 text-xs font-semibold border-slate-200 text-slate-700 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-colors shadow-xs"
+                                            >
+                                                <ShoppingCart className="h-3.5 w-3.5 text-primary" />
+                                                Ver Carrito
+                                            </Button>
                                         </div>
 
-                                        {/* Catálogo completo: todos los productos activos y con stock */}
+                                        {/* Catálogo completo: todos los productos activos y con stock (filtrados) */}
                                         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
-                                            {store.productos.map((p) => (
+                                            {productosFiltrados.map((p) => (
                                                 <ProductCard
                                                     key={p.id}
                                                     producto={p}
                                                 />
                                             ))}
-                                            {store.productos.length === 0 && (
+                                            {productosFiltrados.length === 0 && (
                                                 <div className="col-span-full py-8 text-center text-slate-400">
                                                     <Package className="mx-auto mb-3 h-10 w-10 opacity-50" />
                                                     <p className="text-sm">
@@ -1178,6 +1191,91 @@ export default function MarketplaceShow({
                                                 </span>{' '}
                                                 {store.phone}
                                             </span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Bloque: Almacenes y Ubicación */}
+                                <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+                                    <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
+                                        <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
+                                            <Building2 className="h-4 w-4 text-primary" />
+                                            Almacenes y Ubicación
+                                        </h2>
+                                        {store.is_official && (
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200/60">
+                                                <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                                                Oficial
+                                            </span>
+                                        )}
+                                    </div>
+                                    {almacenes.length > 0 ? (
+                                        <div className="space-y-4">
+                                            {almacenes.map((almacen) => (
+                                                <div
+                                                    key={almacen.id}
+                                                    className="rounded-lg border border-slate-100 bg-slate-50 p-3.5 hover:bg-slate-100 transition-colors"
+                                                >
+                                                    <div className="flex items-start gap-2.5 mb-1.5">
+                                                        <Building2 className="h-4 w-4 shrink-0 text-primary mt-0.5" />
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="text-sm font-bold text-slate-900 leading-tight">
+                                                                {almacen.nombre}
+                                                            </p>
+                                                            {almacen.codigo && (
+                                                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                                                    {almacen.codigo}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {almacen.direccion && (
+                                                        <div className="flex items-start gap-2 mb-1.5">
+                                                            <MapPin className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
+                                                            <span className="text-sm text-slate-700 leading-tight break-words">
+                                                                {almacen.direccion}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    {almacen.telefono && (
+                                                        <div className="flex items-start gap-2 mb-1.5">
+                                                            <Phone className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
+                                                            <span className="text-sm text-slate-700 leading-tight">
+                                                                {almacen.telefono}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    {almacen.responsable && (
+                                                        <div className="flex items-start gap-2 mb-1.5">
+                                                            <UserIcon className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
+                                                            <span className="text-sm text-slate-700 leading-tight">
+                                                                <strong className="text-slate-800">Responsable:</strong>{' '}
+                                                                {almacen.responsable}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    {almacen.tipo && (
+                                                        <div className="flex items-start gap-2">
+                                                            <Tag className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
+                                                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                                                                {almacen.tipo}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="py-6 text-center text-slate-400">
+                                            <Building2 className="mx-auto mb-2 h-8 w-8 opacity-40" />
+                                            <p className="text-xs">No hay almacenes disponibles</p>
+                                            <p className="text-[10px] text-slate-500 mt-1">
+                                                Esta tienda aún no tiene sucursales configuradas
+                                            </p>
                                         </div>
                                     )}
                                 </div>
@@ -1352,8 +1450,8 @@ export default function MarketplaceShow({
                         )}
                     </main>
 
-                    {/* Right Column (Cart Widget) */}
-                    <aside className="w-full lg:col-span-3">
+                    {/* Right Column (Cart Widget) - Oculto en desktop, el carrito se accede desde el botón "Ver Carrito" */}
+                    <aside className="w-full lg:col-span-3 lg:hidden">
                         <div className="sticky top-20 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm transition-all hover:shadow-md">
                             <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
                                 <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
