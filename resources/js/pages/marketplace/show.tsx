@@ -29,7 +29,7 @@ import {
     Building2,
     User as UserIcon,
 } from 'lucide-react';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { FormInput } from '@/components/form-input';
 import { Button } from '@/components/ui/button';
@@ -181,6 +181,14 @@ interface StoreProfile {
     categorias: Categoria[];
     productos: Producto[];
     almacenes: Almacen[];
+    productosMeta?: {
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+        from: number | null;
+        to: number | null;
+    } | null;
     created_at: string;
     likes_count: number;
     rating_total: number;
@@ -276,6 +284,12 @@ export default function MarketplaceShow({
     >('productos');
     const [filtroAlmacen, setFiltroAlmacen] = useState<number | null>(null);
     const [filtroCategoria, setFiltroCategoria] = useState<number | null>(null);
+    // Estados de paginación con scroll infinito
+    const [productosCargados, setProductosCargados] = useState<Producto[]>([]);
+    const [paginaActual, setPaginaActual] = useState(1);
+    const [cargandoMas, setCargandoMas] = useState(false);
+    const [hayMas, setHayMas] = useState(true);
+    const observerRef = useRef<HTMLDivElement | null>(null);
     const [opinionTexto, setOpinionTexto] = useState('');
     const [enviandoOpinion, setEnviandoOpinion] = useState(false);
     const [datosCheckout, setDatosCheckout] = useState({
@@ -339,7 +353,7 @@ export default function MarketplaceShow({
     );
 
     const productosFiltrados = useMemo(() => {
-        return store.productos.filter((p) => {
+        return productosCargados.filter((p) => {
             if (filtroAlmacen && p.inventarios) {
                 const enAlmacen = p.inventarios.some(
                     (inv) => inv.almacen_id === filtroAlmacen,
@@ -351,7 +365,78 @@ export default function MarketplaceShow({
             }
             return true;
         });
-    }, [store.productos, filtroAlmacen, filtroCategoria]);
+    }, [productosCargados, filtroAlmacen, filtroCategoria]);
+
+    // Cargar productos iniciales (resetear paginación) cuando cambian filtros o tab
+    useEffect(() => {
+        if (tabActivo !== 'productos') return;
+        setProductosCargados([]);
+        setPaginaActual(1);
+        setHayMas(true);
+        cargarProductosPagina(1);
+    }, [tabActivo, filtroAlmacen, filtroCategoria]);
+
+    // Función para cargar una página de productos vía API
+    const cargarProductosPagina = async (page: number) => {
+        if (!store.slug) return;
+        setCargandoMas(true);
+        try {
+            const url = new URL(
+                `/tienda/${store.slug}/productos/mas`,
+                window.location.origin,
+            );
+            url.searchParams.set('page', String(page));
+            url.searchParams.set('per_page', '24');
+
+            const response = await fetch(url.toString(), {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+            const data = await response.json();
+
+            if (page === 1) {
+                setProductosCargados(data.data || []);
+            } else {
+                setProductosCargados((prev) => [
+                    ...prev,
+                    ...(data.data || []),
+                ]);
+            }
+
+            setPaginaActual(data.meta?.current_page ?? page);
+            setHayMas(
+                data.meta?.current_page ?? 0 <
+                    (data.meta?.last_page ?? 0),
+            );
+        } catch (error) {
+            console.error('Error cargando productos:', error);
+        } finally {
+            setCargandoMas(false);
+        }
+    };
+
+    // Cargar más productos cuando llega al final (Intersection Observer)
+    useEffect(() => {
+        if (tabActivo !== 'productos' || !hayMas || cargandoMas) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hayMas && !cargandoMas) {
+                    cargarProductosPagina(paginaActual + 1);
+                }
+            },
+            { threshold: 0.1 },
+        );
+
+        const target = observerRef.current;
+        if (target) observer.observe(target);
+
+        return () => {
+            if (target) observer.unobserve(target);
+        };
+    }, [hayMas, cargandoMas, paginaActual, tabActivo]);
 
     const stockProducto = (producto: Producto | null): number => {
         if (!producto) {
@@ -1107,8 +1192,8 @@ export default function MarketplaceShow({
                                                     Catálogo de Productos
                                                 </h2>
                                                 <p className="text-xs text-slate-500">
-                                                    {productosFiltrados.length}{' '}
-                                                    {productosFiltrados.length === 1
+                                                    {store.productosMeta?.total ?? productosFiltrados.length}{' '}
+                                                    {store.productosMeta?.total === 1
                                                         ? 'producto disponible'
                                                         : 'productos disponibles'}
                                                 </p>
@@ -1145,6 +1230,20 @@ export default function MarketplaceShow({
                                                     </p>
                                                 </div>
                                             )}
+                                            {cargandoMas && (
+                                                <div className="col-span-full py-8 text-center">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                                        <span className="text-xs text-slate-500">
+                                                            Cargando más productos...
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div
+                                                ref={observerRef}
+                                                className="col-span-full h-4"
+                                            />
                                         </div>
                                 </div>
                             </div>

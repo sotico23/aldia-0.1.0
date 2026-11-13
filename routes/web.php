@@ -382,6 +382,7 @@ Route::group(['prefix' => 'auth/{provider}'], function () {
 
 Route::get('/tienda', [MarketplaceController::class, 'index'])->name('marketplace.index');
 Route::get('/tienda/{slug}', [MarketplaceController::class, 'show'])->name('marketplace.show');
+Route::get('/tienda/{slug}/productos/mas', [MarketplaceController::class, 'loadMore'])->name('marketplace.loadMore');
 Route::get('/tienda/{slug}/categorias', [MarketplaceController::class, 'categories'])->name('marketplace.categories');
 Route::post('/tienda/{slug}/react', [MarketplaceController::class, 'react'])->name('marketplace.react')->middleware('auth');
 Route::post('/tienda/{slug}/opinion', [MarketplaceController::class, 'storeReview'])->name('marketplace.review')->middleware('auth');

@@ -30,7 +30,7 @@ class MarketplaceController extends Controller
         ]);
     }
 
-    public function show($slug)
+    public function show($slug, Request $request)
     {
         $publicProfile = PublicProfile::withoutGlobalScope(OwnerScope::class)
             ->where('slug', $slug)
@@ -44,8 +44,12 @@ class MarketplaceController extends Controller
             }])
             ->firstOrFail();
 
+        $page = $request->integer('page', 1);
+        $perPage = $request->integer('per_page', 24);
+
         // Include legacy products without a profile, but never mix another tenant's catalog.
-        $productos = Producto::withoutGlobalScope(OwnerScope::class)
+        // All inventories/SKUs loaded without OwnerScope so stock reflects real availability.
+        $productosQuery = Producto::withoutGlobalScope(OwnerScope::class)
             ->where('owner_id', $publicProfile->owner_id)
             ->where(function ($query) use ($publicProfile) {
                 $query->where('public_profile_id', $publicProfile->id)
@@ -57,10 +61,19 @@ class MarketplaceController extends Controller
                 'skus.valores' => fn ($valoresQuery) => $valoresQuery->withoutGlobalScope(OwnerScope::class),
                 'skus.valores.varianteValor' => fn ($varianteValorQuery) => $varianteValorQuery->withoutGlobalScope(OwnerScope::class),
             ])
-            ->orderBy('nombre')
-            ->get();
+            ->orderBy('nombre');
 
-        $publicProfile->setRelation('productos', $productos);
+        $productosPaginated = $productosQuery->paginate($perPage, ['*'], 'page', $page);
+
+        $publicProfile->setRelation('productos', $productosPaginated->items());
+        $productosMeta = [
+            'current_page' => $productosPaginated->currentPage(),
+            'last_page' => $productosPaginated->lastPage(),
+            'per_page' => $productosPaginated->perPage(),
+            'total' => $productosPaginated->total(),
+            'from' => $productosPaginated->firstItem(),
+            'to' => $productosPaginated->lastItem(),
+        ];
 
         $userReaction = null;
         $hasPurchased = false;
@@ -96,7 +109,8 @@ class MarketplaceController extends Controller
 
         return Inertia::render('marketplace/show', [
             'store' => $publicProfile,
-            'productos' => $productos,
+            'productos' => $productosPaginated->items(),
+            'productosMeta' => $productosMeta,
             'almacenes' => $almacenes,
             'userReaction' => $userReaction,
             'reviews' => $reviews,
@@ -193,6 +207,42 @@ class MarketplaceController extends Controller
         }
 
         return back();
+    }
+
+    public function loadMore($slug, Request $request)
+    {
+        $page = $request->integer('page', 1);
+        $perPage = $request->integer('per_page', 24);
+
+        $publicProfile = PublicProfile::withoutGlobalScope(OwnerScope::class)
+            ->where('slug', $slug)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $productos = Producto::withoutGlobalScope(OwnerScope::class)
+            ->where('owner_id', $publicProfile->owner_id)
+            ->where(function ($query) use ($publicProfile) {
+                $query->where('public_profile_id', $publicProfile->id)
+                    ->orWhereNull('public_profile_id');
+            })
+            ->with([
+                'inventarios' => fn ($q) => $q->withoutGlobalScope(OwnerScope::class),
+                'skus' => fn ($q) => $q->withoutGlobalScope(OwnerScope::class),
+                'skus.valores' => fn ($q) => $q->withoutGlobalScope(OwnerScope::class),
+                'skus.valores.varianteValor' => fn ($q) => $q->withoutGlobalScope(OwnerScope::class),
+            ])
+            ->orderBy('nombre')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            'data' => $productos->items(),
+            'meta' => [
+                'current_page' => $productos->currentPage(),
+                'last_page' => $productos->lastPage(),
+                'per_page' => $productos->perPage(),
+                'total' => $productos->total(),
+            ],
+        ]);
     }
 
     public function storeReview(Request $request, $slug)
