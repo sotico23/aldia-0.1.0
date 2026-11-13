@@ -1110,17 +1110,16 @@ export default function MarketplaceShow({
                                                         : 'productos disponibles'}
                                                 </p>
                                             </div>
-                                            <SheetTrigger asChild>
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="flex items-center gap-1.5 text-xs font-semibold border-slate-200 text-slate-700 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-colors shadow-xs"
-                                                >
-                                                    <ShoppingCart className="h-3.5 w-3.5 text-primary" />
-                                                    Ver Carrito
-                                                </Button>
-                                            </SheetTrigger>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setCarritoAbierto(true)}
+                                                className="flex items-center gap-1.5 text-xs font-semibold border-slate-200 text-slate-700 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-colors shadow-xs"
+                                            >
+                                                <ShoppingCart className="h-3.5 w-3.5 text-primary" />
+                                                Ver Carrito
+                                            </Button>
                                         </div>
 
                                         {/* Catálogo completo: todos los productos activos y con stock (filtrados) */}
