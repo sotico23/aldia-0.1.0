@@ -11,13 +11,14 @@ use App\Models\Almacen;
 
 class SubirProductosLocales extends Command
 {
-    protected $signature = 'productos:subir {--textos=textos_productos : Carpeta de textos dentro de public} {--imagenes=imagenes_maxiofertas : Carpeta de imágenes dentro de public}';
+    protected $signature = 'productos:subir {--textos=textos_productos : Carpeta de textos} {--imagenes=imagenes_maxiofertas : Carpeta de imágenes} {--almacen=Master : Nombre del almacén destino}';
     protected $description = 'Sube productos masivamente adaptados al esquema real, asignando owner 1 e inventario inicial de 1000.';
 
     public function handle()
     {
         $nombreCarpetaTextos = $this->option('textos');
         $nombreCarpetaImagenes = $this->option('imagenes');
+        $nombreAlmacen = $this->option('almacen');
 
         $carpetaTextos = public_path($nombreCarpetaTextos);
         $carpetaImagenes = public_path($nombreCarpetaImagenes);
@@ -27,12 +28,17 @@ class SubirProductosLocales extends Command
             return;
         }
 
-        // Obtener el almacén principal o del owner 1
-        $almacen = Almacen::where('owner_id', 1)->first() ?? Almacen::first();
+        // 1. Buscar el almacén una sola vez antes de procesar los productos
+        $almacen = Almacen::where('nombre', 'LIKE', '%' . $nombreAlmacen . '%')
+                          ->where('owner_id', 1)
+                          ->first();
+
         if (!$almacen) {
-            $this->error("No se encontró ningún almacén en la base de datos. Crea uno primero.");
+            $this->error("No se encontró ningún almacén con el nombre '{$nombreAlmacen}' para el owner 1.");
             return;
         }
+
+        $this->info("Usando almacén: {$almacen->nombre} (ID: {$almacen->id})");
 
         $archivosTxt = File::files($carpetaTextos);
         $this->info("Procesando " . count($archivosTxt) . " productos desde '{$nombreCarpetaTextos}'...");
@@ -46,7 +52,7 @@ class SubirProductosLocales extends Command
 
             $contenido = File::get($pathTxt);
 
-            // 1. Extraer los datos básicos del archivo txt usando tus métodos seguros
+            // 1. Extraer los datos básicos del archivo txt
             $titulo = $this->extraerSeccion($contenido, 'TÍTULO:', 'PRECIO:');
             $precioStr = $this->extraerSeccion($contenido, 'PRECIO:', 'ENLACE:');
             $enlace = $this->extraerSeccion($contenido, 'ENLACE:', 'DESCRIPCIÓN:');
@@ -102,7 +108,7 @@ class SubirProductosLocales extends Command
                 ]
             );
 
-            // 5. Crear o actualizar el registro de inventario con 1000 unidades
+            // 5. Crear o actualizar el registro de inventario con 1000 unidades en el almacén correcto
             Inventario::updateOrCreate(
                 [
                     'producto_id' => $producto->id,
@@ -119,7 +125,7 @@ class SubirProductosLocales extends Command
         }
 
         $bar->finish();
-        $this->info("\n¡Proceso completado con éxito! Todos los productos y su stock inicial de 1000 unidades se configuraron correctamente.");
+        $this->info("\n¡Proceso completado con éxito! Todos los productos y su stock inicial de 1000 unidades se configuraron en el almacén {$almacen->nombre}.");
     }
 
     private function parafrasearConEmojis($titulo, $descripcion)
