@@ -42,19 +42,24 @@ class MarketplaceController extends Controller
                     ->where('mostrar_en_perfil', true)
                     ->orderBy('nombre');
             }])
-            ->with(['productos' => function ($query) {
-                $query->withoutGlobalScope(OwnerScope::class)
-                    ->where('activo', true)
-                    ->where('mostrar_en_perfil', true)
-                    ->with([
-                        'inventarios' => fn ($inventariosQuery) => $inventariosQuery->withoutGlobalScope(OwnerScope::class),
-                        'skus' => fn ($skusQuery) => $skusQuery->withoutGlobalScope(OwnerScope::class)->where('activo', true),
-                        'skus.valores' => fn ($valoresQuery) => $valoresQuery->withoutGlobalScope(OwnerScope::class),
-                        'skus.valores.varianteValor' => fn ($varianteValorQuery) => $varianteValorQuery->withoutGlobalScope(OwnerScope::class),
-                    ])
-                    ->orderBy('nombre');
-            }])
             ->firstOrFail();
+
+        // Cargar todos los productos activos y visibles del perfil sin el filtro
+        // de OwnerScope (que restringiría por owner_id y limitaría el catálogo).
+        $productos = Producto::withoutGlobalScope(OwnerScope::class)
+            ->where('public_profile_id', $publicProfile->id)
+            ->where('activo', true)
+            ->where('mostrar_en_perfil', true)
+            ->with([
+                'inventarios' => fn ($inventariosQuery) => $inventariosQuery->withoutGlobalScope(OwnerScope::class),
+                'skus' => fn ($skusQuery) => $skusQuery->withoutGlobalScope(OwnerScope::class)->where('activo', true),
+                'skus.valores' => fn ($valoresQuery) => $valoresQuery->withoutGlobalScope(OwnerScope::class),
+                'skus.valores.varianteValor' => fn ($varianteValorQuery) => $varianteValorQuery->withoutGlobalScope(OwnerScope::class),
+            ])
+            ->orderBy('nombre')
+            ->get();
+
+        $publicProfile->setRelation('productos', $productos);
 
         $userReaction = null;
         $hasPurchased = false;
