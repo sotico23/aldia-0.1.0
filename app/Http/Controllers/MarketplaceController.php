@@ -44,37 +44,6 @@ class MarketplaceController extends Controller
             }])
             ->firstOrFail();
 
-        $page = $request->integer('page', 1);
-        $perPage = $request->integer('per_page', 24);
-
-        // Include legacy products without a profile, but never mix another tenant's catalog.
-        // All inventories/SKUs loaded without OwnerScope so stock reflects real availability.
-        $productosQuery = Producto::withoutGlobalScope(OwnerScope::class)
-            ->where('owner_id', $publicProfile->owner_id)
-            ->where(function ($query) use ($publicProfile) {
-                $query->where('public_profile_id', $publicProfile->id)
-                    ->orWhereNull('public_profile_id');
-            })
-            ->with([
-                'inventarios' => fn ($inventariosQuery) => $inventariosQuery->withoutGlobalScope(OwnerScope::class),
-                'skus' => fn ($skusQuery) => $skusQuery->withoutGlobalScope(OwnerScope::class),
-                'skus.valores' => fn ($valoresQuery) => $valoresQuery->withoutGlobalScope(OwnerScope::class),
-                'skus.valores.varianteValor' => fn ($varianteValorQuery) => $varianteValorQuery->withoutGlobalScope(OwnerScope::class),
-            ])
-            ->orderBy('nombre');
-
-        $productosPaginated = $productosQuery->paginate($perPage, ['*'], 'page', $page);
-
-        $publicProfile->setRelation('productos', $productosPaginated->items());
-        $productosMeta = [
-            'current_page' => $productosPaginated->currentPage(),
-            'last_page' => $productosPaginated->lastPage(),
-            'per_page' => $productosPaginated->perPage(),
-            'total' => $productosPaginated->total(),
-            'from' => $productosPaginated->firstItem(),
-            'to' => $productosPaginated->lastItem(),
-        ];
-
         $userReaction = null;
         $hasPurchased = false;
         $userReview = null;
@@ -107,10 +76,8 @@ class MarketplaceController extends Controller
 
         $paymentConfig = PaymentConfig::resolveForOwner($publicProfile->user_id);
 
-        return Inertia::render('marketplace/show', [
+        return view('marketplace.show', [
             'store' => $publicProfile,
-            'productos' => $productosPaginated->items(),
-            'productosMeta' => $productosMeta,
             'almacenes' => $almacenes,
             'userReaction' => $userReaction,
             'reviews' => $reviews,

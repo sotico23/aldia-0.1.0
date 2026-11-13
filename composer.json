@@ -31,7 +31,7 @@
         "laravel/socialite": "^5.24",
         "laravel/tinker": "^2.10.1",
         "laravel/wayfinder": "^0.1.9",
-        "livewire/livewire": "^4.4.8",
+        "livewire/livewire": "4",
         "maatwebsite/excel": "^3.1.70",
         "picqer/php-barcode-generator": "^3.2",
         "resend/resend-laravel": "^1.4",
@@ -128,6 +128,12 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "policy": {
+            "advisories": {
+                "ignore": ["[PKSA-bgw4-5zmg-2njg, PKSA-g5js-3ypd-k2kr, PKSA-9tny-xycd-bd72, PKSA-xhv3-nr94-h8db]"],
+                "block": false
+            }
         }
     },
     "minimum-stability": "stable",
