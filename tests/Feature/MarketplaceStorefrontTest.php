@@ -14,6 +14,15 @@ use App\Models\VarianteValor;
 use Inertia\Testing\AssertableInertia as Assert;
 use Livewire\Livewire;
 
+test('las visitas inertia al perfil publico solicitan una carga completa', function () {
+    $url = route('marketplace.show', 'tienda-publica');
+
+    $this->withHeader('X-Inertia', 'true')
+        ->get($url)
+        ->assertStatus(409)
+        ->assertHeader('X-Inertia-Location', $url);
+});
+
 beforeEach(function () {
     $this->vendor = User::factory()->create();
     $this->buyer = User::factory()->create();

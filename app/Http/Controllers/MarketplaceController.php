@@ -11,9 +11,11 @@ use App\Models\PublicProfile;
 use App\Models\StoreReaction;
 use App\Models\StoreReview;
 use App\Scopes\OwnerScope;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response;
 
 class MarketplaceController extends Controller
 {
@@ -30,8 +32,12 @@ class MarketplaceController extends Controller
         ]);
     }
 
-    public function show($slug, Request $request)
+    public function show(string $slug, Request $request): View|Response
     {
+        if ($request->header('X-Inertia')) {
+            return Inertia::location(route('marketplace.show', $slug));
+        }
+
         $publicProfile = PublicProfile::withoutGlobalScope(OwnerScope::class)
             ->where('slug', $slug)
             ->where('is_active', true)
