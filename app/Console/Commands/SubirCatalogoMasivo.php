@@ -9,10 +9,10 @@ use App\Models\Producto;
 use App\Models\Inventario;
 use App\Models\Almacen;
 
-class SubirProductosLocales extends Command
+class SubirCatalogoMasivo extends Command
 {
-    protected $signature = 'productos:subir {--textos=textos_productos : Carpeta de textos} {--imagenes=imagenes_maxiofertas : Carpeta de imágenes} {--almacen=Master : Nombre del almacén destino}';
-    protected $description = 'Sube productos masivamente adaptados al esquema real, asignando owner 1 e inventario inicial de 1000.';
+    protected $signature = 'catalogo:subir {--textos=textos_productos : Carpeta de textos} {--imagenes=imagenes_maxiofertas : Carpeta de imágenes} {--almacen=Master : Nombre del almacén destino}';
+    protected $description = 'Sube un catálogo masivo de productos con inventario inicial.';
 
     public function handle()
     {

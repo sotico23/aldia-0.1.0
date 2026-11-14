@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\MarketplaceStore;
 use App\Models\Almacen;
 use App\Models\Categoria;
 use App\Models\Inventario;
@@ -11,6 +12,7 @@ use App\Models\User;
 use App\Models\Variante;
 use App\Models\VarianteValor;
 use Inertia\Testing\AssertableInertia as Assert;
+use Livewire\Livewire;
 
 beforeEach(function () {
     $this->vendor = User::factory()->create();
@@ -47,14 +49,14 @@ beforeEach(function () {
         'tiene_variantes' => true,
     ]);
 
-    $almacen = Almacen::factory()->create([
+    $this->almacen = Almacen::factory()->create([
         'owner_id' => $this->vendor->id,
         'activo' => true,
     ]);
 
     Inventario::factory()->create([
         'producto_id' => $this->producto->id,
-        'almacen_id' => $almacen->id,
+        'almacen_id' => $this->almacen->id,
         'owner_id' => $this->vendor->id,
         'cantidad' => 12,
         'cantidad_minima' => 2,
@@ -88,22 +90,19 @@ beforeEach(function () {
     ]);
 });
 
-test('la tienda expone los datos completos del producto para la vista de detalle', function () {
-    $this->actingAs($this->buyer)
-        ->get(route('marketplace.show', $this->publicProfile->slug))
+test('la tienda renderiza el catalogo livewire con el stock real', function () {
+    $this->get(route('marketplace.show', $this->publicProfile->slug))
         ->assertSuccessful()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('marketplace/show')
-            ->where('store.productos.0.codigo', 'PRO-STORE-01')
-            ->where('store.productos.0.descripcion', 'Descripción ampliada del producto para la tienda pública.')
-            ->where('store.productos.0.imagen', 'productos/principal.jpg')
-            ->where('store.productos.0.imagen2', 'productos/secundaria.jpg')
-            ->where('store.productos.0.inventarios.0.cantidad', 12)
-            ->where('store.productos.0.skus.0.sku', 'PRO-STORE-01-ROJO')
-            ->where('store.productos.0.skus.0.valores.0.variante_valor.valor', 'Rojo')
-            ->has('almacenes', 1)
-            ->where('almacenes.0.activo', true)
-        );
+        ->assertSeeLivewire('marketplace-store')
+        ->assertSee('Botella de prueba')
+        ->assertSee('12 disponibles');
+});
+
+test('el componente calcula el stock sumando los inventarios del producto', function () {
+    Livewire::test(MarketplaceStore::class, ['slug' => $this->publicProfile->slug])
+        ->assertViewHas('totalProductos', 1)
+        ->call('agregar', $this->producto->id)
+        ->assertSet('carrito', [$this->producto->id => 1]);
 });
 
 test('la tienda lista todos los productos de su propietario sin aplicar filtros de visibilidad', function () {
@@ -135,25 +134,51 @@ test('la tienda lista todos los productos de su propietario sin aplicar filtros 
         'nombre' => 'zz producto masivo',
     ]);
 
-    $productoDeOtroPropietario = Producto::factory()->create([
+    Producto::factory()->create([
         'user_id' => $this->buyer->id,
         'owner_id' => $this->buyer->id,
         'categoria_id' => $this->categoria->id,
         'public_profile_id' => $this->publicProfile->id,
         'codigo' => 'PRO-STORE-03',
+        'nombre' => 'Producto de otro propietario',
     ]);
 
-    $this->get(route('marketplace.show', $this->publicProfile->slug))
-        ->assertSuccessful()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('marketplace/show')
-            ->has('store.productos', 16)
-            ->where('store.productos.1.id', $productoLegado->id)
-            ->where('store.productos.2.id', $productoNoVisible->id)
-            ->where('productos.0.id', $this->producto->id)
-            ->where('productos.1.id', $productoLegado->id)
-            ->where('productos.2.id', $productoNoVisible->id)
-        );
+    Livewire::test(MarketplaceStore::class, ['slug' => $this->publicProfile->slug])
+        ->assertViewHas('totalProductos', 16)
+        ->assertSee('Producto legado')
+        ->assertSee('Producto no visible')
+        ->assertSee($productoLegado->nombre)
+        ->assertSee($productoNoVisible->nombre)
+        ->assertDontSee('Producto de otro propietario');
+});
+
+test('el filtro por almacen limita los productos mostrados', function () {
+    $otroAlmacen = Almacen::factory()->create([
+        'owner_id' => $this->vendor->id,
+        'activo' => true,
+    ]);
+
+    Inventario::factory()->create([
+        'producto_id' => $this->producto->id,
+        'almacen_id' => $otroAlmacen->id,
+        'owner_id' => $this->vendor->id,
+        'cantidad' => 5,
+        'cantidad_minima' => 1,
+    ]);
+
+    $productoSinInventario = Producto::factory()->create([
+        'user_id' => $this->vendor->id,
+        'owner_id' => $this->vendor->id,
+        'categoria_id' => $this->categoria->id,
+        'public_profile_id' => $this->publicProfile->id,
+        'nombre' => 'Producto sin inventario',
+    ]);
+
+    Livewire::test(MarketplaceStore::class, ['slug' => $this->publicProfile->slug])
+        ->call('setFiltroAlmacen', $otroAlmacen->id)
+        ->assertViewHas('totalProductos', 1)
+        ->assertSee('Botella de prueba')
+        ->assertDontSee($productoSinInventario->nombre);
 });
 
 test('la ruta de todas las categorias lista las categorias visibles de la tienda', function () {

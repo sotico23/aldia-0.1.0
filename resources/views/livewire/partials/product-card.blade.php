@@ -1,75 +1,103 @@
-<div class="group relative flex flex-col rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md">
-    {{-- Imagen del producto --}}
-    <button
-        type="button"
-        class="relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg border border-slate-100 bg-slate-100 text-left"
-    >
-        @if ($producto->imagen)
+<div class="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+    {{-- Imagen --}}
+    <div class="relative aspect-square w-full overflow-hidden bg-slate-100">
+        @if ($imagen)
             <img
-                src="{{ asset('storage/' . $producto->imagen) }}"
+                src="{{ $imagen }}"
                 alt="{{ $producto->nombre }}"
+                loading="lazy"
                 class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             >
         @else
-            <div class="flex h-full w-full items-center justify-center bg-slate-100 text-5xl font-bold text-slate-300">
-                {{ Str::upper($producto->nombre[0] ?? '?') }}
+            <div class="flex h-full w-full items-center justify-center bg-slate-100 text-4xl font-bold text-slate-300">
+                {{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($producto->nombre, 0, 1)) }}
             </div>
         @endif
 
         @if ($producto->is_service)
-            <div class="absolute top-2 left-2">
-                <span class="inline-flex items-center gap-1 rounded-full bg-violet-600/90 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    {{ $producto->duracion }} min
-                </span>
-            </div>
+            <span class="absolute top-2 left-2 rounded-full bg-violet-600/90 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+                Servicio{{ $producto->duracion ? ' · '.$producto->duracion.' min' : '' }}
+            </span>
+        @elseif ($stock <= 0)
+            <span class="absolute top-2 left-2 rounded-full bg-slate-800/85 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+                Sin stock
+            </span>
         @endif
-    </button>
-
-    {{-- Info del producto --}}
-    <div class="mt-3 flex-1">
-        <button type="button" class="line-clamp-2 text-left text-sm leading-tight font-semibold text-slate-900 hover:text-primary">
-            {{ $producto->nombre }}
-        </button>
-        <p class="mt-1 text-lg font-bold text-slate-900">
-            ${{ number_format($producto->precio_venta) }}
-        </p>
     </div>
 
-    {{-- Controles de cantidad y agregar --}}
-    <div class="mt-3 space-y-2 border-t border-slate-100 pt-3">
-        <div class="flex items-center justify-between rounded-lg bg-slate-100 p-1">
-            <button
-                wire:click="decrementar({{ $producto->id }})"
-                class="h-7 w-7 rounded-md hover:bg-slate-200"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
-                </svg>
-            </button>
+    {{-- Información --}}
+    <div class="flex flex-1 flex-col p-3">
+        <h3 class="line-clamp-2 text-sm leading-tight font-semibold text-slate-900" title="{{ $producto->nombre }}">
+            {{ $producto->nombre }}
+        </h3>
 
-            <span class="text-sm font-semibold">{{ session('carrito.' . $producto->id, 0) }}</span>
+        <p class="mt-1.5 text-lg font-bold text-slate-900">
+            ${{ number_format((float) $producto->precio_venta, 0, ',', '.') }}
+            @if ($producto->unidad_medida)
+                <span class="text-[11px] font-normal text-slate-400">/ {{ $producto->unidad_medida }}</span>
+            @endif
+        </p>
 
-            <button
-                wire:click="incrementar({{ $producto->id }})"
-                class="h-7 w-7 rounded-md hover:bg-slate-200"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-            </button>
+        @if (! $producto->is_service)
+            <p class="mt-0.5 text-[11px] font-medium {{ $stock > 0 ? 'text-emerald-600' : 'text-slate-400' }}">
+                {{ $stock > 0 ? number_format($stock, 0, ',', '.').' disponibles' : 'Sin stock registrado' }}
+            </p>
+        @endif
+
+        <div class="mt-auto pt-3">
+            @if ($producto->is_service || $stock > 0)
+                @php $enCarrito = (float) ($carrito[$producto->id] ?? 0); @endphp
+
+                <div class="flex items-center gap-2">
+                    <div class="flex flex-1 items-center justify-between rounded-lg border border-slate-200 bg-slate-50">
+                        <button
+                            type="button"
+                            wire:click="decrementar({{ $producto->id }})"
+                            class="flex h-8 w-8 items-center justify-center rounded-l-lg text-slate-600 transition-colors hover:bg-slate-200"
+                            aria-label="Quitar una unidad de {{ $producto->nombre }}"
+                        >
+                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/>
+                            </svg>
+                        </button>
+
+                        <span class="text-xs font-bold text-slate-800">
+                            {{ rtrim(rtrim(number_format($enCarrito, 2, '.', ''), '0'), '.') ?: '0' }}
+                        </span>
+
+                        <button
+                            type="button"
+                            wire:click="incrementar({{ $producto->id }})"
+                            class="flex h-8 w-8 items-center justify-center rounded-r-lg text-slate-600 transition-colors hover:bg-slate-200"
+                            aria-label="Agregar una unidad de {{ $producto->nombre }}"
+                        >
+                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <button
+                        type="button"
+                        wire:click="agregar({{ $producto->id }})"
+                        class="inline-flex h-8 items-center gap-1 rounded-lg bg-primary px-3 text-xs font-bold text-white transition-colors hover:bg-primary/90"
+                        aria-label="Agregar {{ $producto->nombre }} al carrito"
+                    >
+                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Agregar
+                    </button>
+                </div>
+            @else
+                <button
+                    type="button"
+                    disabled
+                    class="w-full cursor-not-allowed rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-400"
+                >
+                    Agotado
+                </button>
+            @endif
         </div>
-
-        <button
-            wire:click="agregar({{ $producto->id }})"
-            class="h-9 w-full rounded-lg bg-primary text-white text-sm font-semibold transition-colors hover:bg-primary/90"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" class="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            Agregar
-        </button>
     </div>
 </div>

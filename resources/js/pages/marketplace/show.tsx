@@ -179,7 +179,7 @@ interface StoreProfile {
     is_verified: boolean;
     user: LocalUserType;
     categorias: Categoria[];
-    productos: Producto[];
+    productos?: Producto[];
     almacenes: Almacen[];
     productosMeta?: {
         current_page: number;
@@ -340,7 +340,10 @@ export default function MarketplaceShow({
         [carrito],
     );
     const productosEnCarrito = useMemo(
-        () => store.productos.filter((p) => carrito[p.id] && carrito[p.id] > 0),
+        () =>
+            (store.productos ?? []).filter(
+                (p) => carrito[p.id] && carrito[p.id] > 0,
+            ),
         [store.productos, carrito],
     );
     const totalCarrito = useMemo(
@@ -530,7 +533,9 @@ export default function MarketplaceShow({
         productoId: number,
         cantidadSolicitada?: number,
     ) => {
-        const producto = store.productos.find((p) => p.id === productoId);
+        const producto = (store.productos ?? []).find(
+            (p) => p.id === productoId,
+        );
         const cantidadRaw =
             cantidadSolicitada ?? cantidadesAgregar[productoId] ?? 1;
         const cantidad =
