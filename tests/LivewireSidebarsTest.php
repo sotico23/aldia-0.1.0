@@ -40,7 +40,7 @@ function sidebarUser(array $permissions = [], array $roles = []): User
 
 test('los dos laterales funcionan para invitados', function () {
     Livewire::test(AppSidebar::class)->assertSee('Marketplace')->assertDontSee('Gestión Comercial');
-    Livewire::test(AppRightSidebar::class)->assertSee('Ingresar')->assertDontSee('Cerrar sesión');
+    Livewire::test(AppRightSidebar::class)->assertSuccessful()->assertSee('Ingresar')->assertDontSee('Cerrar sesión');
 });
 
 test('el izquierdo filtra los submenus por los permisos del visitante', function () {
