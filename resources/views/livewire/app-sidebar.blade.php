@@ -1,4 +1,4 @@
-<aside aria-label="Navegación principal" class="fixed inset-y-0 left-0 z-50 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex" :class="{ '!flex': leftSidebarOpen }">
+<aside id="app-left-sidebar" aria-label="Navegación principal" tabindex="-1" :role="leftSidebarOpen ? 'dialog' : 'complementary'" :aria-modal="leftSidebarOpen ? 'true' : null" x-trap.inert.noscroll="leftSidebarOpen" class="fixed inset-y-0 left-0 z-50 hidden w-64 max-w-[calc(100vw-2rem)] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex" :class="{ '!flex': leftSidebarOpen }">
     <div class="flex items-center justify-between p-4">
         <a href="{{ auth()->check() ? route('dashboard') : route('home') }}" class="flex w-full items-center justify-center">
             @if ($logo)
@@ -7,7 +7,7 @@
                 <span class="text-xl font-bold text-primary">{{ $appName }}</span>
             @endif
         </a>
-        <button type="button" @click="leftSidebarOpen = false" class="p-2 lg:hidden" aria-label="Cerrar navegación"><x-sidebar-icon name="X" /></button>
+        <button type="button" @click="leftSidebarOpen = false" class="flex size-11 shrink-0 items-center justify-center lg:hidden" aria-label="Cerrar navegación"><x-sidebar-icon name="X" /></button>
     </div>
     <nav class="min-h-0 flex-1 space-y-4 overflow-y-auto px-2 pb-4">
         @foreach ($groups as $group => $items)

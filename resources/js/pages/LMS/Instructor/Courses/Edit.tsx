@@ -488,7 +488,7 @@ export default function Edit({
                         </section>
 
                         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                            <div className="mb-6 flex items-center justify-between">
+                            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                                 <h2 className="text-xl font-bold">
                                     Temario del Curso
                                 </h2>
@@ -566,11 +566,12 @@ export default function Edit({
                                                             {lesson.title}
                                                         </span>
                                                     </div>
-                                                    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                                    <div className="flex items-center gap-1 opacity-100 transition-opacity">
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-7 w-7"
+                                                            className="h-11 w-11"
+                                                            aria-label={`Editar ${lesson.title}`}
                                                             onClick={() => {
                                                                 setEditingLessonId(
                                                                     lesson.id,
@@ -596,7 +597,8 @@ export default function Edit({
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-7 w-7 text-red-500"
+                                                            className="h-11 w-11 text-red-500"
+                                                            aria-label={`Eliminar ${lesson.title}`}
                                                             onClick={() =>
                                                                 handleDeleteLesson(
                                                                     lesson.id,
@@ -638,12 +640,12 @@ export default function Edit({
                         </section>
 
                         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                            <div className="mb-6 flex items-center justify-between">
+                            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                                 <h2 className="flex items-center gap-2 text-xl font-bold">
                                     <FileText className="h-5 w-5" />
                                     Certificado del Curso
                                 </h2>
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
                                     {!data.certificado_html && (
                                         <Button
                                             variant="outline"

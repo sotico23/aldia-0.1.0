@@ -1,6 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import DOMPurify from 'dompurify';
 import { Target, Users, Zap } from 'lucide-react';
+import { PublicHeader } from '@/components/public-header';
 
 interface Props {
     title: string;
@@ -26,94 +27,32 @@ export default function QuienesSomos({
 }: Props) {
     const appName = web_settings?.app_name || 'GrowERP';
     const appLogo = web_settings?.app_logo || null;
-    const logoLetra = appName.charAt(0).toUpperCase();
 
     return (
         <div className="flex min-h-screen flex-col bg-slate-50 font-sans">
             <Head title={title} />
 
             {/* Header */}
-            <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md">
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-                    {(nav?.app_brand_visible ?? true) ? (
-                        <Link href="/" className="flex items-center gap-2">
-                            {appLogo ? (
-                                <img
-                                    src={appLogo}
-                                    alt={appName}
-                                    className="h-10 w-10 rounded-lg object-contain"
-                                />
-                            ) : (
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-2xl font-black text-white">
-                                    {logoLetra}
-                                </div>
-                            )}
-                            <span className="text-xl font-bold text-gray-900">
-                                {appName}
-                            </span>
-                        </Link>
-                    ) : (
-                        <Link href="/" className="flex items-center">
-                            <span className="sr-only text-xl font-bold text-gray-900">
-                                {appName}
-                            </span>
-                        </Link>
-                    )}
-                    <nav className="flex items-center gap-6">
-                        <div className="mr-4 hidden items-center gap-6 md:flex">
-                            <Link
-                                href="/quienes-somos"
-                                className="text-sm font-semibold text-amber-600 transition-colors"
-                            >
-                                {nav?.quienes_somos || 'Quiénes Somos'}
-                            </Link>
-                            {(nav?.feedback_visible ?? true) && (
-                                <Link
-                                    href="/feedback"
-                                    className="text-sm font-medium text-gray-500 transition-colors hover:text-amber-600"
-                                >
-                                    {nav?.feedback || 'Feedback'}
-                                </Link>
-                            )}
-                            {(nav?.fundacion_visible ?? true) && (
-                                <Link
-                                    href="/fundacion"
-                                    className="text-sm font-medium text-gray-500 transition-colors hover:text-amber-600"
-                                >
-                                    {nav?.fundacion || 'Nuestra Fundación'}
-                                </Link>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Link
-                                href="/login"
-                                className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
-                            >
-                                Iniciar sesión
-                            </Link>
-                            <Link
-                                href="/register"
-                                className="rounded-full bg-gray-900 px-5 py-2 text-sm font-medium text-white transition-all hover:bg-gray-800 hover:shadow-lg"
-                            >
-                                Regístrate gratis
-                            </Link>
-                        </div>
-                    </nav>
-                </div>
-            </header>
+            <PublicHeader
+                appName={appName}
+                appLogo={appLogo}
+                nav={nav}
+                activePage="quienes-somos"
+                canRegister
+            />
 
             {/* Hero Section */}
-            <section className="relative overflow-hidden bg-white pt-16 pb-32">
+            <section className="relative overflow-hidden bg-white pt-10 pb-16 sm:pt-16 sm:pb-32">
                 <div className="absolute inset-x-0 bottom-0 h-1/2 bg-slate-50" />
                 <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="mx-auto mb-16 max-w-3xl text-center">
+                    <div className="mx-auto mb-8 max-w-3xl text-center sm:mb-16">
                         <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
                             Sobre{' '}
                             <span className="bg-gradient-to-r from-amber-500 to-orange-600 bg-clip-text text-amber-500 text-transparent">
                                 Nosotros
                             </span>
                         </h1>
-                        <p className="text-xl leading-relaxed text-gray-500">
+                        <p className="text-base leading-relaxed text-gray-500 sm:text-xl">
                             {subtitle ||
                                 title ||
                                 'Conoce nuestra historia y propósito.'}
@@ -125,10 +64,10 @@ export default function QuienesSomos({
                         <img
                             src={image || '/images/about_us_team.png'}
                             alt="Nuestro equipo"
-                            className="h-[500px] w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            className="h-72 w-full object-cover transition-transform duration-700 group-hover:scale-105 sm:h-[500px]"
                         />
-                        <div className="absolute right-0 bottom-0 left-0 z-20 translate-y-4 transform p-8 text-white transition-transform duration-300 group-hover:translate-y-0">
-                            <h3 className="mb-2 text-3xl font-bold">
+                        <div className="absolute right-0 bottom-0 left-0 z-20 p-4 text-white transition-transform duration-300 sm:translate-y-4 sm:p-8 sm:group-hover:translate-y-0">
+                            <h3 className="mb-2 text-xl font-bold sm:text-3xl">
                                 Un equipo comprometido con tu éxito
                             </h3>
                             <p className="text-gray-200">
@@ -144,13 +83,13 @@ export default function QuienesSomos({
             <section className="flex-grow bg-slate-50 py-20">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
-                        <div className="prose prose-lg prose-amber text-gray-600 lg:col-span-2">
+                        <div className="prose prose-lg prose-amber min-w-0 break-words text-gray-600 lg:col-span-2">
                             <h2 className="mb-6 border-b border-gray-200 pb-4 text-3xl font-bold text-gray-900">
                                 {nav_extra?.quienes_somos_vision_title ||
                                     'Nuestra Esencia'}
                             </h2>
                             <div
-                                className="prose prose-lg prose-amber max-w-none leading-relaxed"
+                                className="prose prose-lg prose-amber max-w-none overflow-x-auto leading-relaxed break-words"
                                 dangerouslySetInnerHTML={{
                                     __html: DOMPurify.sanitize(
                                         content ||

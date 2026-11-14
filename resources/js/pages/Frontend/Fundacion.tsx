@@ -1,6 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import DOMPurify from 'dompurify';
 import { HeartHandshake, GraduationCap, Globe2, Sparkles } from 'lucide-react';
+import { PublicHeader } from '@/components/public-header';
 
 interface Props {
     title: string;
@@ -32,71 +33,17 @@ export default function Fundacion({
             <Head title={title} />
 
             {/* Header */}
-            <header className="sticky top-0 z-50 border-b border-stone-200 bg-white/90 backdrop-blur-md">
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-                    {(nav?.app_brand_visible ?? true) ? (
-                        <Link href="/" className="flex items-center gap-2">
-                            {appLogo ? (
-                                <img
-                                    src={appLogo}
-                                    alt={appName}
-                                    className="h-10 w-10 rounded-lg object-contain"
-                                />
-                            ) : (
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-orange-500 text-2xl font-black text-white">
-                                    {appName.charAt(0)}
-                                </div>
-                            )}
-                            <span className="bg-gradient-to-r from-rose-600 to-orange-500 bg-clip-text text-xl font-bold text-transparent">
-                                Fundación {appName}
-                            </span>
-                        </Link>
-                    ) : (
-                        <Link href="/" className="flex items-center">
-                            <span className="sr-only text-xl font-bold text-transparent">
-                                {appName}
-                            </span>
-                        </Link>
-                    )}
-                    <nav className="flex items-center gap-6">
-                        <div className="mr-4 hidden items-center gap-6 md:flex">
-                            {(nav?.quienes_somos_visible ?? true) && (
-                                <Link
-                                    href="/quienes-somos"
-                                    className="text-sm font-medium text-stone-500 transition-colors hover:text-rose-600"
-                                >
-                                    {nav?.quienes_somos || 'Quiénes Somos'}
-                                </Link>
-                            )}
-                            {(nav?.feedback_visible ?? true) && (
-                                <Link
-                                    href="/feedback"
-                                    className="text-sm font-medium text-stone-500 transition-colors hover:text-rose-600"
-                                >
-                                    {nav?.feedback || 'Feedback'}
-                                </Link>
-                            )}
-                            <Link
-                                href="/fundacion"
-                                className="text-sm font-semibold text-rose-600 transition-colors"
-                            >
-                                {nav?.fundacion || 'Nuestra Fundación'}
-                            </Link>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Link
-                                href="/login"
-                                className="px-3 py-2 text-sm font-medium text-stone-600 hover:text-stone-900"
-                            >
-                                Iniciar sesión
-                            </Link>
-                        </div>
-                    </nav>
-                </div>
-            </header>
+            <PublicHeader
+                appName={appName}
+                appLogo={appLogo}
+                nav={nav}
+                activePage="fundacion"
+                tone="rose"
+                brandPrefix="Fundación"
+            />
 
             {/* Hero Section */}
-            <section className="relative overflow-hidden pt-20 pb-32">
+            <section className="relative overflow-hidden pt-10 pb-16 sm:pt-20 sm:pb-32">
                 <div className="absolute inset-0 z-0 bg-rose-900/5" />
 
                 <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -106,7 +53,7 @@ export default function Fundacion({
                                 <Sparkles className="h-4 w-4" />{' '}
                                 {nav_extra?.fundacion_badge || 'Impacto Social'}
                             </div>
-                            <h1 className="mb-6 text-5xl leading-tight font-extrabold tracking-tight text-stone-900">
+                            <h1 className="mb-6 text-3xl leading-tight font-extrabold tracking-tight break-words text-stone-900 sm:text-5xl">
                                 {title || (
                                     <>
                                         <span className="bg-gradient-to-r from-rose-500 to-orange-500 bg-clip-text text-transparent">
@@ -115,7 +62,7 @@ export default function Fundacion({
                                     </>
                                 )}
                             </h1>
-                            <p className="mb-8 text-xl leading-relaxed text-stone-600">
+                            <p className="mb-8 text-base leading-relaxed text-stone-600 sm:text-xl">
                                 {subtitle ||
                                     'Brindamos becas y asistencia a comunidades vulnerables para crear un futuro más brillante.'}
                             </p>
@@ -136,7 +83,7 @@ export default function Fundacion({
                             <img
                                 src={image || '/images/ngo_foundation.png'}
                                 alt="Voluntaria entregando beca"
-                                className="relative z-10 h-[500px] w-full rounded-[2.5rem] object-cover shadow-2xl"
+                                className="relative z-10 h-72 w-full rounded-3xl object-cover shadow-2xl sm:h-[500px] sm:rounded-[2.5rem]"
                             />
 
                             {/* Floating Card */}
@@ -175,7 +122,7 @@ export default function Fundacion({
                             'Nuestro Propósito'}
                     </h2>
                     <div
-                        className="prose prose-rose prose-lg mx-auto text-left leading-relaxed text-stone-600"
+                        className="prose prose-rose prose-lg mx-auto overflow-x-auto text-left leading-relaxed break-words text-stone-600"
                         dangerouslySetInnerHTML={{
                             __html: DOMPurify.sanitize(
                                 content ||

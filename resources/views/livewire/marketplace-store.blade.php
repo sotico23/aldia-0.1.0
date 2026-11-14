@@ -1,5 +1,5 @@
 <div
-    x-data="{ carritoAbierto: false }"
+    x-data="{ carritoAbierto: false, filtrosAbiertos: false }"
     x-cloak
     class="min-h-screen bg-slate-50 pb-20"
 >
@@ -133,8 +133,13 @@
         <div class="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
 
             {{-- Filtros --}}
-            <aside class="w-full lg:col-span-3 xl:col-span-2">
+            <aside class="min-w-0 w-full lg:col-span-3 xl:col-span-2">
                 <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <button type="button" @click="filtrosAbiertos = !filtrosAbiertos" :aria-expanded="filtrosAbiertos" aria-controls="store-filters" class="flex min-h-11 w-full items-center justify-between text-sm font-bold lg:hidden">
+                        <span>Filtros de productos</span>
+                        <span x-text="filtrosAbiertos ? 'Ocultar' : 'Mostrar'" class="text-xs text-primary"></span>
+                    </button>
+                    <div id="store-filters" class="hidden lg:block" :class="{ '!block': filtrosAbiertos }">
                     <div class="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
                         <h2 class="flex items-center gap-2 text-sm font-bold text-slate-900">
                             <svg class="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
@@ -218,11 +223,12 @@
                             </div>
                         </div>
                     @endif
+                    </div>
                 </div>
             </aside>
 
             {{-- Columna principal --}}
-            <main class="w-full space-y-5 lg:col-span-9 xl:col-span-10">
+            <main class="min-w-0 w-full space-y-5 lg:col-span-9 xl:col-span-10">
 
                 {{-- -------------------- PRODUCTOS -------------------- --}}
                 @if ($tabActivo === 'productos')
@@ -248,7 +254,7 @@
                                 <p class="mt-1 text-xs">Prueba cambiando los filtros</p>
                             </div>
                         @else
-                            <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4">
+                            <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,11rem),1fr))] gap-3 sm:gap-4">
                                 @foreach ($productos as $producto)
                                     @include('livewire.partials.product-card', [
                                         'producto' => $producto,
@@ -468,7 +474,7 @@
     <div
         x-show="carritoAbierto"
         x-transition.opacity
-        class="fixed inset-0 z-40 bg-slate-900/40"
+        class="fixed inset-0 z-[60] bg-slate-900/40"
         x-on:click="carritoAbierto = false"
     ></div>
 
@@ -480,7 +486,12 @@
         x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="translate-x-0"
         x-transition:leave-end="translate-x-full"
-        class="fixed top-0 right-0 z-50 flex h-full w-full max-w-md flex-col bg-white shadow-2xl"
+        x-trap.inert.noscroll="carritoAbierto"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Tu carrito"
+        @keydown.escape.stop.window="carritoAbierto = false"
+        class="fixed inset-y-0 right-0 z-[70] flex h-dvh w-full max-w-md flex-col bg-white shadow-2xl"
     >
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
             <h2 class="text-base font-bold text-slate-900">Tu carrito</h2>

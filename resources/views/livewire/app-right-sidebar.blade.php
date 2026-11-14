@@ -1,7 +1,7 @@
-<aside aria-label="Mi cuenta" class="fixed inset-y-0 right-0 z-50 hidden w-64 flex-col border-l border-sidebar-border bg-sidebar text-sidebar-foreground xl:flex" :class="{ '!flex': rightSidebarOpen }" @if ($user) wire:poll.60s @endif>
+<aside id="app-right-sidebar" aria-label="Mi cuenta" tabindex="-1" :role="rightSidebarOpen ? 'dialog' : 'complementary'" :aria-modal="rightSidebarOpen ? 'true' : null" x-trap.inert.noscroll="rightSidebarOpen" class="fixed inset-y-0 right-0 z-50 hidden w-64 max-w-[calc(100vw-2rem)] flex-col border-l border-sidebar-border bg-sidebar text-sidebar-foreground xl:flex" :class="{ '!flex': rightSidebarOpen }" @if ($user) wire:poll.60s @endif>
     <div class="flex items-center justify-between px-4 pt-4">
         <h2 class="text-xs font-medium">{{ $user ? 'Usuario' : 'Mi cuenta' }}</h2>
-        <button type="button" @click="rightSidebarOpen = false" class="p-2 xl:hidden" aria-label="Cerrar cuenta"><x-sidebar-icon name="X" /></button>
+        <button type="button" @click="rightSidebarOpen = false" class="flex size-11 shrink-0 items-center justify-center xl:hidden" aria-label="Cerrar cuenta"><x-sidebar-icon name="X" /></button>
     </div>
     <div class="min-h-0 flex-1 space-y-4 overflow-y-auto p-2">
         @if ($user)

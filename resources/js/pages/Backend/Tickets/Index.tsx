@@ -372,7 +372,7 @@ export default function Index({
                             </p>
                         </div>
 
-                        <div className="flex flex-nowrap items-center gap-2">
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
                             <BulkActions
                                 baseUrl="/tickets"
                                 modelName="Tickets"
@@ -398,7 +398,7 @@ export default function Index({
                     <div className="grid gap-6">
                         <Card className="overflow-hidden border-none shadow-xl shadow-foreground/5">
                             <CardHeader className="bg-gradient-to-r from-muted/50 to-transparent pb-4">
-                                <div className="flex items-center justify-between">
+                                <div className="flex flex-wrap items-center justify-between gap-3">
                                     <div className="flex items-center gap-2">
                                         <ClipboardList className="h-5 w-5 text-primary" />
                                         <CardTitle>Cola de Atención</CardTitle>
@@ -438,8 +438,8 @@ export default function Index({
                             </CardHeader>
                             <CardContent className="p-0">
                                 {/* Filters Bar */}
-                                <div className="flex flex-col gap-4 border-b border-muted/30 bg-muted/20 p-4 md:flex-row md:items-center">
-                                    <div className="relative flex-1">
+                                <div className="flex flex-col gap-4 border-b border-muted/30 bg-muted/20 p-4 2xl:flex-row 2xl:items-center">
+                                    <div className="relative min-w-0 flex-1">
                                         <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                         <Input
                                             placeholder="Buscar por título, cliente o asignado..."
@@ -671,7 +671,7 @@ export default function Index({
                                                                                     </div>
                                                                                 </td>
                                                                                 <td className="px-6 py-4 text-right">
-                                                                                    <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                                                                    <div className="flex justify-end gap-1 opacity-100 transition-opacity">
                                                                                         <Button
                                                                                             variant="ghost"
                                                                                             size="icon"

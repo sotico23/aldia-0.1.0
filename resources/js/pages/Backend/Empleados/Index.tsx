@@ -165,7 +165,7 @@ export default function Index({
         telefono: '',
         direccion: '',
         comuna: '',
-        cargo: null,
+        cargo: null as string | null,
         departamento: '',
         almacen_id: '',
         fecha_contratacion: '',

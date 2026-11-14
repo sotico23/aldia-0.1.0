@@ -1084,7 +1084,7 @@ export default function Index({
                             className="max-h-[85vh] overflow-y-auto p-6 pt-2"
                         >
                             <div className="grid gap-6 py-4">
-                                <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-4">
                                     <div className="space-y-2">
                                         <Label className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                                             Número de Documento

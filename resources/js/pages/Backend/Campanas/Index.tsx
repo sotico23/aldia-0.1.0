@@ -338,7 +338,7 @@ export default function Index({
                             </p>
                         </div>
 
-                        <div className="flex flex-nowrap items-center gap-2">
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
                             <BulkActions
                                 baseUrl="/campanas"
                                 filters={{
@@ -413,7 +413,7 @@ export default function Index({
                         </Card>
                     </div>
 
-                    <div className="grid gap-6">
+                    <div className="grid min-w-0 grid-cols-1 gap-6">
                         {/* View Toggle */}
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">

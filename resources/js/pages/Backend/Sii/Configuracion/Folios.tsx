@@ -105,7 +105,7 @@ export default function Folios({ cafs }: Props) {
                     </Button>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-6">
                     <Card className="border-none bg-zinc-900 text-white shadow-2xl md:col-span-1">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-bold tracking-widest text-zinc-400 uppercase">

@@ -8,6 +8,8 @@
         <testsuite name="Sidebar components">
             <file>tests/LivewireSidebarsTest.php</file>
             <file>tests/MarketplaceStoreImagesTest.php</file>
+            <file>tests/ResponsiveLayoutTest.php</file>
+            <file>tests/DashboardInventoryValueTest.php</file>
         </testsuite>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>

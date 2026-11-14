@@ -297,7 +297,7 @@ export default function Reportes({
                             </Select>
                         </div>
 
-                        <div className="flex items-center gap-2 rounded-xl border bg-background px-2 py-1">
+                        <div className="flex max-w-full flex-wrap items-center gap-2 rounded-xl border bg-background px-2 py-1">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
                             <Input
                                 type="date"
@@ -376,7 +376,7 @@ export default function Reportes({
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-4">
                     <Card className="border-emerald-100 bg-emerald-50">
                         <CardHeader className="pb-1">
                             <CardTitle className="flex items-center justify-between text-[10px] font-bold text-emerald-700 uppercase">

@@ -57,6 +57,7 @@ import { WhatsAppButton } from '@/components/whatsapp-button';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import { formatCurrency, formatDateCLP, formatRut } from '@/lib/utils';
+import { updateEstado } from '@/routes/prospectos';
 import type { BreadcrumbItem } from '@/types';
 
 interface Prospecto {
@@ -362,17 +363,22 @@ export default function Index({
         e.dataTransfer.dropEffect = 'move';
     };
 
-    const handleDrop = (e: React.DragEvent, nuevoEstado: string) => {
-        e.preventDefault();
-        if (draggingId === null) return;
-
+    const changeProspectoEstado = (id: number, nuevoEstado: string) => {
+        if (!canEdit) return;
         router.patch(
-            `/prospectos/${draggingId}/estado`,
+            updateEstado(id).url,
             { estado: nuevoEstado },
             {
+                preserveScroll: true,
                 onSuccess: () => setDraggingId(null),
             },
         );
+    };
+
+    const handleDrop = (e: React.DragEvent, nuevoEstado: string) => {
+        e.preventDefault();
+        if (draggingId === null) return;
+        changeProspectoEstado(draggingId, nuevoEstado);
     };
 
     const groupedProspectos = useMemo(() => {
@@ -482,8 +488,8 @@ export default function Index({
 
                     <div className="grid gap-6">
                         {/* Filters Bar */}
-                        <div className="flex flex-col gap-4 rounded-3xl border border-muted/50 bg-muted/40 p-4 md:flex-row md:items-center">
-                            <div className="relative flex-1">
+                        <div className="flex flex-col gap-4 rounded-3xl border border-muted/50 bg-muted/40 p-4 2xl:flex-row 2xl:items-center">
+                            <div className="relative min-w-0 flex-1">
                                 <Search className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     placeholder="Buscar por nombre, empresa, rut o email..."
@@ -494,12 +500,12 @@ export default function Index({
                                     className="h-11 rounded-2xl border-none bg-background pl-12 shadow-sm focus-visible:ring-primary/20"
                                 />
                             </div>
-                            <div className="flex gap-2">
+                            <div className="grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.75rem] 2xl:w-[26rem]">
                                 <Select
                                     value={estadoFilter}
                                     onValueChange={setEstadoFilter}
                                 >
-                                    <SelectTrigger className="h-11 min-w-[140px] rounded-2xl border-none bg-background font-bold shadow-sm md:w-[160px]">
+                                    <SelectTrigger className="h-11 w-full min-w-0 rounded-2xl border-none bg-background font-bold shadow-sm">
                                         <SelectValue placeholder="Estado" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -520,7 +526,7 @@ export default function Index({
                                     value={fuenteFilter}
                                     onValueChange={setFuenteFilter}
                                 >
-                                    <SelectTrigger className="h-11 min-w-[140px] rounded-2xl border-none bg-background font-bold shadow-sm md:w-[160px]">
+                                    <SelectTrigger className="h-11 w-full min-w-0 rounded-2xl border-none bg-background font-bold shadow-sm">
                                         <SelectValue placeholder="Fuente" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -594,7 +600,7 @@ export default function Index({
                                                 {prospEnEst.map((p: any) => (
                                                     <div
                                                         key={p.id}
-                                                        draggable
+                                                        draggable={canEdit}
                                                         onDragStart={(e) =>
                                                             handleDragStart(
                                                                 e,
@@ -659,13 +665,50 @@ export default function Index({
                                                             </div>
                                                         </div>
 
-                                                        <div className="mt-4 flex justify-end gap-1 border-t border-muted/50 pt-3 opacity-0 transition-opacity group-hover:opacity-100">
+                                                        {canEdit && (
+                                                            <select
+                                                                aria-label={`Estado de ${p.nombre}`}
+                                                                value={p.estado}
+                                                                onChange={(
+                                                                    event,
+                                                                ) =>
+                                                                    changeProspectoEstado(
+                                                                        p.id,
+                                                                        event
+                                                                            .target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                                className="mt-3 min-h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                                                            >
+                                                                {ESTADOS.map(
+                                                                    (
+                                                                        estado,
+                                                                    ) => (
+                                                                        <option
+                                                                            key={
+                                                                                estado.value
+                                                                            }
+                                                                            value={
+                                                                                estado.value
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                estado.label
+                                                                            }
+                                                                        </option>
+                                                                    ),
+                                                                )}
+                                                            </select>
+                                                        )}
+                                                        <div className="mt-4 flex justify-end gap-1 border-t border-muted/50 pt-3 opacity-100 transition-opacity">
                                                             {p.estado !==
                                                                 'convertido' && (
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    className="h-7 w-7 text-green-600 hover:bg-green-50"
+                                                                    className="h-11 w-11 text-green-600 hover:bg-green-50"
+                                                                    aria-label={`Convertir ${p.nombre} en cliente`}
                                                                     onClick={() =>
                                                                         handleConvertir(
                                                                             p.id,
@@ -679,7 +722,8 @@ export default function Index({
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    className="h-7 w-7 text-primary hover:bg-primary/10"
+                                                                    className="h-11 w-11 text-primary hover:bg-primary/10"
+                                                                    aria-label={`Editar ${p.nombre}`}
                                                                     onClick={() =>
                                                                         handleEdit(
                                                                             p,
@@ -693,7 +737,8 @@ export default function Index({
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                                                                    className="h-11 w-11 text-destructive hover:bg-destructive/10"
+                                                                    aria-label={`Eliminar ${p.nombre}`}
                                                                     onClick={() =>
                                                                         handleDelete(
                                                                             p.id,
@@ -863,7 +908,7 @@ export default function Index({
                                                                                                     nombre={
                                                                                                         p.nombre
                                                                                                     }
-                                                                                                    className="h-7 w-7"
+                                                                                                    className="h-11 w-11"
                                                                                                 />
                                                                                             )}
                                                                                             <div className="text-xs">
@@ -931,7 +976,7 @@ export default function Index({
                                                                                         </div>
                                                                                     </td>
                                                                                     <td className="px-6 py-4 text-right">
-                                                                                        <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                                                                        <div className="flex justify-end gap-1 opacity-100 transition-opacity">
                                                                                             {p.estado !==
                                                                                                 'convertido' && (
                                                                                                 <Button

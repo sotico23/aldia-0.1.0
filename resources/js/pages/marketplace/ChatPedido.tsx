@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import echo from '@/echo';
+import { useChatViewport } from '@/hooks/use-chat-viewport';
 import AppLayout from '@/layouts/app-layout';
 
 interface Message {
@@ -63,6 +64,7 @@ export default function ChatPedido({
     mensajes: initialMensajes,
     auth,
 }: Props) {
+    const viewportRef = useChatViewport();
     const scrollRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [mensajes, setMensajes] = useState<Message[]>(initialMensajes);
@@ -338,36 +340,42 @@ export default function ChatPedido({
                 title={`Chat Pedido ${conversacion.pedido.numero_pedido} | Marketplace`}
             />
 
-            <div className="mx-auto flex h-[calc(100vh-14rem)] max-w-4xl flex-col">
-                <Card className="flex flex-1 flex-col overflow-hidden border-slate-200 shadow-lg dark:border-slate-800">
-                    <CardHeader className="z-10 shrink-0 border-b border-slate-100 bg-white py-4 dark:border-slate-800 dark:bg-slate-900">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
+            <div
+                ref={viewportRef}
+                className="mx-auto flex h-[var(--chat-height,calc(100dvh-5rem))] min-h-0 w-full max-w-4xl flex-col p-2 sm:p-4"
+            >
+                <Card className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden border-slate-200 py-0 shadow-lg dark:border-slate-800">
+                    <CardHeader className="z-10 shrink-0 border-b border-slate-100 bg-white px-3 py-3 sm:px-6 dark:border-slate-800 dark:bg-slate-900">
+                        <div className="flex min-w-0 items-center justify-between gap-2">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     asChild
-                                    className="rounded-full"
+                                    className="size-11 shrink-0 rounded-full"
                                 >
                                     <Link
                                         href="/mis-pedidos"
-                                        className="h-5 w-5"
+                                        aria-label="Volver a mis pedidos"
                                     >
                                         <ArrowLeft className="h-5 w-5" />
                                     </Link>
                                 </Button>
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800">
+                                <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 sm:flex dark:bg-slate-800">
                                     {isVendedor ? (
                                         <User className="h-6 w-6" />
                                     ) : (
                                         <Store className="h-5 w-5" />
                                     )}
                                 </div>
-                                <div>
-                                    <h2 className="leading-tight font-bold text-slate-900 dark:text-white">
+                                <div className="min-w-0">
+                                    <h2
+                                        className="truncate leading-tight font-bold text-slate-900 dark:text-white"
+                                        title={chatTitle}
+                                    >
                                         {chatTitle}
                                     </h2>
-                                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                                    <div className="flex flex-wrap items-center gap-1 text-xs text-slate-500 sm:gap-2">
                                         <Package className="h-3 w-3" />
                                         <span>
                                             {conversacion.pedido.numero_pedido}
@@ -381,14 +389,14 @@ export default function ChatPedido({
                                 </div>
                             </div>
                             <span
-                                className={`inline-block h-2 w-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`}
+                                className={`inline-block h-2 w-2 shrink-0 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`}
                                 title={connected ? 'Conectado' : 'Desconectado'}
                             />
                         </div>
                     </CardHeader>
 
                     <CardContent
-                        className="flex-1 space-y-4 overflow-x-hidden overflow-y-auto bg-slate-50/50 p-4 dark:bg-slate-950/20"
+                        className="min-h-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto bg-slate-50/50 p-3 sm:p-4 dark:bg-slate-950/20"
                         ref={scrollRef}
                     >
                         {mensajes.length > 0 ? (
@@ -535,15 +543,15 @@ export default function ChatPedido({
                         )}
                     </CardContent>
 
-                    <div className="shrink-0 border-t border-slate-100 bg-white p-4 sm:p-6 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="shrink-0 border-t border-slate-100 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-4 dark:border-slate-800 dark:bg-slate-900">
                         <form
                             onSubmit={handleSubmit}
                             encType="multipart/form-data"
                             className="flex flex-col gap-2"
                         >
                             {selectedFile && (
-                                <div className="flex items-center justify-between rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
-                                    <div className="flex items-center gap-2 truncate">
+                                <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
+                                    <div className="flex min-w-0 items-center gap-2 truncate">
                                         {previewImage && (
                                             <img
                                                 src={previewImage}
@@ -561,13 +569,14 @@ export default function ChatPedido({
                                     <button
                                         type="button"
                                         onClick={clearFile}
-                                        className="text-emerald-400 hover:text-emerald-600"
+                                        className="flex size-11 shrink-0 items-center justify-center text-emerald-400 hover:text-emerald-600"
+                                        aria-label="Quitar archivo adjunto"
                                     >
                                         <X className="h-4 w-4" />
                                     </button>
                                 </div>
                             )}
-                            <div className="flex flex-col items-center gap-2 sm:flex-row">
+                            <div className="flex min-w-0 items-center gap-2">
                                 <input
                                     type="file"
                                     className="hidden"
@@ -578,7 +587,8 @@ export default function ChatPedido({
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="shrink-0 rounded-full"
+                                    className="size-11 shrink-0 rounded-full"
+                                    aria-label="Adjuntar archivo"
                                     onClick={() =>
                                         fileInputRef.current?.click()
                                     }
@@ -592,13 +602,15 @@ export default function ChatPedido({
                                         handleTyping();
                                     }}
                                     placeholder="Escribe un mensaje..."
-                                    className="w-full flex-1 rounded-full border-slate-200 px-4 py-6 focus-visible:ring-primary dark:border-slate-800"
+                                    className="h-11 min-w-0 flex-1 rounded-full border-slate-200 px-3 text-base focus-visible:ring-primary dark:border-slate-800"
+                                    aria-label="Mensaje"
                                     autoComplete="off"
                                 />
                                 <Button
                                     type="submit"
                                     size="icon"
-                                    className="h-12 w-12 rounded-full shadow-lg transition-transform active:scale-95"
+                                    className="size-11 shrink-0 rounded-full shadow-lg transition-transform active:scale-95"
+                                    aria-label="Enviar mensaje"
                                     disabled={
                                         isSending ||
                                         (!contenido.trim() && !selectedFile)

@@ -46,6 +46,7 @@ import {
     Pie,
     Cell,
 } from 'recharts';
+import { useIsMobile } from '@/hooks/use-mobile';
 import AppLayout from '@/layouts/app-layout';
 
 export default function CalendarView({
@@ -87,7 +88,11 @@ export default function CalendarView({
     const [syncing, setSyncing] = useState(false);
     const [syncedEvents, setSyncedEvents] = useState<any[]>([]);
     const [syncError, setSyncError] = useState<string | null>(null);
-    const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('month');
+    const isMobile = useIsMobile();
+    const [selectedViewMode, setSelectedViewMode] = useState<
+        'day' | 'week' | 'month' | null
+    >(null);
+    const viewMode = selectedViewMode ?? (isMobile ? 'day' : 'month');
     const [currentMonth, setCurrentMonth] = useState(() =>
         startOfMonth(new Date()),
     );
@@ -638,9 +643,9 @@ export default function CalendarView({
                 </div>
 
                 {/* ── Main Grid: Sidebar + Calendar + Day Detail ── */}
-                <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 pb-3 sm:gap-4 sm:pb-4 lg:grid-cols-12">
+                <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-3 pb-3 sm:gap-4 sm:pb-4 2xl:grid-cols-12">
                     {/* ── Left Sidebar ── */}
-                    <div className="flex min-h-0 flex-col gap-3 lg:col-span-3">
+                    <div className="flex min-h-0 min-w-0 flex-col gap-3 2xl:col-span-3">
                         {/* Today's Agenda (fills available height) */}
                         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
                             <div className="flex shrink-0 items-center justify-between bg-slate-900 px-3 py-2.5 text-white sm:px-4 sm:py-3">
@@ -795,12 +800,12 @@ export default function CalendarView({
                     </div>
 
                     {/* ── Calendar + Day Detail ── */}
-                    <div className="h-full min-h-0 lg:col-span-9">
+                    <div className="h-full min-h-0 min-w-0 2xl:col-span-9">
                         <div className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
                             {/* Calendar Header */}
-                            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/80 px-3 py-2.5 sm:px-5 sm:py-3">
-                                <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-                                    <h2 className="text-sm font-bold whitespace-nowrap text-slate-900 capitalize sm:text-base">
+                            <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-3 py-2.5 sm:px-5 sm:py-3">
+                                <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
+                                    <h2 className="text-sm font-bold break-words text-slate-900 capitalize sm:text-base">
                                         {viewMode === 'day'
                                             ? format(
                                                   currentDate,
@@ -819,21 +824,23 @@ export default function CalendarView({
                                         <button
                                             type="button"
                                             onClick={goPrev}
-                                            className="border-r border-slate-200 p-1.5 transition-colors hover:bg-slate-50 sm:p-2"
+                                            aria-label="Período anterior"
+                                            className="flex min-h-11 min-w-11 items-center justify-center border-r border-slate-200 p-2 transition-colors hover:bg-slate-50"
                                         >
                                             <ChevronLeft className="h-3.5 w-3.5 text-slate-600 sm:h-4 sm:w-4" />
                                         </button>
                                         <button
                                             type="button"
                                             onClick={goToday}
-                                            className="px-2.5 py-1.5 text-[10px] font-semibold text-slate-700 transition-colors hover:bg-slate-50 sm:px-3 sm:py-2 sm:text-xs"
+                                            className="min-h-11 px-3 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50"
                                         >
                                             Hoy
                                         </button>
                                         <button
                                             type="button"
                                             onClick={goNext}
-                                            className="border-l border-slate-200 p-1.5 transition-colors hover:bg-slate-50 sm:p-2"
+                                            aria-label="Período siguiente"
+                                            className="flex min-h-11 min-w-11 items-center justify-center border-l border-slate-200 p-2 transition-colors hover:bg-slate-50"
                                         >
                                             <ChevronRight className="h-3.5 w-3.5 text-slate-600 sm:h-4 sm:w-4" />
                                         </button>
@@ -849,9 +856,10 @@ export default function CalendarView({
                                                 key={mode}
                                                 type="button"
                                                 onClick={() =>
-                                                    setViewMode(mode)
+                                                    setSelectedViewMode(mode)
                                                 }
-                                                className={`flex items-center gap-1 px-2 py-1.5 text-[10px] font-semibold transition-colors sm:px-3 sm:py-2 sm:text-xs ${
+                                                aria-pressed={viewMode === mode}
+                                                className={`flex min-h-11 items-center gap-1 px-3 text-xs font-semibold transition-colors ${
                                                     viewMode === mode
                                                         ? 'bg-primary text-white'
                                                         : 'text-slate-600 hover:bg-slate-50'
@@ -864,7 +872,7 @@ export default function CalendarView({
                                                 ) : (
                                                     <CalendarDays className="h-3 w-3" />
                                                 )}
-                                                <span className="hidden sm:inline">
+                                                <span>
                                                     {mode === 'day'
                                                         ? 'Día'
                                                         : mode === 'week'
@@ -877,7 +885,7 @@ export default function CalendarView({
                                 </div>
                             </div>
 
-                            <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+                            <div className="flex min-h-0 min-w-0 flex-1 flex-col 2xl:flex-row">
                                 {viewMode === 'month' ? (
                                     /* ── Month View ── */
                                     <div className="flex min-h-0 flex-1 flex-col p-2 sm:p-3 lg:p-4">
@@ -1334,7 +1342,7 @@ export default function CalendarView({
                                 )}
 
                                 {/* ── Day Detail Panel ── */}
-                                <div className="flex h-full max-h-[280px] shrink-0 flex-col border-t border-slate-200 bg-slate-50/50 lg:max-h-none lg:w-72 lg:border-t-0 lg:border-l xl:w-80">
+                                <div className="flex h-full max-h-[280px] shrink-0 flex-col border-t border-slate-200 bg-slate-50/50 2xl:max-h-none 2xl:w-72 2xl:border-t-0 2xl:border-l">
                                     {selectedDay ? (
                                         <>
                                             <div className="flex-shrink-0 border-b border-slate-200 px-3 py-2.5 sm:px-4 sm:py-3">

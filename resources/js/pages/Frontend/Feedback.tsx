@@ -1,6 +1,7 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { Send, MessageSquare, Star } from 'lucide-react';
 import React, { useState } from 'react';
+import { PublicHeader } from '@/components/public-header';
 
 interface Props {
     title: string;
@@ -49,64 +50,18 @@ export default function Feedback({
             <Head title={title} />
 
             {/* Header */}
-            <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/70 backdrop-blur-xl">
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-                    {(nav?.app_brand_visible ?? true) ? (
-                        <Link href="/" className="flex items-center gap-2">
-                            {appLogo ? (
-                                <img
-                                    src={appLogo}
-                                    alt={appName}
-                                    className="h-10 w-10 rounded-lg object-contain"
-                                />
-                            ) : (
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-purple-600 text-2xl font-black text-white">
-                                    {appName.charAt(0)}
-                                </div>
-                            )}
-                            <span className="bg-gradient-to-r from-emerald-600 to-purple-600 bg-clip-text text-xl font-bold text-transparent">
-                                {appName}
-                            </span>
-                        </Link>
-                    ) : (
-                        <Link href="/" className="flex items-center">
-                            <span className="sr-only text-xl font-bold text-transparent">
-                                {appName}
-                            </span>
-                        </Link>
-                    )}
-                    <nav className="flex items-center gap-6">
-                        <div className="mr-4 hidden items-center gap-6 md:flex">
-                            {(nav?.quienes_somos_visible ?? true) && (
-                                <Link
-                                    href="/quienes-somos"
-                                    className="text-sm font-medium text-gray-500 transition-colors hover:text-emerald-600"
-                                >
-                                    {nav?.quienes_somos || 'Quiénes Somos'}
-                                </Link>
-                            )}
-                            <Link
-                                href="/feedback"
-                                className="text-sm font-semibold text-emerald-600 transition-colors"
-                            >
-                                {nav?.feedback || 'Feedback'}
-                            </Link>
-                            {(nav?.fundacion_visible ?? true) && (
-                                <Link
-                                    href="/fundacion"
-                                    className="text-sm font-medium text-gray-500 transition-colors hover:text-emerald-600"
-                                >
-                                    {nav?.fundacion || 'Nuestra Fundación'}
-                                </Link>
-                            )}
-                        </div>
-                    </nav>
-                </div>
-            </header>
+            <PublicHeader
+                appName={appName}
+                appLogo={appLogo}
+                nav={nav}
+                activePage="feedback"
+                tone="emerald"
+                showLogin={false}
+            />
 
-            <main className="relative flex flex-grow flex-col md:flex-row">
+            <main className="relative flex flex-grow flex-col lg:flex-row">
                 {/* Visual Section */}
-                <div className="relative flex min-h-[400px] items-center justify-center overflow-hidden border-r border-emerald-800 bg-emerald-900 p-12 md:min-h-auto md:w-1/2">
+                <div className="relative flex min-h-72 min-w-0 items-center justify-center overflow-hidden border-emerald-800 bg-emerald-900 p-6 sm:min-h-[400px] sm:p-10 lg:w-1/2 lg:border-r lg:p-12">
                     <div className="absolute inset-0 z-10 bg-gradient-to-br from-emerald-900/90 via-purple-900/80 to-emerald-900/90 mix-blend-multiply" />
 
                     <img
@@ -115,11 +70,11 @@ export default function Feedback({
                         className="absolute inset-0 h-full w-full object-cover opacity-80"
                     />
 
-                    <div className="relative z-20 max-w-lg text-white">
+                    <div className="relative z-20 max-w-lg min-w-0 break-words text-white">
                         <div className="mb-8 inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 p-3 backdrop-blur-md">
                             <MessageSquare className="h-8 w-8 text-emerald-300" />
                         </div>
-                        <h1 className="mb-6 text-5xl leading-tight font-extrabold tracking-tight">
+                        <h1 className="mb-4 text-3xl leading-tight font-extrabold tracking-tight sm:mb-6 sm:text-5xl">
                             {title || (
                                 <>
                                     <span className="bg-gradient-to-r from-emerald-400 to-purple-300 bg-clip-text text-transparent">
@@ -128,7 +83,7 @@ export default function Feedback({
                                 </>
                             )}
                         </h1>
-                        <div className="text-lg leading-relaxed font-light whitespace-pre-wrap text-emerald-100/90">
+                        <div className="text-base leading-relaxed font-light whitespace-pre-wrap text-emerald-100/90 sm:text-lg">
                             {subtitle ||
                                 'Te escuchamos. Cuéntanos qué podemos mejorar, qué te encanta y qué esperas ver en el futuro.'}
                         </div>
@@ -136,7 +91,7 @@ export default function Feedback({
                 </div>
 
                 {/* Form Section */}
-                <div className="flex flex-col justify-center bg-white px-8 py-16 md:w-1/2 md:px-16 lg:px-24">
+                <div className="flex min-w-0 flex-col justify-center bg-white px-4 py-10 sm:px-8 sm:py-16 lg:w-1/2 lg:px-12 xl:px-24">
                     <div className="mx-auto w-full max-w-md">
                         <div className="mb-10 text-center md:text-left">
                             <h2 className="mb-2 text-2xl font-bold text-gray-900">

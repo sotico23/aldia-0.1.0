@@ -180,6 +180,8 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobileLeft, setOpenMobileLeft, openMobileRight, setOpenMobileRight } = useSidebar()
+  const isBelowDesktop = useIsMobile(1280)
+  const isDrawer = side === "right" ? isBelowDesktop : isMobile
 
   const openMobile = side === "left" ? openMobileLeft : openMobileRight
   const setOpenMobile = side === "left" ? setOpenMobileLeft : setOpenMobileRight
@@ -199,18 +201,14 @@ function Sidebar({
     )
   }
 
-  if (isMobile) {
+  if (isDrawer) {
     return (
       <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
-        <SheetHeader className="sr-only">
-          <SheetTitle>Sidebar</SheetTitle>
-          <SheetDescription>Displays the mobile sidebar.</SheetDescription>
-        </SheetHeader>
         <SheetContent
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+          className="bg-sidebar text-sidebar-foreground h-dvh w-(--sidebar-width) max-w-[calc(100vw-1rem)] p-0 [&>button]:top-2 [&>button]:right-2 [&>button]:flex [&>button]:size-11 [&>button]:items-center [&>button]:justify-center"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -218,6 +216,10 @@ function Sidebar({
           }
           side={side}
         >
+          <SheetHeader className="sr-only">
+            <SheetTitle>{side === "right" ? "Mi cuenta" : "Navegación principal"}</SheetTitle>
+            <SheetDescription>Menú lateral de la aplicación.</SheetDescription>
+          </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>
       </Sheet>
@@ -279,8 +281,10 @@ function SidebarTrigger({
   ...props
 }: React.ComponentProps<typeof Button> & { side?: "left" | "right" }) {
   const { toggleSidebarBySide, toggleSidebar, isMobile, state, openMobileLeft, openMobileRight } = useSidebar()
+  const isBelowDesktop = useIsMobile(1280)
+  const isDrawer = side === "right" ? isBelowDesktop : isMobile
 
-  const isOpen = isMobile 
+  const isOpen = isDrawer
     ? (side === "left" ? openMobileLeft : openMobileRight)
     : state === "expanded"
 
@@ -294,10 +298,13 @@ function SidebarTrigger({
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon"
-      className={cn("h-7 w-7", className)}
+      className={cn("h-11 w-11 shrink-0", className)}
+      aria-expanded={isOpen}
+      aria-label={side === "right" ? "Abrir mi cuenta" : "Abrir navegación"}
       onClick={(event) => {
         onClick?.(event)
-        if (isMobile) {
+        if (event.defaultPrevented) return
+        if (isDrawer) {
           toggleSidebarBySide(side)
         } else {
           toggleSidebar()

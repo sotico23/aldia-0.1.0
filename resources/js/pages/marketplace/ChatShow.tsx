@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import echo from '@/echo';
+import { useChatViewport } from '@/hooks/use-chat-viewport';
 import AppLayout from '@/layouts/app-layout';
 import chat from '@/routes/chat';
 
@@ -46,6 +47,7 @@ interface Props {
 }
 
 export default function ChatShow({ conversation, messages, auth }: Props) {
+    const viewportRef = useChatViewport();
     const scrollRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [localMessages, setLocalMessages] = useState<Message[]>(messages);
@@ -221,33 +223,39 @@ export default function ChatShow({ conversation, messages, auth }: Props) {
         >
             <Head title={`Chat con ${chatTitle} | Marketplace`} />
 
-            <div className="mx-auto flex h-[calc(100vh-14rem)] max-w-4xl flex-col">
-                <Card className="flex flex-1 flex-col overflow-hidden border-slate-200 shadow-lg dark:border-slate-800">
-                    <CardHeader className="z-10 shrink-0 border-b border-slate-100 bg-white py-4 dark:border-slate-800 dark:bg-slate-900">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
+            <div
+                ref={viewportRef}
+                className="mx-auto flex h-[var(--chat-height,calc(100dvh-5rem))] min-h-0 w-full max-w-4xl flex-col p-2 sm:p-4"
+            >
+                <Card className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden border-slate-200 py-0 shadow-lg dark:border-slate-800">
+                    <CardHeader className="z-10 shrink-0 border-b border-slate-100 bg-white px-3 py-3 sm:px-6 dark:border-slate-800 dark:bg-slate-900">
+                        <div className="flex min-w-0 items-center justify-between gap-2">
+                            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     asChild
-                                    className="rounded-full"
+                                    className="size-11 shrink-0 rounded-full"
                                 >
                                     <Link
                                         href={chat.index().url}
-                                        className="h-5 w-5"
+                                        aria-label="Volver a mensajes"
                                     >
                                         <ArrowLeft className="h-5 w-5" />
                                     </Link>
                                 </Button>
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800">
+                                <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 sm:flex dark:bg-slate-800">
                                     {isStoreOwner ? (
                                         <User className="h-6 w-6" />
                                     ) : (
                                         <Store className="h-5 w-5" />
                                     )}
                                 </div>
-                                <div>
-                                    <h2 className="leading-tight font-bold text-slate-900 dark:text-white">
+                                <div className="min-w-0">
+                                    <h2
+                                        className="truncate leading-tight font-bold text-slate-900 dark:text-white"
+                                        title={chatTitle}
+                                    >
                                         {chatTitle}
                                     </h2>
                                     <p className="flex items-center gap-1 text-xs text-slate-500">
@@ -258,11 +266,11 @@ export default function ChatShow({ conversation, messages, auth }: Props) {
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex shrink-0 items-center gap-2">
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="rounded-full"
+                                    className="size-11 rounded-full"
                                     onClick={() => setIsPolling(!isPolling)}
                                     title={
                                         isPolling
@@ -279,7 +287,7 @@ export default function ChatShow({ conversation, messages, auth }: Props) {
                     </CardHeader>
 
                     <CardContent
-                        className="flex-1 space-y-4 overflow-x-hidden overflow-y-auto bg-slate-50/50 p-4 dark:bg-slate-950/20"
+                        className="min-h-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto bg-slate-50/50 p-3 sm:p-4 dark:bg-slate-950/20"
                         ref={scrollRef}
                     >
                         {localMessages.length > 0 ? (
@@ -391,31 +399,32 @@ export default function ChatShow({ conversation, messages, auth }: Props) {
                         )}
                     </CardContent>
 
-                    <div className="shrink-0 border-t border-slate-100 bg-white p-4 sm:p-6 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="shrink-0 border-t border-slate-100 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-4 dark:border-slate-800 dark:bg-slate-900">
                         <form
                             onSubmit={handleSubmit}
                             encType="multipart/form-data"
                             className="flex flex-col gap-2"
                         >
                             {previewImage && (
-                                <div className="relative self-start overflow-hidden rounded-lg border border-slate-200">
+                                <div className="relative max-w-full self-start overflow-hidden rounded-lg border border-slate-200">
                                     <img
                                         src={previewImage}
                                         alt="Preview"
-                                        className="h-24 w-auto object-cover"
+                                        className="h-16 w-auto max-w-full object-cover sm:h-24"
                                     />
                                     <Button
                                         type="button"
                                         variant="destructive"
                                         size="icon"
-                                        className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                                        className="absolute top-1 right-1 size-11 rounded-full"
+                                        aria-label="Quitar imagen adjunta"
                                         onClick={clearImage}
                                     >
                                         <X className="h-3 w-3" />
                                     </Button>
                                 </div>
                             )}
-                            <div className="flex flex-col items-center gap-2 sm:flex-row">
+                            <div className="flex min-w-0 items-center gap-2">
                                 <input
                                     type="file"
                                     accept="image/*"
@@ -427,7 +436,8 @@ export default function ChatShow({ conversation, messages, auth }: Props) {
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="rounded-full"
+                                    className="size-11 shrink-0 rounded-full"
+                                    aria-label="Adjuntar imagen"
                                     onClick={() =>
                                         fileInputRef.current?.click()
                                     }
@@ -441,14 +451,16 @@ export default function ChatShow({ conversation, messages, auth }: Props) {
                                         emitTyping();
                                     }}
                                     placeholder="Escribe un mensaje..."
-                                    className="w-full flex-1 rounded-full border-slate-200 px-4 py-6 focus-visible:ring-primary dark:border-slate-800"
+                                    className="h-11 min-w-0 flex-1 rounded-full border-slate-200 px-3 text-base focus-visible:ring-primary dark:border-slate-800"
+                                    aria-label="Mensaje"
                                     autoComplete="off"
                                     disabled={processing}
                                 />
                                 <Button
                                     type="submit"
                                     size="icon"
-                                    className="h-12 w-12 rounded-full shadow-lg transition-transform active:scale-95"
+                                    className="size-11 shrink-0 rounded-full shadow-lg transition-transform active:scale-95"
+                                    aria-label="Enviar mensaje"
                                     disabled={
                                         processing ||
                                         (!data.body.trim() && !data.image)

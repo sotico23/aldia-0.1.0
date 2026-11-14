@@ -1664,8 +1664,8 @@ export default function PosIndex({
             ]}
         >
             <Head title="Caja POS" />
-            <div className="flex min-h-dvh overflow-hidden bg-background">
-                <div className="flex flex-1 flex-col gap-4 overflow-hidden border-r p-4">
+            <div className="@container/pos flex min-h-dvh min-w-0 bg-background">
+                <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-hidden border-r p-3 pb-24 sm:p-4 @min-[64rem]/pos:pb-4">
                     <div className="flex items-center gap-3">
                         <div className="relative flex-1">
                             <Search className="absolute top-3 left-3 h-5 w-5 text-muted-foreground" />
@@ -1703,7 +1703,7 @@ export default function PosIndex({
                                 <p>No se encontraron productos.</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,12rem),1fr))] gap-3">
                                 {productosFiltrados.map((prod) => (
                                     <Card
                                         key={prod.id}
@@ -1824,7 +1824,7 @@ export default function PosIndex({
                     </div>
                 </div>
 
-                <div className="hidden w-[400px] flex-col bg-muted/10 lg:flex">
+                <div className="hidden w-80 shrink-0 flex-col bg-muted/10 @min-[64rem]/pos:flex">
                     <div className="space-y-4 border-b bg-background p-4 shadow-sm">
                         <div className="flex items-center gap-2">
                             <UserIcon className="h-4 w-4 text-muted-foreground" />
@@ -2595,7 +2595,8 @@ export default function PosIndex({
                 <Sheet open={cartOpen} onOpenChange={setCartOpen}>
                     <SheetTrigger asChild>
                         <Button
-                            className="fixed right-4 bottom-4 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-xl lg:hidden"
+                            aria-label="Abrir carrito de compras"
+                            className="fixed right-4 bottom-4 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-xl xl:right-[17rem] @min-[64rem]/pos:hidden"
                             size="icon"
                         >
                             <ShoppingCart className="h-6 w-6" />

@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import { PublicHeader } from '@/components/public-header';
 import { useCountry } from '@/hooks/use-country';
 
 interface Caracteristica {
@@ -122,101 +123,38 @@ export default function WelcomeNew({
             </Head>
 
             {/* Header */}
-            <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md">
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-                    {(nav?.app_brand_visible ?? true) ? (
-                        <div className="flex items-center gap-2">
-                            {appLogo ? (
-                                <img
-                                    src={appLogo}
-                                    alt={appName}
-                                    className="h-10 w-10 rounded-lg object-contain"
-                                />
-                            ) : (
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-2xl font-black text-white">
-                                    {logoLetra}
-                                </div>
-                            )}
-                            <span className="text-xl font-bold text-gray-900">
-                                {appName}
-                            </span>
-                        </div>
-                    ) : (
-                        <div />
-                    )}
-                    <nav className="flex items-center gap-6">
-                        <div className="mr-4 hidden items-center gap-6 md:flex">
-                            {(nav?.quienes_somos_visible ?? true) && (
-                                <Link
-                                    href="/quienes-somos"
-                                    className="text-sm font-medium text-gray-500 transition-colors hover:text-amber-600"
-                                >
-                                    {nav?.quienes_somos || 'Quiénes Somos'}
-                                </Link>
-                            )}
-                            {(nav?.feedback_visible ?? true) && (
-                                <Link
-                                    href="/feedback"
-                                    className="text-sm font-medium text-gray-500 transition-colors hover:text-amber-600"
-                                >
-                                    {nav?.feedback || 'Feedback'}
-                                </Link>
-                            )}
-                            {(nav?.fundacion_visible ?? true) && (
-                                <Link
-                                    href="/fundacion"
-                                    className="text-sm font-medium text-gray-500 transition-colors hover:text-amber-600"
-                                >
-                                    {nav?.fundacion || 'Nuestra Fundación'}
-                                </Link>
-                            )}
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <Link
-                                href="/login"
-                                className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
-                            >
-                                Iniciar sesión
-                            </Link>
-                            {canRegister && (
-                                <Link
-                                    href="/register"
-                                    className="rounded-full bg-gray-900 px-5 py-2 text-sm font-medium text-white transition-all hover:bg-gray-800 hover:shadow-lg"
-                                >
-                                    Regístrate gratis
-                                </Link>
-                            )}
-                        </div>
-                    </nav>
-                </div>
-            </header>
+            <PublicHeader
+                appName={appName}
+                appLogo={appLogo}
+                nav={nav}
+                canRegister={canRegister}
+            />
 
             {/* Hero Section */}
-            <section className="relative overflow-hidden py-20 lg:py-32">
+            <section className="relative overflow-hidden py-12 sm:py-20 lg:py-32">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-100/50 via-transparent to-transparent"></div>
                 <div className="mx-auto max-w-7xl px-4">
                     <div className="text-center">
                         {hero.badge && (
-                            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-sm font-medium text-amber-700">
-                                <span className="relative flex h-2 w-2">
+                            <div className="mb-4 inline-flex max-w-full items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-medium text-amber-700 sm:mb-6 sm:text-sm">
+                                <span className="relative flex h-2 w-2 shrink-0">
                                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75"></span>
                                     <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500"></span>
                                 </span>
                                 {hero.badge}
                             </div>
                         )}
-                        <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+                        <h1 className="mb-4 text-3xl font-extrabold tracking-tight break-words text-gray-900 sm:mb-6 sm:text-5xl lg:text-6xl">
                             {hero.titulo}
                         </h1>
-                        <p className="mx-auto mb-10 max-w-2xl text-lg text-gray-600">
+                        <p className="mx-auto mb-6 max-w-2xl text-base text-gray-600 sm:mb-10 sm:text-lg">
                             {hero.subtitulo}
                         </p>
                         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                             {canRegister && (
                                 <Link
                                     href="/register"
-                                    className="group relative inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl"
+                                    className="group relative inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-3 text-base font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl sm:w-auto sm:px-8 sm:py-4 sm:text-lg"
                                 >
                                     <span>{hero.boton_principal}</span>
                                     <svg
@@ -236,7 +174,7 @@ export default function WelcomeNew({
                             )}
                             <Link
                                 href="/demo"
-                                className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-8 py-4 text-lg font-medium text-gray-700 transition-all hover:border-gray-400 hover:shadow-lg"
+                                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-base font-medium text-gray-700 transition-all hover:border-gray-400 hover:shadow-lg sm:w-auto sm:px-8 sm:py-4 sm:text-lg"
                             >
                                 <svg
                                     className="h-5 w-5 text-gray-400"

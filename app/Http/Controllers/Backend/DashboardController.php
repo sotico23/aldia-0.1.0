@@ -306,7 +306,7 @@ class DashboardController extends Controller
 
         $baseInventarios = $esSuperAdmin
             ? Inventario::withoutGlobalScope(OwnerScope::class)
-            : Inventario::query()->where('owner_id', $ownerId);
+            : Inventario::query()->where('inventarios.owner_id', $ownerId);
 
         $baseAlmacenes = $esSuperAdmin
             ? Almacen::withoutGlobalScope(OwnerScope::class)
@@ -314,10 +314,7 @@ class DashboardController extends Controller
 
         $almacenesActivos = (clone $baseAlmacenes)->where('activo', true)->count();
 
-        $stockValue = (clone $baseInventarios)
-            ->join('productos', 'inventarios.producto_id', '=', 'productos.id')
-            ->where('productos.owner_id', $ownerId)
-            ->sum(DB::raw('COALESCE(inventarios.cantidad, 0) * COALESCE(productos.precio_compra, 0)'));
+        $stockValue = $this->inventoryStockValue($ownerId, $esSuperAdmin);
 
         $criticalStockCount = (clone $baseInventarios)
             ->whereColumn('cantidad', '<=', 'cantidad_minima')
@@ -883,6 +880,18 @@ class DashboardController extends Controller
         );
 
         return back();
+    }
+
+    protected function inventoryStockValue(int $ownerId, bool $esSuperAdmin): float
+    {
+        $inventories = $esSuperAdmin
+            ? Inventario::withoutGlobalScope(OwnerScope::class)
+            : Inventario::query()->where('inventarios.owner_id', $ownerId);
+
+        return (float) $inventories
+            ->join('productos', 'inventarios.producto_id', '=', 'productos.id')
+            ->where('productos.owner_id', $ownerId)
+            ->sum(DB::raw('COALESCE(inventarios.cantidad, 0) * COALESCE(productos.precio_compra, 0)'));
     }
 
     /**

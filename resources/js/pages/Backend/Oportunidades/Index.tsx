@@ -55,6 +55,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import { formatCurrency, formatDateCLP } from '@/lib/utils';
+import { updateEtapa } from '@/routes/oportunidades';
 import type { BreadcrumbItem } from '@/types';
 
 interface Cliente {
@@ -252,17 +253,22 @@ export default function Index({
         e.dataTransfer.dropEffect = 'move';
     };
 
-    const handleDrop = (e: React.DragEvent, nuevaEtapa: string) => {
-        e.preventDefault();
-        if (draggingId === null) return;
-
+    const changeOportunidadEtapa = (id: number, nuevaEtapa: string) => {
+        if (!canEdit) return;
         router.patch(
-            `/oportunidades/${draggingId}/etapa`,
+            updateEtapa(id).url,
             { etapa: nuevaEtapa },
             {
+                preserveScroll: true,
                 onSuccess: () => setDraggingId(null),
             },
         );
+    };
+
+    const handleDrop = (e: React.DragEvent, nuevaEtapa: string) => {
+        e.preventDefault();
+        if (draggingId === null) return;
+        changeOportunidadEtapa(draggingId, nuevaEtapa);
     };
 
     const handleDelete = (id: number) => {
@@ -378,8 +384,8 @@ export default function Index({
 
                     <div className="grid gap-6">
                         {/* Filters Bar */}
-                        <div className="flex flex-col gap-4 rounded-3xl border border-muted/50 bg-muted/40 p-4 md:flex-row md:items-center">
-                            <div className="relative flex-1">
+                        <div className="flex flex-col gap-4 rounded-3xl border border-muted/50 bg-muted/40 p-4 2xl:flex-row 2xl:items-center">
+                            <div className="relative min-w-0 flex-1">
                                 <Search className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     placeholder="Buscar por nombre o descripción..."
@@ -390,12 +396,12 @@ export default function Index({
                                     className="h-11 rounded-2xl border-none bg-background pl-12 shadow-sm focus-visible:ring-primary/20"
                                 />
                             </div>
-                            <div className="flex gap-2">
+                            <div className="grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.75rem] 2xl:w-[26rem]">
                                 <Select
                                     value={clienteFilter}
                                     onValueChange={setClienteFilter}
                                 >
-                                    <SelectTrigger className="h-11 min-w-[140px] rounded-2xl border-none bg-background font-bold shadow-sm md:w-[200px]">
+                                    <SelectTrigger className="h-11 w-full min-w-0 rounded-2xl border-none bg-background font-bold shadow-sm">
                                         <SelectValue placeholder="Cliente" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -416,7 +422,7 @@ export default function Index({
                                     value={etapaFilter}
                                     onValueChange={setEtapaFilter}
                                 >
-                                    <SelectTrigger className="h-11 min-w-[140px] rounded-2xl border-none bg-background font-bold shadow-sm md:w-[160px]">
+                                    <SelectTrigger className="h-11 w-full min-w-0 rounded-2xl border-none bg-background font-bold shadow-sm">
                                         <SelectValue placeholder="Etapa" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -499,7 +505,7 @@ export default function Index({
                                                 {opsEnEtapa.map((op) => (
                                                     <div
                                                         key={op.id}
-                                                        draggable
+                                                        draggable={canEdit}
                                                         onDragStart={(e) =>
                                                             handleDragStart(
                                                                 e,
@@ -557,12 +563,47 @@ export default function Index({
                                                             />
                                                         </div>
 
-                                                        <div className="mt-4 flex justify-end gap-1 border-t border-muted/50 pt-4 opacity-0 transition-opacity group-hover:opacity-100">
+                                                        {canEdit && (
+                                                            <select
+                                                                aria-label={`Etapa de ${op.nombre}`}
+                                                                value={op.etapa}
+                                                                onChange={(
+                                                                    event,
+                                                                ) =>
+                                                                    changeOportunidadEtapa(
+                                                                        op.id,
+                                                                        event
+                                                                            .target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                                className="mt-3 min-h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                                                            >
+                                                                {ETAPAS.map(
+                                                                    (etapa) => (
+                                                                        <option
+                                                                            key={
+                                                                                etapa.value
+                                                                            }
+                                                                            value={
+                                                                                etapa.value
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                etapa.label
+                                                                            }
+                                                                        </option>
+                                                                    ),
+                                                                )}
+                                                            </select>
+                                                        )}
+                                                        <div className="mt-4 flex justify-end gap-1 border-t border-muted/50 pt-4 opacity-100 transition-opacity">
                                                             {canEdit && (
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    className="h-8 w-8 rounded-xl text-primary hover:bg-primary/10"
+                                                                    className="h-11 w-11 rounded-xl text-primary hover:bg-primary/10"
+                                                                    aria-label={`Editar ${op.nombre}`}
                                                                     onClick={() =>
                                                                         handleEdit(
                                                                             op,
@@ -576,7 +617,8 @@ export default function Index({
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    className="h-8 w-8 rounded-xl text-destructive hover:bg-destructive/10"
+                                                                    className="h-11 w-11 rounded-xl text-destructive hover:bg-destructive/10"
+                                                                    aria-label={`Eliminar ${op.nombre}`}
                                                                     onClick={() =>
                                                                         handleDelete(
                                                                             op.id,
@@ -806,12 +848,12 @@ export default function Index({
                                                                                             )}
                                                                                         </td>
                                                                                         <td className="px-6 py-4 text-right">
-                                                                                            <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                                                                            <div className="flex justify-end gap-1 opacity-100 transition-opacity">
                                                                                                 {canEdit && (
                                                                                                     <Button
                                                                                                         variant="ghost"
                                                                                                         size="icon"
-                                                                                                        className="h-8 w-8 rounded-xl text-primary hover:bg-primary/10"
+                                                                                                        className="h-11 w-11 rounded-xl text-primary hover:bg-primary/10"
                                                                                                         onClick={() =>
                                                                                                             handleEdit(
                                                                                                                 op,
@@ -825,7 +867,7 @@ export default function Index({
                                                                                                     <Button
                                                                                                         variant="ghost"
                                                                                                         size="icon"
-                                                                                                        className="h-8 w-8 rounded-xl text-destructive hover:bg-destructive/10"
+                                                                                                        className="h-11 w-11 rounded-xl text-destructive hover:bg-destructive/10"
                                                                                                         onClick={() =>
                                                                                                             handleDelete(
                                                                                                                 op.id,

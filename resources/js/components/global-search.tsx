@@ -113,7 +113,8 @@ export function GlobalSearch() {
         <>
             <button
                 onClick={() => setOpen(true)}
-                className="group flex items-center gap-2 rounded-xl border border-transparent bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground transition-all hover:border-border hover:bg-muted"
+                aria-label="Buscar en la aplicación"
+                className="group flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-transparent bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground transition-all hover:border-border hover:bg-muted"
             >
                 <Search className="h-4 w-4 transition-colors group-hover:text-primary" />
                 <span className="hidden md:inline-block">Buscar...</span>

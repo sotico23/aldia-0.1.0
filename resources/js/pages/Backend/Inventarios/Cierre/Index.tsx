@@ -353,7 +353,7 @@ export default function CierreIndex({
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-4">
                     <Card className="border-none shadow-lg">
                         <CardContent className="p-4">
                             <div className="flex items-center gap-3">
@@ -481,12 +481,12 @@ export default function CierreIndex({
 
                 <Card ref={tableRef} className="border-none shadow-xl">
                     <CardHeader className="border-b pb-4">
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
                             <CardTitle className="flex items-center gap-2">
                                 <FileText className="h-5 w-5 text-primary" />
                                 Historial de Cierres
                             </CardTitle>
-                            <div className="flex items-center gap-2">
+                            <div className="flex min-w-0 flex-wrap items-center gap-2">
                                 <div className="flex items-center gap-1 rounded-lg border bg-background/50 p-0.5">
                                     <Button
                                         variant={

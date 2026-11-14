@@ -186,7 +186,7 @@ export default function Index({
         color: '',
         estado: 'disponible',
         kilometraje: 0,
-        capacidad_carga: null,
+        capacidad_carga: null as number | null,
         notas: '',
         fotos: [] as string[],
     });

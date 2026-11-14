@@ -378,7 +378,7 @@ export default function Index({
                         </p>
                     </div>
 
-                    <div className="flex flex-nowrap items-center gap-2">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <BulkActions
                             baseUrl="/inventarios"
                             modelName="Inventarios"
@@ -411,7 +411,7 @@ export default function Index({
                 </div>
 
                 {/* Charts Section */}
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-4">
                     {/* Stock por Bodega */}
                     <Card className="border-none shadow-lg">
                         <CardHeader className="pb-2">

@@ -441,7 +441,7 @@ export default function Index({
                     </div>
 
                     {/* Performance Dashboard */}
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-4">
                         {[
                             {
                                 label: 'Llamadas Totales',
@@ -488,8 +488,8 @@ export default function Index({
                                 key={idx}
                                 className={`border-none shadow-sm ${s.cardBg} rounded-3xl`}
                             >
-                                <CardContent className="flex items-center justify-between p-6">
-                                    <div>
+                                <CardContent className="flex min-w-0 items-center justify-between gap-3 p-4 sm:p-6">
+                                    <div className="min-w-0 break-words">
                                         <p
                                             className={`text-[10px] font-black tracking-widest uppercase ${s.labelColor} mb-1`}
                                         >
@@ -502,7 +502,7 @@ export default function Index({
                                         </h3>
                                     </div>
                                     <div
-                                        className={`h-12 w-12 rounded-2xl ${s.iconBg} flex items-center justify-center ${s.iconColor}`}
+                                        className={`h-12 w-12 shrink-0 rounded-2xl ${s.iconBg} flex items-center justify-center ${s.iconColor}`}
                                     >
                                         <s.icon className="h-6 w-6" />
                                     </div>
@@ -572,7 +572,7 @@ export default function Index({
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-7 w-7 rounded-full"
+                                                            className="h-11 w-11 rounded-full"
                                                             onClick={() =>
                                                                 setMenuOpenId(
                                                                     menuOpenId ===
@@ -932,11 +932,11 @@ export default function Index({
                                                                                     </div>
                                                                                 </td>
                                                                                 <td className="px-6 py-4 text-right">
-                                                                                    <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                                                                    <div className="flex justify-end gap-1 opacity-100 transition-opacity">
                                                                                         <Button
                                                                                             variant="ghost"
                                                                                             size="icon"
-                                                                                            className="h-8 w-8 rounded-xl text-primary hover:bg-primary/10"
+                                                                                            className="h-11 w-11 rounded-xl text-primary hover:bg-primary/10"
                                                                                         >
                                                                                             <TrendingUp className="h-4 w-4" />
                                                                                         </Button>
@@ -944,7 +944,7 @@ export default function Index({
                                                                                             <Button
                                                                                                 variant="ghost"
                                                                                                 size="icon"
-                                                                                                className="h-8 w-8 rounded-xl text-destructive hover:bg-destructive/10"
+                                                                                                className="h-11 w-11 rounded-xl text-destructive hover:bg-destructive/10"
                                                                                                 onClick={() =>
                                                                                                     handleDelete(
                                                                                                         l.id,
@@ -1032,6 +1032,7 @@ export default function Index({
                                                                                 m{' '}
                                                                                 {l.duracion %
                                                                                     60}
+
                                                                                 s
                                                                             </span>
                                                                         </div>
@@ -1130,7 +1131,7 @@ export default function Index({
                                                                     <Button
                                                                         variant="ghost"
                                                                         size="icon"
-                                                                        className="h-8 w-8 rounded-xl text-primary hover:bg-primary/10"
+                                                                        className="h-11 w-11 rounded-xl text-primary hover:bg-primary/10"
                                                                     >
                                                                         <TrendingUp className="h-4 w-4" />
                                                                     </Button>
@@ -1138,7 +1139,7 @@ export default function Index({
                                                                         <Button
                                                                             variant="ghost"
                                                                             size="icon"
-                                                                            className="h-8 w-8 rounded-xl text-destructive hover:bg-destructive/10"
+                                                                            className="h-11 w-11 rounded-xl text-destructive hover:bg-destructive/10"
                                                                             onClick={() =>
                                                                                 handleDelete(
                                                                                     l.id,

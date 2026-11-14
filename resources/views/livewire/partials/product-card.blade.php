@@ -1,4 +1,4 @@
-<div class="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+<div class="@container group flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
     {{-- Imagen --}}
     <div class="relative aspect-square w-full overflow-hidden bg-slate-100">
         @if ($imagen)
@@ -48,12 +48,12 @@
             @if ($producto->is_service || $stock > 0)
                 @php $enCarrito = (float) ($carrito[$producto->id] ?? 0); @endphp
 
-                <div class="flex items-center gap-2">
-                    <div class="flex flex-1 items-center justify-between rounded-lg border border-slate-200 bg-slate-50">
+                <div class="flex flex-col gap-2 @min-[18rem]:flex-row">
+                    <div class="flex min-w-0 flex-1 items-center justify-between rounded-lg border border-slate-200 bg-slate-50">
                         <button
                             type="button"
                             wire:click="decrementar({{ $producto->id }})"
-                            class="flex h-8 w-8 items-center justify-center rounded-l-lg text-slate-600 transition-colors hover:bg-slate-200"
+                            class="flex size-11 shrink-0 items-center justify-center rounded-l-lg text-slate-600 transition-colors hover:bg-slate-200"
                             aria-label="Quitar una unidad de {{ $producto->nombre }}"
                         >
                             <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true">
@@ -68,7 +68,7 @@
                         <button
                             type="button"
                             wire:click="incrementar({{ $producto->id }})"
-                            class="flex h-8 w-8 items-center justify-center rounded-r-lg text-slate-600 transition-colors hover:bg-slate-200"
+                            class="flex size-11 shrink-0 items-center justify-center rounded-r-lg text-slate-600 transition-colors hover:bg-slate-200"
                             aria-label="Agregar una unidad de {{ $producto->nombre }}"
                         >
                             <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true">
@@ -80,7 +80,7 @@
                     <button
                         type="button"
                         wire:click="agregar({{ $producto->id }})"
-                        class="inline-flex h-8 items-center gap-1 rounded-lg bg-primary px-3 text-xs font-bold text-white transition-colors hover:bg-primary/90"
+                        class="inline-flex min-h-11 shrink-0 items-center justify-center gap-1 rounded-lg bg-primary px-3 text-xs font-bold text-white transition-colors hover:bg-primary/90"
                         aria-label="Agregar {{ $producto->nombre }} al carrito"
                     >
                         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">

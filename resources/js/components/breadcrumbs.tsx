@@ -18,26 +18,41 @@ export function Breadcrumbs({
     return (
         <>
             {breadcrumbs.length > 0 && (
-                <Breadcrumb>
-                    <BreadcrumbList>
+                <Breadcrumb className="min-w-0">
+                    <BreadcrumbList className="flex-nowrap overflow-hidden">
                         {breadcrumbs.map((item, index) => {
                             const isLast = index === breadcrumbs.length - 1;
                             return (
                                 <Fragment key={index}>
-                                    <BreadcrumbItem>
+                                    <BreadcrumbItem
+                                        className={
+                                            isLast
+                                                ? 'min-w-0'
+                                                : 'hidden min-w-0 md:inline-flex'
+                                        }
+                                    >
                                         {isLast ? (
-                                            <BreadcrumbPage>
+                                            <BreadcrumbPage
+                                                className="truncate"
+                                                title={item.title}
+                                            >
                                                 {item.title}
                                             </BreadcrumbPage>
                                         ) : (
-                                            <BreadcrumbLink asChild>
+                                            <BreadcrumbLink
+                                                asChild
+                                                className="max-w-40 truncate"
+                                                title={item.title}
+                                            >
                                                 <Link href={item.href}>
                                                     {item.title}
                                                 </Link>
                                             </BreadcrumbLink>
                                         )}
                                     </BreadcrumbItem>
-                                    {!isLast && <BreadcrumbSeparator />}
+                                    {!isLast && (
+                                        <BreadcrumbSeparator className="hidden shrink-0 md:list-item" />
+                                    )}
                                 </Fragment>
                             );
                         })}

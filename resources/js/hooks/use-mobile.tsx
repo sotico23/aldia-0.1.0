@@ -1,36 +1,31 @@
-import { useSyncExternalStore } from 'react';
+import { useCallback, useMemo, useSyncExternalStore } from 'react';
 
 const MOBILE_BREAKPOINT = 768;
-
-const mql =
-    typeof window === 'undefined'
-        ? undefined
-        : window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
-
-function mediaQueryListener(callback: (event: MediaQueryListEvent) => void) {
-    if (!mql) {
-        return () => {};
-    }
-
-    mql.addEventListener('change', callback);
-
-    return () => {
-        mql.removeEventListener('change', callback);
-    };
-}
-
-function isSmallerThanBreakpoint(): boolean {
-    return mql?.matches ?? false;
-}
 
 function getServerSnapshot(): boolean {
     return false;
 }
 
-export function useIsMobile(): boolean {
-    return useSyncExternalStore(
-        mediaQueryListener,
-        isSmallerThanBreakpoint,
-        getServerSnapshot,
+export function useIsMobile(breakpoint = MOBILE_BREAKPOINT): boolean {
+    const mediaQuery = useMemo(
+        () =>
+            typeof window === 'undefined'
+                ? undefined
+                : window.matchMedia(`(max-width: ${breakpoint - 1}px)`),
+        [breakpoint],
     );
+    const subscribe = useCallback(
+        (callback: () => void) => {
+            mediaQuery?.addEventListener('change', callback);
+
+            return () => mediaQuery?.removeEventListener('change', callback);
+        },
+        [mediaQuery],
+    );
+    const getSnapshot = useCallback(
+        () => mediaQuery?.matches ?? false,
+        [mediaQuery],
+    );
+
+    return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

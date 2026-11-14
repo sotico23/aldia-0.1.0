@@ -228,7 +228,7 @@ export default function Index({ pedidos, filtros }: Props) {
                         )}
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-4">
                         <div className="space-y-1">
                             <label className="text-xs font-medium text-gray-600">
                                 Buscar
