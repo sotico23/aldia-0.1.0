@@ -12,9 +12,9 @@
         <div class="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
             {{-- Portada --}}
             <div class="relative h-48 w-full overflow-hidden rounded-b-xl bg-gradient-to-r from-slate-200 to-slate-300 sm:h-64 md:h-80">
-                @if ($store->user?->cover_photo_url)
+                @if ($store->user?->coverPhotoUrl())
                     <img
-                        src="{{ $store->user->cover_photo_url }}"
+                        src="{{ $store->user->coverPhotoUrl() }}"
                         alt="Portada de {{ $store->title }}"
                         class="h-full w-full object-cover"
                     >
@@ -25,9 +25,9 @@
             {{-- Datos del perfil --}}
             <div class="relative -mt-12 mb-4 flex flex-col items-center gap-4 px-2 pb-4 sm:-mt-16 sm:flex-row sm:items-end sm:px-6">
                 <div class="relative h-24 w-24 shrink-0 overflow-hidden rounded-full border-4 border-white bg-white shadow-md sm:h-32 sm:w-32">
-                    @if ($store->user?->profile_photo_url)
+                    @if ($store->user?->profilePhotoUrl())
                         <img
-                            src="{{ $store->user->profile_photo_url }}"
+                            src="{{ $store->user->profilePhotoUrl() }}"
                             alt="{{ $store->title }}"
                             class="h-full w-full object-cover"
                         >
