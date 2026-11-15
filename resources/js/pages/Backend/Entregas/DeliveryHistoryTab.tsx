@@ -183,25 +183,27 @@ export default function DeliveryHistoryTab({
                         if (!open) setSelected(null);
                     }}
                 >
-                    <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl">
-                        <DialogHeader>
-                            <DialogTitle>
+                    <DialogContent className="max-h-[92dvh] w-[95vw] max-w-2xl overflow-y-auto p-4 sm:p-6">
+                        <DialogHeader className="space-y-1">
+                            <DialogTitle className="text-lg font-bold sm:text-xl">
                                 Foto de la entrega #{selected?.id}
                             </DialogTitle>
-                        </DialogHeader>
-                        {selected && (
-                            <>
-                                <p className="text-sm text-muted-foreground">
+                            {selected && (
+                                <p className="text-xs text-muted-foreground sm:text-sm">
                                     {selected.driver_name ||
                                         'Sin repartidor registrado'}{' '}
                                     · {formatDate(selected.delivered_at)}
                                 </p>
+                            )}
+                        </DialogHeader>
+                        {selected && (
+                            <div className="flex items-center justify-center overflow-hidden rounded-xl border border-border/50 bg-muted/30 p-1 sm:p-2">
                                 <img
                                     src={evidencePhoto.url(selected.id)}
                                     alt={`Evidencia completa de entrega ${selected.id}`}
-                                    className="max-h-[65dvh] w-full rounded-lg object-contain"
+                                    className="max-h-[65dvh] w-auto max-w-full rounded-lg object-contain shadow-xs"
                                 />
-                            </>
+                            </div>
                         )}
                     </DialogContent>
                 </Dialog>

@@ -455,7 +455,7 @@ export default function Index({
             <Head title="Entregas" />
             <AppLayout breadcrumbs={breadcrumbs}>
                 <div className="flex flex-col gap-4 p-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                         <div>
                             <h1 className="text-2xl font-black tracking-tight text-primary uppercase">
                                 Entregas
@@ -465,7 +465,7 @@ export default function Index({
                             </p>
                         </div>
                         {activeTab === 'deliveries' && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                                 <BulkActions
                                     baseUrl="/entregas"
                                     modelName="Entregas"
@@ -474,7 +474,7 @@ export default function Index({
                                 {canCreate && (
                                     <Button
                                         onClick={handleNew}
-                                        className="h-11 rounded-xl px-6 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+                                        className="h-11 w-full rounded-xl px-6 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 sm:w-auto"
                                     >
                                         <Truck className="mr-2 h-5 w-5" /> Nuevo
                                         Despacho
@@ -948,16 +948,16 @@ export default function Index({
                 </div>
             </AppLayout>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto border-none bg-background p-0 shadow-2xl md:max-w-2xl">
-                    <DialogHeader className="bg-gradient-to-r from-primary/10 to-transparent p-6 pb-2">
-                        <DialogTitle className="text-2xl font-black tracking-tight text-primary">
+                <DialogContent className="max-h-[90vh] w-[95vw] overflow-y-auto border-none bg-background p-0 shadow-2xl md:max-w-2xl">
+                    <DialogHeader className="bg-gradient-to-r from-primary/10 to-transparent p-4 pb-2 sm:p-6">
+                        <DialogTitle className="text-xl font-black tracking-tight text-primary sm:text-2xl">
                             {editando
                                 ? 'Modificar Registro'
                                 : 'Nueva Planificación'}{' '}
                             de Entrega
                         </DialogTitle>
                     </DialogHeader>
-                    <div className="max-h-[calc(90vh-140px)] overflow-y-auto p-6 pt-0">
+                    <div className="max-h-[calc(90vh-120px)] overflow-y-auto p-4 pt-0 sm:p-6">
                         <form onSubmit={handleSubmit}>
                             <div className="grid gap-6 py-4">
                                 <div className="space-y-2">
@@ -1381,10 +1381,10 @@ export default function Index({
                                                     (item) => (
                                                         <div
                                                             key={item.id}
-                                                            className="flex items-center justify-between"
+                                                            className="flex items-center justify-between gap-3"
                                                         >
-                                                            <div className="flex-1">
-                                                                <p className="text-sm font-bold">
+                                                            <div className="min-w-0 flex-1">
+                                                                <p className="truncate text-sm font-bold">
                                                                     {
                                                                         item
                                                                             .producto
@@ -1436,7 +1436,7 @@ export default function Index({
                                                                         ) || 0,
                                                                     )
                                                                 }
-                                                                className="h-8 w-20 text-center"
+                                                                className="h-8 w-20 shrink-0 text-center"
                                                             />
                                                         </div>
                                                     ),
@@ -1445,7 +1445,7 @@ export default function Index({
                                         </div>
                                     )}
                             </div>
-                            <DialogFooter className="gap-2 border-t pt-6 sm:gap-0">
+                            <DialogFooter className="flex-col gap-2 border-t pt-4 sm:flex-row sm:gap-0 sm:pt-6">
                                 <Button
                                     type="button"
                                     variant="ghost"
@@ -1456,7 +1456,7 @@ export default function Index({
                                 </Button>
                                 <Button
                                     type="submit"
-                                    className="w-full rounded-full bg-primary px-12 font-black shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95 sm:w-auto"
+                                    className="w-full rounded-full bg-primary px-6 font-black shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95 sm:w-auto sm:px-12"
                                 >
                                     {editando
                                         ? 'Guardar Cambios'
@@ -1470,22 +1470,22 @@ export default function Index({
 
             {/* View Modal */}
             <Dialog open={isVerOpen} onOpenChange={setIsVerOpen}>
-                <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto rounded-3xl border-none bg-background p-0 shadow-2xl md:max-w-3xl">
+                <DialogContent className="max-h-[90vh] w-[95vw] overflow-y-auto rounded-2xl border-none bg-background p-0 shadow-2xl sm:rounded-3xl md:max-w-3xl">
                     {entregaSeleccionada && (
                         <div className="flex flex-col">
                             <div className="relative shrink-0">
                                 <div className="pointer-events-none absolute top-0 left-0 h-32 w-full bg-gradient-to-br from-primary/20 via-primary/5 to-transparent" />
-                                <DialogHeader className="relative z-10 p-6 pb-4 md:p-8">
+                                <DialogHeader className="relative z-10 p-4 pb-2 sm:p-6 sm:pb-4 md:p-8">
                                     <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-                                        <div className="flex items-center gap-4">
-                                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/10 bg-white text-primary shadow-xl md:h-20 md:w-20">
-                                                <Truck className="h-8 w-8 md:h-10 md:w-10" />
+                                        <div className="flex items-center gap-3 sm:gap-4">
+                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/10 bg-card text-primary shadow-xl sm:h-16 sm:w-16 md:h-20 md:w-20">
+                                                <Truck className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10" />
                                             </div>
-                                            <div>
+                                            <div className="min-w-0 flex-1">
                                                 <div className="mb-1 flex flex-wrap items-center gap-2">
                                                     <Badge
                                                         variant="outline"
-                                                        className="border-primary/30 bg-white px-2 py-0.5 text-xs font-black text-primary md:px-3 md:py-1"
+                                                        className="border-primary/30 bg-card px-2 py-0.5 text-xs font-black text-primary md:px-3 md:py-1"
                                                     >
                                                         PEDIDO #
                                                         {
@@ -1496,7 +1496,7 @@ export default function Index({
                                                         entregaSeleccionada.estado,
                                                     )}
                                                 </div>
-                                                <DialogTitle className="text-2xl font-black tracking-tight text-foreground md:text-3xl lg:text-4xl">
+                                                <DialogTitle className="truncate text-xl font-black tracking-tight text-foreground sm:text-2xl md:text-3xl lg:text-4xl">
                                                     Detalles de Entrega
                                                 </DialogTitle>
                                             </div>
@@ -1505,7 +1505,7 @@ export default function Index({
                                 </DialogHeader>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-6 overflow-y-auto px-6 pb-6 md:grid-cols-3 md:gap-8 md:px-8">
+                            <div className="grid grid-cols-1 gap-4 overflow-y-auto px-4 pb-4 sm:gap-6 sm:px-6 sm:pb-6 md:grid-cols-3 md:gap-8 md:px-8">
                                 <div className="space-y-6 md:col-span-2">
                                     <section>
                                         <h3 className="mb-3 flex items-center gap-2 text-xs font-black tracking-widest text-primary/70 uppercase md:text-[10px]">
@@ -1514,14 +1514,14 @@ export default function Index({
                                         </h3>
                                         <div className="space-y-3 rounded-2xl border border-border/50 bg-muted/30 p-4 md:space-y-4 md:rounded-3xl md:p-6">
                                             <div className="flex items-start gap-3 md:gap-4">
-                                                <div className="rounded-xl bg-white p-2 text-primary shadow-sm">
+                                                <div className="rounded-xl border border-border/50 bg-card p-2 text-primary shadow-xs">
                                                     <User className="h-4 w-4 md:h-5 md:w-5" />
                                                 </div>
-                                                <div>
+                                                <div className="min-w-0 flex-1">
                                                     <p className="text-[10px] font-black text-muted-foreground uppercase md:text-[9px]">
                                                         Destinatario
                                                     </p>
-                                                    <p className="text-sm font-bold md:text-base">
+                                                    <p className="truncate text-sm font-bold md:text-base">
                                                         {entregaSeleccionada.cliente ||
                                                             'Cliente no registrado'}
                                                     </p>
@@ -1529,14 +1529,14 @@ export default function Index({
                                             </div>
                                             {entregaSeleccionada.direccion && (
                                                 <div className="flex items-start gap-3 md:gap-4">
-                                                    <div className="rounded-xl bg-white p-2 text-primary shadow-sm">
+                                                    <div className="rounded-xl border border-border/50 bg-card p-2 text-primary shadow-xs">
                                                         <Navigation className="h-4 w-4 md:h-5 md:w-5" />
                                                     </div>
-                                                    <div>
+                                                    <div className="min-w-0 flex-1">
                                                         <p className="text-[10px] font-black text-muted-foreground uppercase md:text-[9px]">
                                                             Dirección
                                                         </p>
-                                                        <p className="text-sm leading-relaxed font-medium">
+                                                        <p className="text-sm leading-relaxed font-medium break-words">
                                                             {
                                                                 entregaSeleccionada.direccion
                                                             }
@@ -1546,14 +1546,14 @@ export default function Index({
                                             )}
                                             {entregaSeleccionada.notas && (
                                                 <div className="flex items-start gap-3 md:gap-4">
-                                                    <div className="rounded-xl bg-white p-2 text-primary shadow-sm">
+                                                    <div className="rounded-xl border border-border/50 bg-card p-2 text-primary shadow-xs">
                                                         <Info className="h-4 w-4 md:h-5 md:w-5" />
                                                     </div>
-                                                    <div>
+                                                    <div className="min-w-0 flex-1">
                                                         <p className="text-[10px] font-black text-muted-foreground uppercase md:text-[9px]">
                                                             Notas
                                                         </p>
-                                                        <p className="text-sm leading-relaxed font-medium">
+                                                        <p className="text-sm leading-relaxed font-medium break-words">
                                                             {
                                                                 entregaSeleccionada.notas
                                                             }
@@ -1563,7 +1563,7 @@ export default function Index({
                                             )}
                                             {!entregaSeleccionada.notas &&
                                                 !entregaSeleccionada.direccion && (
-                                                    <p className="rounded-xl bg-white p-4 text-center text-xs text-muted-foreground italic">
+                                                    <p className="rounded-xl border border-border/50 bg-card p-4 text-center text-xs text-muted-foreground italic">
                                                         No se han registrado
                                                         instrucciones especiales
                                                         para este despacho.
@@ -1584,7 +1584,7 @@ export default function Index({
                                                     (item) => (
                                                         <div
                                                             key={item.id}
-                                                            className="rounded-xl border border-border/50 bg-white p-3 shadow-sm transition-all hover:border-primary/20 md:rounded-2xl md:p-4"
+                                                            className="rounded-xl border border-border/50 bg-card p-3 shadow-xs transition-all hover:border-primary/20 md:rounded-2xl md:p-4"
                                                         >
                                                             <div className="mb-2 flex flex-col gap-2 md:mb-3 md:flex-row md:items-center md:justify-between">
                                                                 <div>
@@ -1618,7 +1618,7 @@ export default function Index({
                                                                         'Unid'}
                                                                 </Badge>
                                                             </div>
-                                                            <div className="grid grid-cols-3 gap-2">
+                                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                                                 <div
                                                                     className={`flex flex-col items-center justify-center rounded-lg p-2 text-center ring-1 md:rounded-xl md:p-2 ${item.unidad_medida === 'kg' ? 'bg-emerald-500/5 ring-emerald-500/10' : 'bg-emerald-500/5 ring-emerald-500/10'}`}
                                                                 >
@@ -1737,7 +1737,7 @@ export default function Index({
                                         </h3>
                                         <div className="space-y-3 md:space-y-4">
                                             <div className="flex items-center gap-3 rounded-xl border border-primary/10 bg-primary/[0.03] p-3 md:rounded-3xl md:p-5">
-                                                <div className="rounded-lg border border-primary/5 bg-white p-1.5 shadow-sm md:rounded-xl md:p-2">
+                                                <div className="rounded-lg border border-border/50 bg-card p-1.5 shadow-xs md:rounded-xl md:p-2">
                                                     <Calendar className="h-3.5 w-3.5 text-primary md:h-4 md:w-4" />
                                                 </div>
                                                 <div>
@@ -1754,7 +1754,7 @@ export default function Index({
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3 rounded-xl border border-primary/10 bg-primary/[0.03] p-3 md:rounded-3xl md:p-5">
-                                                <div className="rounded-lg border border-primary/5 bg-white p-1.5 shadow-sm md:rounded-xl md:p-2">
+                                                <div className="rounded-lg border border-border/50 bg-card p-1.5 shadow-xs md:rounded-xl md:p-2">
                                                     <Truck className="h-3.5 w-3.5 text-primary md:h-4 md:w-4" />
                                                 </div>
                                                 <div className="min-w-0 flex-1">
@@ -1772,7 +1772,7 @@ export default function Index({
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3 rounded-xl border border-primary/10 bg-primary/[0.03] p-3 md:rounded-3xl md:p-5">
-                                                <div className="rounded-lg border border-primary/5 bg-white p-1.5 shadow-sm md:rounded-xl md:p-2">
+                                                <div className="rounded-lg border border-border/50 bg-card p-1.5 shadow-xs md:rounded-xl md:p-2">
                                                     <User className="h-3.5 w-3.5 text-primary md:h-4 md:w-4" />
                                                 </div>
                                                 <div className="min-w-0 flex-1">
@@ -1798,10 +1798,10 @@ export default function Index({
                                         </h3>
                                         <div className="relative space-y-4 pl-5 before:absolute before:top-2 before:bottom-2 before:left-1.5 before:w-[2px] before:rounded-full before:bg-muted md:pl-6">
                                             <div className="group relative flex items-center gap-3">
-                                                <div className="absolute -left-5 z-10 flex h-3 w-3 items-center justify-center rounded-full bg-green-500 shadow-sm ring-2 ring-white transition-transform group-hover:scale-125 md:-left-6 md:h-4 md:w-4">
+                                                <div className="absolute -left-5 z-10 flex h-3 w-3 items-center justify-center rounded-full bg-green-500 shadow-sm ring-2 ring-background transition-transform group-hover:scale-125 md:-left-6 md:h-4 md:w-4">
                                                     <Check className="h-1.5 w-1.5 text-white md:h-2 md:w-2" />
                                                 </div>
-                                                <div className="rounded-xl border border-green-500/10 bg-green-50/50 p-2 md:rounded-2xl md:p-3">
+                                                <div className="rounded-xl border border-green-500/10 bg-green-50/50 dark:bg-green-950/20 p-2 md:rounded-2xl md:p-3">
                                                     <p className="text-[10px] font-black text-green-600 uppercase md:text-xs">
                                                         Creado
                                                     </p>
@@ -1817,10 +1817,10 @@ export default function Index({
                                             </div>
                                             <div className="group relative flex items-center gap-3">
                                                 <div
-                                                    className={`absolute -left-5 z-10 flex h-3 w-3 items-center justify-center rounded-full shadow-sm ring-2 ring-white transition-transform group-hover:scale-125 md:-left-6 md:h-4 md:w-4 ${['en_ruta', 'entregado'].includes(entregaSeleccionada.estado) ? 'bg-emerald-500' : 'bg-muted'}`}
+                                                    className={`absolute -left-5 z-10 flex h-3 w-3 items-center justify-center rounded-full shadow-sm ring-2 ring-background transition-transform group-hover:scale-125 md:-left-6 md:h-4 md:w-4 ${['en_ruta', 'entregado'].includes(entregaSeleccionada.estado) ? 'bg-emerald-500' : 'bg-muted'}`}
                                                 ></div>
                                                 <div
-                                                    className={`rounded-xl border p-2 md:rounded-2xl md:p-3 ${['en_ruta', 'entregado'].includes(entregaSeleccionada.estado) ? 'border-emerald-500/10 bg-emerald-50/50' : 'border-border/50 bg-muted/30'}`}
+                                                    className={`rounded-xl border p-2 md:rounded-2xl md:p-3 ${['en_ruta', 'entregado'].includes(entregaSeleccionada.estado) ? 'border-emerald-500/10 bg-emerald-50/50 dark:bg-emerald-950/20' : 'border-border/50 bg-muted/30'}`}
                                                 >
                                                     <p
                                                         className={`text-[10px] font-black uppercase md:text-xs ${['en_ruta', 'entregado'].includes(entregaSeleccionada.estado) ? 'text-emerald-600' : 'text-muted-foreground'}`}
@@ -1831,7 +1831,7 @@ export default function Index({
                                             </div>
                                             <div className="group relative flex items-center gap-3">
                                                 <div
-                                                    className={`absolute -left-5 z-10 flex h-3 w-3 items-center justify-center rounded-full shadow-sm ring-2 ring-white transition-transform group-hover:scale-125 md:-left-6 md:h-4 md:w-4 ${entregaSeleccionada.estado === 'entregado' ? 'bg-green-500' : 'bg-muted'}`}
+                                                    className={`absolute -left-5 z-10 flex h-3 w-3 items-center justify-center rounded-full shadow-sm ring-2 ring-background transition-transform group-hover:scale-125 md:-left-6 md:h-4 md:w-4 ${entregaSeleccionada.estado === 'entregado' ? 'bg-green-500' : 'bg-muted'}`}
                                                 >
                                                     {entregaSeleccionada.estado ===
                                                         'entregado' && (
@@ -1839,7 +1839,7 @@ export default function Index({
                                                     )}
                                                 </div>
                                                 <div
-                                                    className={`rounded-xl border p-2 md:rounded-2xl md:p-3 ${entregaSeleccionada.estado === 'entregado' ? 'border-green-500/10 bg-green-50/50' : 'border-border/50 bg-muted/30'}`}
+                                                    className={`rounded-xl border p-2 md:rounded-2xl md:p-3 ${entregaSeleccionada.estado === 'entregado' ? 'border-green-500/10 bg-green-50/50 dark:bg-green-950/20' : 'border-border/50 bg-muted/30'}`}
                                                 >
                                                     <p
                                                         className={`text-[10px] font-black uppercase md:text-xs ${entregaSeleccionada.estado === 'entregado' ? 'text-green-600' : 'text-muted-foreground'}`}

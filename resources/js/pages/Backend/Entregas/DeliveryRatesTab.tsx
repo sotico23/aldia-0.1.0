@@ -138,7 +138,7 @@ export default function DeliveryRatesTab({
     return (
         <>
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between gap-4">
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <CardTitle>Tarifas de Despacho</CardTitle>
                         <p className="mt-1 text-sm text-muted-foreground">
@@ -147,7 +147,7 @@ export default function DeliveryRatesTab({
                         </p>
                     </div>
                     {canCreate && (
-                        <Button onClick={openCreateDialog}>
+                        <Button onClick={openCreateDialog} className="w-full sm:w-auto">
                             <Plus className="mr-2 h-4 w-4" />
                             Nueva tarifa
                         </Button>
@@ -231,7 +231,7 @@ export default function DeliveryRatesTab({
             </Card>
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[90dvh] w-[95vw] overflow-y-auto p-4 sm:p-6 sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>
                             {editingRate
@@ -296,7 +296,7 @@ export default function DeliveryRatesTab({
                         )}
 
                         {data.calculation_type === 'rango_km' && (
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div className="space-y-2">
                                     <Label htmlFor="km-from">Desde (km)</Label>
                                     <Input
@@ -383,8 +383,8 @@ export default function DeliveryRatesTab({
                             <Label htmlFor="rate-active">Tarifa activa</Label>
                         </div>
 
-                        <DialogFooter>
-                            <Button type="submit" disabled={processing}>
+                        <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                            <Button type="submit" disabled={processing} className="w-full sm:w-auto">
                                 {processing ? 'Guardando...' : 'Guardar tarifa'}
                             </Button>
                         </DialogFooter>
