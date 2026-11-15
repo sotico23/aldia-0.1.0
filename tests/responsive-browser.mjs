@@ -121,11 +121,27 @@ export async function startFixtureServer() {
         return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="csrf-token" content="responsive-fixture">${[...styleFiles].map((file) => `<link rel="stylesheet" href="/build/${file}">`).join('')}</head><body><div id="app" data-page="${escapeHtml(JSON.stringify(page))}"></div><script type="module" src="/build/${appEntry.file}"></script></body></html>`;
     }
     const writeRequests = [];
+    const readRequests = [];
     const server = http.createServer(async (request, response) => {
         try {
             const url = new URL(request.url, 'http://127.0.0.1');
+            if (request.method === 'GET') readRequests.push({ path: url.pathname, query: Object.fromEntries(url.searchParams) });
             if (request.method !== 'GET' && request.method !== 'HEAD') {
                 writeRequests.push({ method: request.method, path: url.pathname });
+                if (url.pathname.startsWith('/prospectos/google-maps/')) {
+                    let body = '';
+                    for await (const chunk of request) body += chunk;
+                    const data = body ? JSON.parse(body) : {};
+                    writeRequests.at(-1).body = data;
+                    const fixture = backendFixtures.find(fixture => fixture.path === '/prospectos');
+                    if (url.pathname.endsWith('/buscar')) {
+                        fixture.props.scraping.runs.unshift({ id: 4, ...data, status: 'queued', error: null, results: [] });
+                    } else if (url.pathname.endsWith('/cancelar')) {
+                        fixture.props.scraping.runs[0].status = 'cancelled';
+                    }
+                    response.writeHead(303, { Location: '/prospectos' }).end();
+                    return;
+                }
                 if (request.method === 'POST' && url.pathname === '/paises') {
                     let body = '';
                     for await (const chunk of request) body += chunk;
@@ -275,7 +291,7 @@ export async function startFixtureServer() {
         }
     });
     await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-    return { server, writeRequests, origin: `http://127.0.0.1:${server.address().port}` };
+    return { server, writeRequests, readRequests, origin: `http://127.0.0.1:${server.address().port}` };
 }
 
 export async function connectBrowser(origin) {

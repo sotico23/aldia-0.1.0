@@ -9,6 +9,7 @@ use App\Http\Controllers\Traits\HasBulkOperations;
 use App\Imports\ProspectosImport;
 use App\Models\Cliente;
 use App\Models\Prospecto;
+use App\Services\ProspectoScrapingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -71,6 +72,7 @@ class ProspectoController extends Controller implements HasMiddleware
         return Inertia::render('Backend/Prospectos/Index', [
             'prospectos' => $prospectos,
             'filters' => $request->only(['search', 'estado', 'fuente']),
+            'scraping' => fn () => app(ProspectoScrapingService::class)->state((int) $ownerId, $request->user()->can('admin.web-settings.edit')),
         ]);
     }
 

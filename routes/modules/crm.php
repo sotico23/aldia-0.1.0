@@ -9,10 +9,15 @@ use App\Http\Controllers\Backend\ProductoBarcodeController;
 use App\Http\Controllers\Backend\ProductoController;
 use App\Http\Controllers\Backend\ProductoSkuLookupController;
 use App\Http\Controllers\Backend\ProspectoController;
+use App\Http\Controllers\Backend\ProspectoScrapingController;
 use App\Http\Controllers\Backend\TicketController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['permission:comercial.prospectos.viewAny'])->group(function () {
+    Route::patch('prospectos/google-maps/configuracion', [ProspectoScrapingController::class, 'configure'])->name('prospectos.scraping.configure');
+    Route::post('prospectos/google-maps/buscar', [ProspectoScrapingController::class, 'start'])->middleware('throttle:5,1')->name('prospectos.scraping.start');
+    Route::post('prospectos/google-maps/{run}/importar', [ProspectoScrapingController::class, 'importResults'])->whereNumber('run')->name('prospectos.scraping.import');
+    Route::post('prospectos/google-maps/{run}/cancelar', [ProspectoScrapingController::class, 'cancel'])->whereNumber('run')->name('prospectos.scraping.cancel');
     Route::get('prospectos/export', [ProspectoController::class, 'exportCsv'])->name('prospectos.export');
     Route::get('prospectos/export-excel', [ProspectoController::class, 'exportExcel'])->name('prospectos.exportExcel');
     Route::post('prospectos/import', [ProspectoController::class, 'importCsv'])->name('prospectos.import');

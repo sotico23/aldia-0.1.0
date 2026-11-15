@@ -23,6 +23,37 @@ return [
 
     'groups' => [
 
+        'prospecting' => [
+            'label' => 'Prospectos / Motor de Google Maps',
+            'description' => 'Motor propio con Node.js y Chromium instalados en el servidor. No utiliza proveedor ni API Key.',
+            'fields' => [
+                'SCRAPING_NODE_BINARY' => [
+                    'label' => 'Ejecutable de Node.js (22 o superior)', 'type' => 'text', 'default' => env('SCRAPING_NODE_BINARY', 'node'),
+                    'help' => 'Nombre en PATH o ruta absoluta del ejecutable, sin argumentos.',
+                ],
+                'SCRAPING_CHROME_BINARY' => [
+                    'label' => 'Ejecutable de Chrome / Chromium', 'type' => 'text', 'default' => env('SCRAPING_CHROME_BINARY', ''),
+                    'help' => 'Ruta absoluta del ejecutable, sin argumentos. Vacío intenta detectar la instalación.',
+                ],
+                'QUEUE_CONNECTION' => [
+                    'label' => 'Conexión de colas', 'type' => 'select', 'default' => env('QUEUE_CONNECTION', 'database'),
+                    'options' => ['database' => 'Base de datos', 'redis' => 'Redis', 'sync' => 'Sincrónica (no admite scraping)'],
+                    'config' => ['queue.default'],
+                    'help' => 'Configuración global de colas. Para scraping usa base de datos o Redis y un worker activo.',
+                ],
+                'DB_QUEUE_RETRY_AFTER' => [
+                    'label' => 'Reserva de trabajos en base de datos (segundos)', 'type' => 'number', 'default' => env('DB_QUEUE_RETRY_AFTER', 90),
+                    'config' => ['queue.connections.database.retry_after'], 'cast' => 'int',
+                    'help' => 'Para scraping debe ser al menos 300 segundos, mayor que el timeout del worker.',
+                ],
+                'REDIS_QUEUE_RETRY_AFTER' => [
+                    'label' => 'Reserva de trabajos en Redis (segundos)', 'type' => 'number', 'default' => env('REDIS_QUEUE_RETRY_AFTER', 90),
+                    'config' => ['queue.connections.redis.retry_after'], 'cast' => 'int',
+                    'help' => 'Para scraping debe ser al menos 300 segundos, mayor que el timeout del worker.',
+                ],
+            ],
+        ],
+
         'app' => [
             'label' => 'Aplicación / Google Maps',
             'description' => 'Nombre de la aplicación y credenciales de Google Maps.',

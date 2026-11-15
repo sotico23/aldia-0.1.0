@@ -52,6 +52,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Toaster } from '@/components/ui/sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { WhatsAppButton } from '@/components/whatsapp-button';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -59,6 +60,7 @@ import AppLayout from '@/layouts/app-layout';
 import { formatCurrency, formatDateCLP, formatRut } from '@/lib/utils';
 import { updateEstado } from '@/routes/prospectos';
 import type { BreadcrumbItem } from '@/types';
+import ScrapingTab, { type ScrapingState } from './ScrapingTab';
 
 interface Prospecto {
     id: number;
@@ -129,6 +131,7 @@ const ESTADO_TONOS: Record<string, PanelTone> = {
 };
 
 const FUENTES = [
+    'google_maps',
     'web',
     'referido',
     'telefono',
@@ -151,8 +154,10 @@ const PRIORIDADES = [
 export default function Index({
     prospectos,
     filters,
+    scraping,
 }: {
     prospectos: { data: Prospecto[]; links: any[]; meta: any };
+    scraping?: ScrapingState;
     filters: {
         search?: string;
         estado?: string;
@@ -416,544 +421,712 @@ export default function Index({
             <Head title="Pipeline de Prospectos" />
 
             <TooltipProvider delayDuration={200}>
-                <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                        <div>
-                            <div className="mb-1 flex items-center gap-2">
-                                <TrendingUp className="h-5 w-5 text-primary" />
-                                <span className="text-[10px] font-black tracking-widest text-primary/70 uppercase">
-                                    CRM & Sales Pipeline
-                                </span>
-                            </div>
-                            <h1 className="text-3xl font-black tracking-tight text-foreground">
-                                Prospectos
-                            </h1>
-                            <p className="text-sm font-medium text-muted-foreground">
-                                Gestione sus oportunidades de venta y
-                                conviértalas en clientes
-                            </p>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                            <div className="mr-2 flex gap-1 rounded-xl bg-muted/30 p-1">
-                                <Button
-                                    variant={vistaKanban ? 'default' : 'ghost'}
-                                    size="sm"
-                                    onClick={() => setVistaKanban(true)}
-                                    className="h-8 rounded-lg font-bold"
-                                >
-                                    <Kanban className="h-4 w-4 md:mr-2" />
-                                    <span className="hidden md:inline">
-                                        Kanban
+                <Tabs defaultValue="pipeline" className="min-w-0">
+                    <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <div className="mb-1 flex items-center gap-2">
+                                    <TrendingUp className="h-5 w-5 text-primary" />
+                                    <span className="text-[10px] font-black tracking-widest text-primary/70 uppercase">
+                                        CRM & Sales Pipeline
                                     </span>
-                                </Button>
-                                <Button
-                                    variant={!vistaKanban ? 'default' : 'ghost'}
-                                    size="sm"
-                                    onClick={() => setVistaKanban(false)}
-                                    className="h-8 rounded-lg font-bold"
-                                >
-                                    <List className="h-4 w-4 md:mr-2" />
-                                    <span className="hidden md:inline">
-                                        Lista
-                                    </span>
-                                </Button>
+                                </div>
+                                <h1 className="text-3xl font-black tracking-tight text-foreground">
+                                    Prospectos
+                                </h1>
+                                <p className="text-sm font-medium text-muted-foreground">
+                                    Gestione sus oportunidades de venta y
+                                    conviértalas en clientes
+                                </p>
                             </div>
 
-                            <BulkActions
-                                baseUrl="/prospectos"
-                                filters={{
-                                    search: searchTerm,
-                                    estado: estadoFilter,
-                                    fuente: fuenteFilter,
-                                }}
-                                modelName="Prospectos"
-                            />
+                            <div className="flex flex-wrap items-center gap-2">
+                                <div className="mr-2 flex gap-1 rounded-xl bg-muted/30 p-1">
+                                    <Button
+                                        variant={
+                                            vistaKanban ? 'default' : 'ghost'
+                                        }
+                                        size="sm"
+                                        onClick={() => setVistaKanban(true)}
+                                        className="h-8 rounded-lg font-bold"
+                                    >
+                                        <Kanban className="h-4 w-4 md:mr-2" />
+                                        <span className="hidden md:inline">
+                                            Kanban
+                                        </span>
+                                    </Button>
+                                    <Button
+                                        variant={
+                                            !vistaKanban ? 'default' : 'ghost'
+                                        }
+                                        size="sm"
+                                        onClick={() => setVistaKanban(false)}
+                                        className="h-8 rounded-lg font-bold"
+                                    >
+                                        <List className="h-4 w-4 md:mr-2" />
+                                        <span className="hidden md:inline">
+                                            Lista
+                                        </span>
+                                    </Button>
+                                </div>
 
-                            {canCreate && (
-                                <Button
-                                    onClick={() => {
-                                        setEditando(null);
-                                        reset();
-                                        setIsOpen(true);
+                                <BulkActions
+                                    baseUrl="/prospectos"
+                                    filters={{
+                                        search: searchTerm,
+                                        estado: estadoFilter,
+                                        fuente: fuenteFilter,
                                     }}
-                                    className="h-9 rounded-full bg-primary px-5 font-bold shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
-                                >
-                                    <Plus className="mr-2 h-4 w-4" /> Nuevo
-                                    Prospecto
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="grid gap-6">
-                        {/* Filters Bar */}
-                        <div className="flex flex-col gap-4 rounded-3xl border border-muted/50 bg-muted/40 p-4 2xl:flex-row 2xl:items-center">
-                            <div className="relative min-w-0 flex-1">
-                                <Search className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input
-                                    placeholder="Buscar por nombre, empresa, rut o email..."
-                                    value={searchTerm}
-                                    onChange={(e) =>
-                                        setSearchTerm(e.target.value)
-                                    }
-                                    className="h-11 rounded-2xl border-none bg-background pl-12 shadow-sm focus-visible:ring-primary/20"
+                                    modelName="Prospectos"
                                 />
-                            </div>
-                            <div className="grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.75rem] 2xl:w-[26rem]">
-                                <Select
-                                    value={estadoFilter}
-                                    onValueChange={setEstadoFilter}
-                                >
-                                    <SelectTrigger className="h-11 w-full min-w-0 rounded-2xl border-none bg-background font-bold shadow-sm">
-                                        <SelectValue placeholder="Estado" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            Todos los estados
-                                        </SelectItem>
-                                        {ESTADOS.map((e) => (
-                                            <SelectItem
-                                                key={e.value}
-                                                value={e.value}
-                                            >
-                                                {e.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <Select
-                                    value={fuenteFilter}
-                                    onValueChange={setFuenteFilter}
-                                >
-                                    <SelectTrigger className="h-11 w-full min-w-0 rounded-2xl border-none bg-background font-bold shadow-sm">
-                                        <SelectValue placeholder="Fuente" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            Todas las fuentes
-                                        </SelectItem>
-                                        {FUENTES.map((f) => (
-                                            <SelectItem key={f} value={f}>
-                                                {f}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-11 w-11 rounded-2xl border-none bg-background text-muted-foreground shadow-sm"
-                                    onClick={() => {
-                                        setSearchTerm('');
-                                        setEstadoFilter('all');
-                                        setFuenteFilter('all');
-                                    }}
-                                >
-                                    <X className="h-5 w-5" />
-                                </Button>
+
+                                {canCreate && (
+                                    <Button
+                                        onClick={() => {
+                                            setEditando(null);
+                                            reset();
+                                            setIsOpen(true);
+                                        }}
+                                        className="h-9 rounded-full bg-primary px-5 font-bold shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
+                                    >
+                                        <Plus className="mr-2 h-4 w-4" /> Nuevo
+                                        Prospecto
+                                    </Button>
+                                )}
                             </div>
                         </div>
 
-                        {vistaKanban ? (
-                            <div className="flex min-h-[65vh] items-start gap-5 overflow-x-auto pb-6">
-                                {ESTADOS.map((est) => {
-                                    const prospEnEst =
-                                        (groupedProspectos as any)[est.value] ||
-                                        [];
-                                    const totalValor = prospEnEst.reduce(
-                                        (sum: number, p: any) =>
-                                            sum + Number(p.valor_estimado),
-                                        0,
-                                    );
-
-                                    return (
-                                        <div
-                                            key={est.value}
-                                            className="flex w-[320px] shrink-0 flex-col gap-4"
-                                            onDragOver={handleDragOver}
-                                            onDrop={(e) =>
-                                                handleDrop(e, est.value)
+                        <TabsList aria-label="Secciones de Prospectos">
+                            <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+                            <TabsTrigger value="scraping">
+                                Google Maps
+                            </TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="scraping">
+                            <ScrapingTab
+                                state={scraping}
+                                canImport={
+                                    hasPermission(
+                                        'comercial.prospectos.import',
+                                    ) && canCreate
+                                }
+                                canConfigure={hasPermission(
+                                    'admin.web-settings.edit',
+                                )}
+                            />
+                        </TabsContent>
+                        <TabsContent value="pipeline">
+                            <div className="grid gap-6">
+                                {/* Filters Bar */}
+                                <div className="flex flex-col gap-4 rounded-3xl border border-muted/50 bg-muted/40 p-4 2xl:flex-row 2xl:items-center">
+                                    <div className="relative min-w-0 flex-1">
+                                        <Search className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Buscar por nombre, empresa, rut o email..."
+                                            value={searchTerm}
+                                            onChange={(e) =>
+                                                setSearchTerm(e.target.value)
                                             }
-                                        >
-                                            <div
-                                                className={`rounded-3xl p-4 ${est.color} flex flex-col gap-1 border-2 border-transparent`}
-                                            >
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <est.icon className="h-4 w-4" />
-                                                        <span className="text-[11px] font-black tracking-widest uppercase">
-                                                            {est.label}
-                                                        </span>
-                                                    </div>
-                                                    <Badge className="border-none bg-background/50 text-[10px] font-black text-inherit hover:bg-background/60">
-                                                        {prospEnEst.length}
-                                                    </Badge>
-                                                </div>
-                                                <div className="mt-1 text-[10px] font-bold opacity-70">
-                                                    {formatCurrency(totalValor)}{' '}
-                                                    Estimados
-                                                </div>
-                                            </div>
-
-                                            <div className="flex flex-col gap-3">
-                                                {prospEnEst.map((p: any) => (
-                                                    <div
-                                                        key={p.id}
-                                                        draggable={canEdit}
-                                                        onDragStart={(e) =>
-                                                            handleDragStart(
-                                                                e,
-                                                                p.id,
-                                                            )
-                                                        }
-                                                        className="group cursor-grab rounded-3xl border border-muted bg-background p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-xl active:cursor-grabbing"
-                                                    >
-                                                        <div className="mb-3 flex items-start justify-between">
-                                                            <div className="min-w-0 flex-1">
-                                                                <div className="truncate text-sm font-bold tracking-tight transition-colors group-hover:text-primary">
-                                                                    {p.nombre}
-                                                                </div>
-                                                                <div className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
-                                                                    <Building2 className="h-2.5 w-2.5" />
-                                                                    <span className="truncate">
-                                                                        {p.empresa ||
-                                                                            'Empresa no reg.'}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                            <Badge
-                                                                variant="outline"
-                                                                className={`rounded-md px-1 py-0 text-[8px] font-black uppercase ${PRIORIDADES.find((pr) => pr.value === p.prioridad)?.color || ''}`}
-                                                            >
-                                                                {p.prioridad}
-                                                            </Badge>
-                                                        </div>
-
-                                                        <div className="mt-4 flex items-center justify-between">
-                                                            <div className="flex -space-x-2">
-                                                                {p.telefono && (
-                                                                    <WhatsAppButton
-                                                                        phone={
-                                                                            p.telefono
-                                                                        }
-                                                                        nombre={
-                                                                            p.nombre
-                                                                        }
-                                                                        className="h-8 w-8 transition-transform hover:scale-110"
-                                                                    />
-                                                                )}
-                                                                {p.email && (
-                                                                    <a
-                                                                        href={`mailto:${p.email}`}
-                                                                        className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-emerald-50 text-emerald-500 transition-colors hover:bg-emerald-100"
-                                                                    >
-                                                                        <Mail className="h-3 w-3" />
-                                                                    </a>
-                                                                )}
-                                                            </div>
-                                                            <div className="text-right">
-                                                                <div className="text-[11px] font-black text-primary">
-                                                                    {formatCurrency(
-                                                                        p.valor_estimado,
-                                                                    )}
-                                                                </div>
-                                                                <div className="text-[8px] font-bold text-muted-foreground uppercase">
-                                                                    {p.fuente ||
-                                                                        'web'}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {canEdit && (
-                                                            <select
-                                                                aria-label={`Estado de ${p.nombre}`}
-                                                                value={p.estado}
-                                                                onChange={(
-                                                                    event,
-                                                                ) =>
-                                                                    changeProspectoEstado(
-                                                                        p.id,
-                                                                        event
-                                                                            .target
-                                                                            .value,
-                                                                    )
-                                                                }
-                                                                className="mt-3 min-h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
-                                                            >
-                                                                {ESTADOS.map(
-                                                                    (
-                                                                        estado,
-                                                                    ) => (
-                                                                        <option
-                                                                            key={
-                                                                                estado.value
-                                                                            }
-                                                                            value={
-                                                                                estado.value
-                                                                            }
-                                                                        >
-                                                                            {
-                                                                                estado.label
-                                                                            }
-                                                                        </option>
-                                                                    ),
-                                                                )}
-                                                            </select>
-                                                        )}
-                                                        <div className="mt-4 flex justify-end gap-1 border-t border-muted/50 pt-3 opacity-100 transition-opacity">
-                                                            {p.estado !==
-                                                                'convertido' && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-11 w-11 text-green-600 hover:bg-green-50"
-                                                                    aria-label={`Convertir ${p.nombre} en cliente`}
-                                                                    onClick={() =>
-                                                                        handleConvertir(
-                                                                            p.id,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <UserPlus className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
-                                                            {canEdit && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-11 w-11 text-primary hover:bg-primary/10"
-                                                                    aria-label={`Editar ${p.nombre}`}
-                                                                    onClick={() =>
-                                                                        handleEdit(
-                                                                            p,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Pencil className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
-                                                            {canDelete && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-11 w-11 text-destructive hover:bg-destructive/10"
-                                                                    aria-label={`Eliminar ${p.nombre}`}
-                                                                    onClick={() =>
-                                                                        handleDelete(
-                                                                            p.id,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                                {prospEnEst.length === 0 && (
-                                                    <div className="rounded-3xl border-2 border-dashed border-muted p-10 text-center">
-                                                        <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                                                            Sin Prospectos
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            <Card className="overflow-hidden border-none shadow-xl shadow-foreground/5">
-                                <CardHeader className="px-6 py-4">
-                                    <div className="flex items-center justify-between">
-                                        <CardTitle className="text-base">
-                                            Prospectos
-                                        </CardTitle>
-                                        <div className="flex gap-1 rounded-lg bg-muted p-1">
-                                            <Button
-                                                variant={
-                                                    viewMode === 'table'
-                                                        ? 'default'
-                                                        : 'ghost'
-                                                }
-                                                size="sm"
-                                                onClick={() =>
-                                                    setViewMode('table')
-                                                }
-                                                className="h-8 w-8 p-0"
-                                            >
-                                                <List className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant={
-                                                    viewMode === 'cards'
-                                                        ? 'default'
-                                                        : 'ghost'
-                                                }
-                                                size="sm"
-                                                onClick={() =>
-                                                    setViewMode('cards')
-                                                }
-                                                className="h-8 w-8 p-0"
-                                            >
-                                                <LayoutGrid className="h-4 w-4" />
-                                            </Button>
-                                        </div>
+                                            className="h-11 rounded-2xl border-none bg-background pl-12 shadow-sm focus-visible:ring-primary/20"
+                                        />
                                     </div>
-                                </CardHeader>
-                                <CardContent className="p-0">
-                                    {gruposProspectos.length === 0 ? (
-                                        <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
-                                            <LayoutGrid className="mb-2 h-8 w-8" />
-                                            <p className="text-sm">
-                                                No se encontraron prospectos con
-                                                los filtros aplicados
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col gap-3 p-3 sm:p-4">
-                                            {gruposProspectos.map((grupo) => (
-                                                <SectionPanel
-                                                    key={grupo.value}
-                                                    title={grupo.label}
-                                                    description={`Panel de prospectos en estado ${grupo.label.toLowerCase()}.`}
-                                                    icon={grupo.icon}
-                                                    tone={grupo.tone}
-                                                    count={grupo.data.length}
-                                                    badges={
-                                                        <Badge
-                                                            variant="outline"
-                                                            className="bg-white/70 text-[10px]"
-                                                        >
-                                                            {formatCurrency(
-                                                                grupo.data.reduce(
-                                                                    (
-                                                                        sum,
-                                                                        prospecto,
-                                                                    ) =>
-                                                                        sum +
-                                                                        Number(
-                                                                            prospecto.valor_estimado,
-                                                                        ),
-                                                                    0,
-                                                                ),
-                                                            )}
-                                                        </Badge>
+                                    <div className="grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.75rem] 2xl:w-[26rem]">
+                                        <Select
+                                            value={estadoFilter}
+                                            onValueChange={setEstadoFilter}
+                                        >
+                                            <SelectTrigger className="h-11 w-full min-w-0 rounded-2xl border-none bg-background font-bold shadow-sm">
+                                                <SelectValue placeholder="Estado" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    Todos los estados
+                                                </SelectItem>
+                                                {ESTADOS.map((e) => (
+                                                    <SelectItem
+                                                        key={e.value}
+                                                        value={e.value}
+                                                    >
+                                                        {e.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <Select
+                                            value={fuenteFilter}
+                                            onValueChange={setFuenteFilter}
+                                        >
+                                            <SelectTrigger
+                                                aria-label="Filtrar por fuente"
+                                                className="h-11 w-full min-w-0 rounded-2xl border-none bg-background font-bold shadow-sm"
+                                            >
+                                                <SelectValue placeholder="Fuente" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    Todas las fuentes
+                                                </SelectItem>
+                                                {FUENTES.map((f) => (
+                                                    <SelectItem
+                                                        key={f}
+                                                        data-testid={`source-option-${f}`}
+                                                        value={f}
+                                                    >
+                                                        {f === 'google_maps'
+                                                            ? 'Google Maps'
+                                                            : f}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-11 w-11 rounded-2xl border-none bg-background text-muted-foreground shadow-sm"
+                                            onClick={() => {
+                                                setSearchTerm('');
+                                                setEstadoFilter('all');
+                                                setFuenteFilter('all');
+                                            }}
+                                        >
+                                            <X className="h-5 w-5" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {vistaKanban ? (
+                                    <div className="flex min-h-[65vh] items-start gap-5 overflow-x-auto pb-6">
+                                        {ESTADOS.map((est) => {
+                                            const prospEnEst =
+                                                (groupedProspectos as any)[
+                                                    est.value
+                                                ] || [];
+                                            const totalValor =
+                                                prospEnEst.reduce(
+                                                    (sum: number, p: any) =>
+                                                        sum +
+                                                        Number(
+                                                            p.valor_estimado,
+                                                        ),
+                                                    0,
+                                                );
+
+                                            return (
+                                                <div
+                                                    key={est.value}
+                                                    className="flex w-[320px] shrink-0 flex-col gap-4"
+                                                    onDragOver={handleDragOver}
+                                                    onDrop={(e) =>
+                                                        handleDrop(e, est.value)
                                                     }
                                                 >
-                                                    {viewMode === 'table' ? (
-                                                        <>
-                                                            <div className="hidden overflow-x-auto md:block">
-                                                                <table className="w-full">
-                                                                    <thead>
-                                                                        <tr className="border-b bg-muted/5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                                                                            <th className="px-6 py-4 text-left">
-                                                                                Prospecto
-                                                                                /
-                                                                                Empresa
-                                                                            </th>
-                                                                            <th className="px-6 py-4 text-left">
-                                                                                Contacto
-                                                                            </th>
-                                                                            <th className="px-6 py-4 text-left">
-                                                                                Descripción
-                                                                            </th>
-                                                                            <th className="px-6 py-4 text-right">
-                                                                                Valor
-                                                                                Estimado
-                                                                            </th>
-                                                                            <th className="px-6 py-4 text-center">
-                                                                                Estado
-                                                                                /
-                                                                                Prioridad
-                                                                            </th>
-                                                                            <th className="px-6 py-4 text-right">
-                                                                                Acciones
-                                                                            </th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody className="divide-y divide-muted/50">
-                                                                        {grupo.data.map(
-                                                                            (
-                                                                                p,
-                                                                            ) => (
-                                                                                <tr
-                                                                                    key={
-                                                                                        p.id
+                                                    <div
+                                                        className={`rounded-3xl p-4 ${est.color} flex flex-col gap-1 border-2 border-transparent`}
+                                                    >
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-2">
+                                                                <est.icon className="h-4 w-4" />
+                                                                <span className="text-[11px] font-black tracking-widest uppercase">
+                                                                    {est.label}
+                                                                </span>
+                                                            </div>
+                                                            <Badge className="border-none bg-background/50 text-[10px] font-black text-inherit hover:bg-background/60">
+                                                                {
+                                                                    prospEnEst.length
+                                                                }
+                                                            </Badge>
+                                                        </div>
+                                                        <div className="mt-1 text-[10px] font-bold opacity-70">
+                                                            {formatCurrency(
+                                                                totalValor,
+                                                            )}{' '}
+                                                            Estimados
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex flex-col gap-3">
+                                                        {prospEnEst.map(
+                                                            (p: any) => (
+                                                                <div
+                                                                    key={p.id}
+                                                                    draggable={
+                                                                        canEdit
+                                                                    }
+                                                                    onDragStart={(
+                                                                        e,
+                                                                    ) =>
+                                                                        handleDragStart(
+                                                                            e,
+                                                                            p.id,
+                                                                        )
+                                                                    }
+                                                                    className="group cursor-grab rounded-3xl border border-muted bg-background p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-xl active:cursor-grabbing"
+                                                                >
+                                                                    <div className="mb-3 flex items-start justify-between">
+                                                                        <div className="min-w-0 flex-1">
+                                                                            <div className="truncate text-sm font-bold tracking-tight transition-colors group-hover:text-primary">
+                                                                                {
+                                                                                    p.nombre
+                                                                                }
+                                                                            </div>
+                                                                            <div className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+                                                                                <Building2 className="h-2.5 w-2.5" />
+                                                                                <span className="truncate">
+                                                                                    {p.empresa ||
+                                                                                        'Empresa no reg.'}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <Badge
+                                                                            variant="outline"
+                                                                            className={`rounded-md px-1 py-0 text-[8px] font-black uppercase ${PRIORIDADES.find((pr) => pr.value === p.prioridad)?.color || ''}`}
+                                                                        >
+                                                                            {
+                                                                                p.prioridad
+                                                                            }
+                                                                        </Badge>
+                                                                    </div>
+
+                                                                    <div className="mt-4 flex items-center justify-between">
+                                                                        <div className="flex -space-x-2">
+                                                                            {p.telefono && (
+                                                                                <WhatsAppButton
+                                                                                    phone={
+                                                                                        p.telefono
                                                                                     }
-                                                                                    className="group transition-colors hover:bg-muted/30"
+                                                                                    nombre={
+                                                                                        p.nombre
+                                                                                    }
+                                                                                    className="h-8 w-8 transition-transform hover:scale-110"
+                                                                                />
+                                                                            )}
+                                                                            {p.email && (
+                                                                                <a
+                                                                                    href={`mailto:${p.email}`}
+                                                                                    className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-emerald-50 text-emerald-500 transition-colors hover:bg-emerald-100"
                                                                                 >
-                                                                                    <td className="px-6 py-4">
-                                                                                        <div>
-                                                                                            <div className="text-sm font-bold tracking-tight text-foreground">
-                                                                                                {
-                                                                                                    p.nombre
+                                                                                    <Mail className="h-3 w-3" />
+                                                                                </a>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="text-right">
+                                                                            <div className="text-[11px] font-black text-primary">
+                                                                                {formatCurrency(
+                                                                                    p.valor_estimado,
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="text-[8px] font-bold text-muted-foreground uppercase">
+                                                                                {p.fuente ||
+                                                                                    'web'}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {canEdit && (
+                                                                        <select
+                                                                            aria-label={`Estado de ${p.nombre}`}
+                                                                            value={
+                                                                                p.estado
+                                                                            }
+                                                                            onChange={(
+                                                                                event,
+                                                                            ) =>
+                                                                                changeProspectoEstado(
+                                                                                    p.id,
+                                                                                    event
+                                                                                        .target
+                                                                                        .value,
+                                                                                )
+                                                                            }
+                                                                            className="mt-3 min-h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                                                                        >
+                                                                            {ESTADOS.map(
+                                                                                (
+                                                                                    estado,
+                                                                                ) => (
+                                                                                    <option
+                                                                                        key={
+                                                                                            estado.value
+                                                                                        }
+                                                                                        value={
+                                                                                            estado.value
+                                                                                        }
+                                                                                    >
+                                                                                        {
+                                                                                            estado.label
+                                                                                        }
+                                                                                    </option>
+                                                                                ),
+                                                                            )}
+                                                                        </select>
+                                                                    )}
+                                                                    <div className="mt-4 flex justify-end gap-1 border-t border-muted/50 pt-3 opacity-100 transition-opacity">
+                                                                        {p.estado !==
+                                                                            'convertido' && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-11 w-11 text-green-600 hover:bg-green-50"
+                                                                                aria-label={`Convertir ${p.nombre} en cliente`}
+                                                                                onClick={() =>
+                                                                                    handleConvertir(
+                                                                                        p.id,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <UserPlus className="h-4 w-4" />
+                                                                            </Button>
+                                                                        )}
+                                                                        {canEdit && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-11 w-11 text-primary hover:bg-primary/10"
+                                                                                aria-label={`Editar ${p.nombre}`}
+                                                                                onClick={() =>
+                                                                                    handleEdit(
+                                                                                        p,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <Pencil className="h-4 w-4" />
+                                                                            </Button>
+                                                                        )}
+                                                                        {canDelete && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-11 w-11 text-destructive hover:bg-destructive/10"
+                                                                                aria-label={`Eliminar ${p.nombre}`}
+                                                                                onClick={() =>
+                                                                                    handleDelete(
+                                                                                        p.id,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <Trash2 className="h-4 w-4" />
+                                                                            </Button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            ),
+                                                        )}
+                                                        {prospEnEst.length ===
+                                                            0 && (
+                                                            <div className="rounded-3xl border-2 border-dashed border-muted p-10 text-center">
+                                                                <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                                                                    Sin
+                                                                    Prospectos
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <Card className="overflow-hidden border-none shadow-xl shadow-foreground/5">
+                                        <CardHeader className="px-6 py-4">
+                                            <div className="flex items-center justify-between">
+                                                <CardTitle className="text-base">
+                                                    Prospectos
+                                                </CardTitle>
+                                                <div className="flex gap-1 rounded-lg bg-muted p-1">
+                                                    <Button
+                                                        variant={
+                                                            viewMode === 'table'
+                                                                ? 'default'
+                                                                : 'ghost'
+                                                        }
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            setViewMode('table')
+                                                        }
+                                                        className="h-8 w-8 p-0"
+                                                    >
+                                                        <List className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant={
+                                                            viewMode === 'cards'
+                                                                ? 'default'
+                                                                : 'ghost'
+                                                        }
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            setViewMode('cards')
+                                                        }
+                                                        className="h-8 w-8 p-0"
+                                                    >
+                                                        <LayoutGrid className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="p-0">
+                                            {gruposProspectos.length === 0 ? (
+                                                <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground">
+                                                    <LayoutGrid className="mb-2 h-8 w-8" />
+                                                    <p className="text-sm">
+                                                        No se encontraron
+                                                        prospectos con los
+                                                        filtros aplicados
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col gap-3 p-3 sm:p-4">
+                                                    {gruposProspectos.map(
+                                                        (grupo) => (
+                                                            <SectionPanel
+                                                                key={
+                                                                    grupo.value
+                                                                }
+                                                                title={
+                                                                    grupo.label
+                                                                }
+                                                                description={`Panel de prospectos en estado ${grupo.label.toLowerCase()}.`}
+                                                                icon={
+                                                                    grupo.icon
+                                                                }
+                                                                tone={
+                                                                    grupo.tone
+                                                                }
+                                                                count={
+                                                                    grupo.data
+                                                                        .length
+                                                                }
+                                                                badges={
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="bg-white/70 text-[10px]"
+                                                                    >
+                                                                        {formatCurrency(
+                                                                            grupo.data.reduce(
+                                                                                (
+                                                                                    sum,
+                                                                                    prospecto,
+                                                                                ) =>
+                                                                                    sum +
+                                                                                    Number(
+                                                                                        prospecto.valor_estimado,
+                                                                                    ),
+                                                                                0,
+                                                                            ),
+                                                                        )}
+                                                                    </Badge>
+                                                                }
+                                                            >
+                                                                {viewMode ===
+                                                                'table' ? (
+                                                                    <>
+                                                                        <div className="hidden overflow-x-auto md:block">
+                                                                            <table className="w-full">
+                                                                                <thead>
+                                                                                    <tr className="border-b bg-muted/5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                                                                                        <th className="px-6 py-4 text-left">
+                                                                                            Prospecto
+                                                                                            /
+                                                                                            Empresa
+                                                                                        </th>
+                                                                                        <th className="px-6 py-4 text-left">
+                                                                                            Contacto
+                                                                                        </th>
+                                                                                        <th className="px-6 py-4 text-left">
+                                                                                            Descripción
+                                                                                        </th>
+                                                                                        <th className="px-6 py-4 text-right">
+                                                                                            Valor
+                                                                                            Estimado
+                                                                                        </th>
+                                                                                        <th className="px-6 py-4 text-center">
+                                                                                            Estado
+                                                                                            /
+                                                                                            Prioridad
+                                                                                        </th>
+                                                                                        <th className="px-6 py-4 text-right">
+                                                                                            Acciones
+                                                                                        </th>
+                                                                                    </tr>
+                                                                                </thead>
+                                                                                <tbody className="divide-y divide-muted/50">
+                                                                                    {grupo.data.map(
+                                                                                        (
+                                                                                            p,
+                                                                                        ) => (
+                                                                                            <tr
+                                                                                                key={
+                                                                                                    p.id
                                                                                                 }
-                                                                                            </div>
-                                                                                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                                                                                                <Building2 className="h-2.5 w-2.5" />
-                                                                                                {p.empresa ||
-                                                                                                    'Particular'}
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </td>
-                                                                                    <td className="px-6 py-4">
-                                                                                        <div className="flex items-center gap-3">
-                                                                                            {p.telefono && (
-                                                                                                <WhatsAppButton
-                                                                                                    phone={
-                                                                                                        p.telefono
-                                                                                                    }
-                                                                                                    nombre={
+                                                                                                className="group transition-colors hover:bg-muted/30"
+                                                                                            >
+                                                                                                <td className="px-6 py-4">
+                                                                                                    <div>
+                                                                                                        <div className="text-sm font-bold tracking-tight text-foreground">
+                                                                                                            {
+                                                                                                                p.nombre
+                                                                                                            }
+                                                                                                        </div>
+                                                                                                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                                                                                            <Building2 className="h-2.5 w-2.5" />
+                                                                                                            {p.empresa ||
+                                                                                                                'Particular'}
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                </td>
+                                                                                                <td className="px-6 py-4">
+                                                                                                    <div className="flex items-center gap-3">
+                                                                                                        {p.telefono && (
+                                                                                                            <WhatsAppButton
+                                                                                                                phone={
+                                                                                                                    p.telefono
+                                                                                                                }
+                                                                                                                nombre={
+                                                                                                                    p.nombre
+                                                                                                                }
+                                                                                                                className="h-11 w-11"
+                                                                                                            />
+                                                                                                        )}
+                                                                                                        <div className="text-xs">
+                                                                                                            <div className="font-bold text-primary">
+                                                                                                                {p.email ||
+                                                                                                                    'Sin email'}
+                                                                                                            </div>
+                                                                                                            <div className="text-[10px] font-bold text-muted-foreground uppercase">
+                                                                                                                {p.fuente ||
+                                                                                                                    'web'}
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                </td>
+                                                                                                <td className="max-w-[260px] px-6 py-4">
+                                                                                                    <TruncatedText
+                                                                                                        text={
+                                                                                                            p.descripcion ||
+                                                                                                            p.notas
+                                                                                                        }
+                                                                                                        emptyLabel="Sin descripción"
+                                                                                                        onExpand={() =>
+                                                                                                            handleEdit(
+                                                                                                                p,
+                                                                                                            )
+                                                                                                        }
+                                                                                                    />
+                                                                                                </td>
+                                                                                                <td className="px-6 py-4 text-right">
+                                                                                                    <div className="text-sm font-black text-primary">
+                                                                                                        {formatCurrency(
+                                                                                                            p.valor_estimado,
+                                                                                                        )}
+                                                                                                    </div>
+                                                                                                    {p.fecha_seguimiento && (
+                                                                                                        <div className="text-[9px] font-bold text-orange-500 uppercase">
+                                                                                                            Seguimiento:{' '}
+                                                                                                            {formatDateCLP(
+                                                                                                                p.fecha_seguimiento,
+                                                                                                            )}
+                                                                                                        </div>
+                                                                                                    )}
+                                                                                                </td>
+                                                                                                <td className="px-6 py-4 text-center">
+                                                                                                    <div className="flex flex-col items-center gap-1">
+                                                                                                        <Badge
+                                                                                                            variant="outline"
+                                                                                                            className={`${getEstadoConfig(p.estado).color} rounded-full border px-2 py-0.5 text-[8px] font-black uppercase`}
+                                                                                                        >
+                                                                                                            {
+                                                                                                                getEstadoConfig(
+                                                                                                                    p.estado,
+                                                                                                                )
+                                                                                                                    .label
+                                                                                                            }
+                                                                                                        </Badge>
+                                                                                                        <Badge
+                                                                                                            variant="outline"
+                                                                                                            className={`rounded-full px-2 py-0 text-[8px] font-bold ${PRIORIDADES.find((pr) => pr.value === p.prioridad)?.color || ''}`}
+                                                                                                        >
+                                                                                                            {
+                                                                                                                p.prioridad
+                                                                                                            }
+                                                                                                        </Badge>
+                                                                                                    </div>
+                                                                                                </td>
+                                                                                                <td className="px-6 py-4 text-right">
+                                                                                                    <div className="flex justify-end gap-1 opacity-100 transition-opacity">
+                                                                                                        {p.estado !==
+                                                                                                            'convertido' && (
+                                                                                                            <Button
+                                                                                                                variant="ghost"
+                                                                                                                size="icon"
+                                                                                                                className="h-8 w-8 text-green-600 hover:bg-green-50"
+                                                                                                                onClick={() =>
+                                                                                                                    handleConvertir(
+                                                                                                                        p.id,
+                                                                                                                    )
+                                                                                                                }
+                                                                                                            >
+                                                                                                                <UserPlus className="h-4 w-4" />
+                                                                                                            </Button>
+                                                                                                        )}
+                                                                                                        {canEdit && (
+                                                                                                            <Button
+                                                                                                                variant="ghost"
+                                                                                                                size="icon"
+                                                                                                                className="h-8 w-8 text-primary hover:bg-primary/10"
+                                                                                                                onClick={() =>
+                                                                                                                    handleEdit(
+                                                                                                                        p,
+                                                                                                                    )
+                                                                                                                }
+                                                                                                            >
+                                                                                                                <Pencil className="h-4 w-4" />
+                                                                                                            </Button>
+                                                                                                        )}
+                                                                                                        {canDelete && (
+                                                                                                            <Button
+                                                                                                                variant="ghost"
+                                                                                                                size="icon"
+                                                                                                                className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                                                                                                onClick={() =>
+                                                                                                                    handleDelete(
+                                                                                                                        p.id,
+                                                                                                                    )
+                                                                                                                }
+                                                                                                            >
+                                                                                                                <Trash2 className="h-4 w-4" />
+                                                                                                            </Button>
+                                                                                                        )}
+                                                                                                    </div>
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                        ),
+                                                                                    )}
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </div>
+                                                                        <div className="grid gap-2 p-2 sm:p-3 md:hidden">
+                                                                            {grupo.data.map(
+                                                                                (
+                                                                                    p,
+                                                                                ) => (
+                                                                                    <div
+                                                                                        key={
+                                                                                            p.id
+                                                                                        }
+                                                                                        className="rounded-xl border bg-card p-3 shadow-sm"
+                                                                                    >
+                                                                                        <div className="flex items-start justify-between gap-2">
+                                                                                            <div className="min-w-0">
+                                                                                                <p className="truncate text-sm font-bold">
+                                                                                                    {
                                                                                                         p.nombre
                                                                                                     }
-                                                                                                    className="h-11 w-11"
-                                                                                                />
-                                                                                            )}
-                                                                                            <div className="text-xs">
-                                                                                                <div className="font-bold text-primary">
-                                                                                                    {p.email ||
-                                                                                                        'Sin email'}
-                                                                                                </div>
-                                                                                                <div className="text-[10px] font-bold text-muted-foreground uppercase">
-                                                                                                    {p.fuente ||
-                                                                                                        'web'}
-                                                                                                </div>
+                                                                                                </p>
+                                                                                                <p className="truncate text-[10px] text-muted-foreground">
+                                                                                                    {p.empresa ||
+                                                                                                        'Particular'}
+                                                                                                </p>
                                                                                             </div>
-                                                                                        </div>
-                                                                                    </td>
-                                                                                    <td className="max-w-[260px] px-6 py-4">
-                                                                                        <TruncatedText
-                                                                                            text={
-                                                                                                p.descripcion ||
-                                                                                                p.notas
-                                                                                            }
-                                                                                            emptyLabel="Sin descripción"
-                                                                                            onExpand={() =>
-                                                                                                handleEdit(
-                                                                                                    p,
-                                                                                                )
-                                                                                            }
-                                                                                        />
-                                                                                    </td>
-                                                                                    <td className="px-6 py-4 text-right">
-                                                                                        <div className="text-sm font-black text-primary">
-                                                                                            {formatCurrency(
-                                                                                                p.valor_estimado,
-                                                                                            )}
-                                                                                        </div>
-                                                                                        {p.fecha_seguimiento && (
-                                                                                            <div className="text-[9px] font-bold text-orange-500 uppercase">
-                                                                                                Seguimiento:{' '}
-                                                                                                {formatDateCLP(
-                                                                                                    p.fecha_seguimiento,
-                                                                                                )}
-                                                                                            </div>
-                                                                                        )}
-                                                                                    </td>
-                                                                                    <td className="px-6 py-4 text-center">
-                                                                                        <div className="flex flex-col items-center gap-1">
                                                                                             <Badge
                                                                                                 variant="outline"
                                                                                                 className={`${getEstadoConfig(p.estado).color} rounded-full border px-2 py-0.5 text-[8px] font-black uppercase`}
@@ -965,18 +1138,167 @@ export default function Index({
                                                                                                         .label
                                                                                                 }
                                                                                             </Badge>
-                                                                                            <Badge
-                                                                                                variant="outline"
-                                                                                                className={`rounded-full px-2 py-0 text-[8px] font-bold ${PRIORIDADES.find((pr) => pr.value === p.prioridad)?.color || ''}`}
-                                                                                            >
-                                                                                                {
-                                                                                                    p.prioridad
-                                                                                                }
-                                                                                            </Badge>
                                                                                         </div>
-                                                                                    </td>
-                                                                                    <td className="px-6 py-4 text-right">
-                                                                                        <div className="flex justify-end gap-1 opacity-100 transition-opacity">
+                                                                                        <div className="mt-1">
+                                                                                            <TruncatedText
+                                                                                                text={
+                                                                                                    p.descripcion ||
+                                                                                                    p.notas
+                                                                                                }
+                                                                                                emptyLabel="Sin descripción"
+                                                                                                lines={
+                                                                                                    2
+                                                                                                }
+                                                                                                onExpand={() =>
+                                                                                                    handleEdit(
+                                                                                                        p,
+                                                                                                    )
+                                                                                                }
+                                                                                            />
+                                                                                        </div>
+                                                                                        <div className="mt-2 flex items-center justify-between border-t pt-2">
+                                                                                            <span className="text-xs font-black text-primary">
+                                                                                                {formatCurrency(
+                                                                                                    p.valor_estimado,
+                                                                                                )}
+                                                                                            </span>
+                                                                                            <div className="flex items-center gap-1">
+                                                                                                {p.estado !==
+                                                                                                    'convertido' && (
+                                                                                                    <Button
+                                                                                                        variant="ghost"
+                                                                                                        size="icon"
+                                                                                                        className="h-8 w-8 text-green-600 hover:bg-green-50"
+                                                                                                        onClick={() =>
+                                                                                                            handleConvertir(
+                                                                                                                p.id,
+                                                                                                            )
+                                                                                                        }
+                                                                                                    >
+                                                                                                        <UserPlus className="h-4 w-4" />
+                                                                                                    </Button>
+                                                                                                )}
+                                                                                                {canEdit && (
+                                                                                                    <Button
+                                                                                                        variant="ghost"
+                                                                                                        size="icon"
+                                                                                                        className="h-8 w-8 text-primary hover:bg-primary/10"
+                                                                                                        onClick={() =>
+                                                                                                            handleEdit(
+                                                                                                                p,
+                                                                                                            )
+                                                                                                        }
+                                                                                                    >
+                                                                                                        <Pencil className="h-4 w-4" />
+                                                                                                    </Button>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ),
+                                                                            )}
+                                                                        </div>
+                                                                    </>
+                                                                ) : (
+                                                                    <div className="grid grid-cols-1 gap-4 p-2 sm:grid-cols-2 sm:p-3 xl:grid-cols-3">
+                                                                        {grupo.data.map(
+                                                                            (
+                                                                                p,
+                                                                            ) => (
+                                                                                <Card
+                                                                                    key={
+                                                                                        p.id
+                                                                                    }
+                                                                                    className="overflow-hidden"
+                                                                                >
+                                                                                    <CardHeader className="pb-3">
+                                                                                        <div className="flex items-start justify-between">
+                                                                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                                                                                                <Building2 className="h-5 w-5 text-primary" />
+                                                                                            </div>
+                                                                                            <div className="flex gap-1">
+                                                                                                <Badge
+                                                                                                    variant="outline"
+                                                                                                    className={`${getEstadoConfig(p.estado).color} rounded-full border px-2 py-0.5 text-[8px] font-black uppercase`}
+                                                                                                >
+                                                                                                    {
+                                                                                                        getEstadoConfig(
+                                                                                                            p.estado,
+                                                                                                        )
+                                                                                                            .label
+                                                                                                    }
+                                                                                                </Badge>
+                                                                                                <Badge
+                                                                                                    variant="outline"
+                                                                                                    className={`rounded-full px-2 py-0 text-[8px] font-bold ${PRIORIDADES.find((pr) => pr.value === p.prioridad)?.color || ''}`}
+                                                                                                >
+                                                                                                    {
+                                                                                                        p.prioridad
+                                                                                                    }
+                                                                                                </Badge>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <CardTitle className="mt-2 text-sm">
+                                                                                            {
+                                                                                                p.nombre
+                                                                                            }
+                                                                                        </CardTitle>
+                                                                                        <CardDescription className="flex items-center gap-1 text-xs">
+                                                                                            <Building2 className="h-3 w-3" />
+                                                                                            {p.empresa ||
+                                                                                                'Particular'}
+                                                                                        </CardDescription>
+                                                                                    </CardHeader>
+                                                                                    <CardContent>
+                                                                                        <div className="mb-2">
+                                                                                            <TruncatedText
+                                                                                                text={
+                                                                                                    p.descripcion ||
+                                                                                                    p.notas
+                                                                                                }
+                                                                                                lines={
+                                                                                                    2
+                                                                                                }
+                                                                                                emptyLabel="Sin descripción"
+                                                                                                onExpand={() =>
+                                                                                                    handleEdit(
+                                                                                                        p,
+                                                                                                    )
+                                                                                                }
+                                                                                            />
+                                                                                        </div>
+                                                                                        <div className="space-y-2 text-xs">
+                                                                                            {p.email && (
+                                                                                                <div className="flex items-center gap-2 text-muted-foreground">
+                                                                                                    <Mail className="h-3 w-3" />
+                                                                                                    <span>
+                                                                                                        {
+                                                                                                            p.email
+                                                                                                        }
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            )}
+                                                                                            <div className="flex items-center justify-between">
+                                                                                                <span className="text-muted-foreground">
+                                                                                                    Valor
+                                                                                                    estimado
+                                                                                                </span>
+                                                                                                <span className="font-black text-primary">
+                                                                                                    {formatCurrency(
+                                                                                                        p.valor_estimado,
+                                                                                                    )}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                            {p.fuente && (
+                                                                                                <div className="text-muted-foreground">
+                                                                                                    Fuente:{' '}
+                                                                                                    {
+                                                                                                        p.fuente
+                                                                                                    }
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                        <div className="mt-3 flex justify-end gap-1 border-t pt-2">
                                                                                             {p.estado !==
                                                                                                 'convertido' && (
                                                                                                 <Button
@@ -1021,270 +1343,30 @@ export default function Index({
                                                                                                 </Button>
                                                                                             )}
                                                                                         </div>
-                                                                                    </td>
-                                                                                </tr>
+                                                                                    </CardContent>
+                                                                                </Card>
                                                                             ),
                                                                         )}
-                                                                    </tbody>
-                                                                </table>
-                                                            </div>
-                                                            <div className="grid gap-2 p-2 sm:p-3 md:hidden">
-                                                                {grupo.data.map(
-                                                                    (p) => (
-                                                                        <div
-                                                                            key={
-                                                                                p.id
-                                                                            }
-                                                                            className="rounded-xl border bg-card p-3 shadow-sm"
-                                                                        >
-                                                                            <div className="flex items-start justify-between gap-2">
-                                                                                <div className="min-w-0">
-                                                                                    <p className="truncate text-sm font-bold">
-                                                                                        {
-                                                                                            p.nombre
-                                                                                        }
-                                                                                    </p>
-                                                                                    <p className="truncate text-[10px] text-muted-foreground">
-                                                                                        {p.empresa ||
-                                                                                            'Particular'}
-                                                                                    </p>
-                                                                                </div>
-                                                                                <Badge
-                                                                                    variant="outline"
-                                                                                    className={`${getEstadoConfig(p.estado).color} rounded-full border px-2 py-0.5 text-[8px] font-black uppercase`}
-                                                                                >
-                                                                                    {
-                                                                                        getEstadoConfig(
-                                                                                            p.estado,
-                                                                                        )
-                                                                                            .label
-                                                                                    }
-                                                                                </Badge>
-                                                                            </div>
-                                                                            <div className="mt-1">
-                                                                                <TruncatedText
-                                                                                    text={
-                                                                                        p.descripcion ||
-                                                                                        p.notas
-                                                                                    }
-                                                                                    emptyLabel="Sin descripción"
-                                                                                    lines={
-                                                                                        2
-                                                                                    }
-                                                                                    onExpand={() =>
-                                                                                        handleEdit(
-                                                                                            p,
-                                                                                        )
-                                                                                    }
-                                                                                />
-                                                                            </div>
-                                                                            <div className="mt-2 flex items-center justify-between border-t pt-2">
-                                                                                <span className="text-xs font-black text-primary">
-                                                                                    {formatCurrency(
-                                                                                        p.valor_estimado,
-                                                                                    )}
-                                                                                </span>
-                                                                                <div className="flex items-center gap-1">
-                                                                                    {p.estado !==
-                                                                                        'convertido' && (
-                                                                                        <Button
-                                                                                            variant="ghost"
-                                                                                            size="icon"
-                                                                                            className="h-8 w-8 text-green-600 hover:bg-green-50"
-                                                                                            onClick={() =>
-                                                                                                handleConvertir(
-                                                                                                    p.id,
-                                                                                                )
-                                                                                            }
-                                                                                        >
-                                                                                            <UserPlus className="h-4 w-4" />
-                                                                                        </Button>
-                                                                                    )}
-                                                                                    {canEdit && (
-                                                                                        <Button
-                                                                                            variant="ghost"
-                                                                                            size="icon"
-                                                                                            className="h-8 w-8 text-primary hover:bg-primary/10"
-                                                                                            onClick={() =>
-                                                                                                handleEdit(
-                                                                                                    p,
-                                                                                                )
-                                                                                            }
-                                                                                        >
-                                                                                            <Pencil className="h-4 w-4" />
-                                                                                        </Button>
-                                                                                    )}
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    ),
+                                                                    </div>
                                                                 )}
-                                                            </div>
-                                                        </>
-                                                    ) : (
-                                                        <div className="grid grid-cols-1 gap-4 p-2 sm:grid-cols-2 sm:p-3 xl:grid-cols-3">
-                                                            {grupo.data.map(
-                                                                (p) => (
-                                                                    <Card
-                                                                        key={
-                                                                            p.id
-                                                                        }
-                                                                        className="overflow-hidden"
-                                                                    >
-                                                                        <CardHeader className="pb-3">
-                                                                            <div className="flex items-start justify-between">
-                                                                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                                                                                    <Building2 className="h-5 w-5 text-primary" />
-                                                                                </div>
-                                                                                <div className="flex gap-1">
-                                                                                    <Badge
-                                                                                        variant="outline"
-                                                                                        className={`${getEstadoConfig(p.estado).color} rounded-full border px-2 py-0.5 text-[8px] font-black uppercase`}
-                                                                                    >
-                                                                                        {
-                                                                                            getEstadoConfig(
-                                                                                                p.estado,
-                                                                                            )
-                                                                                                .label
-                                                                                        }
-                                                                                    </Badge>
-                                                                                    <Badge
-                                                                                        variant="outline"
-                                                                                        className={`rounded-full px-2 py-0 text-[8px] font-bold ${PRIORIDADES.find((pr) => pr.value === p.prioridad)?.color || ''}`}
-                                                                                    >
-                                                                                        {
-                                                                                            p.prioridad
-                                                                                        }
-                                                                                    </Badge>
-                                                                                </div>
-                                                                            </div>
-                                                                            <CardTitle className="mt-2 text-sm">
-                                                                                {
-                                                                                    p.nombre
-                                                                                }
-                                                                            </CardTitle>
-                                                                            <CardDescription className="flex items-center gap-1 text-xs">
-                                                                                <Building2 className="h-3 w-3" />
-                                                                                {p.empresa ||
-                                                                                    'Particular'}
-                                                                            </CardDescription>
-                                                                        </CardHeader>
-                                                                        <CardContent>
-                                                                            <div className="mb-2">
-                                                                                <TruncatedText
-                                                                                    text={
-                                                                                        p.descripcion ||
-                                                                                        p.notas
-                                                                                    }
-                                                                                    lines={
-                                                                                        2
-                                                                                    }
-                                                                                    emptyLabel="Sin descripción"
-                                                                                    onExpand={() =>
-                                                                                        handleEdit(
-                                                                                            p,
-                                                                                        )
-                                                                                    }
-                                                                                />
-                                                                            </div>
-                                                                            <div className="space-y-2 text-xs">
-                                                                                {p.email && (
-                                                                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                                                                        <Mail className="h-3 w-3" />
-                                                                                        <span>
-                                                                                            {
-                                                                                                p.email
-                                                                                            }
-                                                                                        </span>
-                                                                                    </div>
-                                                                                )}
-                                                                                <div className="flex items-center justify-between">
-                                                                                    <span className="text-muted-foreground">
-                                                                                        Valor
-                                                                                        estimado
-                                                                                    </span>
-                                                                                    <span className="font-black text-primary">
-                                                                                        {formatCurrency(
-                                                                                            p.valor_estimado,
-                                                                                        )}
-                                                                                    </span>
-                                                                                </div>
-                                                                                {p.fuente && (
-                                                                                    <div className="text-muted-foreground">
-                                                                                        Fuente:{' '}
-                                                                                        {
-                                                                                            p.fuente
-                                                                                        }
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                            <div className="mt-3 flex justify-end gap-1 border-t pt-2">
-                                                                                {p.estado !==
-                                                                                    'convertido' && (
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="icon"
-                                                                                        className="h-8 w-8 text-green-600 hover:bg-green-50"
-                                                                                        onClick={() =>
-                                                                                            handleConvertir(
-                                                                                                p.id,
-                                                                                            )
-                                                                                        }
-                                                                                    >
-                                                                                        <UserPlus className="h-4 w-4" />
-                                                                                    </Button>
-                                                                                )}
-                                                                                {canEdit && (
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="icon"
-                                                                                        className="h-8 w-8 text-primary hover:bg-primary/10"
-                                                                                        onClick={() =>
-                                                                                            handleEdit(
-                                                                                                p,
-                                                                                            )
-                                                                                        }
-                                                                                    >
-                                                                                        <Pencil className="h-4 w-4" />
-                                                                                    </Button>
-                                                                                )}
-                                                                                {canDelete && (
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="icon"
-                                                                                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                                                                        onClick={() =>
-                                                                                            handleDelete(
-                                                                                                p.id,
-                                                                                            )
-                                                                                        }
-                                                                                    >
-                                                                                        <Trash2 className="h-4 w-4" />
-                                                                                    </Button>
-                                                                                )}
-                                                                            </div>
-                                                                        </CardContent>
-                                                                    </Card>
-                                                                ),
-                                                            )}
-                                                        </div>
+                                                            </SectionPanel>
+                                                        ),
                                                     )}
-                                                </SectionPanel>
-                                            ))}
-                                        </div>
-                                    )}
-                                    <div className="border-t border-muted/50 p-4">
-                                        <Pagination
-                                            links={prospectos.links}
-                                            meta={prospectos.meta}
-                                        />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
+                                                </div>
+                                            )}
+                                            <div className="border-t border-muted/50 p-4">
+                                                <Pagination
+                                                    links={prospectos.links}
+                                                    meta={prospectos.meta}
+                                                />
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                )}
+                            </div>
+                        </TabsContent>
                     </div>
-                </div>
-
+                </Tabs>
                 <Dialog open={isOpen} onOpenChange={setIsOpen}>
                     <DialogContent className="max-h-[95vh] max-w-[95vw] overflow-y-auto border-none p-0 shadow-2xl md:max-w-4xl">
                         <DialogHeader className="sticky top-0 z-10 bg-gradient-to-r from-primary/10 to-transparent p-4 pb-4 text-left backdrop-blur-sm md:p-6">
@@ -1551,7 +1633,10 @@ export default function Index({
                                                                             f
                                                                         }
                                                                     >
-                                                                        {f}
+                                                                        {f ===
+                                                                        'google_maps'
+                                                                            ? 'Google Maps'
+                                                                            : f}
                                                                     </SelectItem>
                                                                 ),
                                                             )}

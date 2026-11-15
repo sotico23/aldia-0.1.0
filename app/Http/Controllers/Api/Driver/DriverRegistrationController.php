@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Driver;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Driver\RegisterFreelancerRequest;
 use App\Models\Repartidor;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -10,7 +11,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\Rules\Password;
 use Spatie\Permission\Models\Role;
 
 /**
@@ -29,40 +29,32 @@ class DriverRegistrationController extends Controller
      * Registro de repartidor Freelancer desde la app móvil.
      * No requiere autenticación previa — crea la cuenta en un solo paso.
      */
-    public function register(Request $request): JsonResponse
+    public function register(RegisterFreelancerRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Password::min(8)],
-            'telefono' => ['required', 'string', 'max:20'],
-            'rut' => ['nullable', 'string', 'max:12'],
-            'vehiculo_tipo' => ['required', 'string', 'in:bicicleta,moto,auto,camioneta,pie'],
-            'radio_km' => ['nullable', 'numeric', 'min:1', 'max:50'],
-            // owner_id: el tenant al que se postula el freelancer
-            'owner_id' => ['required', 'integer', 'exists:users,id'],
-        ], [
-            'email.unique' => 'Este correo ya está registrado.',
-            'password.confirmed' => 'Las contraseñas no coinciden.',
-            'owner_id.exists' => 'El negocio indicado no existe.',
-            'vehiculo_tipo.in' => 'Tipo de vehículo no válido.',
-        ]);
+        $validated = $request->validated();
+        $companyId = isset($validated['owner_id']) ? (int) $validated['owner_id'] : null;
 
         try {
             DB::beginTransaction();
 
             // Crear el usuario
-            $user = User::create([
+            $user = (new User)->forceFill([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 'telefono' => $validated['telefono'],
                 'rut' => $validated['rut'] ?? null,
-                'creator_id' => (int) $validated['owner_id'],
-                'owner_id' => (int) $validated['owner_id'],
+                'creator_id' => $companyId,
+                'owner_id' => $companyId,
                 'is_active' => true,
                 'has_explicit_role' => true,
             ]);
+            $user->save();
+
+            if ($companyId === null) {
+                $user->forceFill(['owner_id' => $user->id])->save();
+            }
+            $ownerId = $companyId ?? $user->id;
 
             // Asignar el rol por defecto de repartidor via Spatie.
             // Asegurar que el rol exista con guard 'web' para evitar
@@ -71,11 +63,11 @@ class DriverRegistrationController extends Controller
                 ['name' => Repartidor::defaultRole(), 'guard_name' => 'web'],
                 ['owner_id' => null]
             );
-            $user->syncRoles([$rolRepartidor->name]);
+            $user->syncRoles([$rolRepartidor]);
 
             // Crear perfil de repartidor en estado pendiente
             $repartidor = Repartidor::create([
-                'owner_id' => (int) $validated['owner_id'],
+                'owner_id' => $ownerId,
                 'user_id' => $user->id,
                 'driver_type' => Repartidor::TYPE_FREELANCER,
                 'approval_status' => Repartidor::APPROVAL_PENDING,
@@ -91,7 +83,7 @@ class DriverRegistrationController extends Controller
                 'user_id' => $user->id,
                 'repartidor_id' => $repartidor->id,
                 'vehiculo_tipo' => $validated['vehiculo_tipo'],
-                'owner_id' => $validated['owner_id'],
+                'owner_id' => $ownerId,
             ]);
 
             DB::commit();

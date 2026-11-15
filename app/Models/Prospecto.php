@@ -28,6 +28,10 @@ class Prospecto extends Model
         'valor_estimado',
         'fecha_seguimiento',
         'notas',
+        'giro',
+        'google_maps_key',
+        'google_maps_url',
+        'sitio_web',
     ];
 
     protected function casts(): array

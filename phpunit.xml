@@ -7,6 +7,8 @@
     <testsuites>
         <testsuite name="Delivery synchronization">
             <file>tests/EntregaPedidoSyncTest.php</file>
+            <file>tests/DriverRegistrationTest.php</file>
+            <file>tests/ProspectoScrapingTest.php</file>
         </testsuite>
         <testsuite name="Sidebar components">
             <file>tests/LivewireSidebarsTest.php</file>
