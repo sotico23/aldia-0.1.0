@@ -18,12 +18,21 @@ try {
     const { send, evaluate, waitFor, click } = browser;
     for (const width of [400, 1280]) {
         fixture.props.scraping = state();
+        fixture.props.scraping.health = { ...fixture.props.scraping.health, ready: false, message: 'No se encontró Chrome/Chromium en el servidor.', checks: {
+            node: { ready: true, message: 'Node.js 26 disponible.' }, chrome: { ready: false, message: 'No se encontró Chrome/Chromium en el servidor.' }, queue: { ready: true, message: 'Cola configurada.' },
+        } };
         browser.exceptions.length = 0;
         await send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false });
         await send('Page.navigate', { url: `${origin}/prospectos` });
         await waitFor('!!document.querySelector("[role=tablist]")', 'pestañas de prospectos');
         await click('[role=tablist] [role=tab]:last-child');
         await waitFor('!!document.querySelector("[data-testid=prospectos-scraping]")', 'configuración de scraping');
+        assert.ok(await evaluate(`[...document.querySelectorAll('button')].find(button => button.textContent === 'Buscar negocios').disabled`));
+        assert.ok(await evaluate(`document.querySelector('[data-testid=scraping-search-blocker]').textContent.includes('Chrome/Chromium')`));
+        await evaluate(`[...document.querySelectorAll('button')].find(button => button.textContent === 'Comprobar estado').click()`);
+        await waitFor(`[...document.querySelectorAll('button')].some(button => button.textContent === 'Comprobando…' && button.disabled)`, 'progreso de comprobación');
+        await waitFor(`![...document.querySelectorAll('button')].find(button => button.textContent === 'Buscar negocios').disabled`, 'búsqueda habilitada tras comprobar requisitos');
+        assert.equal(writeRequests.findLast(request => request.path.endsWith('/comprobar')).method, 'POST');
         assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'), `${width}px sin desborde`);
         assert.equal(await evaluate('document.querySelector("#scraping-query").value'), 'Panaderías');
         await evaluate('document.querySelector("[data-testid=prospectos-scraping] summary").click()');

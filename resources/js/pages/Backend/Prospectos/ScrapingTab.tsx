@@ -1,6 +1,7 @@
 import { router, useForm, usePage, usePoll } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import {
+    check as checkEngine,
     configure,
     start as startSearch,
     cancel,
@@ -35,6 +36,7 @@ export type ScrapingState = {
         queue_ready: boolean;
         queue_connection?: string;
         message: string;
+        checks?: Record<string, { ready: boolean; message: string }>;
     };
     binaries: { node: string; chrome: string } | null;
     runs: Run[];
@@ -58,6 +60,7 @@ export default function ScrapingTab({
     canConfigure: boolean;
 }) {
     const health = state?.health;
+    const verification = useForm({});
     const runs = state?.runs ?? [];
     const active = runs.some((run) =>
         ['queued', 'running'].includes(run.status),
@@ -84,7 +87,22 @@ export default function ScrapingTab({
         chrome_binary: state?.binaries?.chrome ?? '',
         queue_connection: state?.health.queue_connection ?? 'database',
     });
-    const { flash } = usePage<{ flash?: { success?: string } }>().props;
+    const { flash } = usePage<{
+        flash?: { success?: string; warning?: string };
+    }>().props;
+    const blockingReason = !canImport
+        ? 'No tienes permisos para buscar e importar prospectos.'
+        : verification.processing
+          ? 'Comprobando los requisitos del motor…'
+          : !health
+            ? 'Esperando la comprobación del motor.'
+            : !health.ready || !health.queue_ready
+              ? health.message
+              : active
+                ? 'Ya hay una búsqueda en curso. Espera a que termine o cancélala.'
+                : null;
+    const verifyEngine = () =>
+        verification.post(checkEngine.url(), { preserveScroll: true });
 
     return (
         <section
@@ -105,13 +123,38 @@ export default function ScrapingTab({
                 >
                     {health?.message ?? 'Cargando estado del motor…'}
                 </p>
+                {health?.checks && (
+                    <ul
+                        className="mt-3 space-y-2 text-sm"
+                        data-testid="scraping-checks"
+                    >
+                        {Object.entries(health.checks).map(([key, check]) => (
+                            <li key={key} className="rounded-lg border p-3">
+                                <strong>
+                                    {key === 'node'
+                                        ? 'Node.js'
+                                        : key === 'chrome'
+                                          ? 'Navegador'
+                                          : 'Cola'}
+                                    : {check.ready ? 'Disponible' : 'Pendiente'}
+                                </strong>
+                                <p className="mt-1 text-muted-foreground">
+                                    {check.message}
+                                </p>
+                            </li>
+                        ))}
+                    </ul>
+                )}
                 <Button
                     type="button"
                     variant="outline"
                     className="mt-3"
-                    onClick={() => router.reload({ only: ['scraping'] })}
+                    onClick={verifyEngine}
+                    disabled={verification.processing || engine.processing}
                 >
-                    Comprobar estado
+                    {verification.processing
+                        ? 'Comprobando…'
+                        : 'Comprobar estado'}
                 </Button>
                 {canConfigure && (
                     <details className="mt-4 rounded-lg border p-3">
@@ -204,12 +247,16 @@ export default function ScrapingTab({
                     </details>
                 )}
             </div>
-            {flash?.success && (
+            {(flash?.success || flash?.warning) && (
                 <p
                     role="status"
-                    className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"
+                    className={
+                        flash.warning
+                            ? 'rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900'
+                            : 'rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900'
+                    }
                 >
-                    {flash.success}
+                    {flash.warning ?? flash.success}
                 </p>
             )}
             <form
@@ -275,16 +322,35 @@ export default function ScrapingTab({
                 <div className="space-y-2 md:col-span-3">
                     <Button
                         type="submit"
-                        disabled={
-                            !canImport ||
-                            !health?.ready ||
-                            !health.queue_ready ||
-                            active ||
-                            search.processing
+                        disabled={Boolean(blockingReason) || search.processing}
+                        aria-describedby={
+                            blockingReason
+                                ? 'scraping-search-blocker'
+                                : undefined
                         }
                     >
                         {search.processing ? 'Enviando…' : 'Buscar negocios'}
                     </Button>
+                    {blockingReason && (
+                        <div
+                            id="scraping-search-blocker"
+                            role="status"
+                            data-testid="scraping-search-blocker"
+                            className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+                        >
+                            <p>{blockingReason}</p>
+                            {!verification.processing && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="mt-2"
+                                    onClick={verifyEngine}
+                                >
+                                    Volver a comprobar requisitos
+                                </Button>
+                            )}
+                        </div>
+                    )}
                     <p className="text-sm text-muted-foreground">
                         Se leen nombre, dirección, teléfono y sitio web
                         públicos, cuando están disponibles. Si Google solicita

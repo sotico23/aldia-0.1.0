@@ -134,7 +134,12 @@ export async function startFixtureServer() {
                     const data = body ? JSON.parse(body) : {};
                     writeRequests.at(-1).body = data;
                     const fixture = backendFixtures.find(fixture => fixture.path === '/prospectos');
-                    if (url.pathname.endsWith('/buscar')) {
+                    if (url.pathname.endsWith('/comprobar')) {
+                        await new Promise(resolve => setTimeout(resolve, 600));
+                        fixture.props.scraping.health = { ...fixture.props.scraping.health, ready: true, queue_ready: true, message: 'Requisitos comprobados. El worker de prospecting procesará las búsquedas.', checks: {
+                            node: { ready: true, message: 'Node.js 26 disponible.' }, chrome: { ready: true, message: 'Chrome/Chromium disponible.' }, queue: { ready: true, message: 'Cola database configurada.' },
+                        } };
+                    } else if (url.pathname.endsWith('/buscar')) {
                         fixture.props.scraping.runs.unshift({ id: 4, ...data, status: 'queued', error: null, results: [] });
                     } else if (url.pathname.endsWith('/cancelar')) {
                         fixture.props.scraping.runs[0].status = 'cancelled';

@@ -14,6 +14,7 @@ use App\Http\Controllers\Backend\TicketController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['permission:comercial.prospectos.viewAny'])->group(function () {
+    Route::post('prospectos/google-maps/comprobar', [ProspectoScrapingController::class, 'check'])->middleware('throttle:12,1')->name('prospectos.scraping.check');
     Route::patch('prospectos/google-maps/configuracion', [ProspectoScrapingController::class, 'configure'])->name('prospectos.scraping.configure');
     Route::post('prospectos/google-maps/buscar', [ProspectoScrapingController::class, 'start'])->middleware('throttle:5,1')->name('prospectos.scraping.start');
     Route::post('prospectos/google-maps/{run}/importar', [ProspectoScrapingController::class, 'importResults'])->whereNumber('run')->name('prospectos.scraping.import');

@@ -157,6 +157,38 @@ test('una reserva menor que el timeout no habilita el motor y guardar configura 
     expect(SystemSettings::get('DB_QUEUE_RETRY_AFTER'))->toBe('300');
 });
 
+test('guardar vuelve a probar los ejecutables aunque haya un fallo previo en cache', function () {
+    Process::fake(['*' => Process::result(exitCode: 1)]);
+    $engine = app(ProspectoScrapingService::class);
+    expect($engine->health()['ready'])->toBeFalse();
+    Process::fake(['*' => Process::result(output: 'v26.0.0')]);
+    expect($engine->health()['ready'])->toBeFalse();
+    $this->patch('/prospectos/google-maps/configuracion', ['node_binary' => 'node', 'chrome_binary' => '/test/chromium', 'queue_connection' => 'database'])
+        ->assertRedirect()->assertSessionHas('success');
+    expect($engine->health()['ready'])->toBeTrue()->and($engine->health()['queue_ready'])->toBeTrue();
+});
+
+test('comprobar ejecuta de nuevo la verificacion y distingue un navegador faltante', function () {
+    $engine = app(ProspectoScrapingService::class);
+    expect($engine->health()['ready'])->toBeTrue();
+    Process::fake(fn ($process) => str_contains(is_array($process->command) ? implode(' ', $process->command) : $process->command, 'chromium')
+        ? Process::result(exitCode: 1) : Process::result(output: 'v26.0.0'));
+    $this->post('/prospectos/google-maps/comprobar')->assertRedirect()->assertSessionHas('warning');
+    $health = $engine->health();
+    expect($health['checks']['node']['ready'])->toBeTrue()->and($health['checks']['chrome']['ready'])->toBeFalse()
+        ->and($health['checks']['queue']['ready'])->toBeTrue()->and($health['message'])->toContain('Chrome/Chromium');
+});
+
+test('guardar configuracion incompleta avisa lo que falta y no anuncia que el motor esta listo', function () {
+    Process::fake(['*' => Process::result(output: 'v20.0.0')]);
+    config()->set('queue.default', 'sync');
+    $this->patch('/prospectos/google-maps/configuracion', ['node_binary' => 'node', 'chrome_binary' => '/test/chromium', 'queue_connection' => 'database'])
+        ->assertRedirect()->assertSessionHas('warning')->assertSessionMissing('success');
+    $health = app(ProspectoScrapingService::class)->health();
+    expect($health['queue_ready'])->toBeTrue()->and(config('queue.default'))->toBe('database')
+        ->and($health['checks']['node']['ready'])->toBeFalse()->and($health['message'])->toContain('22');
+});
+
 test('no sobreescribe un prospecto manual que ya corresponde al mismo comercio y direccion', function () {
     $run = scrapingRun();
     (new ScrapeGoogleMapsProspectos($run->id))->handle(app(ProspectoScrapingService::class));

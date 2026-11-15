@@ -29,7 +29,7 @@ class ProspectoScrapingController extends Controller implements HasMiddleware
         ];
     }
 
-    public function configure(ConfigureProspectoScrapingRequest $request): RedirectResponse
+    public function configure(ConfigureProspectoScrapingRequest $request, ProspectoScrapingService $engine): RedirectResponse
     {
         $settings = [
             'SCRAPING_NODE_BINARY' => ['value' => $request->validated('node_binary') ?: 'node', 'group' => 'prospecting'],
@@ -41,8 +41,24 @@ class ProspectoScrapingController extends Controller implements HasMiddleware
             $settings[$retryKey] = ['value' => '300', 'group' => 'prospecting'];
         }
         SystemSettings::save($settings);
+        if ($request->has('queue_connection')) {
+            $connection = $request->validated('queue_connection');
+            config(['queue.default' => $connection, "queue.connections.{$connection}.retry_after" => 300]);
+        }
+        $health = $engine->health(refresh: true);
 
-        return back()->with('success', 'Configuración del motor guardada.');
+        return $health['ready'] && $health['queue_ready']
+            ? back()->with('success', 'Configuración guardada y requisitos comprobados. Ya puedes buscar negocios.')
+            : back()->with('warning', 'Configuración guardada, pero falta un requisito: '.$health['message']);
+    }
+
+    public function check(Request $request, ProspectoScrapingService $engine): RedirectResponse
+    {
+        $health = $engine->health(refresh: true);
+
+        return $health['ready'] && $health['queue_ready']
+            ? back()->with('success', 'Comprobación terminada. Los requisitos están disponibles.')
+            : back()->with('warning', 'Comprobación terminada: '.$health['message']);
     }
 
     public function start(StartProspectoScrapingRequest $request, ProspectoScrapingService $engine): RedirectResponse
@@ -54,14 +70,14 @@ class ProspectoScrapingController extends Controller implements HasMiddleware
         $ownerId = $request->user()->getOwnerId();
         $createdRunId = null;
         try {
-            DB::transaction(function () use ($request, $ownerId, &$createdRunId): void {
+            DB::transaction(function () use ($request, $ownerId, $health, &$createdRunId): void {
                 User::whereKey($ownerId)->lockForUpdate()->firstOrFail();
                 if (ProspectoScrapeRun::where('owner_id', $ownerId)->whereIn('status', ['queued', 'running'])->exists()) {
                     throw ValidationException::withMessages(['query' => 'Ya hay una búsqueda pendiente. Espera o cancélala antes de iniciar otra.']);
                 }
                 $run = ProspectoScrapeRun::create([...$request->validated(), 'owner_id' => $ownerId, 'user_id' => $request->user()->id, 'status' => 'queued']);
                 $createdRunId = $run->id;
-                ScrapeGoogleMapsProspectos::dispatch($run->id)->onQueue('prospecting');
+                ScrapeGoogleMapsProspectos::dispatch($run->id)->onConnection($health['queue_connection'])->onQueue('prospecting');
             });
         } catch (ValidationException $exception) {
             throw $exception;

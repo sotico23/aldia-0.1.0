@@ -33,31 +33,63 @@ class ProspectoScrapingService
         return ['node' => $node ?: 'node', 'chrome' => $chrome];
     }
 
-    /** @return array{ready: bool, queue_ready: bool, queue_connection: string, message: string} */
-    public function health(): array
+    /** @return array{ready: bool, queue_ready: bool, queue_connection: string, message: string, checks: array<string, array{ready: bool, message: string}>} */
+    public function health(bool $refresh = false): array
     {
         $binaries = $this->binaries();
-        $runtime = Cache::remember('prospecting-runtime:'.hash('sha256', json_encode($binaries)), 60, function () use ($binaries): bool {
-            if ($binaries['chrome'] === '') {
-                return false;
+        $cacheKey = 'prospecting-runtime:v2:'.hash('sha256', json_encode($binaries));
+        if ($refresh) {
+            Cache::forget($cacheKey);
+        }
+        $runtime = Cache::remember($cacheKey, 60, function () use ($binaries): array {
+            $nodeCheck = ['ready' => false, 'message' => 'No se pudo ejecutar Node.js. Revisa su instalación, ruta y permisos en el servidor.'];
+            $chromeCheck = ['ready' => false, 'message' => 'No se pudo ejecutar Chrome/Chromium. Revisa su instalación, ruta y permisos en el servidor.'];
+            if (! function_exists('proc_open')) {
+                $message = 'El hosting tiene deshabilitada la ejecución de procesos (proc_open). El motor necesita que esté disponible.';
+
+                return ['node' => ['ready' => false, 'message' => $message], 'chrome' => ['ready' => false, 'message' => $message]];
             }
             try {
                 $node = Process::timeout(5)->run([$binaries['node'], '--version']);
-                $chrome = Process::timeout(5)->run([$binaries['chrome'], '--version']);
-
-                return $node->successful() && preg_match('/v(\d+)/', $node->output(), $version)
-                    && (int) $version[1] >= 22 && $chrome->successful();
+                if ($node->successful() && preg_match('/v(\d+(?:\.\d+)*)/', $node->output(), $version)) {
+                    $nodeCheck = ['ready' => (int) $version[1] >= 22,
+                        'message' => (int) $version[1] >= 22 ? 'Node.js '.$version[1].' disponible.' : 'Node.js '.$version[1].' detectado; se requiere la versión 22 o superior.'];
+                }
             } catch (Throwable) {
-                return false;
             }
-        });
-        $connection = (string) config('queue.default');
-        $queueReady = in_array($connection, ['database', 'redis'], true) && (int) config("queue.connections.{$connection}.retry_after", 0) >= 300;
+            if ($binaries['chrome'] === '') {
+                $chromeCheck['message'] = 'No se encontró Chrome/Chromium. Instálalo en el servidor e indica su ruta.';
+            } else {
+                try {
+                    $chrome = Process::timeout(5)->run([$binaries['chrome'], '--version']);
+                    if ($chrome->successful()) {
+                        $chromeCheck = ['ready' => true, 'message' => 'Chrome/Chromium disponible.'];
+                    }
+                } catch (Throwable) {
+                }
+            }
 
-        return ['ready' => $runtime, 'queue_ready' => $queueReady, 'queue_connection' => config('queue.default'),
-            'message' => ! $runtime ? 'Configura Node.js 22 o superior y Chrome/Chromium en el servidor.'
-                : (! $queueReady ? 'Guarda la configuración con cola Base de datos o Redis (reserva de 300 segundos) y activa el worker de prospecting con timeout de 240 segundos.' : 'Motor disponible. Las búsquedas se procesan en segundo plano.'),
-        ];
+            return ['node' => $nodeCheck, 'chrome' => $chromeCheck];
+        });
+        $connection = (string) SystemSettings::get('QUEUE_CONNECTION', config('queue.default'));
+        $retryKey = $connection === 'redis' ? 'REDIS_QUEUE_RETRY_AFTER' : 'DB_QUEUE_RETRY_AFTER';
+        $retryAfter = (int) SystemSettings::get($retryKey, config("queue.connections.{$connection}.retry_after", 0));
+        $queueReady = in_array($connection, ['database', 'redis'], true) && $retryAfter >= 300;
+        $runtimeReady = $runtime['node']['ready'] && $runtime['chrome']['ready'];
+        $queueMessage = ! in_array($connection, ['database', 'redis'], true)
+            ? 'Selecciona Base de datos o Redis y guarda la configuración; la cola sincrónica no permite estas búsquedas.'
+            : ($retryAfter < 300 ? 'La reserva de la cola es de '.$retryAfter.' segundos; guarda la configuración para establecer 300 segundos.'
+                : 'Cola '.$connection.' configurada con reserva de '.$retryAfter.' segundos. Debe haber un worker de prospecting activo.');
+        $checks = [...$runtime, 'queue' => ['ready' => $queueReady, 'message' => $queueMessage]];
+        $message = 'Requisitos comprobados. El worker de prospecting procesará las búsquedas.';
+        foreach ($checks as $check) {
+            if (! $check['ready']) {
+                $message = $check['message'];
+                break;
+            }
+        }
+
+        return ['ready' => $runtimeReady, 'queue_ready' => $queueReady, 'queue_connection' => $connection, 'message' => $message, 'checks' => $checks];
     }
 
     /** @return array<string, mixed> */

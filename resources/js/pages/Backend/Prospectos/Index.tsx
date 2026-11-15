@@ -58,7 +58,7 @@ import { WhatsAppButton } from '@/components/whatsapp-button';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import { formatCurrency, formatDateCLP, formatRut } from '@/lib/utils';
-import { updateEstado } from '@/routes/prospectos';
+import { index as prospectosIndex, updateEstado } from '@/routes/prospectos';
 import type { BreadcrumbItem } from '@/types';
 import ScrapingTab, { type ScrapingState } from './ScrapingTab';
 
@@ -208,20 +208,34 @@ export default function Index({
     });
 
     useEffect(() => {
+        if (
+            searchTerm === (filters.search || '') &&
+            estadoFilter === (filters.estado || 'all') &&
+            fuenteFilter === (filters.fuente || 'all')
+        ) {
+            return;
+        }
         const timer = setTimeout(() => {
             const query: any = {};
             if (searchTerm) query.search = searchTerm;
             if (estadoFilter !== 'all') query.estado = estadoFilter;
             if (fuenteFilter !== 'all') query.fuente = fuenteFilter;
 
-            router.get('/prospectos', query, {
+            router.get(prospectosIndex.url(), query, {
                 preserveState: true,
                 preserveScroll: true,
                 replace: true,
             });
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchTerm, estadoFilter, fuenteFilter]);
+    }, [
+        searchTerm,
+        estadoFilter,
+        fuenteFilter,
+        filters.search,
+        filters.estado,
+        filters.fuente,
+    ]);
 
     const handleValidarRut = async () => {
         if (!data.rut) {
