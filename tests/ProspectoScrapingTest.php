@@ -150,11 +150,21 @@ test('sin cola asincrona rechaza la busqueda en lugar de bloquear la pagina', fu
     Bus::assertNothingDispatched();
 });
 
-test('una reserva menor que el timeout no habilita el motor y guardar configura 300 segundos', function () {
+test('una reserva menor que el minimo no habilita el motor y se puede configurar manualmente', function () {
     config()->set('queue.connections.database.retry_after', 90);
     expect(app(ProspectoScrapingService::class)->health()['queue_ready'])->toBeFalse();
-    $this->patch('/prospectos/google-maps/configuracion', ['node_binary' => 'node', 'chrome_binary' => '/test/chromium', 'queue_connection' => 'database'])->assertRedirect();
-    expect(SystemSettings::get('DB_QUEUE_RETRY_AFTER'))->toBe('300');
+    $this->patch('/prospectos/google-maps/configuracion', ['node_binary' => 'node', 'chrome_binary' => '/test/chromium', 'queue_connection' => 'database', 'queue_retry_after' => 420])->assertRedirect();
+    expect(SystemSettings::get('DB_QUEUE_RETRY_AFTER'))->toBe('420')
+        ->and(config('queue.connections.database.retry_after'))->toBe(420)
+        ->and(app(ProspectoScrapingService::class)->health()['queue_retry_after'])->toBe(420)
+        ->and(app(ProspectoScrapingService::class)->health()['queue_ready'])->toBeTrue();
+});
+
+test('no permite reservar la cola por menos de 300 segundos', function () {
+    $this->patch('/prospectos/google-maps/configuracion', [
+        'node_binary' => 'node', 'chrome_binary' => '/test/chromium',
+        'queue_connection' => 'database', 'queue_retry_after' => 299,
+    ])->assertSessionHasErrors('queue_retry_after');
 });
 
 test('guardar vuelve a probar los ejecutables aunque haya un fallo previo en cache', function () {

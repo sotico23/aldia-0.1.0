@@ -38,12 +38,14 @@ class ProspectoScrapingController extends Controller implements HasMiddleware
         if ($request->has('queue_connection')) {
             $settings['QUEUE_CONNECTION'] = ['value' => $request->validated('queue_connection'), 'group' => 'prospecting'];
             $retryKey = $request->validated('queue_connection') === 'redis' ? 'REDIS_QUEUE_RETRY_AFTER' : 'DB_QUEUE_RETRY_AFTER';
-            $settings[$retryKey] = ['value' => '300', 'group' => 'prospecting'];
+            $retryAfter = (int) ($request->validated('queue_retry_after') ?? 300);
+            $settings[$retryKey] = ['value' => (string) $retryAfter, 'group' => 'prospecting'];
         }
         SystemSettings::save($settings);
         if ($request->has('queue_connection')) {
             $connection = $request->validated('queue_connection');
-            config(['queue.default' => $connection, "queue.connections.{$connection}.retry_after" => 300]);
+            $retryAfter = (int) ($request->validated('queue_retry_after') ?? 300);
+            config(['queue.default' => $connection, "queue.connections.{$connection}.retry_after" => $retryAfter]);
         }
         $health = $engine->health(refresh: true);
 

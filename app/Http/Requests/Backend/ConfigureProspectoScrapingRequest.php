@@ -26,6 +26,7 @@ class ConfigureProspectoScrapingRequest extends FormRequest
             'node_binary' => ['nullable', 'string', 'max:500', 'not_regex:/[\r\n\x00]/'],
             'chrome_binary' => ['nullable', 'string', 'max:500', 'not_regex:/[\r\n\x00]/'],
             'queue_connection' => ['sometimes', 'required', 'in:database,redis,sync'],
+            'queue_retry_after' => ['sometimes', 'required', 'integer', 'min:300', 'max:86400'],
         ];
     }
 }

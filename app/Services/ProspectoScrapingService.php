@@ -33,7 +33,7 @@ class ProspectoScrapingService
         return ['node' => $node ?: 'node', 'chrome' => $chrome];
     }
 
-    /** @return array{ready: bool, queue_ready: bool, queue_connection: string, message: string, checks: array<string, array{ready: bool, message: string}>} */
+    /** @return array{ready: bool, queue_ready: bool, queue_connection: string, queue_retry_after: int, message: string, checks: array<string, array{ready: bool, message: string}>} */
     public function health(bool $refresh = false): array
     {
         $binaries = $this->binaries();
@@ -74,11 +74,12 @@ class ProspectoScrapingService
         $connection = (string) SystemSettings::get('QUEUE_CONNECTION', config('queue.default'));
         $retryKey = $connection === 'redis' ? 'REDIS_QUEUE_RETRY_AFTER' : 'DB_QUEUE_RETRY_AFTER';
         $retryAfter = (int) SystemSettings::get($retryKey, config("queue.connections.{$connection}.retry_after", 0));
-        $queueReady = in_array($connection, ['database', 'redis'], true) && $retryAfter >= 300;
+        $minimumRetryAfter = 300;
+        $queueReady = in_array($connection, ['database', 'redis'], true) && $retryAfter >= $minimumRetryAfter;
         $runtimeReady = $runtime['node']['ready'] && $runtime['chrome']['ready'];
         $queueMessage = ! in_array($connection, ['database', 'redis'], true)
             ? 'Selecciona Base de datos o Redis y guarda la configuración; la cola sincrónica no permite estas búsquedas.'
-            : ($retryAfter < 300 ? 'La reserva de la cola es de '.$retryAfter.' segundos; guarda la configuración para establecer 300 segundos.'
+            : ($retryAfter < $minimumRetryAfter ? 'La reserva de la cola es de '.$retryAfter.' segundos; configúrala en al menos '.$minimumRetryAfter.' segundos.'
                 : 'Cola '.$connection.' configurada con reserva de '.$retryAfter.' segundos. Debe haber un worker de prospecting activo.');
         $checks = [...$runtime, 'queue' => ['ready' => $queueReady, 'message' => $queueMessage]];
         $message = 'Requisitos comprobados. El worker de prospecting procesará las búsquedas.';
@@ -89,7 +90,8 @@ class ProspectoScrapingService
             }
         }
 
-        return ['ready' => $runtimeReady, 'queue_ready' => $queueReady, 'queue_connection' => $connection, 'message' => $message, 'checks' => $checks];
+        return ['ready' => $runtimeReady, 'queue_ready' => $queueReady, 'queue_connection' => $connection,
+            'queue_retry_after' => $retryAfter, 'message' => $message, 'checks' => $checks];
     }
 
     /** @return array<string, mixed> */

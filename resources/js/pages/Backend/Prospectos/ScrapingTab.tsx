@@ -35,6 +35,7 @@ export type ScrapingState = {
         ready: boolean;
         queue_ready: boolean;
         queue_connection?: string;
+        queue_retry_after?: number;
         message: string;
         checks?: Record<string, { ready: boolean; message: string }>;
     };
@@ -86,6 +87,7 @@ export default function ScrapingTab({
         node_binary: state?.binaries?.node ?? 'node',
         chrome_binary: state?.binaries?.chrome ?? '',
         queue_connection: state?.health.queue_connection ?? 'database',
+        queue_retry_after: state?.health.queue_retry_after ?? 300,
     });
     const { flash } = usePage<{
         flash?: { success?: string; warning?: string };
@@ -230,11 +232,32 @@ export default function ScrapingTab({
                             <InputError
                                 message={engine.errors.queue_connection}
                             />
+                            <Label htmlFor="scraping-queue-retry-after">
+                                Tiempo de reserva de la cola (segundos)
+                            </Label>
+                            <Input
+                                id="scraping-queue-retry-after"
+                                type="number"
+                                min={300}
+                                max={86400}
+                                step={1}
+                                value={engine.data.queue_retry_after}
+                                onChange={(event) =>
+                                    engine.setData(
+                                        'queue_retry_after',
+                                        Number(event.target.value),
+                                    )
+                                }
+                            />
+                            <InputError
+                                message={engine.errors.queue_retry_after}
+                            />
                             <p className="text-sm text-muted-foreground">
-                                Al guardar se configura una reserva de trabajos
-                                de 300 segundos. Mantén un worker dedicado para
-                                estas búsquedas. Usa rutas de ejecutables sin
-                                argumentos.
+                                Usa al menos 300 segundos para que el trabajo
+                                no se reserve de nuevo mientras el worker sigue
+                                procesándolo. Puedes aumentarlo hasta 24 horas.
+                                Mantén un worker dedicado para estas búsquedas.
+                                Usa rutas de ejecutables sin argumentos.
                             </p>
                             <code className="block rounded-md bg-muted p-3 text-xs break-all">
                                 php artisan queue:work --queue=prospecting

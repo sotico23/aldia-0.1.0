@@ -5,7 +5,7 @@ import { connectBrowser, startFixtureServer } from './responsive-browser.mjs';
 const fixture = backendFixtures.find(fixture => fixture.path === '/prospectos');
 const resultId = 'a'.repeat(64);
 const state = () => ({
-    health: { ready: true, queue_ready: true, queue_connection: 'database', message: 'Motor disponible. Las búsquedas se procesan en segundo plano.' },
+    health: { ready: true, queue_ready: true, queue_connection: 'database', queue_retry_after: 420, message: 'Motor disponible. Las búsquedas se procesan en segundo plano.' },
     binaries: { node: 'node', chrome: '/usr/bin/chromium' },
     runs: [{ id: 3, query: 'Panaderías', location: 'Santiago, Chile', max_results: 10, status: 'completed', error: null,
         results: [{ id: resultId, name: 'Negocio de prueba', address: 'Calle 123, Santiago', phone: '+56912345678', category: 'Panadería', website: 'https://example.test', maps_url: 'https://www.google.com/maps/place/test' }] }],
@@ -15,7 +15,7 @@ const { server, origin, writeRequests, readRequests } = await startFixtureServer
 let browser;
 try {
     browser = await connectBrowser(origin);
-    const { send, evaluate, waitFor, click } = browser;
+    const { send, evaluate, waitFor, click, fill } = browser;
     for (const width of [400, 1280]) {
         fixture.props.scraping = state();
         fixture.props.scraping.health = { ...fixture.props.scraping.health, ready: false, message: 'No se encontró Chrome/Chromium en el servidor.', checks: {
@@ -38,7 +38,11 @@ try {
         await evaluate('document.querySelector("[data-testid=prospectos-scraping] summary").click()');
         assert.equal(await evaluate('document.querySelector("#scraping-node").value'), 'node');
         assert.equal(await evaluate('document.querySelector("#scraping-queue").value'), 'database');
-        await evaluate(`[...document.querySelectorAll('button')].find(button => button.textContent === 'Guardar configuración').click()`);
+        assert.equal(await evaluate('document.querySelector("#scraping-queue-retry-after").value'), '420');
+        await fill('#scraping-queue-retry-after', 600);
+        assert.equal(await evaluate('document.querySelector("#scraping-queue-retry-after").value'), '600');
+        await click('details button[type="submit"]');
+        assert.equal(writeRequests.findLast(request => request.path.endsWith('/configuracion')).body.queue_retry_after, 600);
         await waitFor(`!!document.querySelector('[role=tab][data-state=active]')?.textContent.includes('Google Maps') && document.querySelector('#scraping-node') !== null`, 'conservar pestaña');
         await evaluate(`document.querySelector('input[aria-label="Seleccionar Negocio de prueba"]').click()`);
         await evaluate(`[...document.querySelectorAll('button')].find(button => button.textContent.startsWith('Agregar 1 a Prospectos')).click()`);

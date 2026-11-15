@@ -403,6 +403,27 @@ export async function connectBrowser(origin) {
         });
         await pause(100);
     }
+    async function fill(selector, value) {
+        await click(selector);
+        await send('Input.dispatchKeyEvent', {
+            type: 'keyDown', key: 'Control', code: 'ControlLeft',
+            windowsVirtualKeyCode: 17,
+        });
+        await send('Input.dispatchKeyEvent', {
+            type: 'keyDown', key: 'a', code: 'KeyA',
+            windowsVirtualKeyCode: 65, modifiers: 2,
+        });
+        await send('Input.dispatchKeyEvent', {
+            type: 'keyUp', key: 'a', code: 'KeyA',
+            windowsVirtualKeyCode: 65, modifiers: 2,
+        });
+        await send('Input.dispatchKeyEvent', {
+            type: 'keyUp', key: 'Control', code: 'ControlLeft',
+            windowsVirtualKeyCode: 17,
+        });
+        await send('Input.insertText', { text: String(value) });
+        await pause(100);
+    }
     const escape = async () => {
         await send('Input.dispatchKeyEvent', {
             type: 'keyDown',
@@ -423,6 +444,7 @@ export async function connectBrowser(origin) {
         evaluate,
         waitFor,
         click,
+        fill,
         escape,
         exceptions,
         close: () => socket.close(),
