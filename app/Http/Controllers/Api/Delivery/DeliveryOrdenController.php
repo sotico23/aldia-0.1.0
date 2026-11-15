@@ -649,6 +649,8 @@ class DeliveryOrdenController extends Controller
         return [
             'id' => $pedido->id,
             'numero_pedido' => $pedido->numero_pedido,
+            'pool_alert_key' => $pedido->poolAlertKey(),
+            'assignment_alert_key' => $pedido->assignmentAlertKey(),
             'estado' => $pedido->estado,
             'dispatch_mode' => $pedido->dispatch_mode ?? 'internal',
             'delivery_type' => $pedido->dispatch_mode ?? 'internal',

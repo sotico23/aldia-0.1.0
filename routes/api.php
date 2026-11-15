@@ -9,15 +9,16 @@ use App\Http\Controllers\Api\Bot\TransversalBotController;
 use App\Http\Controllers\Api\Bot\VentaBotController;
 use App\Http\Controllers\Api\ChannelController;
 use App\Http\Controllers\Api\Delivery\DeliveryOrdenController;
+use App\Http\Controllers\Api\Delivery\PushDeviceController;
 use App\Http\Controllers\Api\Delivery\ZoneController;
 use App\Http\Controllers\Api\Driver\DriverDocumentsController;
 use App\Http\Controllers\Api\Driver\DriverEarningsController;
 use App\Http\Controllers\Api\Driver\DriverMarketplaceController;
 use App\Http\Controllers\Api\Driver\DriverOnlineController;
 use App\Http\Controllers\Api\Driver\DriverRegistrationController;
-use App\Http\Controllers\Api\Pos\PosApiController;
 use App\Http\Controllers\Api\InternalAutomationController;
 use App\Http\Controllers\Api\InternalAutomationSendController;
+use App\Http\Controllers\Api\Pos\PosApiController;
 use App\Http\Controllers\Api\TenantDataController;
 use App\Http\Controllers\Api\TrackingController;
 use App\Http\Controllers\Backend\GlobalSearchController;
@@ -25,6 +26,7 @@ use App\Http\Controllers\Backend\RepartidorSolicitudesController;
 use App\Http\Controllers\Backend\SiiController;
 use App\Http\Controllers\Internal\N8nController;
 use App\Http\Controllers\Webhooks\TelegramWebhookController;
+use Illuminate\Broadcasting\BroadcastController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -168,6 +170,9 @@ Route::prefix('internal')->middleware(['verify-n8n-token', 'throttle:60,1'])->gr
 Route::prefix('v1/delivery')
     ->middleware(['auth:sanctum', 'delivery', 'throttle:delivery'])
     ->group(function () {
+        Route::get('push-config', [PushDeviceController::class, 'configuration']);
+        Route::post('push-device', [PushDeviceController::class, 'store'])->middleware('api-token');
+        Route::delete('push-device', [PushDeviceController::class, 'destroy'])->middleware('api-token');
         Route::post('location', [DeliveryOrdenController::class, 'location'])
             ->middleware('throttle:60,1');
 
@@ -197,7 +202,7 @@ Route::middleware(['auth:sanctum', 'delivery', 'throttle:delivery'])->prefix('re
 });
 
 // Autenticación de canales privados WebSocket / Reverb con Sanctum PAT
-Route::match(['get', 'post'], 'broadcasting/auth', [Illuminate\Broadcasting\BroadcastController::class, 'authenticate'])
+Route::match(['get', 'post'], 'broadcasting/auth', [BroadcastController::class, 'authenticate'])
     ->middleware(['auth:sanctum']);
 
 // API de Repartidor — modelo Uber/Rappi (Online/Offline + Ofertas)

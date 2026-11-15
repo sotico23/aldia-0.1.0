@@ -369,6 +369,35 @@ return [
             ],
         ],
 
+        'pushy' => [
+            'label' => 'Pushy / Notificaciones de repartos',
+            'description' => 'Avisos de pedidos asignados y del pool, incluso con la APK en segundo plano. Registra en Pushy el paquete Android cl.redcliente.mobile.',
+            'fields' => [
+                'PUSHY_ENABLED' => [
+                    'label' => 'Activar notificaciones push',
+                    'type' => 'select',
+                    'options' => ['false' => 'Desactivadas', 'true' => 'Activadas'],
+                    'default' => env('PUSHY_ENABLED', false) ? 'true' : 'false',
+                    'config' => ['services.pushy.enabled'],
+                    'cast' => 'boolean',
+                ],
+                'PUSHY_APP_ID' => [
+                    'label' => 'Pushy App ID (opcional)',
+                    'type' => 'text',
+                    'default' => env('PUSHY_APP_ID'),
+                    'config' => ['services.pushy.app_id'],
+                    'help' => 'Identificador público de la aplicación en Pushy. Si se deja vacío, se identifica mediante el paquete Android.',
+                ],
+                'PUSHY_SECRET_API_KEY' => [
+                    'label' => 'Pushy Secret API Key',
+                    'type' => 'password',
+                    'secret' => true,
+                    'config' => ['services.pushy.secret_api_key'],
+                    'help' => 'Clave de la pestaña API Authentication de Pushy. Se guarda cifrada y nunca se envía a la APK.',
+                ],
+            ],
+        ],
+
         'openrouter' => [
             'label' => 'OpenRouter / IA',
             'description' => 'Credencial del proveedor OpenRouter.',

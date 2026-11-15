@@ -131,6 +131,16 @@ class Pedido extends Model
         return $this->hasOne(Entrega::class);
     }
 
+    public function poolAlertKey(): string
+    {
+        return 'pool:'.$this->id.':'.($this->pool_entrada_at?->format('U.u') ?? '0').':'.($this->pool_reenvios ?? 0);
+    }
+
+    public function assignmentAlertKey(): string
+    {
+        return 'assigned:'.$this->id.':'.($this->repartidor_id ?? 0).':'.($this->hora_aceptado?->format('U.u') ?? '0');
+    }
+
     public function repartidor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'repartidor_id');

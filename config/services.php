@@ -3,6 +3,16 @@
 $appUrl = rtrim((string) env('APP_URL', 'http://localhost'), '/');
 
 return [
+    'pushy' => [
+        'enabled' => env('PUSHY_ENABLED', false),
+        'secret_api_key' => env('PUSHY_SECRET_API_KEY'),
+        'app_id' => env('PUSHY_APP_ID'),
+        'fallback' => [
+            'enabled' => env('PUSHY_ENABLED', false),
+            'secret_api_key' => env('PUSHY_SECRET_API_KEY'),
+            'app_id' => env('PUSHY_APP_ID'),
+        ],
+    ],
 
     /*
     |--------------------------------------------------------------------------

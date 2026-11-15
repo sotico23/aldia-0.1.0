@@ -3,24 +3,35 @@
 use App\Events\DeliveryOrderPoolUpdated;
 use App\Events\EntregaDisponiblePool;
 use App\Http\Controllers\Api\Delivery\DeliveryOrdenController;
+use App\Http\Controllers\Api\Delivery\PushDeviceController;
 use App\Http\Controllers\Backend\EntregaController as WebEntregaController;
 use App\Http\Requests\Delivery\CompleteDeliveryRequest;
+use App\Http\Requests\Delivery\StorePushDeviceRequest;
+use App\Jobs\SendDeliveryPush;
+use App\Livewire\SystemSettingsPage;
 use App\Models\Entrega;
 use App\Models\Pedido;
+use App\Models\PushDevice;
 use App\Models\Repartidor;
 use App\Models\User;
 use App\Services\DeliveryHistoryService;
+use App\Services\DeliveryPushService;
 use App\Services\EntregaPedidoService;
+use App\Support\SystemSettings;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Livewire;
 
 uses(TestCase::class);
 
@@ -32,11 +43,35 @@ beforeEach(function () {
     Schema::create('users', function (Blueprint $table): void {
         $table->id();
         $table->string('name');
+        $table->boolean('is_active')->default(true);
+        $table->timestamp('banned_at')->nullable();
     });
     Schema::create('conductores', function (Blueprint $table): void {
         $table->id();
         $table->string('nombre');
     });
+    Schema::create('personal_access_tokens', function (Blueprint $table): void {
+        $table->id();
+        $table->morphs('tokenable');
+        $table->string('name');
+        $table->string('token', 64)->unique();
+        $table->text('abilities')->nullable();
+        $table->timestamp('expires_at')->nullable();
+        $table->timestamp('last_used_at')->nullable();
+        $table->timestamps();
+    });
+    (require database_path('migrations/2026_11_15_131343_create_push_devices_table.php'))->up();
+    Schema::create('settings', function (Blueprint $table): void {
+        $table->id();
+        $table->string('key')->unique();
+        $table->text('value')->nullable();
+        $table->string('group')->nullable();
+        $table->boolean('is_encrypted')->default(false);
+        $table->timestamps();
+    });
+    config()->set('cache.default', 'array');
+    Cache::flush();
+    Http::preventStrayRequests();
 
     Schema::create('pedidos', function (Blueprint $table): void {
         $table->id();
@@ -88,6 +123,12 @@ beforeEach(function () {
         $table->unsignedBigInteger('owner_id');
         $table->string('estado')->nullable();
         $table->decimal('comision_pct')->default(80);
+        $table->string('approval_status')->default('approved');
+        $table->string('driver_type')->default('employee');
+        $table->boolean('is_online')->default(true);
+        $table->decimal('lat', 12, 7)->nullable();
+        $table->decimal('lng', 12, 7)->nullable();
+        $table->decimal('radio_km')->default(10);
         $table->timestamps();
     });
     Schema::create('ventas', function (Blueprint $table): void {
@@ -107,6 +148,134 @@ beforeEach(function () {
     })->middleware('api');
     Route::get('/testing/entregas/{entrega}/evidencia', [WebEntregaController::class, 'evidencePhoto'])
         ->middleware(['api', 'permission:flota.entregas.viewAny']);
+    Route::post('/testing/push-device', function (StorePushDeviceRequest $request) {
+        $user = User::findOrFail(99);
+        $request->setUserResolver(fn () => $user);
+        $request->attributes->set('api_token', $user->tokens()->firstOrFail());
+
+        return app(PushDeviceController::class)->store($request);
+    })->middleware('api');
+});
+
+function enablePushySettings(): void
+{
+    SystemSettings::save([
+        'PUSHY_ENABLED' => ['value' => 'true', 'group' => 'pushy'],
+        'PUSHY_SECRET_API_KEY' => ['value' => 'server-test-secret', 'secret' => true, 'group' => 'pushy'],
+    ]);
+}
+
+function pushDeviceForTest(): PushDevice
+{
+    DB::table('users')->insertOrIgnore(['id' => 99, 'name' => 'Repartidor', 'is_active' => true]);
+    $user = User::findOrFail(99);
+    $token = $user->createToken('test-pushy')->accessToken;
+
+    return PushDevice::create(['user_id' => 99, 'personal_access_token_id' => $token->id,
+        'token' => 'valid-pushy-device-token', 'token_hash' => hash('sha256', 'valid-pushy-device-token')]);
+}
+
+test('la pestaña servidor guarda Pushy cifrado y conserva la clave si se deja vacia', function () {
+    Livewire::test(SystemSettingsPage::class)
+        ->assertSee('Pushy / Notificaciones de repartos')
+        ->set('values.PUSHY_ENABLED', 'true')
+        ->set('values.PUSHY_APP_ID', 'public-app-id')
+        ->set('secrets.PUSHY_SECRET_API_KEY', 'private-key-from-screen')
+        ->call('save')->assertHasNoErrors()
+        ->assertSet('secrets.PUSHY_SECRET_API_KEY', '')
+        ->assertSet('hasStoredSecret.PUSHY_SECRET_API_KEY', true)
+        ->assertDontSee('private-key-from-screen');
+
+    expect(DB::table('settings')->where('key', 'PUSHY_SECRET_API_KEY')->value('value'))->not->toContain('private-key-from-screen');
+    Livewire::test(SystemSettingsPage::class)->set('secrets.PUSHY_SECRET_API_KEY', '')->call('save')->assertHasNoErrors();
+    expect(SystemSettings::get('PUSHY_SECRET_API_KEY'))->toBe('private-key-from-screen');
+    $service = app(DeliveryPushService::class);
+    expect($service->publicConfiguration())->toBe(['enabled' => true, 'app_id' => 'public-app-id']);
+    SystemSettings::save(['PUSHY_ENABLED' => ['value' => 'false', 'group' => 'pushy']]);
+    expect($service->isEnabled())->toBeFalse();
+});
+
+test('un push usa la configuracion de la pantalla y no se repite aunque se ejecute de nuevo', function () {
+    $pedido = deliveryWithPhoto();
+    $pedido->update(['estado' => 'preparando']);
+    $device = pushDeviceForTest();
+    enablePushySettings();
+    Http::fake(['api.pushy.me/*' => Http::response(['success' => true], 200)]);
+    $job = new SendDeliveryPush($device->id, 99, $pedido->id, 'assigned', $pedido->assignmentAlertKey());
+    $job->handle(app(DeliveryPushService::class));
+    $job->handle(app(DeliveryPushService::class));
+    Http::assertSentCount(1);
+    Http::assertSent(fn ($request) => str_contains($request->url(), 'api_key=server-test-secret')
+        && $request['data']['type'] === 'assigned' && $request['data']['user_id'] === 99);
+    expect(DB::table('push_devices')->value('token'))->not->toBe('valid-pushy-device-token')
+        ->and($device->toArray())->not->toHaveKey('token');
+});
+
+test('el cierre de sesion elimina el dispositivo y evita envios pendientes', function () {
+    $pedido = deliveryWithPhoto();
+    $pedido->update(['estado' => 'preparando']);
+    $device = pushDeviceForTest();
+    enablePushySettings();
+    $device->accessToken->delete();
+    expect(PushDevice::find($device->id))->toBeNull();
+    (new SendDeliveryPush($device->id, 99, $pedido->id, 'assigned', $pedido->assignmentAlertKey()))->handle(app(DeliveryPushService::class));
+    Http::assertNothingSent();
+});
+
+test('el pool no notifica pedidos reservados fuera de la empresa ni repartidores offline', function () {
+    $entrega = poolEntrega();
+    $entrega->save();
+    $pedido = app(EntregaPedidoService::class)->sync($entrega);
+    $device = pushDeviceForTest();
+    $driver = Repartidor::create(['user_id' => 99, 'owner_id' => 20, 'estado' => 'disponible', 'approval_status' => 'approved', 'driver_type' => 'employee', 'is_online' => true]);
+    $service = app(DeliveryPushService::class);
+    expect($service->canReceive($pedido, $driver, 'pool'))->toBeFalse();
+    $driver->update(['owner_id' => 10, 'is_online' => false]);
+    expect($service->canReceive($pedido, $driver->fresh(), 'pool'))->toBeFalse();
+    $driver->update(['is_online' => true]);
+    expect($service->canReceive($pedido, $driver->fresh(), 'pool'))->toBeTrue();
+});
+
+test('los tokens push invalidos se retiran y los fallos transitorios permiten reintento', function () {
+    $pedido = deliveryWithPhoto();
+    $pedido->update(['estado' => 'preparando']);
+    $device = pushDeviceForTest();
+    enablePushySettings();
+    Http::fake(['api.pushy.me/*' => Http::sequence()->push([], 503)->push(['success' => true], 200)->push(['code' => 'NO_RECIPIENTS'], 400)]);
+    $job = new SendDeliveryPush($device->id, 99, $pedido->id, 'assigned', $pedido->assignmentAlertKey());
+    expect(fn () => $job->handle(app(DeliveryPushService::class)))->toThrow(RuntimeException::class);
+    $job->handle(app(DeliveryPushService::class));
+    Http::assertSentCount(2);
+    Cache::flush();
+    $job->handle(app(DeliveryPushService::class));
+    expect($device->fresh())->toBeNull();
+});
+
+test('registrar el dispositivo ignora el usuario del cuerpo y requiere autenticacion real', function () {
+    $device = pushDeviceForTest();
+    $this->postJson('/testing/push-device', ['token' => 'new-device-token-123456', 'user_id' => 20])->assertSuccessful();
+    expect(PushDevice::where('token_hash', hash('sha256', 'new-device-token-123456'))->first()->user_id)->toBe(99);
+    $this->postJson('/api/v1/delivery/push-device', ['token' => 'new-device-token-123456'])->assertUnauthorized();
+});
+
+test('la cola push se dispara despues del commit y no desde una transaccion revertida', function () {
+    $pedido = deliveryWithPhoto();
+    $pedido->update(['estado' => 'preparando']);
+    pushDeviceForTest();
+    enablePushySettings();
+    Bus::fake([SendDeliveryPush::class]);
+    DB::beginTransaction();
+    $pedido->update(['hora_aceptado' => now()]);
+    Bus::assertNotDispatched(SendDeliveryPush::class);
+    DB::rollBack();
+    Bus::assertNotDispatched(SendDeliveryPush::class);
+    DB::transaction(fn () => $pedido->fresh()->update(['hora_aceptado' => now()->addMinute()]));
+    Bus::assertDispatched(SendDeliveryPush::class, fn ($job) => $job->userId === 99 && $job->type === 'assigned');
+});
+
+test('no permite activar Pushy sin una clave configurada', function () {
+    Livewire::test(SystemSettingsPage::class)->set('values.PUSHY_ENABLED', 'true')
+        ->call('save')->assertHasErrors('secrets.PUSHY_SECRET_API_KEY');
 });
 
 function poolEntrega(int $ownerId = 10): Entrega
@@ -183,6 +352,19 @@ test('una entrega reservada a conductor no entra al pool movil', function () {
     $entrega->fill(['estado_asignacion' => 'asignado', 'conductor_id' => 7])->save();
     $pedido = app(EntregaPedidoService::class)->sync($entrega);
     expect($pedido->pool_bloqueado)->toBeTrue();
+});
+
+test('las claves de alerta son estables al consultar y cambian para una nueva asignacion', function () {
+    $entrega = poolEntrega();
+    $entrega->save();
+    $pedido = app(EntregaPedidoService::class)->sync($entrega);
+    $poolKey = $pedido->poolAlertKey();
+    $pedido->update(['nombre_cliente' => 'Nombre actualizado']);
+    expect($pedido->fresh()->poolAlertKey())->toBe($poolKey);
+    $assignmentKey = $pedido->assignmentAlertKey();
+    $pedido->update(['repartidor_id' => 99, 'hora_aceptado' => now()]);
+    expect($pedido->assignmentAlertKey())->not->toBe($assignmentKey)
+        ->and($pedido->assignmentAlertKey())->not->toBe($poolKey);
 });
 
 test('el comando recupera entregas libres existentes sin duplicarlas y respeta el tenant', function () {

@@ -191,6 +191,12 @@ class SystemSettingsPage extends Component
             };
         }
 
+        if (isset($fields['PUSHY_SECRET_API_KEY']) && ($this->values['PUSHY_ENABLED'] ?? 'false') === 'true') {
+            $rules['secrets.PUSHY_SECRET_API_KEY'][] = Rule::requiredIf(
+                blank(SystemSettings::get('PUSHY_SECRET_API_KEY', config('services.pushy.fallback.secret_api_key')))
+            );
+        }
+
         if ($this->databaseOverrideEnabled) {
             $rules['values.DB_CONNECTION'] = ['required', 'string', Rule::in(array_keys($fields['DB_CONNECTION']['options'] ?? []))];
             $rules['values.DB_DATABASE'] = ['required', 'string', 'max:255'];
