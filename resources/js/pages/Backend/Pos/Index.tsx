@@ -570,6 +570,8 @@ export default function PosIndex({
     const cameraScanHandledRef = useRef(false);
     const [montoFocusId, setMontoFocusId] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const cartListRef = useRef<HTMLDivElement>(null);
+    const prevCartLengthRef = useRef(0);
     const [procesando, setProcesando] = useState(false);
     const [productoSeleccionado, setProductoSeleccionado] =
         useState<Producto | null>(null);
@@ -1169,6 +1171,18 @@ export default function PosIndex({
     useEffect(() => {
         localStorage.setItem('pos_cart', JSON.stringify(cart));
     }, [cart]);
+
+    useEffect(() => {
+        if (cart.length > prevCartLengthRef.current) {
+            requestAnimationFrame(() => {
+                cartListRef.current?.scrollTo({
+                    top: cartListRef.current.scrollHeight,
+                    behavior: 'smooth',
+                });
+            });
+        }
+        prevCartLengthRef.current = cart.length;
+    }, [cart.length]);
 
     useEffect(() => {
         if (scannedCode) {
@@ -1832,14 +1846,14 @@ export default function PosIndex({
                     data-testid="pos-cart"
                     className="hidden min-h-0 w-80 shrink-0 flex-col overflow-hidden bg-muted/10 @min-[64rem]/pos:flex"
                 >
-                    <div className="max-h-[35%] shrink-0 space-y-4 overflow-y-auto overscroll-contain border-b bg-background p-4 shadow-sm">
+                    <div className="shrink-0 space-y-2 border-b bg-background p-3 shadow-xs">
                         <div className="flex items-center gap-2">
-                            <UserIcon className="h-4 w-4 text-muted-foreground" />
+                            <UserIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
                             <Select
                                 value={clienteId}
                                 onValueChange={handleClienteChange}
                             >
-                                <SelectTrigger className="h-9">
+                                <SelectTrigger className="h-8 text-xs">
                                     <SelectValue placeholder="Cliente Genérico" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1866,10 +1880,10 @@ export default function PosIndex({
                                         : 'outline'
                                 }
                                 size="sm"
-                                className="flex-1"
+                                className="h-8 flex-1 text-xs"
                                 onClick={() => setTipoDocumento('boleta')}
                             >
-                                <Receipt className="mr-2 h-4 w-4" /> Boleta
+                                <Receipt className="mr-1.5 h-3.5 w-3.5" /> Boleta
                             </Button>
                             <Button
                                 variant={
@@ -1878,22 +1892,22 @@ export default function PosIndex({
                                         : 'outline'
                                 }
                                 size="sm"
-                                className="flex-1"
+                                className="h-8 flex-1 text-xs"
                                 onClick={() => setTipoDocumento('factura')}
                             >
-                                <FileText className="mr-2 h-4 w-4" /> Factura
+                                <FileText className="mr-1.5 h-3.5 w-3.5" /> Factura
                             </Button>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-xs font-black text-primary/70 uppercase">
+                        <div className="space-y-1">
+                            <Label className="text-[10px] font-bold text-muted-foreground uppercase">
                                 Almacén de Origen
                             </Label>
                             <Select
                                 value={almacenId}
                                 onValueChange={setAlmacenId}
                             >
-                                <SelectTrigger className="h-9">
+                                <SelectTrigger className="h-8 text-xs">
                                     <SelectValue placeholder="Seleccionar Almacén" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1909,9 +1923,9 @@ export default function PosIndex({
                             </Select>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className="flex items-center gap-1 text-xs font-black text-primary/70 uppercase">
-                                <UserCheck className="h-3.5 w-3.5" />
+                        <div className="space-y-1">
+                            <Label className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase">
+                                <UserCheck className="h-3 w-3" />
                                 Cajero / Vendedor
                             </Label>
                             {puede_seleccionar_cajero ? (
@@ -1919,7 +1933,7 @@ export default function PosIndex({
                                     value={empleadoId || undefined}
                                     onValueChange={setEmpleadoId}
                                 >
-                                    <SelectTrigger className="h-9">
+                                    <SelectTrigger className="h-8 text-xs">
                                         <SelectValue placeholder="Seleccionar Cajero" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1938,14 +1952,14 @@ export default function PosIndex({
                                     </SelectContent>
                                 </Select>
                             ) : (
-                                <div className="flex h-9 items-center gap-2 rounded-md border bg-muted/50 px-3 text-sm font-semibold">
-                                    <UserCheck className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                <div className="flex h-8 items-center gap-2 rounded-md border bg-muted/50 px-2.5 text-xs font-semibold">
+                                    <UserCheck className="h-3 w-3 shrink-0 text-muted-foreground" />
                                     <span className="truncate">
                                         {cajeroActualNombre}
                                     </span>
                                     <Badge
                                         variant="secondary"
-                                        className="ml-auto shrink-0 text-[10px]"
+                                        className="ml-auto shrink-0 px-1.5 py-0 text-[9px]"
                                     >
                                         Bloqueado
                                     </Badge>
@@ -1954,7 +1968,10 @@ export default function PosIndex({
                         </div>
                     </div>
 
-                    <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain p-4">
+                    <div
+                        ref={cartListRef}
+                        className="flex min-h-0 flex-col gap-2 overflow-y-auto overscroll-contain p-3 shrink"
+                    >
                         {cart.length > 0 && (
                             <div className="flex items-center justify-between px-1">
                                 <span className="text-xs font-medium text-muted-foreground">
@@ -1966,7 +1983,7 @@ export default function PosIndex({
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 text-xs text-destructive hover:text-destructive"
+                                    className="h-6 px-2 text-xs text-destructive hover:text-destructive"
                                     onClick={vaciarCarrito}
                                 >
                                     <Trash2 className="mr-1 h-3 w-3" />
@@ -1975,10 +1992,10 @@ export default function PosIndex({
                             </div>
                         )}
                         {cart.length === 0 ? (
-                            <div className="flex h-full flex-col items-center justify-center py-20 text-muted-foreground/40">
-                                <Barcode className="mb-4 h-20 w-20" />
-                                <p className="font-bold">CAJA LISTA</p>
-                                <p className="text-xs">
+                            <div className="flex flex-col items-center justify-center py-6 text-muted-foreground/40">
+                                <Barcode className="mb-2 h-10 w-10" />
+                                <p className="text-xs font-bold tracking-wider uppercase">Caja Lista</p>
+                                <p className="text-[11px]">
                                     Escanee o busque productos
                                 </p>
                             </div>
@@ -1986,19 +2003,22 @@ export default function PosIndex({
                             cart.map((item) => (
                                 <Card
                                     key={item.cartId}
-                                    className="shrink-0 overflow-hidden border-none shadow-sm"
+                                    className="shrink-0 overflow-hidden border border-border/50 bg-card shadow-xs"
                                 >
-                                    <div className="flex gap-3 p-3">
+                                    <div className="flex gap-2 p-2.5">
                                         <div className="min-w-0 flex-1">
-                                            <div className="truncate text-sm font-bold">
+                                            <div
+                                                className="truncate text-xs font-bold leading-tight"
+                                                title={item.nombre}
+                                            >
                                                 {item.nombre}
                                             </div>
                                             {item.variantes && (
-                                                <div className="text-xs text-muted-foreground">
+                                                <div className="text-[11px] text-muted-foreground">
                                                     {item.variantes}
                                                 </div>
                                             )}
-                                            <div className="text-xs text-muted-foreground">
+                                            <div className="text-[11px] text-muted-foreground">
                                                 {esGrameable(item) ? (
                                                     <>
                                                         {formatCurrency(
@@ -2045,7 +2065,7 @@ export default function PosIndex({
                                                 )}
                                                 {item.stock > 0 &&
                                                     item.stock <= 5 && (
-                                                        <span className="ml-1 text-orange-500">
+                                                        <span className="ml-1 font-medium text-orange-500">
                                                             (Stock: {item.stock}
                                                             )
                                                         </span>
@@ -2053,7 +2073,7 @@ export default function PosIndex({
                                             </div>
                                         </div>
                                         <div className="flex flex-col items-end justify-between text-right">
-                                            <div className="font-black text-emerald-600">
+                                            <div className="text-sm font-black text-emerald-600">
                                                 {formatCurrency(
                                                     calcularSubtotalLinea(
                                                         item,
@@ -2070,13 +2090,13 @@ export default function PosIndex({
                                                             : 0),
                                                 )}
                                             </div>
-                                            <div className="mt-2 flex items-center justify-end gap-1">
+                                            <div className="mt-1.5 flex items-center justify-end gap-1">
                                                 {!esGrameable(item) && (
                                                     <>
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-7 w-7 rounded-full bg-muted"
+                                                            className="h-6 w-6 rounded-full bg-muted"
                                                             onClick={() =>
                                                                 actualizarCantidad(
                                                                     item.cartId,
@@ -2102,7 +2122,7 @@ export default function PosIndex({
                                                                     ) || 0,
                                                                 )
                                                             }
-                                                            className="h-7 w-16 [appearance:textfield] text-center text-xs font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                            className="h-6 w-12 [appearance:textfield] px-1 text-center text-xs font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                                         />
                                                         <span className="text-[8px] uppercase">
                                                             {item.unidad_medida ===
@@ -2115,7 +2135,7 @@ export default function PosIndex({
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-7 w-7 rounded-full bg-muted"
+                                                            className="h-6 w-6 rounded-full bg-muted"
                                                             onClick={() =>
                                                                 actualizarCantidad(
                                                                     item.cartId,
@@ -2132,8 +2152,8 @@ export default function PosIndex({
                                                     size="icon"
                                                     className={
                                                         esGrameable(item)
-                                                            ? 'h-7 w-7 text-destructive hover:bg-destructive/10'
-                                                            : 'ml-2 h-7 w-7 text-destructive hover:bg-destructive/10'
+                                                            ? 'h-6 w-6 text-destructive hover:bg-destructive/10'
+                                                            : 'ml-1 h-6 w-6 text-destructive hover:bg-destructive/10'
                                                     }
                                                     onClick={() =>
                                                         eliminarItem(
@@ -2255,21 +2275,21 @@ export default function PosIndex({
 
                     <div
                         data-testid="pos-checkout"
-                        className="max-h-[50%] shrink-0 space-y-4 overflow-y-auto overscroll-contain border-t bg-background p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]"
+                        className="shrink-0 space-y-2.5 border-y bg-background p-3 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]"
                     >
                         <div className="space-y-1">
-                            <div className="flex justify-between text-sm font-medium text-muted-foreground">
+                            <div className="flex justify-between text-xs font-medium text-muted-foreground">
                                 <span>Subtotal</span>
                                 <span>{formatCurrency(subtotal)}</span>
                             </div>
                             {descuento > 0 && (
-                                <div className="flex justify-between text-sm font-medium text-orange-600">
+                                <div className="flex justify-between text-xs font-medium text-orange-600">
                                     <span>Descuento</span>
                                     <span>-{formatCurrency(descuento)}</span>
                                 </div>
                             )}
                             {cuponAplicado && cuponDescuento > 0 && (
-                                <div className="flex justify-between text-sm font-medium text-emerald-600">
+                                <div className="flex justify-between text-xs font-medium text-emerald-600">
                                     <span>Dto. Cupón</span>
                                     <span>
                                         -{formatCurrency(cuponDescuento)}
@@ -2277,7 +2297,7 @@ export default function PosIndex({
                                 </div>
                             )}
                             {descuentoManual > 0 && (
-                                <div className="flex justify-between text-sm font-medium text-purple-600">
+                                <div className="flex justify-between text-xs font-medium text-purple-600">
                                     <span>
                                         Dto. Manual (
                                         {tipoDescuentoManual === 'porcentaje'
@@ -2311,18 +2331,18 @@ export default function PosIndex({
                                 suffix="desktop"
                             />
                             {hasDelivery && (
-                                <div className="flex justify-between text-sm font-medium text-emerald-600">
+                                <div className="flex justify-between text-xs font-medium text-emerald-600">
                                     <span>Despacho</span>
                                     <span>{formatCurrency(deliveryCost)}</span>
                                 </div>
                             )}
-                            <div className="flex justify-between text-sm font-medium text-muted-foreground">
+                            <div className="flex justify-between text-xs font-medium text-muted-foreground">
                                 <span>
                                     IVA ({(iva_tasa * 100).toFixed(0)}%)
                                 </span>
                                 <span>{formatCurrency(iva)}</span>
                             </div>
-                            <div className="flex items-center gap-2 py-1">
+                            <div className="flex items-center gap-2 py-0.5">
                                 <Checkbox
                                     id="incluye-iva"
                                     checked={incluyeIva}
@@ -2337,7 +2357,7 @@ export default function PosIndex({
                                     Incluir IVA
                                 </Label>
                             </div>
-                            <div className="mt-2 flex justify-between border-t pt-2 text-xl font-black">
+                            <div className="mt-1.5 flex justify-between border-t pt-1.5 text-lg font-black">
                                 <span>TOTAL</span>
                                 <span className="text-emerald-600">
                                     {formatCurrency(total)}
@@ -2345,7 +2365,7 @@ export default function PosIndex({
                             </div>
                         </div>
 
-                        <div className="space-y-2 border-t pt-3">
+                        <div className="space-y-1.5 border-t pt-2">
                             <div className="flex items-center gap-2">
                                 <Checkbox
                                     id="descuento-manual"
@@ -2358,7 +2378,7 @@ export default function PosIndex({
                                 />
                                 <Label
                                     htmlFor="descuento-manual"
-                                    className="cursor-pointer text-sm font-medium"
+                                    className="cursor-pointer text-xs font-medium"
                                 >
                                     Descuento manual
                                 </Label>
@@ -2387,7 +2407,7 @@ export default function PosIndex({
                                                     Number(e.target.value),
                                                 )
                                             }
-                                            className="h-9 text-sm"
+                                            className="h-8 text-xs"
                                             disabled={procesando}
                                         />
                                     </div>
@@ -2397,7 +2417,7 @@ export default function PosIndex({
                                             v: 'fijo' | 'porcentaje',
                                         ) => setTipoDescuentoManual(v)}
                                     >
-                                        <SelectTrigger className="h-9 w-[130px] text-sm">
+                                        <SelectTrigger className="h-8 w-[110px] text-xs">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -2413,7 +2433,7 @@ export default function PosIndex({
                             )}
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                             <div className="flex items-center gap-2">
                                 <Input
                                     id="coupon-code-input"
@@ -2437,7 +2457,7 @@ export default function PosIndex({
                                         }
                                     }}
                                     className={
-                                        'h-9 flex-1 text-sm ' +
+                                        'h-8 flex-1 text-xs ' +
                                         (cuponAplicado
                                             ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20'
                                             : cuponValido === false
@@ -2451,7 +2471,7 @@ export default function PosIndex({
                                         id="validate-coupon-btn"
                                         variant="default"
                                         size="sm"
-                                        className="h-9 shrink-0 bg-violet-600 text-xs font-bold uppercase hover:bg-violet-700"
+                                        className="h-8 shrink-0 bg-violet-600 px-2.5 text-[11px] font-bold uppercase hover:bg-violet-700"
                                         onClick={validarCupon}
                                         disabled={
                                             procesando ||
@@ -2461,9 +2481,9 @@ export default function PosIndex({
                                         }
                                     >
                                         {cuponValidando ? (
-                                            <RefreshCw className="mr-1 h-3.5 w-3.5 animate-spin" />
+                                            <RefreshCw className="mr-1 h-3 w-3 animate-spin" />
                                         ) : (
-                                            <Ticket className="mr-1 h-3.5 w-3.5" />
+                                            <Ticket className="mr-1 h-3 w-3" />
                                         )}
                                         Validar
                                     </Button>
@@ -2472,17 +2492,17 @@ export default function PosIndex({
                                         id="clear-coupon-btn"
                                         variant="ghost"
                                         size="icon"
-                                        className="h-9 w-9 shrink-0 text-destructive hover:bg-destructive/10"
+                                        className="h-8 w-8 shrink-0 text-destructive hover:bg-destructive/10"
                                         onClick={limpiarCupon}
                                     >
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="h-3.5 w-3.5" />
                                     </Button>
                                 )}
                             </div>
                             {cuponMensaje && (
                                 <p
                                     className={
-                                        'flex items-center gap-1 text-xs ' +
+                                        'flex items-center gap-1 text-[11px] ' +
                                         (cuponValido
                                             ? 'text-emerald-600'
                                             : 'text-red-500')
@@ -2503,11 +2523,11 @@ export default function PosIndex({
                             )}
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-2 pt-1">
                             {!mostrandoMetodosPago ? (
                                 <>
                                     <Button
-                                        className="flex h-16 w-full items-center justify-center gap-2 bg-emerald-600 text-lg font-bold shadow-lg shadow-emerald-500/20 hover:bg-emerald-700"
+                                        className="flex h-12 w-full items-center justify-center gap-2 bg-emerald-600 text-base font-bold shadow-md shadow-emerald-500/20 hover:bg-emerald-700"
                                         disabled={
                                             cart.length === 0 ||
                                             posForm.processing
@@ -2516,30 +2536,30 @@ export default function PosIndex({
                                             setMostrandoMetodosPago(true)
                                         }
                                     >
-                                        <CreditCard className="h-6 w-6" />
+                                        <CreditCard className="h-5 w-5" />
                                         <span>Procesar Venta</span>
-                                        <span className="font-mono text-xl">
+                                        <span className="font-mono text-base font-extrabold">
                                             {formatCurrency(total)}
                                         </span>
                                     </Button>
                                     <Button
                                         variant="outline"
-                                        className="h-12 w-full bg-gray-100 font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                                        className="h-8 w-full bg-gray-100 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                                         disabled={
                                             cart.length === 0 ||
                                             posForm.processing
                                         }
                                         onClick={vaciarCarrito}
                                     >
-                                        <Trash2 className="mr-2 h-5 w-5" />
+                                        <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                                         <span>Limpiar Caja</span>
                                     </Button>
                                 </>
                             ) : (
                                 <>
-                                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                    <div className="grid grid-cols-2 gap-2">
                                         <Button
-                                            className="h-16 flex-col gap-1 bg-emerald-600 shadow-lg shadow-emerald-500/20 hover:bg-emerald-700"
+                                            className="h-12 flex-col gap-1 bg-emerald-600 shadow-sm hover:bg-emerald-700"
                                             disabled={
                                                 cart.length === 0 ||
                                                 posForm.processing
@@ -2548,13 +2568,13 @@ export default function PosIndex({
                                                 procesarPago('tarjeta')
                                             }
                                         >
-                                            <CreditCard className="h-6 w-6" />
+                                            <CreditCard className="h-5 w-5" />
                                             <span className="text-[10px] font-bold uppercase">
                                                 Tarjeta
                                             </span>
                                         </Button>
                                         <Button
-                                            className="h-16 flex-col gap-1 bg-emerald-600 shadow-lg shadow-emerald-500/20 hover:bg-emerald-700"
+                                            className="h-12 flex-col gap-1 bg-emerald-600 shadow-sm hover:bg-emerald-700"
                                             disabled={
                                                 cart.length === 0 ||
                                                 posForm.processing
@@ -2563,7 +2583,7 @@ export default function PosIndex({
                                                 procesarPago('efectivo')
                                             }
                                         >
-                                            <Banknote className="h-6 w-6" />
+                                            <Banknote className="h-5 w-5" />
                                             <span className="text-[10px] font-bold uppercase">
                                                 Efectivo
                                             </span>
@@ -2571,7 +2591,7 @@ export default function PosIndex({
                                     </div>
 
                                     <Button
-                                        className="mt-3 h-12 w-full bg-slate-600 hover:bg-slate-700"
+                                        className="h-9 w-full bg-slate-600 text-xs hover:bg-slate-700"
                                         disabled={
                                             cart.length === 0 ||
                                             posForm.processing
@@ -2580,7 +2600,7 @@ export default function PosIndex({
                                             setMostrarModalPagos(true)
                                         }
                                     >
-                                        <Wallet className="mr-2 h-5 w-5" />
+                                        <Wallet className="mr-1.5 h-4 w-4" />
                                         <span className="font-bold uppercase">
                                             Otros Métodos
                                         </span>
@@ -2588,12 +2608,12 @@ export default function PosIndex({
 
                                     <Button
                                         variant="ghost"
-                                        className="mt-2 h-10 w-full text-sm text-muted-foreground hover:text-foreground"
+                                        className="h-8 w-full text-xs text-muted-foreground hover:text-foreground"
                                         onClick={() =>
                                             setMostrandoMetodosPago(false)
                                         }
                                     >
-                                        <ArrowLeft className="mr-2 h-4 w-4" />
+                                        <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
                                         Volver
                                     </Button>
                                 </>
@@ -2751,7 +2771,7 @@ export default function PosIndex({
                                 </div>
                             </div>
 
-                            <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-4">
+                            <div className="flex min-h-0 flex-col gap-2 overflow-y-auto p-4 shrink">
                                 {cart.length > 0 && (
                                     <div className="flex items-center justify-between px-1">
                                         <span className="text-xs font-medium text-muted-foreground">
@@ -2772,10 +2792,10 @@ export default function PosIndex({
                                     </div>
                                 )}
                                 {cart.length === 0 ? (
-                                    <div className="flex h-full flex-col items-center justify-center py-20 text-muted-foreground/40">
-                                        <Barcode className="mb-4 h-20 w-20" />
-                                        <p className="font-bold">CAJA LISTA</p>
-                                        <p className="text-xs">
+                                    <div className="flex flex-col items-center justify-center py-6 text-muted-foreground/40">
+                                        <Barcode className="mb-2 h-10 w-10" />
+                                        <p className="text-xs font-bold tracking-wider uppercase">CAJA LISTA</p>
+                                        <p className="text-[11px]">
                                             Escanee o busque productos
                                         </p>
                                     </div>
@@ -3051,7 +3071,7 @@ export default function PosIndex({
                                 )}
                             </div>
 
-                            <div className="space-y-4 border-t bg-background p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+                            <div className="shrink-0 space-y-4 border-t bg-background p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
                                 <div className="space-y-1">
                                     <div className="flex justify-between text-sm font-medium text-muted-foreground">
                                         <span>Subtotal</span>
