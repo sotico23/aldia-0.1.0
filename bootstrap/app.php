@@ -45,9 +45,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withBroadcasting(
         __DIR__.'/../routes/channels.php',
         [
-            // La app Flutter autentica con Personal Access Tokens de Sanctum,
-            // no con la sesión web. El endpoint sigue siendo /broadcasting/auth.
-            'middleware' => ['api', 'auth:sanctum'],
+            // Echo usa la sesion del navegador; Sanctum tambien permite el
+            // Bearer token de la APK. La ruta /api/broadcasting/auth sigue
+            // disponible para clientes moviles sin middleware de sesion.
+            'middleware' => ['web', 'auth:sanctum'],
         ],
     )
     ->withMiddleware(function (Middleware $middleware): void {
