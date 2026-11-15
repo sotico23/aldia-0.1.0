@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreCountryRequest;
+use App\Http\Requests\UpdateCountryRequest;
 use App\Models\Country;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
@@ -29,24 +30,9 @@ class PaisController extends Controller implements HasMiddleware
         return Inertia::render('Backend/Paises/Index', ['countries' => $countries]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreCountryRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'code' => 'required|string|max:2|unique:countries,code',
-            'name' => 'required|string|max:100',
-            'currency_code' => 'required|string|max:3',
-            'currency_symbol' => 'required|string|max:10',
-            'currency_decimals' => 'required|integer|min:0|max:4',
-            'locale' => 'required|string|max:10',
-            'timezone' => 'required|string|max:50',
-            'phone_code' => 'required|string|max:5',
-            'tax_name' => 'required|string|max:20',
-            'tax_rate' => 'required|numeric|min:0|max:100',
-            'fiscal_id_label' => 'required|string|max:20',
-            'fiscal_id_pattern' => 'nullable|string|max:50',
-            'date_format' => 'required|string|max:20',
-            'is_active' => 'required|boolean',
-        ]);
+        $validated = $request->validated();
 
         $validated['code'] = strtoupper($validated['code']);
 
@@ -55,23 +41,9 @@ class PaisController extends Controller implements HasMiddleware
         return back();
     }
 
-    public function update(Request $request, Country $country): RedirectResponse
+    public function update(UpdateCountryRequest $request, Country $country): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:100',
-            'currency_code' => 'required|string|max:3',
-            'currency_symbol' => 'required|string|max:10',
-            'currency_decimals' => 'required|integer|min:0|max:4',
-            'locale' => 'required|string|max:10',
-            'timezone' => 'required|string|max:50',
-            'phone_code' => 'required|string|max:5',
-            'tax_name' => 'required|string|max:20',
-            'tax_rate' => 'required|numeric|min:0|max:100',
-            'fiscal_id_label' => 'required|string|max:20',
-            'fiscal_id_pattern' => 'nullable|string|max:50',
-            'date_format' => 'required|string|max:20',
-            'is_active' => 'required|boolean',
-        ]);
+        $validated = $request->validated();
 
         $country->update($validated);
 
@@ -80,6 +52,10 @@ class PaisController extends Controller implements HasMiddleware
 
     public function destroy(Country $country): RedirectResponse
     {
+        if ($country->users()->exists()) {
+            return back()->withErrors(['country' => 'No se puede eliminar un país asociado a usuarios. Puedes desactivarlo.']);
+        }
+
         $country->delete();
 
         return back();

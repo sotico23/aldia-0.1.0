@@ -10,6 +10,7 @@
             <file>tests/MarketplaceStoreImagesTest.php</file>
             <file>tests/ResponsiveLayoutTest.php</file>
             <file>tests/DashboardInventoryValueTest.php</file>
+            <file>tests/CountryManagementTest.php</file>
         </testsuite>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>

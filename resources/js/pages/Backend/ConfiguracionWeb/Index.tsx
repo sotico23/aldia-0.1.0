@@ -893,8 +893,8 @@ export default function Index({
         <>
             <Head title="Configuración Web" />
             <AppLayout breadcrumbs={breadcrumbs}>
-                <div className="mx-auto flex max-w-6xl flex-col gap-6 p-6">
-                    <div className="flex items-center justify-between">
+                <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-4 p-3 sm:gap-6 sm:p-6">
+                    <div className="flex min-w-0 flex-col gap-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
                         <div>
                             <h1 className="text-2xl font-bold tracking-tight">
                                 Configuración de Página de Inicio

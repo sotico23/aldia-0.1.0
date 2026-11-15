@@ -1,4 +1,8 @@
 const today = new Date().toISOString().slice(0, 10);
+const countryFixtures = [
+    { id: 1, code: 'CL', name: 'Chile', currency_code: 'CLP', currency_symbol: '$', currency_decimals: 0, locale: 'es-CL', timezone: 'America/Santiago', phone_code: '+56', tax_name: 'IVA', tax_rate: '19.00', fiscal_id_label: 'RUT', fiscal_id_pattern: null, date_format: 'DD/MM/YYYY', is_active: false },
+    { id: 2, code: 'PE', name: 'Perú', currency_code: 'PEN', currency_symbol: 'S/', currency_decimals: 2, locale: 'es-PE', timezone: 'America/Lima', phone_code: '+51', tax_name: 'IGV', tax_rate: '18.00', fiscal_id_label: 'RUC', fiscal_id_pattern: null, date_format: 'DD/MM/YYYY', is_active: true },
+];
 const dateTime = `${today}T09:00:00`;
 const almacen = { id: 1, nombre: 'Almacén principal de pruebas' };
 const cliente = { id: 1, nombre: 'Cliente de prueba', name: 'Cliente de prueba', rut: null, direccion: null, comuna: null, ciudad: null, region: null };
@@ -34,6 +38,8 @@ const prospecto = {
 };
 
 export default [
+    {path: '/configuracion-web', component: 'Backend/ConfiguracionWeb/Index', props: {settings: {app_name: 'RedCliente', app_logo: null, theme_preset: 'emerald'}, countries: countryFixtures}, countryManagement: true, setup: "[...document.querySelectorAll('button')].find(button => button.innerText.trim().endsWith('Países'))?.click()"},
+    {path: '/paises', component: 'Backend/Paises/Index', props: {countries: countryFixtures}, countryManagement: true},
     {
         path: '/inventarios',
         component: 'Backend/Inventarios/Index',

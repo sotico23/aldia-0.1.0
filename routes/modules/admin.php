@@ -24,7 +24,7 @@ Route::middleware(['permission:admin.configuracion.viewAny'])->group(function ()
 });
 
 Route::middleware(['permission:admin.countries.viewAny'])->group(function () {
-    Route::resource('paises', PaisController::class)->except(['create', 'show', 'edit']);
+    Route::resource('paises', PaisController::class)->parameters(['paises' => 'country'])->except(['create', 'show', 'edit']);
     Route::patch('paises/{country}/toggle', [PaisController::class, 'toggle'])->name('paises.toggle');
 });
 

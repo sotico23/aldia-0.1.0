@@ -1,18 +1,17 @@
-import { useForm, router } from '@inertiajs/react';
+import { router, useForm } from '@inertiajs/react';
 import {
-    Pencil,
-    Plus,
-    Trash2,
+    ArrowDown,
+    ArrowUp,
     Eye,
     EyeOff,
-    Save,
-    X,
+    Pencil,
+    Plus,
     Power,
-    ArrowUpDown,
-    ChevronUp,
-    ChevronDown,
+    Save,
+    Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,6 +24,7 @@ import {
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
@@ -32,6 +32,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePermissions } from '@/hooks/use-permissions';
+import { destroy, store, toggle, update } from '@/routes/paises';
 
 export interface Country {
     id: number;
@@ -44,37 +45,20 @@ export interface Country {
     timezone: string;
     phone_code: string;
     tax_name: string;
-    tax_rate: number;
+    tax_rate: number | string;
     fiscal_id_label: string;
     fiscal_id_pattern: string | null;
     date_format: string;
     is_active: boolean;
 }
-
-interface CountryFormData {
-    code: string;
-    name: string;
-    currency_code: string;
-    currency_symbol: string;
-    currency_decimals: number;
-    locale: string;
-    timezone: string;
-    phone_code: string;
-    tax_name: string;
+interface CountryFormData extends Omit<
+    Country,
+    'id' | 'tax_rate' | 'fiscal_id_pattern'
+> {
     tax_rate: number;
-    fiscal_id_label: string;
     fiscal_id_pattern: string;
-    date_format: string;
-    is_active: boolean;
 }
-
-function getFlagEmoji(countryCode: string): string {
-    const codePoints = [...countryCode.toUpperCase()].map(
-        (c) => 0x1f1e6 - 65 + c.charCodeAt(0),
-    );
-    return String.fromCodePoint(...codePoints);
-}
-
+type FieldKey = Exclude<keyof CountryFormData, 'is_active'>;
 const emptyCountry: CountryFormData = {
     code: '',
     name: '',
@@ -91,662 +75,621 @@ const emptyCountry: CountryFormData = {
     date_format: 'DD/MM/YYYY',
     is_active: true,
 };
+const fields: {
+    key: FieldKey;
+    label: string;
+    placeholder: string;
+    type?: 'number';
+    maxLength?: number;
+    min?: number;
+    max?: number;
+    step?: string;
+    optional?: boolean;
+}[] = [
+    {
+        key: 'code',
+        label: 'Código del país (2 letras)',
+        placeholder: 'CL',
+        maxLength: 2,
+    },
+    {
+        key: 'name',
+        label: 'Nombre del país',
+        placeholder: 'Chile',
+        maxLength: 100,
+    },
+    {
+        key: 'currency_code',
+        label: 'Código de moneda',
+        placeholder: 'CLP',
+        maxLength: 3,
+    },
+    {
+        key: 'currency_symbol',
+        label: 'Símbolo',
+        placeholder: '$',
+        maxLength: 10,
+    },
+    {
+        key: 'currency_decimals',
+        label: 'Decimales',
+        placeholder: '0',
+        type: 'number',
+        min: 0,
+        max: 4,
+        step: '1',
+    },
+    {
+        key: 'date_format',
+        label: 'Formato de fecha',
+        placeholder: 'DD/MM/YYYY',
+        maxLength: 20,
+    },
+    { key: 'locale', label: 'Locale', placeholder: 'es-CL', maxLength: 10 },
+    {
+        key: 'timezone',
+        label: 'Zona horaria',
+        placeholder: 'America/Santiago',
+        maxLength: 50,
+    },
+    {
+        key: 'phone_code',
+        label: 'Código de teléfono',
+        placeholder: '+56',
+        maxLength: 5,
+    },
+    {
+        key: 'tax_name',
+        label: 'Nombre del impuesto',
+        placeholder: 'IVA',
+        maxLength: 20,
+    },
+    {
+        key: 'tax_rate',
+        label: 'Tasa (%)',
+        placeholder: '19',
+        type: 'number',
+        min: 0,
+        max: 100,
+        step: '0.01',
+    },
+    {
+        key: 'fiscal_id_label',
+        label: 'ID fiscal',
+        placeholder: 'RUT',
+        maxLength: 20,
+    },
+    {
+        key: 'fiscal_id_pattern',
+        label: 'Patrón del ID fiscal',
+        placeholder: 'Opcional',
+        maxLength: 50,
+        optional: true,
+    },
+];
+const columns: { key: keyof Country; title: string }[] = [
+    { key: 'name', title: 'País' },
+    { key: 'code', title: 'Código' },
+    { key: 'currency_code', title: 'Moneda' },
+    { key: 'phone_code', title: 'Teléfono' },
+    { key: 'tax_name', title: 'Impuesto' },
+    { key: 'fiscal_id_label', title: 'ID fiscal' },
+    { key: 'timezone', title: 'Zona horaria' },
+    { key: 'is_active', title: 'Estado' },
+];
 
 export default function CountriesTab({ countries }: { countries: Country[] }) {
     const { hasPermission } = usePermissions();
     const canCreate = hasPermission('admin.countries.create');
     const canEdit = hasPermission('admin.countries.edit');
     const canDelete = hasPermission('admin.countries.delete');
-
     const [isOpen, setIsOpen] = useState(false);
     const [editando, setEditando] = useState<Country | null>(null);
     const [showOnlyActive, setShowOnlyActive] = useState(false);
-    const {
-        data,
-        setData,
-        post,
-        put,
-        delete: destroy,
-        reset,
-        processing,
-    } = useForm<CountryFormData>(emptyCountry);
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (editando) {
-            put(`/paises/${editando.id}`, {
-                preserveScroll: true,
-                onSuccess: () => {
-                    setIsOpen(false);
-                    reset();
-                },
-            });
-        } else {
-            post('/paises', {
-                preserveScroll: true,
-                onSuccess: () => {
-                    setIsOpen(false);
-                    reset();
-                },
-            });
-        }
-    };
-
-    const handleEdit = (c: Country) => {
-        setEditando(c);
-        setData({
-            code: c.code,
-            name: c.name,
-            currency_code: c.currency_code,
-            currency_symbol: c.currency_symbol,
-            currency_decimals: c.currency_decimals,
-            locale: c.locale,
-            timezone: c.timezone,
-            phone_code: c.phone_code,
-            tax_name: c.tax_name,
-            tax_rate: c.tax_rate,
-            fiscal_id_label: c.fiscal_id_label,
-            fiscal_id_pattern: c.fiscal_id_pattern || '',
-            date_format: c.date_format,
-            is_active: c.is_active,
-        });
-        setIsOpen(true);
-    };
-
-    const handleNew = () => {
-        reset();
-        setData(emptyCountry);
-        setEditando(null);
-        setIsOpen(true);
-    };
-
-    const handleDelete = (id: number) => {
-        if (confirm('¿Eliminar este país?')) {
-            destroy(`/paises/${id}`, { preserveScroll: true });
-        }
-    };
-
-    const handleToggle = (id: number) => {
-        router.patch(`/paises/${id}/toggle`, {}, { preserveScroll: true });
-    };
-
+    const [busyId, setBusyId] = useState<number | null>(null);
+    const [actionError, setActionError] = useState('');
     const [sortColumn, setSortColumn] = useState<keyof Country>('name');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-
-    const handleSort = (column: keyof Country) => {
-        if (sortColumn === column) {
-            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortColumn(column);
-            setSortDirection('asc');
-        }
+    const { data, setData, post, put, errors, clearErrors, reset, processing } =
+        useForm<CountryFormData>(emptyCountry);
+    const activeCount = countries.filter((country) => country.is_active).length;
+    const sortedCountries = countries
+        .filter((country) => !showOnlyActive || country.is_active)
+        .sort((a, b) => {
+            const comparison = String(a[sortColumn] ?? '').localeCompare(
+                String(b[sortColumn] ?? ''),
+                'es',
+                { numeric: true, sensitivity: 'base' },
+            );
+            return sortDirection === 'asc' ? comparison : -comparison;
+        });
+    const openForm = (country: Country | null) => {
+        clearErrors();
+        setActionError('');
+        setEditando(country);
+        setData(
+            country
+                ? {
+                      ...country,
+                      tax_rate: Number(country.tax_rate),
+                      fiscal_id_pattern: country.fiscal_id_pattern ?? '',
+                  }
+                : { ...emptyCountry },
+        );
+        setIsOpen(true);
     };
-
-    const filteredCountries = showOnlyActive
-        ? countries.filter((c) => c.is_active)
-        : countries;
-
-    const sortedCountries = [...filteredCountries].sort((a, b) => {
-        let valA: string | number | boolean | null = a[sortColumn];
-        let valB: string | number | boolean | null = b[sortColumn];
-
-        if (typeof valA === 'string' && typeof valB === 'string') {
-            valA = valA.toLowerCase();
-            valB = valB.toLowerCase();
-        }
-
-        if (valA === null) return 1;
-        if (valB === null) return -1;
-
-        if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
-        if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
-        return 0;
-    });
-
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsOpen(false);
+                reset();
+            },
+        };
+        if (editando) put(update.url(editando.id), options);
+        else post(store.url(), options);
+    };
+    const runAction = (country: Country, deleting: boolean) => {
+        if (
+            busyId !== null ||
+            (deleting && !window.confirm(`¿Eliminar el país ${country.name}?`))
+        )
+            return;
+        setActionError('');
+        const options = {
+            preserveScroll: true,
+            onStart: () => setBusyId(country.id),
+            onFinish: () => setBusyId(null),
+            onError: (messages: Record<string, string>) =>
+                setActionError(Object.values(messages).join(' ')),
+        };
+        if (deleting) router.delete(destroy.url(country.id), options);
+        else router.patch(toggle.url(country.id), {}, options);
+    };
+    const actions = (country: Country) => (
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+            {canEdit && (
+                <>
+                    <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="size-11"
+                        aria-label={`${country.is_active ? 'Desactivar' : 'Activar'} ${country.name}`}
+                        disabled={busyId !== null}
+                        onClick={() => runAction(country, false)}
+                    >
+                        <Power
+                            className={
+                                country.is_active
+                                    ? 'size-4 text-emerald-600'
+                                    : 'size-4'
+                            }
+                        />
+                    </Button>
+                    <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="size-11"
+                        aria-label={`Editar ${country.name}`}
+                        onClick={() => openForm(country)}
+                    >
+                        <Pencil className="size-4" />
+                    </Button>
+                </>
+            )}
+            {canDelete && (
+                <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="size-11 text-destructive"
+                    aria-label={`Eliminar ${country.name}`}
+                    disabled={busyId !== null}
+                    onClick={() => runAction(country, true)}
+                >
+                    <Trash2 className="size-4" />
+                </Button>
+            )}
+        </div>
+    );
+    const status = (country: Country) => (
+        <Badge
+            className={
+                country.is_active
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-slate-500 text-white'
+            }
+        >
+            {country.is_active ? 'Activo' : 'Inactivo'}
+        </Badge>
+    );
+    const sortBy = (key: keyof Country) => {
+        setSortDirection(
+            sortColumn === key && sortDirection === 'asc' ? 'desc' : 'asc',
+        );
+        setSortColumn(key);
+    };
     return (
-        <div className="space-y-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
+        <div className="@container min-w-0 space-y-4">
+            <div className="flex flex-col gap-3 @min-[42rem]:flex-row @min-[42rem]:items-center @min-[42rem]:justify-between">
+                <div className="min-w-0">
                     <h1 className="text-2xl font-bold">Países</h1>
-                    <p className="text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                         Gestiona los países disponibles para el registro de
-                        usuarios
+                        usuarios.
                     </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap gap-2">
                     <Button
+                        type="button"
                         variant="outline"
-                        size="sm"
+                        className="min-h-11"
+                        aria-pressed={showOnlyActive}
                         onClick={() => setShowOnlyActive(!showOnlyActive)}
                     >
                         {showOnlyActive ? (
-                            <>
-                                <EyeOff className="mr-2 h-4 w-4" />
-                                Mostrar todos ({countries.length})
-                            </>
+                            <EyeOff className="size-4" />
                         ) : (
-                            <>
-                                <Eye className="mr-2 h-4 w-4" />
-                                Solo activos (
-                                {countries.filter((c) => c.is_active).length})
-                            </>
+                            <Eye className="size-4" />
                         )}
+                        {showOnlyActive
+                            ? `Mostrar todos (${countries.length})`
+                            : `Solo activos (${activeCount})`}
                     </Button>
                     {canCreate && (
-                        <Button onClick={handleNew}>
-                            <Plus className="mr-2 h-4 w-4" /> Nuevo País
+                        <Button
+                            type="button"
+                            className="min-h-11"
+                            onClick={() => openForm(null)}
+                        >
+                            <Plus className="size-4" />
+                            Nuevo País
                         </Button>
                     )}
                 </div>
             </div>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Países Soportados</CardTitle>
+            {actionError && (
+                <p
+                    role="alert"
+                    className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+                >
+                    {actionError}
+                </p>
+            )}
+            <Card className="min-w-0 gap-4">
+                <CardHeader className="px-4 sm:px-6">
+                    <CardTitle>Países soportados</CardTitle>
                     <CardDescription>
-                        {countries.filter((c) => c.is_active).length} activos de{' '}
-                        {countries.length} países en total
+                        {activeCount} activos de {countries.length} países en
+                        total
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
-                    {filteredCountries.length === 0 ? (
-                        <p className="py-8 text-center text-muted-foreground">
+                <CardContent className="min-w-0 px-4 sm:px-6">
+                    <div className="mb-3 flex flex-wrap items-center gap-2 @min-[64rem]:hidden">
+                        <Label htmlFor="country-sort">Ordenar por</Label>
+                        <select
+                            id="country-sort"
+                            className="h-11 max-w-full rounded-md border bg-background px-2 text-sm"
+                            value={sortColumn}
+                            onChange={(event) =>
+                                setSortColumn(
+                                    event.target.value as keyof Country,
+                                )
+                            }
+                        >
+                            {columns.map((column) => (
+                                <option key={column.key} value={column.key}>
+                                    {column.title}
+                                </option>
+                            ))}
+                        </select>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="size-11"
+                            size="icon"
+                            aria-label="Invertir orden"
+                            onClick={() =>
+                                setSortDirection(
+                                    sortDirection === 'asc' ? 'desc' : 'asc',
+                                )
+                            }
+                        >
+                            {sortDirection === 'asc' ? (
+                                <ArrowUp className="size-4" />
+                            ) : (
+                                <ArrowDown className="size-4" />
+                            )}
+                        </Button>
+                    </div>
+                    {sortedCountries.length === 0 ? (
+                        <p className="py-8 text-center text-sm text-muted-foreground">
                             {showOnlyActive
                                 ? 'No hay países activos. Desactiva el filtro para ver todos.'
-                                : 'No hay países registrados'}
+                                : 'No hay países registrados.'}
                         </p>
                     ) : (
-                        <div className="max-h-[65vh] overflow-auto rounded-md border">
-                            <table className="relative w-full min-w-[1000px] text-sm">
-                                <thead className="sticky top-0 z-10 border-b bg-background shadow-sm">
-                                    <tr>
-                                        <th
-                                            className="group cursor-pointer px-4 py-3 text-left font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
-                                            onClick={() => handleSort('name')}
-                                        >
-                                            <div className="flex items-center gap-1">
-                                                País{' '}
-                                                {sortColumn === 'name' ? (
-                                                    sortDirection === 'asc' ? (
-                                                        <ChevronUp className="h-4 w-4" />
-                                                    ) : (
-                                                        <ChevronDown className="h-4 w-4" />
-                                                    )
-                                                ) : (
-                                                    <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
-                                                )}
-                                            </div>
-                                        </th>
-                                        <th
-                                            className="group cursor-pointer px-4 py-3 text-left font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
-                                            onClick={() => handleSort('code')}
-                                        >
-                                            <div className="flex items-center gap-1">
-                                                Código{' '}
-                                                {sortColumn === 'code' ? (
-                                                    sortDirection === 'asc' ? (
-                                                        <ChevronUp className="h-4 w-4" />
-                                                    ) : (
-                                                        <ChevronDown className="h-4 w-4" />
-                                                    )
-                                                ) : (
-                                                    <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
-                                                )}
-                                            </div>
-                                        </th>
-                                        <th
-                                            className="group cursor-pointer px-4 py-3 text-left font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
-                                            onClick={() =>
-                                                handleSort('currency_code')
-                                            }
-                                        >
-                                            <div className="flex items-center gap-1">
-                                                Moneda{' '}
-                                                {sortColumn ===
-                                                'currency_code' ? (
-                                                    sortDirection === 'asc' ? (
-                                                        <ChevronUp className="h-4 w-4" />
-                                                    ) : (
-                                                        <ChevronDown className="h-4 w-4" />
-                                                    )
-                                                ) : (
-                                                    <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
-                                                )}
-                                            </div>
-                                        </th>
-                                        <th
-                                            className="group cursor-pointer px-4 py-3 text-left font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
-                                            onClick={() =>
-                                                handleSort('phone_code')
-                                            }
-                                        >
-                                            <div className="flex items-center gap-1">
-                                                Teléfono{' '}
-                                                {sortColumn === 'phone_code' ? (
-                                                    sortDirection === 'asc' ? (
-                                                        <ChevronUp className="h-4 w-4" />
-                                                    ) : (
-                                                        <ChevronDown className="h-4 w-4" />
-                                                    )
-                                                ) : (
-                                                    <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
-                                                )}
-                                            </div>
-                                        </th>
-                                        <th
-                                            className="group cursor-pointer px-4 py-3 text-left font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
-                                            onClick={() =>
-                                                handleSort('tax_name')
-                                            }
-                                        >
-                                            <div className="flex items-center gap-1">
-                                                Impuesto{' '}
-                                                {sortColumn === 'tax_name' ? (
-                                                    sortDirection === 'asc' ? (
-                                                        <ChevronUp className="h-4 w-4" />
-                                                    ) : (
-                                                        <ChevronDown className="h-4 w-4" />
-                                                    )
-                                                ) : (
-                                                    <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
-                                                )}
-                                            </div>
-                                        </th>
-                                        <th
-                                            className="group cursor-pointer px-4 py-3 text-left font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
-                                            onClick={() =>
-                                                handleSort('fiscal_id_label')
-                                            }
-                                        >
-                                            <div className="flex items-center gap-1">
-                                                ID Fiscal{' '}
-                                                {sortColumn ===
-                                                'fiscal_id_label' ? (
-                                                    sortDirection === 'asc' ? (
-                                                        <ChevronUp className="h-4 w-4" />
-                                                    ) : (
-                                                        <ChevronDown className="h-4 w-4" />
-                                                    )
-                                                ) : (
-                                                    <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
-                                                )}
-                                            </div>
-                                        </th>
-                                        <th
-                                            className="group cursor-pointer px-4 py-3 text-left font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
-                                            onClick={() =>
-                                                handleSort('timezone')
-                                            }
-                                        >
-                                            <div className="flex items-center gap-1">
-                                                Timezone{' '}
-                                                {sortColumn === 'timezone' ? (
-                                                    sortDirection === 'asc' ? (
-                                                        <ChevronUp className="h-4 w-4" />
-                                                    ) : (
-                                                        <ChevronDown className="h-4 w-4" />
-                                                    )
-                                                ) : (
-                                                    <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
-                                                )}
-                                            </div>
-                                        </th>
-                                        <th
-                                            className="group cursor-pointer px-4 py-3 text-center font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
-                                            onClick={() =>
-                                                handleSort('is_active')
-                                            }
-                                        >
-                                            <div className="flex items-center justify-center gap-1">
-                                                Activo{' '}
-                                                {sortColumn === 'is_active' ? (
-                                                    sortDirection === 'asc' ? (
-                                                        <ChevronUp className="h-4 w-4" />
-                                                    ) : (
-                                                        <ChevronDown className="h-4 w-4" />
-                                                    )
-                                                ) : (
-                                                    <ArrowUpDown className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-50" />
-                                                )}
-                                            </div>
-                                        </th>
-                                        <th className="px-4 py-3 text-right font-medium whitespace-nowrap text-muted-foreground">
-                                            Acciones
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {sortedCountries.map((c) => (
-                                        <tr
-                                            key={c.id}
-                                            className="border-b transition-colors hover:bg-muted/50"
-                                        >
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                <span className="mr-2 text-lg">
-                                                    {getFlagEmoji(c.code)}
+                        <>
+                            <div className="grid min-w-0 gap-3 @min-[40rem]:grid-cols-2 @min-[64rem]:hidden">
+                                {sortedCountries.map((country) => (
+                                    <article
+                                        key={country.id}
+                                        aria-label={`País ${country.name}`}
+                                        className="min-w-0 rounded-lg border p-3"
+                                    >
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <h2 className="min-w-0 font-semibold break-words">
+                                                {country.name}{' '}
+                                                <span className="text-xs text-muted-foreground">
+                                                    {country.code}
                                                 </span>
-                                                <span className="font-medium">
-                                                    {c.name}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3 font-mono text-sm whitespace-nowrap">
-                                                {c.code}
-                                            </td>
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                <span className="font-medium">
-                                                    {c.currency_symbol}
-                                                </span>{' '}
-                                                <span className="text-muted-foreground">
-                                                    {c.currency_code}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3 font-mono text-sm whitespace-nowrap">
-                                                {c.phone_code}
-                                            </td>
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                {c.tax_name} ({c.tax_rate}%)
-                                            </td>
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                {c.fiscal_id_label}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm whitespace-nowrap text-muted-foreground">
-                                                {c.timezone}
-                                            </td>
-                                            <td className="px-4 py-3 text-center whitespace-nowrap">
-                                                <Badge
-                                                    className={
-                                                        c.is_active
-                                                            ? 'bg-green-500 hover:bg-green-600'
-                                                            : 'bg-gray-500 hover:bg-gray-600'
-                                                    }
+                                            </h2>
+                                            {status(country)}
+                                        </div>
+                                        <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                                            {[
+                                                [
+                                                    'Moneda',
+                                                    `${country.currency_symbol} ${country.currency_code}`,
+                                                ],
+                                                [
+                                                    'Teléfono',
+                                                    country.phone_code,
+                                                ],
+                                                [
+                                                    'Impuesto',
+                                                    `${country.tax_name} (${Number(country.tax_rate).toFixed(2)}%)`,
+                                                ],
+                                                [
+                                                    'ID fiscal',
+                                                    country.fiscal_id_label,
+                                                ],
+                                                [
+                                                    'Zona horaria',
+                                                    country.timezone,
+                                                ],
+                                                ['Locale', country.locale],
+                                            ].map(([label, value]) => (
+                                                <div
+                                                    key={label}
+                                                    className="min-w-0"
                                                 >
-                                                    {c.is_active
-                                                        ? 'Activo'
-                                                        : 'Inactivo'}
-                                                </Badge>
-                                            </td>
-                                            <td className="px-4 py-3 text-right whitespace-nowrap">
-                                                {canEdit && (
-                                                    <>
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                handleToggle(
-                                                                    c.id,
-                                                                )
-                                                            }
-                                                            title={
-                                                                c.is_active
-                                                                    ? 'Desactivar'
-                                                                    : 'Activar'
-                                                            }
-                                                            className={
-                                                                c.is_active
-                                                                    ? 'text-green-600 hover:bg-green-100 hover:text-green-700'
-                                                                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-600'
-                                                            }
-                                                        >
-                                                            <Power className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                handleEdit(c)
-                                                            }
-                                                        >
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                    </>
-                                                )}
-                                                {canDelete && (
-                                                    <Button
+                                                    <dt className="text-xs text-muted-foreground">
+                                                        {label}
+                                                    </dt>
+                                                    <dd className="break-words">
+                                                        {value}
+                                                    </dd>
+                                                </div>
+                                            ))}
+                                        </dl>
+                                        {actions(country)}
+                                    </article>
+                                ))}
+                            </div>
+                            <div className="hidden max-h-[65dvh] overflow-auto rounded-md border @min-[64rem]:block">
+                                <table className="w-full text-sm">
+                                    <thead className="sticky top-0 z-10 bg-background">
+                                        <tr>
+                                            {columns.map((column) => (
+                                                <th
+                                                    key={column.key}
+                                                    aria-sort={
+                                                        sortColumn ===
+                                                        column.key
+                                                            ? sortDirection ===
+                                                              'asc'
+                                                                ? 'ascending'
+                                                                : 'descending'
+                                                            : 'none'
+                                                    }
+                                                    className="text-left"
+                                                >
+                                                    <button
                                                         type="button"
-                                                        variant="ghost"
-                                                        size="icon"
+                                                        className="flex min-h-11 items-center gap-1 px-3 text-xs font-medium"
                                                         onClick={() =>
-                                                            handleDelete(c.id)
+                                                            sortBy(column.key)
                                                         }
                                                     >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </td>
+                                                        {column.title}
+                                                        {sortColumn ===
+                                                            column.key &&
+                                                            (sortDirection ===
+                                                            'asc' ? (
+                                                                <ArrowUp className="size-3" />
+                                                            ) : (
+                                                                <ArrowDown className="size-3" />
+                                                            ))}
+                                                    </button>
+                                                </th>
+                                            ))}
+                                            <th className="px-3 text-right">
+                                                Acciones
+                                            </th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody>
+                                        {sortedCountries.map((country) => (
+                                            <tr
+                                                key={country.id}
+                                                className="border-t"
+                                            >
+                                                <td className="p-3 font-medium">
+                                                    {country.name}
+                                                </td>
+                                                <td className="p-3">
+                                                    {country.code}
+                                                </td>
+                                                <td className="p-3">
+                                                    {country.currency_symbol}{' '}
+                                                    {country.currency_code}
+                                                </td>
+                                                <td className="p-3">
+                                                    {country.phone_code}
+                                                </td>
+                                                <td className="p-3">
+                                                    {country.tax_name} (
+                                                    {Number(
+                                                        country.tax_rate,
+                                                    ).toFixed(2)}
+                                                    %)
+                                                </td>
+                                                <td className="p-3">
+                                                    {country.fiscal_id_label}
+                                                </td>
+                                                <td className="p-3 text-xs">
+                                                    {country.timezone}
+                                                </td>
+                                                <td className="p-3">
+                                                    {status(country)}
+                                                </td>
+                                                <td className="p-2">
+                                                    {actions(country)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
                     )}
                 </CardContent>
             </Card>
-
-            <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
-                    <DialogHeader>
+            <Dialog
+                open={isOpen}
+                onOpenChange={(open) => {
+                    if (!processing) {
+                        setIsOpen(open);
+                        if (!open) clearErrors();
+                    }
+                }}
+            >
+                <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl md:max-w-2xl lg:max-w-3xl xl:max-w-3xl">
+                    <DialogHeader className="shrink-0 border-b px-4 py-4 pr-14 sm:px-6">
                         <DialogTitle>
-                            {editando ? 'Editar' : 'Nuevo'} País
+                            {editando ? 'Editar País' : 'Nuevo País'}
                         </DialogTitle>
+                        <DialogDescription>
+                            Completa los datos regionales. Los campos marcados
+                            con * son obligatorios.
+                        </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit}>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                                <div className="space-y-2">
-                                    <Label>Código (2 letras) *</Label>
-                                    <Input
-                                        value={data.code as string}
-                                        onChange={(e) =>
-                                            setData(
-                                                'code',
-                                                e.target.value.toUpperCase(),
-                                            )
-                                        }
-                                        placeholder="CL"
-                                        maxLength={2}
-                                        required
-                                        disabled={!!editando}
-                                    />
-                                </div>
-                                <div className="space-y-2 sm:col-span-2">
-                                    <Label>Nombre del País *</Label>
-                                    <Input
-                                        value={data.name as string}
-                                        onChange={(e) =>
-                                            setData('name', e.target.value)
-                                        }
-                                        placeholder="Chile"
-                                        required
-                                    />
-                                </div>
+                    <form onSubmit={submit} className="flex min-h-0 flex-col">
+                        <div className="min-h-0 overflow-y-auto p-4 sm:p-6">
+                            {Object.keys(errors).length > 0 && (
+                                <p
+                                    role="alert"
+                                    className="mb-4 text-sm text-destructive"
+                                >
+                                    Revisa los campos indicados antes de
+                                    guardar.
+                                </p>
+                            )}
+                            <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
+                                {fields.map((field) => (
+                                    <div
+                                        key={field.key}
+                                        className="min-w-0 space-y-2"
+                                    >
+                                        <Label htmlFor={`country-${field.key}`}>
+                                            {field.label}
+                                            {!field.optional && ' *'}
+                                        </Label>
+                                        <Input
+                                            id={`country-${field.key}`}
+                                            name={field.key}
+                                            type={field.type ?? 'text'}
+                                            className="h-11 min-w-0"
+                                            value={data[field.key]}
+                                            placeholder={field.placeholder}
+                                            maxLength={field.maxLength}
+                                            min={field.min}
+                                            max={field.max}
+                                            step={field.step}
+                                            required={!field.optional}
+                                            disabled={
+                                                processing ||
+                                                (field.key === 'code' &&
+                                                    !!editando)
+                                            }
+                                            aria-invalid={!!errors[field.key]}
+                                            aria-describedby={
+                                                errors[field.key]
+                                                    ? `country-${field.key}-error`
+                                                    : undefined
+                                            }
+                                            onChange={(event) => {
+                                                let value: string | number =
+                                                    event.target.value;
+                                                if (field.type === 'number')
+                                                    value = Number(value);
+                                                else if (
+                                                    field.key === 'code' ||
+                                                    field.key ===
+                                                        'currency_code'
+                                                )
+                                                    value = value.toUpperCase();
+                                                setData({
+                                                    ...data,
+                                                    [field.key]: value,
+                                                });
+                                            }}
+                                        />
+                                        {errors[field.key] && (
+                                            <p
+                                                id={`country-${field.key}-error`}
+                                                className="text-sm text-destructive"
+                                            >
+                                                {errors[field.key]}
+                                            </p>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
-
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                                <div className="space-y-2">
-                                    <Label>Código Moneda *</Label>
-                                    <Input
-                                        value={data.currency_code as string}
-                                        onChange={(e) =>
-                                            setData(
-                                                'currency_code',
-                                                e.target.value.toUpperCase(),
-                                            )
-                                        }
-                                        placeholder="CLP"
-                                        maxLength={3}
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Símbolo *</Label>
-                                    <Input
-                                        value={data.currency_symbol as string}
-                                        onChange={(e) =>
-                                            setData(
-                                                'currency_symbol',
-                                                e.target.value,
-                                            )
-                                        }
-                                        placeholder="$"
-                                        maxLength={10}
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Decimales *</Label>
-                                    <Input
-                                        type="number"
-                                        value={data.currency_decimals as number}
-                                        onChange={(e) =>
-                                            setData(
-                                                'currency_decimals',
-                                                parseInt(e.target.value) || 0,
-                                            )
-                                        }
-                                        min={0}
-                                        max={4}
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Formato Fecha *</Label>
-                                    <Input
-                                        value={data.date_format as string}
-                                        onChange={(e) =>
-                                            setData(
-                                                'date_format',
-                                                e.target.value,
-                                            )
-                                        }
-                                        placeholder="DD/MM/YYYY"
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                                <div className="space-y-2">
-                                    <Label>Locale *</Label>
-                                    <Input
-                                        value={data.locale as string}
-                                        onChange={(e) =>
-                                            setData('locale', e.target.value)
-                                        }
-                                        placeholder="es-CL"
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Timezone *</Label>
-                                    <Input
-                                        value={data.timezone as string}
-                                        onChange={(e) =>
-                                            setData('timezone', e.target.value)
-                                        }
-                                        placeholder="America/Santiago"
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Código Teléfono *</Label>
-                                    <Input
-                                        value={data.phone_code as string}
-                                        onChange={(e) =>
-                                            setData(
-                                                'phone_code',
-                                                e.target.value,
-                                            )
-                                        }
-                                        placeholder="+56"
-                                        maxLength={5}
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                                <div className="space-y-2">
-                                    <Label>Nombre Impuesto *</Label>
-                                    <Input
-                                        value={data.tax_name as string}
-                                        onChange={(e) =>
-                                            setData('tax_name', e.target.value)
-                                        }
-                                        placeholder="IVA"
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Tasa (%) *</Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={data.tax_rate as number}
-                                        onChange={(e) =>
-                                            setData(
-                                                'tax_rate',
-                                                parseFloat(e.target.value) || 0,
-                                            )
-                                        }
-                                        min={0}
-                                        max={100}
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>ID Fiscal *</Label>
-                                    <Input
-                                        value={data.fiscal_id_label as string}
-                                        onChange={(e) =>
-                                            setData(
-                                                'fiscal_id_label',
-                                                e.target.value,
-                                            )
-                                        }
-                                        placeholder="RUT"
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Patrón ID Fiscal</Label>
-                                    <Input
-                                        value={data.fiscal_id_pattern as string}
-                                        onChange={(e) =>
-                                            setData(
-                                                'fiscal_id_pattern',
-                                                e.target.value,
-                                            )
-                                        }
-                                        placeholder="/^\d{7,8}[\dkK]$/"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
+                            <div className="mt-4 flex min-h-11 items-center gap-3">
                                 <input
+                                    id="country-is_active"
                                     type="checkbox"
-                                    checked={data.is_active as boolean}
-                                    onChange={(e) =>
-                                        setData('is_active', e.target.checked)
+                                    checked={data.is_active}
+                                    disabled={processing}
+                                    onChange={(event) =>
+                                        setData(
+                                            'is_active',
+                                            event.target.checked,
+                                        )
                                     }
-                                    className="h-4 w-4"
+                                    className="size-5"
                                 />
-                                <Label>País activo (visible en registro)</Label>
+                                <Label htmlFor="country-is_active">
+                                    País activo (visible en registro)
+                                </Label>
                             </div>
                         </div>
-                        <DialogFooter className="flex flex-col sm:flex-row">
+                        <DialogFooter className="shrink-0 gap-2 border-t bg-background px-4 py-3 sm:px-6">
                             <Button
                                 type="button"
                                 variant="outline"
+                                className="min-h-11"
+                                disabled={processing}
                                 onClick={() => setIsOpen(false)}
                             >
-                                <X className="mr-2 h-4 w-4" /> Cancelar
+                                Cancelar
                             </Button>
-                            <Button type="submit" disabled={processing}>
-                                <Save className="mr-2 h-4 w-4" />
-                                {editando ? 'Actualizar' : 'Crear'}
+                            <Button
+                                type="submit"
+                                className="min-h-11"
+                                disabled={processing}
+                            >
+                                <Save className="size-4" />
+                                {processing
+                                    ? 'Guardando…'
+                                    : editando
+                                      ? 'Actualizar'
+                                      : 'Crear'}
                             </Button>
                         </DialogFooter>
                     </form>

@@ -551,10 +551,33 @@ export async function runResponsiveChecks() {
             try {
             await setWidth(320);
             await navigate(fixture.path, fixture.ready ?? '!!document.querySelector("h1")');
+            if (fixture.setup) {
+                await evaluate(fixture.setup);
+                await waitFor("document.body.innerText.includes('Países soportados')", 'pestaña Países');
+            }
             for (const width of viewportWidths) {
                 await setWidth(width);
                 await assertNoOverflow(`${fixture.path} ${width}px`);
                 await assertControlsUnclipped(`${fixture.path} ${width}px`);
+                if (fixture.countryManagement) {
+                    await evaluate("window.countryParentSubmits = 0; document.querySelector('#config-form')?.addEventListener('submit', event => { event.preventDefault(); window.countryParentSubmits++; }, {once:true})");
+                    await evaluate("[...document.querySelectorAll('button')].find(button => button.innerText.trim() === 'Nuevo País').click()");
+                    await waitFor("!!document.querySelector('[role=dialog] #country-code')", 'formulario país');
+                    check(await evaluate('window.countryParentSubmits === 0'), 'nuevo país no guarda configuración general');
+                    await assertNoOverflow(`${fixture.path} modal ${width}px`);
+                    await assertControlsUnclipped(`${fixture.path} modal ${width}px`);
+                    check(await evaluate("document.querySelector('#country-is_active').checked"), 'nuevo país activo por defecto');
+                    check(await evaluate("!!document.querySelector('label[for=country-timezone]')"), 'campo zona horaria etiquetado');
+                    check(await evaluate("(()=>{const form=document.querySelector('[role=dialog] form');return !form.checkValidity()})()"), 'formulario vacío no permite guardar');
+                    check(await evaluate("(()=>{const b=[...document.querySelectorAll('[role=dialog] button')].find(e=>e.type==='submit');const r=b.getBoundingClientRect();return r.bottom<=innerHeight&&r.top>=0})()"), 'botón de guardar dentro de pantalla');
+                    await escape();
+                    await waitFor("!document.querySelector('[role=dialog] #country-code')", 'cierre formulario país');
+                    await click('button[aria-label="Editar Chile"]');
+                    await waitFor("document.querySelector('#country-code')?.value === 'CL'", 'datos país editado');
+                    check(await evaluate("document.querySelector('#country-code').disabled && document.querySelector('#country-name').value === 'Chile' && Number(document.querySelector('#country-tax_rate').value) === 19"), 'editar carga código nombre e impuesto');
+                    await escape();
+                    await pause(150);
+                }
             }
             check(browser.exceptions.length === 0, `${fixture.path}: excepciones JS: ${browser.exceptions.join('\n')}`);
             console.log(`PASS pantalla interna ${fixture.path}: ${viewportWidths.join(', ')} px`);
