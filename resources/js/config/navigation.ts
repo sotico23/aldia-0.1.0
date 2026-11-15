@@ -18,6 +18,7 @@ import {
     UsersRound,
     Wrench,
 } from 'lucide-react';
+import { deliveryHistory } from '@/actions/App/Http/Controllers/Backend/EntregaController';
 import { dashboard } from '@/routes';
 
 export type HrefType = NonNullable<InertiaLinkProps['href']>;
@@ -76,7 +77,7 @@ export const mainNavItems: ExtendedNavItem[] = [
         href: dashboard.url(),
         icon: Building2,
     },
-/*     {
+    /*     {
         title: 'Reparto',
         group: 'REPARTO',
         href: '#reparto',
@@ -400,6 +401,11 @@ export const mainNavItems: ExtendedNavItem[] = [
             {
                 title: 'Entregas',
                 href: buildRouteUrl('/entregas'),
+                permission: 'flota.entregas.viewAny',
+            },
+            {
+                title: 'Registro de entregas',
+                href: deliveryHistory.url(),
                 permission: 'flota.entregas.viewAny',
             },
             {

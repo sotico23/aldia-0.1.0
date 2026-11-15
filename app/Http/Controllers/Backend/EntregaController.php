@@ -121,6 +121,7 @@ class EntregaController extends Controller implements HasMiddleware
 
         return Inertia::render('Backend/Entregas/Index', [
             'entregas' => $entregas,
+            'initial_tab' => $request->routeIs('entregas.registro') ? 'history' : 'deliveries',
             'delivery_history' => fn () => app(DeliveryHistoryService::class)->paginateForOwner($ownerId),
             'delivery_rates' => DeliveryRate::where('owner_id', $ownerId)
                 ->orderByDesc('id')
@@ -143,6 +144,11 @@ class EntregaController extends Controller implements HasMiddleware
             'stats' => $stats,
             'filters' => $request->only(['conductor_id', 'estado']),
         ]);
+    }
+
+    public function deliveryHistory(Request $request): Response
+    {
+        return $this->index($request);
     }
 
     public function evidencePhoto(Request $request, Entrega $entrega): StreamedResponse

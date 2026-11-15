@@ -168,6 +168,7 @@ export default function Index({
     grupos_trabajo = [],
     delivery_rates = [],
     delivery_history = { data: [], links: [], total: 0 },
+    initial_tab = 'deliveries',
 }: {
     entregas: { data: Entrega[]; links: any[]; meta?: any; total: number };
     vehiculos: Vehiculo[];
@@ -180,6 +181,7 @@ export default function Index({
     grupos_trabajo?: GrupoTrabajo[];
     delivery_rates?: DeliveryRate[];
     delivery_history?: DeliveryHistory;
+    initial_tab?: 'deliveries' | 'history';
 }) {
     const { currency } = useCountry();
     const { hasPermission } = usePermissions();
@@ -189,7 +191,7 @@ export default function Index({
     usePoll(10000, { only: ['entregas', 'delivery_history', 'stats'] });
     const [activeTab, setActiveTab] = useState<
         'deliveries' | 'rates' | 'history'
-    >('deliveries');
+    >(initial_tab);
 
     const [isOpen, setIsOpen] = useState(false);
     const [isVerOpen, setIsVerOpen] = useState(false);

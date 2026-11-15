@@ -249,13 +249,14 @@ export async function startFixtureServer() {
                     },
                 };
             }
-            const backendFixture = backendFixtures.find((fixture) => fixture.path === url.pathname);
+            const backendFixture = backendFixtures.find((fixture) => fixture.path === (url.pathname === '/entregas/registro' ? '/entregas' : url.pathname));
             if (backendFixture) {
                 component = backendFixture.component;
                 props = {
                     ...sharedProps,
                     auth: { user: { ...fixtureUser, permissions: ['*'] } },
                     ...backendFixture.props,
+                    ...(url.pathname === '/entregas/registro' ? { initial_tab: 'history' } : {}),
                 };
             }
             if (!component) {

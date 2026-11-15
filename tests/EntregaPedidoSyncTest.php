@@ -328,4 +328,7 @@ test('la evidencia inexistente devuelve 404 y la ruta publica exige permiso de e
     $this->actingAs(historyWebUser(10))->get('/testing/entregas/'.$pedido->entrega->id.'/evidencia')->assertNotFound();
     $route = Route::getRoutes()->getByName('entregas.evidencia');
     expect($route->gatherMiddleware())->toContain('permission:flota.entregas.viewAny', 'ownership:entrega');
+    $historyRoute = Route::getRoutes()->getByName('entregas.registro');
+    expect($historyRoute->getActionMethod())->toBe('deliveryHistory')
+        ->and($historyRoute->gatherMiddleware())->toContain('permission:flota.entregas.viewAny');
 });
