@@ -17,6 +17,7 @@ use App\Models\Repartidor;
 use App\Models\Vehiculo;
 use App\Models\Venta;
 use App\Scopes\OwnerScope;
+use App\Services\DeliveryHistoryService;
 use App\Services\DeliveryStatsService;
 use App\Services\EntregaPedidoService;
 use Illuminate\Http\RedirectResponse;
@@ -24,9 +25,11 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EntregaController extends Controller implements HasMiddleware
 {
@@ -118,6 +121,7 @@ class EntregaController extends Controller implements HasMiddleware
 
         return Inertia::render('Backend/Entregas/Index', [
             'entregas' => $entregas,
+            'delivery_history' => fn () => app(DeliveryHistoryService::class)->paginateForOwner($ownerId),
             'delivery_rates' => DeliveryRate::where('owner_id', $ownerId)
                 ->orderByDesc('id')
                 ->get()
@@ -138,6 +142,18 @@ class EntregaController extends Controller implements HasMiddleware
             'grupos_trabajo' => $gruposTrabajo,
             'stats' => $stats,
             'filters' => $request->only(['conductor_id', 'estado']),
+        ]);
+    }
+
+    public function evidencePhoto(Request $request, Entrega $entrega): StreamedResponse
+    {
+        abort_unless((int) $entrega->owner_id === $request->user()->getOwnerId(), 403);
+        $pedido = $entrega->pedido()->where('owner_id', $entrega->owner_id)->firstOrFail();
+        abort_unless($pedido->delivery_photo_path && Storage::disk('local')->exists($pedido->delivery_photo_path), 404);
+
+        return Storage::disk('local')->response($pedido->delivery_photo_path, null, [
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
         ]);
     }
 

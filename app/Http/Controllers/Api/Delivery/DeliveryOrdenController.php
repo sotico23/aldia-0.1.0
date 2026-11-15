@@ -6,6 +6,7 @@ use App\Events\DeliveryOrderPoolUpdated;
 use App\Events\DeliveryPositionUpdated;
 use App\Helpers\NotificationHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Delivery\CompleteDeliveryRequest;
 use App\Http\Requests\Delivery\RejectOrderRequest;
 use App\Http\Requests\Delivery\UpdateAvailabilityRequest;
 use App\Http\Requests\Delivery\UpdateLocationRequest;
@@ -24,6 +25,9 @@ use App\Scopes\OwnerScope;
 use App\Services\PedidoPoolService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 class DeliveryOrdenController extends Controller
 {
@@ -385,7 +389,7 @@ class DeliveryOrdenController extends Controller
      * POST /api/v1/delivery/orders/{pedido}/delivered
      * Solo el repartidor asignado; entrega + libera disponibilidad.
      */
-    public function delivered(Request $request, Pedido $pedido): JsonResponse
+    public function delivered(CompleteDeliveryRequest $request, Pedido $pedido): JsonResponse
     {
         if ((int) $pedido->repartidor_id !== (int) $request->user()->id) {
             return response()->json([
@@ -401,52 +405,72 @@ class DeliveryOrdenController extends Controller
             ], 409);
         }
 
-        $pedido->update([
-            'estado' => 'entregado',
-            'fecha_entrega' => now(),
-            'hora_entregado' => now(),
-        ]);
+        $photoPath = $request->file('foto_entrega')->store('delivery-evidence/'.$pedido->owner_id.'/'.$pedido->id, 'local');
+        if ($photoPath === false) {
+            return response()->json(['success' => false, 'message' => 'No se pudo guardar la foto. La entrega no fue completada.'], 503);
+        }
+
+        try {
+            DB::transaction(function () use ($request, $pedido, $photoPath): void {
+                $locked = Pedido::withoutGlobalScope(OwnerScope::class)->lockForUpdate()->findOrFail($pedido->id);
+                abort_unless((int) $locked->repartidor_id === (int) $request->user()->id, 403);
+                abort_unless($locked->estado === 'enviado', 409, 'El pedido ya no está en reparto.');
+                $pedido->setRawAttributes($locked->getAttributes(), true);
+
+                $pedido->update([
+                    'delivery_photo_path' => $photoPath,
+                    'estado' => 'entregado',
+                    'fecha_entrega' => now(),
+                    'hora_entregado' => now(),
+                ]);
+
+                $repartidor = $this->repartidor($request);
+
+                // Congelar costo de envío y ganancia para el histórico de ganancias.
+                $costoEnvio = $pedido->costoEnvioEfectivo();
+                $distanciaKm = $pedido->distancia_km;
+
+                if (($distanciaKm === null || (float) $distanciaKm <= 0)
+                    && $repartidor->lat !== null
+                    && $repartidor->lng !== null
+                    && $pedido->destino_lat !== null
+                    && $pedido->destino_lng !== null
+                ) {
+                    $distancia = $repartidor->distanciaA(
+                        (float) $pedido->destino_lat,
+                        (float) $pedido->destino_lng
+                    );
+                    $distanciaKm = $distancia !== null ? round($distancia, 2) : null;
+                }
+
+                $pedido->update([
+                    'costo_envio' => $costoEnvio,
+                    'ganancia_repartidor' => $repartidor->gananciaEstimada($costoEnvio),
+                    'distancia_km' => $distanciaKm,
+                ]);
+
+                $repartidor->update(['estado' => 'disponible']);
+
+                // Registrar envases vacíos de gas retornados por el cliente si aplica
+                $cantidadRetornada = (int) $request->input('cantidad_retornada', 0);
+                if ($cantidadRetornada > 0) {
+                    Vacio::create([
+                        'owner_id' => $pedido->owner_id,
+                        'cliente_id' => $pedido->cliente_id,
+                        'cantidad' => $cantidadRetornada,
+                        'estado' => 'bueno',
+                        'ubicacion' => 'Vehiculo Repartidor '.$repartidor->id,
+                        'observaciones' => "Envases retornados en entrega de Pedido #{$pedido->numero_pedido}",
+                    ]);
+                }
+
+            });
+        } catch (Throwable $exception) {
+            Storage::disk('local')->delete($photoPath);
+            throw $exception;
+        }
 
         $repartidor = $this->repartidor($request);
-
-        // Congelar costo de envío y ganancia para el histórico de ganancias.
-        $costoEnvio = $pedido->costoEnvioEfectivo();
-        $distanciaKm = $pedido->distancia_km;
-
-        if (($distanciaKm === null || (float) $distanciaKm <= 0)
-            && $repartidor->lat !== null
-            && $repartidor->lng !== null
-            && $pedido->destino_lat !== null
-            && $pedido->destino_lng !== null
-        ) {
-            $distancia = $repartidor->distanciaA(
-                (float) $pedido->destino_lat,
-                (float) $pedido->destino_lng
-            );
-            $distanciaKm = $distancia !== null ? round($distancia, 2) : null;
-        }
-
-        $pedido->update([
-            'costo_envio' => $costoEnvio,
-            'ganancia_repartidor' => $repartidor->gananciaEstimada($costoEnvio),
-            'distancia_km' => $distanciaKm,
-        ]);
-
-        $repartidor->update(['estado' => 'disponible']);
-
-        // Registrar envases vacíos de gas retornados por el cliente si aplica
-        $cantidadRetornada = (int) $request->input('cantidad_retornada', 0);
-        if ($cantidadRetornada > 0) {
-            Vacio::create([
-                'owner_id' => $pedido->owner_id,
-                'cliente_id' => $pedido->cliente_id,
-                'cantidad' => $cantidadRetornada,
-                'estado' => 'bueno',
-                'ubicacion' => 'Vehiculo Repartidor '.$repartidor->id,
-                'observaciones' => "Envases retornados en entrega de Pedido #{$pedido->numero_pedido}",
-            ]);
-        }
-
         $pedido->load(['conversacion', 'items.producto']);
         broadcast(new DeliveryOrderPoolUpdated($pedido, 'entregado'));
 
@@ -645,6 +669,7 @@ class DeliveryOrdenController extends Controller
             'hora_aceptado' => $pedido->hora_aceptado?->toISOString(),
             'hora_recogido' => $pedido->hora_recogido?->toISOString(),
             'hora_entregado' => $pedido->hora_entregado?->toISOString(),
+            'has_delivery_photo' => $pedido->delivery_photo_path !== null,
             'created_at' => $pedido->created_at?->toISOString(),
             'items' => $items,
         ];

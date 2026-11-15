@@ -38,6 +38,18 @@ const prospecto = {
 };
 
 export default [
+    {
+        path: '/entregas', component: 'Backend/Entregas/Index',
+        ready: '!!document.querySelector(\'[role="tablist"]\')',
+        props: {
+            entregas: paginate([]), vehiculos: [], conductores: [], repartidores: [], clientes: [], ventas: [],
+            stats: { kg: 0, litros: 0, unidades: 0 }, filters: {}, grupos_trabajo: [], delivery_rates: [],
+            delivery_history: paginate([
+                { id: 79, pedido_number: 'PED-79', cliente: 'Cliente de prueba', direccion: 'Dirección de entrega de prueba', driver_name: 'Repartidor de prueba', accepted_at: `${today}T12:00:00Z`, picked_up_at: `${today}T12:10:00Z`, delivered_at: `${today}T12:30:00Z`, has_photo: true },
+                { id: 67, pedido_number: null, cliente: 'Registro antiguo', direccion: null, driver_name: null, accepted_at: null, picked_up_at: null, delivered_at: null, has_photo: false },
+            ]),
+        },
+    },
     {path: '/configuracion-web', component: 'Backend/ConfiguracionWeb/Index', props: {settings: {app_name: 'RedCliente', app_logo: null, theme_preset: 'emerald'}, countries: countryFixtures}, countryManagement: true, setup: "[...document.querySelectorAll('button')].find(button => button.innerText.trim().endsWith('Países'))?.click()"},
     {path: '/paises', component: 'Backend/Paises/Index', props: {countries: countryFixtures}, countryManagement: true},
     {

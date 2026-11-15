@@ -32,6 +32,8 @@ Route::middleware(['permission:flota.conductores.viewAny'])->group(function () {
 });
 
 Route::middleware(['permission:flota.entregas.viewAny'])->group(function () {
+    Route::get('entregas/{entrega}/evidencia', [EntregaController::class, 'evidencePhoto'])
+        ->middleware('ownership:entrega')->name('entregas.evidencia');
     Route::get('entregas/export', [EntregaController::class, 'exportCsv'])->name('entregas.export');
     Route::get('entregas/export-excel', [EntregaController::class, 'exportExcel'])->name('entregas.exportExcel');
     Route::post('entregas/import', [EntregaController::class, 'importCsv'])->name('entregas.import');

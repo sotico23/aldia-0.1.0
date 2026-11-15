@@ -189,6 +189,7 @@ export async function startFixtureServer() {
             }
             if (
                 url.pathname === '/fixture-image.svg' ||
+                /^\/entregas\/\d+\/evidencia$/.test(url.pathname) ||
                 url.pathname.startsWith('/storage/')
             ) {
                 response.writeHead(200, { 'Content-Type': 'image/svg+xml' });

@@ -53,6 +53,7 @@ class Pedido extends Model
         'hora_aceptado',
         'hora_recogido',
         'hora_entregado',
+        'delivery_photo_path',
         'repartidor_id',
         'metodo_pago',
         'fecha_confirmacion',

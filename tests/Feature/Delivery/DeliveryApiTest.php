@@ -11,8 +11,10 @@ use App\Models\User;
 use App\Notifications\ActualizacionEstadoPedidoNotification;
 use App\Notifications\DeliveryPedidoAceptadoNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 
@@ -351,12 +353,15 @@ test('delivered solo puede ejecutarlo el repartidor asignado', function () {
 
     ($this->actingAsRepartidor)();
 
-    $this->postJson("/api/v1/delivery/orders/{$pedido->id}/delivered")
+    $this->post("/api/v1/delivery/orders/{$pedido->id}/delivered", [
+        'foto_entrega' => UploadedFile::fake()->image('entrega.jpg'),
+    ], ['Accept' => 'application/json'])
         ->assertStatus(403)
         ->assertJsonPath('message', 'Este reparto no está asignado a ti.');
 });
 
 test('delivered completa el pedido y libera la disponibilidad', function () {
+    Storage::fake('local');
     $cliente = User::factory()->create();
     $pedido = ($this->crearPedidoPool)([
         'estado' => 'enviado',
@@ -371,7 +376,9 @@ test('delivered completa el pedido y libera la disponibilidad', function () {
 
     Notification::fake();
 
-    $this->postJson("/api/v1/delivery/orders/{$pedido->id}/delivered")
+    $this->post("/api/v1/delivery/orders/{$pedido->id}/delivered", [
+        'foto_entrega' => UploadedFile::fake()->image('entrega.jpg'),
+    ], ['Accept' => 'application/json'])
         ->assertStatus(200)
         ->assertJsonPath('pedido.estado', 'entregado');
 
@@ -379,6 +386,7 @@ test('delivered completa el pedido y libera la disponibilidad', function () {
     expect($pedido->estado)->toBe('entregado');
     expect($pedido->fecha_entrega)->not->toBeNull();
     expect($pedido->hora_entregado)->not->toBeNull();
+    Storage::disk('local')->assertExists($pedido->delivery_photo_path);
 
     $this->repartidor->refresh();
     expect($this->repartidor->estado)->toBe('disponible');
