@@ -17,6 +17,7 @@ class Entrega extends Model
     protected $fillable = [
         'owner_id',
         'venta_id',
+        'pedido_id',
         'grupo_trabajo_id',
         'vehiculo_id',
         'conductor_id',
@@ -51,6 +52,11 @@ class Entrega extends Model
     public function venta(): BelongsTo
     {
         return $this->belongsTo(Venta::class);
+    }
+
+    public function pedido(): BelongsTo
+    {
+        return $this->belongsTo(Pedido::class);
     }
 
     public function conductor(): BelongsTo

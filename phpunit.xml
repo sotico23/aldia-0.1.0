@@ -5,6 +5,9 @@
          colors="true"
 >
     <testsuites>
+        <testsuite name="Delivery synchronization">
+            <file>tests/EntregaPedidoSyncTest.php</file>
+        </testsuite>
         <testsuite name="Sidebar components">
             <file>tests/LivewireSidebarsTest.php</file>
             <file>tests/MarketplaceStoreImagesTest.php</file>

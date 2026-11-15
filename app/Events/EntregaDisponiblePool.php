@@ -6,6 +6,7 @@ use App\Models\Entrega;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Str;
@@ -14,7 +15,7 @@ use Illuminate\Support\Str;
  * Entrega liberada a la bolsa de ofertas (pool) para que cualquier repartidor
  * conectado pueda aceptarla desde la app móvil.
  */
-class EntregaDisponiblePool implements ShouldBroadcast
+class EntregaDisponiblePool implements ShouldBroadcast, ShouldDispatchAfterCommit
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -30,7 +31,7 @@ class EntregaDisponiblePool implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('delivery.pool.' . $this->entrega->owner_id),
+            new PrivateChannel('delivery.pool.'.$this->entrega->owner_id),
         ];
     }
 
@@ -51,6 +52,7 @@ class EntregaDisponiblePool implements ShouldBroadcast
             'id' => (string) Str::uuid(),
             'type' => 'delivery.pool.available',
             'entrega_id' => $this->entrega->id,
+            'pedido_id' => $this->entrega->pedido_id,
             'venta_id' => $this->entrega->venta_id,
             'cliente' => $this->entrega->cliente,
             'direccion' => $this->entrega->direccion,
@@ -71,6 +73,6 @@ class EntregaDisponiblePool implements ShouldBroadcast
      */
     public function getChannel(): string
     {
-        return 'delivery.pool.' . $this->entrega->owner_id;
+        return 'delivery.pool.'.$this->entrega->owner_id;
     }
 }

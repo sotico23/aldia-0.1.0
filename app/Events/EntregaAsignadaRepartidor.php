@@ -6,14 +6,16 @@ use App\Models\Entrega;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Str;
 
 /**
  * Entrega asignada directamente a un repartidor (modalidad Interno).
  * Se transmite por WebSockets / Reverb al repartidor asignado.
  */
-class EntregaAsignadaRepartidor implements ShouldBroadcast
+class EntregaAsignadaRepartidor implements ShouldBroadcast, ShouldDispatchAfterCommit
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -28,7 +30,7 @@ class EntregaAsignadaRepartidor implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('delivery.driver.' . $this->entrega->repartidor->user_id),
+            new PrivateChannel('delivery.driver.'.$this->entrega->repartidor->user_id),
         ];
     }
 
@@ -46,9 +48,10 @@ class EntregaAsignadaRepartidor implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
-            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'id' => (string) Str::uuid(),
             'type' => 'delivery.entrega.asignada',
             'entrega_id' => $this->entrega->id,
+            'pedido_id' => $this->entrega->pedido_id,
             'venta_id' => $this->entrega->venta_id,
             'cliente' => $this->entrega->cliente,
             'direccion' => $this->entrega->direccion,
@@ -69,6 +72,6 @@ class EntregaAsignadaRepartidor implements ShouldBroadcast
      */
     public function getChannel(): string
     {
-        return 'delivery.driver.' . $this->entrega->repartidor->user_id;
+        return 'delivery.driver.'.$this->entrega->repartidor->user_id;
     }
 }

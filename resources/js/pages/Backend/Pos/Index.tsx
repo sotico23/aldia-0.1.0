@@ -1658,14 +1658,15 @@ export default function PosIndex({
 
     return (
         <AppLayout
+            viewport
             breadcrumbs={[
                 { title: 'Dashboard', href: '/dashboard' },
                 { title: 'Caja POS', href: '/pos' },
             ]}
         >
             <Head title="Caja POS" />
-            <div className="@container/pos flex min-h-dvh min-w-0 bg-background">
-                <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-hidden border-r p-3 pb-24 sm:p-4 @min-[64rem]/pos:pb-4">
+            <div className="@container/pos flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background">
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden border-r p-3 pb-24 sm:p-4 @min-[64rem]/pos:pb-4">
                     <div className="flex items-center gap-3">
                         <div className="relative flex-1">
                             <Search className="absolute top-3 left-3 h-5 w-5 text-muted-foreground" />
@@ -1696,7 +1697,10 @@ export default function PosIndex({
                         </Button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto pr-2">
+                    <div
+                        data-testid="pos-catalog"
+                        className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-2"
+                    >
                         {productosFiltrados.length === 0 ? (
                             <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
                                 <ShoppingCart className="mb-4 h-16 w-16 opacity-20" />
@@ -1824,8 +1828,11 @@ export default function PosIndex({
                     </div>
                 </div>
 
-                <div className="hidden w-80 shrink-0 flex-col bg-muted/10 @min-[64rem]/pos:flex">
-                    <div className="space-y-4 border-b bg-background p-4 shadow-sm">
+                <div
+                    data-testid="pos-cart"
+                    className="hidden min-h-0 w-80 shrink-0 flex-col overflow-hidden bg-muted/10 @min-[64rem]/pos:flex"
+                >
+                    <div className="max-h-[35%] shrink-0 space-y-4 overflow-y-auto overscroll-contain border-b bg-background p-4 shadow-sm">
                         <div className="flex items-center gap-2">
                             <UserIcon className="h-4 w-4 text-muted-foreground" />
                             <Select
@@ -1947,7 +1954,7 @@ export default function PosIndex({
                         </div>
                     </div>
 
-                    <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-4">
+                    <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain p-4">
                         {cart.length > 0 && (
                             <div className="flex items-center justify-between px-1">
                                 <span className="text-xs font-medium text-muted-foreground">
@@ -2246,7 +2253,10 @@ export default function PosIndex({
                         )}
                     </div>
 
-                    <div className="space-y-4 border-t bg-background p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+                    <div
+                        data-testid="pos-checkout"
+                        className="max-h-[50%] shrink-0 space-y-4 overflow-y-auto overscroll-contain border-t bg-background p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]"
+                    >
                         <div className="space-y-1">
                             <div className="flex justify-between text-sm font-medium text-muted-foreground">
                                 <span>Subtotal</span>

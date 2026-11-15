@@ -78,24 +78,24 @@ class DeliveryOrdenController extends Controller
         return response()->json([
             'success' => true,
             'repartidor' => [
-                'id'              => $repartidor->id,
-                'owner_id'        => (int) $repartidor->owner_id,
-                'estado'          => $repartidor->estado,
-                'driver_type'     => $repartidor->driver_type,
+                'id' => $repartidor->id,
+                'owner_id' => (int) $repartidor->owner_id,
+                'estado' => $repartidor->estado,
+                'driver_type' => $repartidor->driver_type,
                 'approval_status' => $repartidor->approval_status,
                 'rejected_reason' => $repartidor->rejected_reason,
-                'is_online'       => $repartidor->is_online,
-                'comision_pct'    => (float) $repartidor->comision_pct,
-                'capacidad_max'   => (int) $repartidor->capacidad_max,
-                'lat'             => $repartidor->lat,
-                'lng'             => $repartidor->lng,
-                'radio_km'        => $repartidor->radio_km,
-                'vehiculo_id'     => $repartidor->vehiculo_id,
+                'is_online' => $repartidor->is_online,
+                'comision_pct' => (float) $repartidor->comision_pct,
+                'capacidad_max' => (int) $repartidor->capacidad_max,
+                'lat' => $repartidor->lat,
+                'lng' => $repartidor->lng,
+                'radio_km' => $repartidor->radio_km,
+                'vehiculo_id' => $repartidor->vehiculo_id,
                 'last_position_at' => $repartidor->last_position_at?->toISOString(),
-                'last_online_at'  => $repartidor->last_online_at?->toISOString(),
+                'last_online_at' => $repartidor->last_online_at?->toISOString(),
             ],
             'config' => $config ? [
-                'modo'             => $config->modo,
+                'modo' => $config->modo,
                 'pool_timeout_min' => $config->pool_timeout_min,
                 'pool_reenvio_min' => $config->pool_reenvio_min,
                 'pool_reenvios_max' => $config->pool_reenvios_max,
@@ -135,14 +135,14 @@ class DeliveryOrdenController extends Controller
         // Sincronizar is_online con el nuevo estado
         $isOnline = ($estado === 'disponible');
         $repartidor->update([
-            'estado'    => $estado,
+            'estado' => $estado,
             'is_online' => $isOnline,
         ]);
 
         return response()->json([
-            'success'         => true,
-            'estado'          => $estado,
-            'is_online'       => $isOnline,
+            'success' => true,
+            'estado' => $estado,
+            'is_online' => $isOnline,
             'pedido_liberado' => $pedidoLiberado,
         ]);
     }
@@ -166,15 +166,11 @@ class DeliveryOrdenController extends Controller
             && $repartidor->is_online
             && $repartidor->isDisponible()
             && $repartidor->isApproved()
-            && $repartidor->lat !== null
-            && $repartidor->lng !== null
         ) {
             $poolQuery = Pedido::query()
                 ->withoutGlobalScope(OwnerScope::class)
                 ->disponibleEnPool()
-                ->with(['items.producto'])
-                ->whereNotNull('destino_lat')
-                ->whereNotNull('destino_lng');
+                ->with(['items.producto', 'entrega']);
 
             if ($repartidor->isFreelancer()) {
                 // Freelancer: ve pedidos del marketplace global + pedidos de su propia empresa
@@ -193,6 +189,11 @@ class DeliveryOrdenController extends Controller
             $pool = $poolQuery->orderBy('created_at')
                 ->get()
                 ->filter(function (Pedido $pedido) use ($repartidor) {
+                    if ($pedido->destino_lat === null || $pedido->destino_lng === null) {
+                        return $pedido->entrega !== null
+                            && (int) $pedido->owner_id === (int) $repartidor->owner_id;
+                    }
+
                     $distancia = $repartidor->distanciaA((float) $pedido->destino_lat, (float) $pedido->destino_lng);
 
                     return $distancia !== null && $distancia <= (float) $repartidor->radio_km;
@@ -213,10 +214,10 @@ class DeliveryOrdenController extends Controller
             ->all();
 
         return response()->json([
-            'success'         => true,
-            'pool'            => $pool,
+            'success' => true,
+            'pool' => $pool,
             'pedidos_activos' => $activos,
-            'is_online'       => $repartidor->is_online,
+            'is_online' => $repartidor->is_online,
         ]);
     }
 
@@ -441,7 +442,7 @@ class DeliveryOrdenController extends Controller
                 'cliente_id' => $pedido->cliente_id,
                 'cantidad' => $cantidadRetornada,
                 'estado' => 'bueno',
-                'ubicacion' => 'Vehiculo Repartidor ' . $repartidor->id,
+                'ubicacion' => 'Vehiculo Repartidor '.$repartidor->id,
                 'observaciones' => "Envases retornados en entrega de Pedido #{$pedido->numero_pedido}",
             ]);
         }
@@ -524,7 +525,7 @@ class DeliveryOrdenController extends Controller
 
         $pedido->update([
             'estado' => 'cancelado',
-            'notas' => trim(($pedido->notas ?? '') . " | Cancelado: $motivo"),
+            'notas' => trim(($pedido->notas ?? '')." | Cancelado: $motivo"),
         ]);
 
         $repartidor = $this->repartidor($request);
@@ -606,46 +607,46 @@ class DeliveryOrdenController extends Controller
         }
 
         // Calcular ganancia estimada para el repartidor (comisión sobre costo de envío)
-        $costoEnvio      = $pedido->costoEnvioEfectivo();
+        $costoEnvio = $pedido->costoEnvioEfectivo();
         $gananciaEstimada = $repartidor ? $repartidor->gananciaEstimada($costoEnvio) : null;
 
         $items = $pedido->items->map(function ($item) {
             return [
-                'id'               => $item->id,
-                'producto_id'      => $item->producto_id,
-                'nombre_producto'  => $item->nombre_producto,
-                'precio_unitario'  => (float) $item->precio_unitario,
-                'cantidad'         => (float) $item->cantidad,
-                'subtotal'         => (float) $item->subtotal,
+                'id' => $item->id,
+                'producto_id' => $item->producto_id,
+                'nombre_producto' => $item->nombre_producto,
+                'precio_unitario' => (float) $item->precio_unitario,
+                'cantidad' => (float) $item->cantidad,
+                'subtotal' => (float) $item->subtotal,
                 'envase_retornable' => (bool) ($item->producto?->envase_retornable ?? false),
             ];
         })->all();
 
         return [
-            'id'                => $pedido->id,
-            'numero_pedido'     => $pedido->numero_pedido,
-            'estado'            => $pedido->estado,
-            'dispatch_mode'     => $pedido->dispatch_mode ?? 'internal',
-            'delivery_type'     => $pedido->dispatch_mode ?? 'internal',
-            'repartidor_id'     => $pedido->repartidor_id,
-            'subtotal'          => (float) ($pedido->subtotal ?? 0),
-            'impuesto'          => (float) ($pedido->impuesto ?? 0),
-            'total'             => (float) $pedido->total,
-            'costo_envio'       => $costoEnvio,
+            'id' => $pedido->id,
+            'numero_pedido' => $pedido->numero_pedido,
+            'estado' => $pedido->estado,
+            'dispatch_mode' => $pedido->dispatch_mode ?? 'internal',
+            'delivery_type' => $pedido->dispatch_mode ?? 'internal',
+            'repartidor_id' => $pedido->repartidor_id,
+            'subtotal' => (float) ($pedido->subtotal ?? 0),
+            'impuesto' => (float) ($pedido->impuesto ?? 0),
+            'total' => (float) $pedido->total,
+            'costo_envio' => $costoEnvio,
             'ganancia_estimada' => $gananciaEstimada,
-            'metodo_pago'       => $pedido->metodo_pago,
-            'nombre_cliente'    => $pedido->nombre_cliente,
-            'telefono_cliente'  => $pedido->telefono_cliente,
+            'metodo_pago' => $pedido->metodo_pago,
+            'nombre_cliente' => $pedido->nombre_cliente,
+            'telefono_cliente' => $pedido->telefono_cliente,
             'direccion_cliente' => $pedido->direccion_cliente,
-            'destino_lat'       => $pedido->destino_lat,
-            'destino_lng'       => $pedido->destino_lng,
-            'distancia_km'      => $distancia !== null ? round($distancia, 2) : null,
-            'notas'             => $pedido->notas,
-            'hora_aceptado'     => $pedido->hora_aceptado?->toISOString(),
-            'hora_recogido'     => $pedido->hora_recogido?->toISOString(),
-            'hora_entregado'    => $pedido->hora_entregado?->toISOString(),
-            'created_at'        => $pedido->created_at?->toISOString(),
-            'items'             => $items,
+            'destino_lat' => $pedido->destino_lat,
+            'destino_lng' => $pedido->destino_lng,
+            'distancia_km' => $distancia !== null ? round($distancia, 2) : null,
+            'notas' => $pedido->notas,
+            'hora_aceptado' => $pedido->hora_aceptado?->toISOString(),
+            'hora_recogido' => $pedido->hora_recogido?->toISOString(),
+            'hora_entregado' => $pedido->hora_entregado?->toISOString(),
+            'created_at' => $pedido->created_at?->toISOString(),
+            'items' => $items,
         ];
     }
 }

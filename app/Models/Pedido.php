@@ -21,6 +21,7 @@ class Pedido extends Model
 
     // Modalidades de despacho
     const DISPATCH_INTERNAL = 'internal';
+
     const DISPATCH_MARKETPLACE = 'marketplace';
 
     protected $fillable = [
@@ -122,6 +123,11 @@ class Pedido extends Model
     public function conversacion(): HasOne
     {
         return $this->hasOne(Conversacion::class);
+    }
+
+    public function entrega(): HasOne
+    {
+        return $this->hasOne(Entrega::class);
     }
 
     public function repartidor(): BelongsTo

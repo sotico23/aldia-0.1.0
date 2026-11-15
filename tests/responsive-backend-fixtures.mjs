@@ -79,7 +79,7 @@ export default [
         component: 'Backend/Pos/Index',
         ready: '!!document.querySelector(\'input[placeholder="Buscar producto o escanear..."]\')',
         props: {
-            productos: [producto, { ...producto, id: 2, codigo: 'PRUEBA-002', nombre: 'Segundo producto de prueba' }],
+            productos: Array.from({ length: 60 }, (_, index) => ({ ...producto, id: index + 1, codigo: `PRUEBA-${index + 1}`, nombre: `Producto de prueba ${index + 1}` })),
             clientes: [cliente], almacenes: [almacen], empleados: [], empleado_id: null,
             puede_seleccionar_cajero: false, cajero_actual: { id: null, nombre: 'Cajero de prueba' },
             promociones: [], delivery_rates: [], iva_tasa: 0.19,

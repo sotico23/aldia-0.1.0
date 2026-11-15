@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Backend;
 
-use App\Events\EntregaDisponiblePool;
 use App\Events\EntregaAsignadaRepartidor;
+use App\Events\EntregaDisponiblePool;
 use App\Exports\EntregasExport;
 use App\Http\Controllers\Controller;
 use App\Imports\EntregasImport;
@@ -18,6 +18,7 @@ use App\Models\Vehiculo;
 use App\Models\Venta;
 use App\Scopes\OwnerScope;
 use App\Services\DeliveryStatsService;
+use App\Services\EntregaPedidoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -185,6 +186,8 @@ class EntregaController extends Controller implements HasMiddleware
         $entrega = Entrega::create($validated);
 
         $this->syncItemsFromVenta($entrega, $ownerId);
+        app(EntregaPedidoService::class)->sync($entrega);
+        $entrega->refresh();
 
         // Emitir evento de entrega disponible en el pool (Bolsa de Ofertas)
         if ($validated['estado_asignacion'] === 'libre') {
@@ -273,6 +276,9 @@ class EntregaController extends Controller implements HasMiddleware
             }
         }
 
+        app(EntregaPedidoService::class)->sync($entrega);
+        $entrega->refresh();
+
         // Emitir evento de entrega disponible en el pool (Bolsa de Ofertas)
         // cuando se cambia a modo libre en una actualización
         if ($request->filled('estado_asignacion') && $validated['estado_asignacion'] === 'libre') {
@@ -291,6 +297,7 @@ class EntregaController extends Controller implements HasMiddleware
 
     public function destroy(Entrega $entrega): RedirectResponse
     {
+        $entrega->pedido?->update(['estado' => 'cancelado', 'pool_bloqueado' => true]);
         $entrega->delete();
 
         return redirect()->route('entregas.index');

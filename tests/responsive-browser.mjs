@@ -276,7 +276,7 @@ export async function startFixtureServer() {
     return { server, writeRequests, origin: `http://127.0.0.1:${server.address().port}` };
 }
 
-async function connectBrowser(origin) {
+export async function connectBrowser(origin) {
     const targets = await (
         await fetch(
             process.env.RESPONSIVE_CDP_URL ?? 'http://127.0.0.1:9437/json/list',

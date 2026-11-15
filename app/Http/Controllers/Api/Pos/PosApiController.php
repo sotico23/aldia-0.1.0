@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\Pos;
 
 use App\Http\Controllers\Controller;
 use App\Models\Almacen;
-use App\Models\Asiento;
 use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\DeliveryRate;
@@ -17,14 +16,11 @@ use App\Models\PosCierreCaja;
 use App\Models\Producto;
 use App\Models\SkuVariante;
 use App\Models\Tesoreria;
-use App\Models\Vacio;
 use App\Models\Venta;
 use App\Services\Inventory\SalesInventoryService;
 use App\Services\PedidoPoolService;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -220,7 +216,7 @@ class PosApiController extends Controller
                     'fecha' => now()->toDateString(),
                     'hora' => now()->format('H:i:s'),
                     'tipo_documento' => $validated['tipo_documento'],
-                    'numero_factura' => 'POS-' . strtoupper(Str::random(6)),
+                    'numero_factura' => 'POS-'.strtoupper(Str::random(6)),
                     'subtotal' => $validated['subtotal'],
                     'iva' => $validated['iva'],
                     'descuento' => $validated['descuento'] ?? 0,
@@ -292,10 +288,9 @@ class PosApiController extends Controller
                         'owner_id' => $ownerId,
                         'user_id' => $user->id,
                         'cliente_id' => $cliente?->id,
-                        'numero_pedido' => 'POS-DEL-' . $venta->id,
+                        'numero_pedido' => 'POS-DEL-'.$venta->id,
                         'estado' => 'preparando',
                         'dispatch_mode' => $dispatchMode,
-                        'delivery_type' => $dispatchMode,
                         'subtotal' => $validated['subtotal'],
                         'impuesto' => $validated['iva'],
                         'total' => $validated['total'],
@@ -323,6 +318,8 @@ class PosApiController extends Controller
 
                     Entrega::create([
                         'owner_id' => $ownerId,
+                        'pedido_id' => $pedido->id,
+                        'estado_asignacion' => 'libre',
                         'venta_id' => $venta->id,
                         'cliente_id' => $cliente?->id,
                         'cliente' => $validated['delivery_recipient_name'] ?? $cliente?->nombre ?? 'Cliente POS',
@@ -330,7 +327,7 @@ class PosApiController extends Controller
                         'direccion' => $validated['delivery_address'] ?? $cliente?->direccion,
                         'estado' => 'pendiente',
                         'fecha' => now()->toDateString(),
-                        'notas' => 'Entrega vinculada a Pedido #' . $pedido->numero_pedido . ' (' . ($dispatchMode === Pedido::DISPATCH_MARKETPLACE ? 'Marketplace' : 'Interno') . ')',
+                        'notas' => 'Entrega vinculada a Pedido #'.$pedido->numero_pedido.' ('.($dispatchMode === Pedido::DISPATCH_MARKETPLACE ? 'Marketplace' : 'Interno').')',
                     ]);
 
                     // Notificar al pool de repartidores
@@ -355,13 +352,13 @@ class PosApiController extends Controller
                 ],
             ], 201);
         } catch (\Exception $e) {
-            Log::error('Error registrando venta POS móvil: ' . $e->getMessage(), [
+            Log::error('Error registrando venta POS móvil: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al registrar la venta: ' . $e->getMessage(),
+                'message' => 'Error al registrar la venta: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -443,7 +440,7 @@ class PosApiController extends Controller
             'total_otros' => $totalOtros,
             'total_general' => $totalGeneral,
             'cantidad_ventas' => $ventas->count(),
-            'referencia' => 'Cierre Turno Móvil ' . now()->format('Y-m-d H:i'),
+            'referencia' => 'Cierre Turno Móvil '.now()->format('Y-m-d H:i'),
             'importado_at' => now(),
         ]);
 

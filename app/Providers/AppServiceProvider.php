@@ -30,6 +30,7 @@ use App\Observers\ConversationObserver;
 use App\Observers\MensajeConversacionObserver;
 use App\Observers\MensajeObserver;
 use App\Observers\MessageObserver;
+use App\Observers\PedidoEntregaObserver;
 use App\Policies\PedidoRecibidoPolicy;
 use App\Support\AgentContext;
 use Carbon\CarbonImmutable;
@@ -283,6 +284,7 @@ class AppServiceProvider extends ServiceProvider
 
     protected function registerObservers(): void
     {
+        Pedido::observe(PedidoEntregaObserver::class);
         Conversacion::observe(ConversacionObserver::class);
         Conversation::observe(ConversationObserver::class);
         MensajeConversacion::observe(MensajeConversacionObserver::class);

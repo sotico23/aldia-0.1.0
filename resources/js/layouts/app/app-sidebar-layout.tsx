@@ -10,11 +10,19 @@ import type { AppLayoutProps } from '@/types';
 export default function AppSidebarLayout({
     children,
     breadcrumbs = [],
+    viewport = false,
 }: AppLayoutProps) {
     return (
         <AppShell variant="sidebar">
             <AppSidebar />
-            <AppContent variant="sidebar" className="overflow-x-hidden">
+            <AppContent
+                variant="sidebar"
+                className={
+                    viewport
+                        ? 'h-dvh overflow-hidden md:h-[calc(100dvh-1rem)]'
+                        : 'overflow-x-hidden'
+                }
+            >
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
                 {children}
             </AppContent>
