@@ -22,6 +22,7 @@ use App\Models\Zone;
 use App\Notifications\ActualizacionEstadoPedidoNotification;
 use App\Notifications\DeliveryPedidoAceptadoNotification;
 use App\Scopes\OwnerScope;
+use App\Services\DeliveryStoreService;
 use App\Services\PedidoPoolService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -73,7 +74,7 @@ class DeliveryOrdenController extends Controller
 
         $config = DeliveryConfig::where('owner_id', $repartidor->owner_id)->first();
 
-        $pedidoActivo = Pedido::with(['conversacion', 'items.producto'])
+        $pedidoActivo = Pedido::with(['conversacion', 'items.producto', 'pickupStore', 'ownerStore'])
             ->where('repartidor_id', $request->user()->id)
             ->whereIn('estado', ['preparando', 'enviado'])
             ->latest('created_at')
@@ -174,7 +175,7 @@ class DeliveryOrdenController extends Controller
             $poolQuery = Pedido::query()
                 ->withoutGlobalScope(OwnerScope::class)
                 ->disponibleEnPool()
-                ->with(['items.producto', 'entrega']);
+                ->with(['items.producto', 'entrega', 'pickupStore', 'ownerStore']);
 
             if ($repartidor->isFreelancer()) {
                 // Freelancer: ve pedidos del marketplace global + pedidos de su propia empresa
@@ -209,7 +210,7 @@ class DeliveryOrdenController extends Controller
 
         $activos = Pedido::query()
             ->withoutGlobalScope(OwnerScope::class)
-            ->with(['conversacion', 'items.producto'])
+            ->with(['conversacion', 'items.producto', 'pickupStore', 'ownerStore'])
             ->where('repartidor_id', $request->user()->id)
             ->whereIn('estado', ['preparando', 'enviado'])
             ->orderBy('created_at', 'desc')
@@ -312,7 +313,7 @@ class DeliveryOrdenController extends Controller
         }
 
         $pedido->refresh();
-        $pedido->load(['conversacion', 'items.producto']);
+        $pedido->load(['conversacion', 'items.producto', 'pickupStore', 'ownerStore']);
 
         DeliveryAsignacion::registrar(
             $pedido,
@@ -336,6 +337,13 @@ class DeliveryOrdenController extends Controller
             'success' => true,
             'message' => 'Reparto aceptado.',
             'pedido' => $this->pedidoResource($pedido, $repartidor),
+        ]);
+    }
+
+    public function stores(Request $request): JsonResponse
+    {
+        return response()->json(['success' => true,
+            'stores' => app(DeliveryStoreService::class)->stores($this->repartidor($request)),
         ]);
     }
 
@@ -364,7 +372,7 @@ class DeliveryOrdenController extends Controller
             'hora_recogido' => now(),
         ]);
 
-        $pedido->load(['conversacion', 'items.producto']);
+        $pedido->load(['conversacion', 'items.producto', 'pickupStore', 'ownerStore']);
         broadcast(new DeliveryOrderPoolUpdated($pedido, 'recogido'));
 
         $cliente = $pedido->cliente_id ? User::find($pedido->cliente_id) : null;
@@ -471,7 +479,7 @@ class DeliveryOrdenController extends Controller
         }
 
         $repartidor = $this->repartidor($request);
-        $pedido->load(['conversacion', 'items.producto']);
+        $pedido->load(['conversacion', 'items.producto', 'pickupStore', 'ownerStore']);
         broadcast(new DeliveryOrderPoolUpdated($pedido, 'entregado'));
 
         $cliente = $pedido->cliente_id ? User::find($pedido->cliente_id) : null;
@@ -526,7 +534,7 @@ class DeliveryOrdenController extends Controller
                 : 'Pedido devuelto al pool.',
             'resultado' => $resultado,
             'pedido' => $this->pedidoResource(
-                $pedido->fresh()->load(['conversacion', 'items.producto']),
+                $pedido->fresh()->load(['conversacion', 'items.producto', 'pickupStore', 'ownerStore']),
                 $this->repartidor($request)
             ),
         ]);
@@ -561,7 +569,7 @@ class DeliveryOrdenController extends Controller
             'success' => true,
             'message' => 'Pedido cancelado.',
             'pedido' => $this->pedidoResource(
-                $pedido->fresh()->load(['conversacion', 'items.producto']),
+                $pedido->fresh()->load(['conversacion', 'items.producto', 'pickupStore', 'ownerStore']),
                 $repartidor
             ),
         ]);
@@ -648,6 +656,7 @@ class DeliveryOrdenController extends Controller
 
         return [
             'id' => $pedido->id,
+            'pickup_store' => app(DeliveryStoreService::class)->pickup($pedido),
             'numero_pedido' => $pedido->numero_pedido,
             'pool_alert_key' => $pedido->poolAlertKey(),
             'assignment_alert_key' => $pedido->assignmentAlertKey(),

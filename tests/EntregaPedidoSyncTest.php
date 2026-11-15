@@ -5,17 +5,21 @@ use App\Events\EntregaDisponiblePool;
 use App\Http\Controllers\Api\Delivery\DeliveryOrdenController;
 use App\Http\Controllers\Api\Delivery\PushDeviceController;
 use App\Http\Controllers\Backend\EntregaController as WebEntregaController;
+use App\Http\Controllers\Backend\PublicProfileController;
 use App\Http\Requests\Delivery\CompleteDeliveryRequest;
 use App\Http\Requests\Delivery\StorePushDeviceRequest;
+use App\Http\Requests\UpdatePublicProfileRequest;
 use App\Jobs\SendDeliveryPush;
 use App\Livewire\SystemSettingsPage;
 use App\Models\Entrega;
 use App\Models\Pedido;
+use App\Models\PublicProfile;
 use App\Models\PushDevice;
 use App\Models\Repartidor;
 use App\Models\User;
 use App\Services\DeliveryHistoryService;
 use App\Services\DeliveryPushService;
+use App\Services\DeliveryStoreService;
 use App\Services\EntregaPedidoService;
 use App\Support\SystemSettings;
 use Illuminate\Database\Schema\Blueprint;
@@ -50,6 +54,16 @@ beforeEach(function () {
         $table->id();
         $table->string('nombre');
     });
+    Schema::create('public_profiles', function (Blueprint $table): void {
+        $table->id();
+        $table->unsignedBigInteger('owner_id')->nullable();
+        $table->unsignedBigInteger('user_id');
+        $table->string('title');
+        $table->string('slug')->unique();
+        $table->boolean('is_active')->default(false);
+        $table->timestamps();
+    });
+    (require database_path('migrations/2026_11_15_154857_add_pickup_location_to_public_profiles_table.php'))->up();
     Schema::create('personal_access_tokens', function (Blueprint $table): void {
         $table->id();
         $table->morphs('tokenable');
@@ -75,7 +89,7 @@ beforeEach(function () {
 
     Schema::create('pedidos', function (Blueprint $table): void {
         $table->id();
-        foreach (['owner_id', 'user_id', 'repartidor_id'] as $column) {
+        foreach (['owner_id', 'user_id', 'repartidor_id', 'public_profile_id'] as $column) {
             $table->unsignedBigInteger($column)->nullable();
         }
         $table->string('numero_pedido')->unique();
@@ -513,4 +527,96 @@ test('la evidencia inexistente devuelve 404 y la ruta publica exige permiso de e
     $historyRoute = Route::getRoutes()->getByName('entregas.registro');
     expect($historyRoute->getActionMethod())->toBe('deliveryHistory')
         ->and($historyRoute->gatherMiddleware())->toContain('permission:flota.entregas.viewAny');
+});
+
+test('el mapa publica solo tiendas activas ubicadas y respeta el alcance del repartidor', function () {
+    DB::table('users')->insert([
+        ['id' => 10, 'name' => 'Comercio local', 'is_active' => true],
+        ['id' => 20, 'name' => 'Otro comercio', 'is_active' => true],
+        ['id' => 30, 'name' => 'Comercio suspendido', 'is_active' => false],
+    ]);
+    foreach ([
+        [1, 10, true, -33.45, -70.66], [2, 20, true, -33.451, -70.661],
+        [3, 10, false, -33.45, -70.66], [4, 10, true, null, null],
+        [5, 30, true, -33.45, -70.66], [6, 10, true, -40, -73],
+    ] as [$id, $owner, $active, $lat, $lng]) {
+        DB::table('public_profiles')->insert(['id' => $id, 'owner_id' => $owner, 'user_id' => $owner,
+            'slug' => "store-{$id}", 'title' => "Comercio {$id}", 'is_active' => $active,
+            'pickup_address' => 'Calle 123', 'pickup_lat' => $lat, 'pickup_lng' => $lng]);
+    }
+    $driver = new Repartidor(['owner_id' => 10, 'approval_status' => 'approved',
+        'driver_type' => 'employee', 'lat' => -33.45, 'lng' => -70.66, 'radio_km' => 5]);
+    $service = app(DeliveryStoreService::class);
+    expect(array_column($service->stores($driver), 'id'))->toBe([1]);
+    $driver->driver_type = 'freelancer';
+    expect(array_column($service->stores($driver), 'id'))->toBe([1, 2]);
+    $driver->approval_status = 'pending';
+    expect($service->stores($driver))->toBe([]);
+    $this->getJson('/api/v1/delivery/stores')->assertUnauthorized();
+});
+
+test('el pedido utiliza su comercio explicito y nunca el perfil del comprador o de otro tenant', function () {
+    DB::table('public_profiles')->insert([
+        ['id' => 1, 'owner_id' => 10, 'user_id' => 10, 'slug' => 'principal', 'title' => 'Principal', 'is_active' => true],
+        ['id' => 2, 'owner_id' => 10, 'user_id' => 11, 'slug' => 'sucursal', 'title' => 'Sucursal', 'is_active' => true],
+        ['id' => 3, 'owner_id' => 20, 'user_id' => 20, 'slug' => 'otro', 'title' => 'Otro', 'is_active' => true],
+    ]);
+    $service = app(DeliveryStoreService::class);
+    $order = new Pedido(['owner_id' => 10, 'user_id' => 20, 'public_profile_id' => 2]);
+    expect($service->pickup($order)['title'])->toBe('Sucursal');
+    $order = new Pedido(['owner_id' => 10, 'user_id' => 20]);
+    expect($service->pickup($order)['title'])->toBe('Principal');
+    $order = new Pedido(['owner_id' => 10, 'public_profile_id' => 3]);
+    expect($service->pickup($order))->toBeNull();
+});
+
+test('la API conserva el comercio y las coordenadas del cliente antes y despues de retirar', function () {
+    DB::table('public_profiles')->insert(['id' => 1, 'owner_id' => 10, 'user_id' => 10,
+        'slug' => 'retiro', 'title' => 'Comercio de retiro', 'is_active' => true,
+        'pickup_address' => 'Comercio 123', 'pickup_lat' => -33.45, 'pickup_lng' => -70.66]);
+    $entrega = poolEntrega();
+    $entrega->save();
+    $pedido = app(EntregaPedidoService::class)->sync($entrega);
+    $pedido->update(['repartidor_id' => 99, 'hora_aceptado' => now(), 'destino_lat' => -33.46, 'destino_lng' => -70.67]);
+    $request = Request::create('/api/v1/delivery/orders');
+    $request->setUserResolver(fn () => (new User)->forceFill(['id' => 99]));
+    $request->attributes->set('delivery.repartidor', new Repartidor(['owner_id' => 10, 'approval_status' => 'approved', 'comision_pct' => 80]));
+    $controller = app(DeliveryOrdenController::class);
+    $before = $controller->orders($request)->getData(true)['pedidos_activos'][0];
+    expect($before['pickup_store']['title'])->toBe('Comercio de retiro')
+        ->and($before['pickup_store']['lat'])->toBe(-33.45)->and($before['hora_recogido'])->toBeNull();
+    Event::fake([DeliveryOrderPoolUpdated::class]);
+    $controller->pickup($request, $pedido);
+    $after = $controller->orders($request)->getData(true)['pedidos_activos'][0];
+    expect($after['estado'])->toBe('enviado')->and($after['hora_recogido'])->not->toBeNull()
+        ->and($after['pickup_store'])->toBe($before['pickup_store'])->and((float) $after['destino_lat'])->toBe(-33.46);
+});
+
+test('la ubicacion de retiro valida el par de coordenadas y requiere direccion', function () {
+    $request = new UpdatePublicProfileRequest;
+    $request->setUserResolver(fn () => new User(['id' => 10]));
+    $rules = $request->rules();
+    unset($rules['slug']);
+    $validator = validator(['title' => 'Comercio', 'pickup_lat' => 91, 'pickup_lng' => -181], $rules);
+    expect($validator->fails())->toBeTrue()
+        ->and($validator->errors()->keys())->toContain('pickup_lat', 'pickup_lng', 'pickup_address');
+    expect(validator(['title' => 'Comercio', 'pickup_address' => 'Local 123', 'pickup_lat' => -33.45], $rules)->fails())->toBeTrue();
+    expect(validator(['title' => 'Comercio', 'pickup_address' => 'Local 123', 'pickup_lat' => -33.45, 'pickup_lng' => -70.66], $rules)->passes())->toBeTrue();
+});
+
+test('guardar la configuracion publica persiste el punto de retiro de la propia tienda', function () {
+    DB::table('users')->insert(['id' => 10, 'name' => 'Comerciante', 'is_active' => true]);
+    DB::table('public_profiles')->insert(['id' => 1, 'owner_id' => 10, 'user_id' => 10,
+        'title' => 'Comercio', 'slug' => 'comercio', 'is_active' => true]);
+    $request = UpdatePublicProfileRequest::create('/settings/public-profile', 'PATCH', [
+        'title' => 'Comercio', 'slug' => 'comercio', 'is_active' => true,
+        'pickup_address' => 'Comercio 123', 'pickup_lat' => '-33.45', 'pickup_lng' => '-70.66',
+    ]);
+    $request->setContainer(app())->setRedirector(app('redirect'));
+    $request->setUserResolver(fn () => User::findOrFail(10));
+    $request->validateResolved();
+    app(PublicProfileController::class)->update($request);
+    $store = PublicProfile::findOrFail(1);
+    expect($store->pickup_address)->toBe('Comercio 123')->and($store->pickup_lat)->toBe(-33.45)
+        ->and($store->pickup_lng)->toBe(-70.66)->and($store->user_id)->toBe(10);
 });

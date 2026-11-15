@@ -116,6 +116,16 @@ class Pedido extends Model
         return $this->belongsTo(User::class, 'cliente_id');
     }
 
+    public function pickupStore(): BelongsTo
+    {
+        return $this->belongsTo(PublicProfile::class, 'public_profile_id')->withoutGlobalScope(OwnerScope::class);
+    }
+
+    public function ownerStore(): HasOne
+    {
+        return $this->hasOne(PublicProfile::class, 'user_id', 'owner_id')->withoutGlobalScope(OwnerScope::class);
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(PedidoItem::class);

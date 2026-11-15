@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdatePublicProfileRequest;
 use App\Models\PublicProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,16 +25,9 @@ class PublicProfileController extends Controller
         ]);
     }
 
-    public function update(Request $request)
+    public function update(UpdatePublicProfileRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'slug' => 'required|string|alpha_dash|max:255|unique:public_profiles,slug,'.optional($request->user()->publicProfile)->id,
-            'description' => 'nullable|string|max:1000',
-            'phone' => 'nullable|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $request->user()->publicProfile()->updateOrCreate(
             ['user_id' => $request->user()->id],

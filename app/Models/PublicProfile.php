@@ -26,6 +26,9 @@ class PublicProfile extends Model
         'likes_count',
         'rating_total',
         'rating_count',
+        'pickup_address',
+        'pickup_lat',
+        'pickup_lng',
     ];
 
     protected function casts(): array
@@ -37,6 +40,8 @@ class PublicProfile extends Model
             'likes_count' => 'integer',
             'rating_total' => 'integer',
             'rating_count' => 'integer',
+            'pickup_lat' => 'float',
+            'pickup_lng' => 'float',
         ];
     }
 

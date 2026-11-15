@@ -179,6 +179,7 @@ Route::prefix('v1/delivery')
         Route::get('me', [DeliveryOrdenController::class, 'me']);
         Route::post('availability', [DeliveryOrdenController::class, 'availability']);
         Route::get('orders', [DeliveryOrdenController::class, 'orders']);
+        Route::get('stores', [DeliveryOrdenController::class, 'stores']);
 
         Route::post('orders/{pedido}/accept', [DeliveryOrdenController::class, 'accept']);
         Route::post('orders/{pedido}/aceptar', [DeliveryOrdenController::class, 'accept']);
