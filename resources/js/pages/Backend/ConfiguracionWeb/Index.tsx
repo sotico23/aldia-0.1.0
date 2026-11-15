@@ -2732,10 +2732,6 @@ export default function Index({
                             </div>
                         )}
 
-                        {activeSection === 'countries' && (
-                            <CountriesTab countries={countries || []} />
-                        )}
-
                         {activeSection === 'logs' && (
                             <div className="grid gap-6 lg:grid-cols-4">
                                 <div className="lg:col-span-3">
@@ -3044,6 +3040,10 @@ export default function Index({
                             </div>
                         )}
                     </form>
+
+                    {activeSection === 'countries' && (
+                        <CountriesTab countries={countries || []} />
+                    )}
 
                     {activeSection === 'solicitudes-repartidores' && (
                         <RepartidorSolicitudes />

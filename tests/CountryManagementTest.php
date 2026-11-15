@@ -54,8 +54,30 @@ afterEach(function () {
 
 test('crear pais normaliza los codigos y vuelve a configuracion', function () {
     $this->from('/configuracion-web')->post(route('paises.store'), managementCountryData(['code' => 'cl', 'currency_code' => 'clp']))
-        ->assertRedirect('/configuracion-web')->assertSessionHasNoErrors();
+        ->assertRedirect('/configuracion-web')->assertSessionHasNoErrors()
+        ->assertSessionHas('success', 'País creado correctamente.');
     $this->assertDatabaseHas('countries', ['code' => 'CL', 'currency_code' => 'CLP', 'is_active' => true]);
+});
+
+test('un pais nuevo activo aparece inmediatamente en el registro y desaparece al desactivarlo', function () {
+    $this->from('/configuracion-web')->post(route('paises.store'), managementCountryData([
+        'code' => 'VE', 'name' => 'Venezuela', 'currency_code' => 'VES',
+        'currency_symbol' => 'Bs', 'currency_decimals' => 2, 'locale' => 'es-VE',
+        'timezone' => 'America/Caracas', 'phone_code' => '+58', 'tax_rate' => 16,
+        'fiscal_id_label' => 'RIF', 'is_active' => true,
+    ]))->assertSessionHasNoErrors()->assertRedirect('/configuracion-web');
+
+    auth()->guard()->forgetUser();
+    $this->withHeader('X-Inertia', 'true')->get('/register')->assertSuccessful()
+        ->assertJsonPath('props.countries.0.code', 'VE')
+        ->assertJsonPath('props.countries.0.currency_code', 'VES');
+
+    $this->actingAs($this->manager);
+    $country = Country::where('code', 'VE')->firstOrFail();
+    $this->patch(route('paises.toggle', $country))->assertRedirect();
+    auth()->guard()->forgetUser();
+    $this->withHeader('X-Inertia', 'true')->get('/register')->assertSuccessful()
+        ->assertJsonCount(0, 'props.countries');
 });
 
 test('editar y eliminar resuelven el pais correcto por la ruta', function () {

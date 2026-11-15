@@ -108,7 +108,7 @@ export async function startFixtureServer() {
     }
     collectStyles('resources/js/app.tsx');
     collectStyles('resources/css/app.css');
-    function inertiaDocument(component, props, url) {
+    function inertiaDocument(component, props, url, asJson = false) {
         const page = {
             component,
             props,
@@ -117,12 +117,24 @@ export async function startFixtureServer() {
             clearHistory: false,
             encryptHistory: false,
         };
+        if (asJson) return JSON.stringify(page);
         return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="csrf-token" content="responsive-fixture">${[...styleFiles].map((file) => `<link rel="stylesheet" href="/build/${file}">`).join('')}</head><body><div id="app" data-page="${escapeHtml(JSON.stringify(page))}"></div><script type="module" src="/build/${appEntry.file}"></script></body></html>`;
     }
+    const writeRequests = [];
     const server = http.createServer(async (request, response) => {
         try {
             const url = new URL(request.url, 'http://127.0.0.1');
             if (request.method !== 'GET' && request.method !== 'HEAD') {
+                writeRequests.push({ method: request.method, path: url.pathname });
+                if (request.method === 'POST' && url.pathname === '/paises') {
+                    let body = '';
+                    for await (const chunk of request) body += chunk;
+                    const country = JSON.parse(body);
+                    const countries = backendFixtures.find(fixture => fixture.path === '/configuracion-web').props.countries;
+                    countries.push({ ...country, id: 100 });
+                    response.writeHead(303, {Location: '/configuracion-web'}).end();
+                    return;
+                }
                 response.writeHead(405).end();
                 return;
             }
@@ -250,17 +262,18 @@ export async function startFixtureServer() {
                 return;
             }
             response.writeHead(200, {
-                'Content-Type': 'text/html; charset=utf-8',
+                'Content-Type': request.headers['x-inertia'] ? 'application/json' : 'text/html; charset=utf-8',
                 'Cache-Control': 'no-store',
+                ...(request.headers['x-inertia'] ? {'X-Inertia': 'true'} : {}),
             });
-            response.end(inertiaDocument(component, props, url.pathname));
+            response.end(inertiaDocument(component, props, url.pathname, !!request.headers['x-inertia']));
         } catch (error) {
             response.writeHead(500, { 'Content-Type': 'text/plain' });
             response.end(error.message);
         }
     });
     await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-    return { server, origin: `http://127.0.0.1:${server.address().port}` };
+    return { server, writeRequests, origin: `http://127.0.0.1:${server.address().port}` };
 }
 
 async function connectBrowser(origin) {
@@ -348,7 +361,7 @@ async function connectBrowser(origin) {
     }
     async function click(selector) {
         const rect = await evaluate(
-            `(()=>{const e=document.querySelector(${JSON.stringify(selector)});if(!e)return null;e.scrollIntoView({block:'center'});const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,width:r.width,height:r.height}})()`,
+            `(()=>{const e=[...document.querySelectorAll(${JSON.stringify(selector)})].find(node=>node.getClientRects().length&&node.getBoundingClientRect().width);if(!e)return null;e.scrollIntoView({block:'center'});const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,width:r.width,height:r.height}})()`,
         );
         assert.ok(rect?.width && rect?.height, `Control visible: ${selector}`);
         await send('Input.dispatchMouseEvent', {
@@ -394,7 +407,7 @@ async function connectBrowser(origin) {
 }
 
 export async function runResponsiveChecks() {
-    const { server, origin } = await startFixtureServer();
+    const { server, origin, writeRequests } = await startFixtureServer();
     let browser;
     let checks = 0;
     const check = (condition, message) => {
@@ -572,12 +585,30 @@ export async function runResponsiveChecks() {
                     check(await evaluate("(()=>{const b=[...document.querySelectorAll('[role=dialog] button')].find(e=>e.type==='submit');const r=b.getBoundingClientRect();return r.bottom<=innerHeight&&r.top>=0})()"), 'botón de guardar dentro de pantalla');
                     await escape();
                     await waitFor("!document.querySelector('[role=dialog] #country-code')", 'cierre formulario país');
+                    await click('button[aria-pressed="false"]');
+                    check(await evaluate("!document.querySelector('[aria-label=\"País Chile\"]') && !!document.querySelector('[aria-label=\"País Perú\"]')"), 'filtro solo activos excluye país inactivo');
+                    await click('button[aria-pressed="true"]');
                     await click('button[aria-label="Editar Chile"]');
                     await waitFor("document.querySelector('#country-code')?.value === 'CL'", 'datos país editado');
                     check(await evaluate("document.querySelector('#country-code').disabled && document.querySelector('#country-name').value === 'Chile' && Number(document.querySelector('#country-tax_rate').value) === 19"), 'editar carga código nombre e impuesto');
                     await escape();
                     await pause(150);
                 }
+            }
+            if (fixture.countryManagement) {
+                await send('Emulation.setDeviceMetricsOverride', {width: 400, height: 320, deviceScaleFactor: 1, mobile: true});
+                await pause(200);
+                await evaluate("[...document.querySelectorAll('button')].find(button=>button.innerText.trim()==='Nuevo País').click()");
+                await waitFor("!!document.querySelector('[role=dialog] #country-code')", 'país en pantalla horizontal');
+                check(await evaluate("(()=>{const b=document.querySelector('[role=dialog] button[type=submit]');const r=b.getBoundingClientRect();return r.top>=0&&r.bottom<=320})()"), 'guardar accesible en pantalla baja');
+                await escape();
+                await send('Emulation.setDeviceMetricsOverride', {width: 1920, height: 900, deviceScaleFactor: 1, mobile: false});
+                await pause(200);
+                await assertNoOverflow(`${fixture.path} 1920px`);
+                check(await evaluate("[...document.querySelectorAll('table')].some(table=>table.getBoundingClientRect().width>0)"), 'tabla de países visible en escritorio amplio');
+                await click('button[aria-label="Editar Chile"]');
+                await waitFor("document.querySelector('#country-code')?.value==='CL'", 'editar desde tabla de escritorio');
+                await escape();
             }
             check(browser.exceptions.length === 0, `${fixture.path}: excepciones JS: ${browser.exceptions.join('\n')}`);
             console.log(`PASS pantalla interna ${fixture.path}: ${viewportWidths.join(', ')} px`);
@@ -586,6 +617,25 @@ export async function runResponsiveChecks() {
                 console.error(`FAIL ${fixture.path}: ${error.message}`);
             }
         }
+
+        await setWidth(400);
+        await navigate('/configuracion-web', '!!document.querySelector("h1")');
+        await evaluate(backendFixtures.find(fixture => fixture.path === '/configuracion-web').setup);
+        await waitFor("document.body.innerText.includes('Países soportados')", 'lista de países');
+        await evaluate("[...document.querySelectorAll('button')].find(button=>button.innerText.trim()==='Nuevo País').click()");
+        await waitFor("!!document.querySelector('#country-code')", 'crear país completo');
+        const newCountryValues={code:'VE',name:'Venezuela',currency_code:'VES',currency_symbol:'Bs',currency_decimals:'2',date_format:'DD/MM/YYYY',locale:'es-VE',timezone:'America/Caracas',phone_code:'+58',tax_name:'IVA',tax_rate:'16',fiscal_id_label:'RIF',fiscal_id_pattern:'^[VEJPGvejpg]-[0-9]{8}-[0-9]$'};
+        for (const [key,value] of Object.entries(newCountryValues)) {
+            await evaluate(`(()=>{const input=document.querySelector(${JSON.stringify('#country-'+key)});Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}))})()`);
+            await pause(30);
+        }
+        await pause(200);
+        check(await evaluate("document.querySelector('[role=dialog] form').checkValidity()"), 'datos completos del país válidos');
+        writeRequests.length = 0;
+        await click('[role=dialog] button[type=submit]');
+        await waitFor("!document.querySelector('[role=dialog] #country-code') && !!document.querySelector('[aria-label=\"País Venezuela\"]')", 'país creado aparece tras guardar');
+        check(writeRequests.length === 1 && writeRequests[0].method === 'POST' && writeRequests[0].path === '/paises', `Crear envía solo país y no configuración: ${JSON.stringify(writeRequests)}`);
+        console.log('PASS creación completa de Venezuela y actualización de lista sin guardar configuración general');
 
         await fs.access(path.join(fixtureDirectory, 'store.html'));
         await setWidth(320);

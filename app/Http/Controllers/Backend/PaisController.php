@@ -38,7 +38,7 @@ class PaisController extends Controller implements HasMiddleware
 
         Country::create($validated);
 
-        return back();
+        return back()->with('success', 'País creado correctamente.');
     }
 
     public function update(UpdateCountryRequest $request, Country $country): RedirectResponse

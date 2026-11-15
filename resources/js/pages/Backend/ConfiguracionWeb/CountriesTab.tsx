@@ -220,6 +220,7 @@ export default function CountriesTab({ countries }: { countries: Country[] }) {
     };
     const submit = (event: FormEvent) => {
         event.preventDefault();
+        event.stopPropagation();
         const options = {
             preserveScroll: true,
             onSuccess: () => {
