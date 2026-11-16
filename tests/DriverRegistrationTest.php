@@ -7,10 +7,12 @@ use App\Services\Auth\ApiAuthService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\TestCase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -52,6 +54,8 @@ beforeEach(function () {
         '2026_08_11_184328_create_repartidores_table.php',
         '2026_08_16_004058_add_capacidad_max_to_repartidores_table.php',
         '2026_11_06_200834_add_driver_type_to_repartidores_table.php',
+        '2026_11_06_210000_add_documentos_to_repartidores_table.php',
+        '2026_11_15_215610_add_driver_review_data_to_repartidores_table.php',
     ] as $migration) {
         (require database_path('migrations/'.$migration))->up();
     }
@@ -95,6 +99,19 @@ test('un codigo valido vincula la solicitud a la empresa y sigue pendiente', fun
     $user = User::where('email', 'repartidor@example.test')->firstOrFail();
     expect((int) $user->creator_id)->toBe(10)
         ->and(Repartidor::where('user_id', $user->id)->firstOrFail()->approval_status)->toBe(Repartidor::APPROVAL_PENDING);
+});
+
+test('guarda la aceptación de antecedentes enviada desde la app', function () {
+    $this->postJson('/api/v1/driver/register', [
+        ...freelancerRegistrationData(),
+        'antecedentes_aceptados' => true,
+        'radio_km' => 18,
+    ])->assertCreated();
+
+    $driver = Repartidor::whereHas('user', fn ($query) => $query->where('email', 'repartidor@example.test'))->firstOrFail();
+    expect($driver->vehiculo_tipo)->toBe('moto')
+        ->and((float) $driver->radio_km)->toBe(18.0)
+        ->and($driver->antecedentes_aceptados_at)->not->toBeNull();
 });
 
 test('un codigo invalido devuelve validacion y no crea cuentas', function ($company) {
@@ -153,6 +170,44 @@ test('la pestaña de solicitudes usa la sesión web y el rol Master puede aproba
         ->and($driverUser->fresh()->hasRole(Repartidor::defaultRole()))->toBeTrue();
 });
 
+test('Master puede revisar todos los datos y abrir documentos de una solicitud', function () {
+    $this->withoutMiddleware(HandleInertiaRequests::class);
+    Storage::fake('public');
+    $master = User::withoutEvents(fn () => User::factory()->create([
+        'name' => 'Master', 'email' => 'master@example.test', 'is_active' => true,
+    ]));
+    Role::findOrCreate('Master', 'web');
+    $master->assignRole('Master');
+    $driverUser = User::withoutEvents(fn () => User::factory()->create([
+        'name' => 'Solicitante', 'email' => 'solicitante@example.test', 'is_active' => true,
+        'telefono' => '+56911112222', 'rut' => '12.345.678-9', 'owner_id' => 10,
+    ]));
+    $path = UploadedFile::fake()->create('cedula.png', 5, 'image/png')->store('driver-documents/'.$driverUser->id, 'public');
+    $driver = Repartidor::create([
+        'owner_id' => 10, 'user_id' => $driverUser->id, 'estado' => 'offline',
+        'driver_type' => Repartidor::TYPE_FREELANCER,
+        'approval_status' => Repartidor::APPROVAL_PENDING,
+        'vehiculo_tipo' => 'moto', 'radio_km' => 18,
+        'antecedentes_aceptados_at' => now(),
+        'documentos' => ['cedula_frontal' => [
+            'tipo' => 'cedula_frontal', 'nombre' => 'cedula.png', 'path' => $path,
+            'subido_at' => now()->toISOString(),
+        ]],
+    ]);
+
+    $this->actingAs($master)->getJson("/admin/repartidores/{$driver->id}/detalle")
+        ->assertOk()
+        ->assertJsonPath('data.persona.nombre', 'Solicitante')
+        ->assertJsonPath('data.vehiculo.tipo', 'moto')
+        ->assertJsonPath('data.vehiculo.radio_km', '18.00')
+        ->assertJsonPath('data.antecedentes.aceptados', true)
+        ->assertJsonPath('data.documentos.0.tipo', 'cedula_frontal')
+        ->assertJsonMissingPath('data.persona.password');
+
+    $this->getJson("/admin/repartidores/{$driver->id}/documentos/cedula_frontal")
+        ->assertOk()->assertHeader('content-type', 'image/png');
+});
+
 test('un usuario con permisos administrativos pero sin rol Master no puede aprobar', function () {
     $this->withoutMiddleware(HandleInertiaRequests::class);
     $administrator = User::withoutEvents(fn () => User::factory()->create([
@@ -173,14 +228,17 @@ test('un usuario con permisos administrativos pero sin rol Master no puede aprob
     ]);
 
     $this->actingAs($administrator)->getJson('/admin/repartidores/solicitudes')->assertOk();
+    $this->getJson("/admin/repartidores/{$driver->id}/detalle")->assertForbidden();
+    $this->getJson("/admin/repartidores/{$driver->id}/documentos/cedula_frontal")->assertForbidden();
     $this->postJson("/admin/repartidores/{$driver->id}/aprobar")
-        ->assertForbidden()->assertJsonPath('message', 'Solo el rol Master puede aprobar solicitudes de repartidores.');
+        ->assertForbidden()->assertJsonPath('message', 'Solo el rol Master puede revisar o aprobar solicitudes de repartidores.');
     $superAdmin = User::withoutEvents(fn () => User::factory()->create([
         'name' => 'Super Admin', 'email' => 'super-admin@example.test', 'is_active' => true,
     ]));
     Role::findOrCreate('Super Admin', 'web');
     $superAdmin->assignRole('Super Admin');
     $this->actingAs($superAdmin)->postJson("/admin/repartidores/{$driver->id}/aprobar")->assertForbidden();
+    $this->getJson("/admin/repartidores/{$driver->id}/detalle")->assertForbidden();
 
     Sanctum::actingAs($administrator);
     $this->postJson("/api/v1/admin/repartidores/{$driver->id}/aprobar")->assertForbidden();

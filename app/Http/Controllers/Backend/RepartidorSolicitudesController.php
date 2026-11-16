@@ -6,14 +6,27 @@ use App\Events\RepartidorEstadoActualizado;
 use App\Http\Controllers\Controller;
 use App\Models\Repartidor;
 use App\Models\User;
+use App\Scopes\OwnerScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RepartidorSolicitudesController extends Controller implements HasMiddleware
 {
+    private const DOCUMENT_LABELS = [
+        'cedula_frontal' => 'Cédula de identidad · frontal',
+        'cedula_reverso' => 'Cédula de identidad · reverso',
+        'licencia' => 'Licencia de conducir',
+        'permiso_circulacion' => 'Permiso de circulación',
+        'foto_vehiculo' => 'Foto del vehículo',
+        'otro' => 'Otro documento',
+    ];
+
     public static function middleware(): array
     {
         return [
@@ -56,6 +69,99 @@ class RepartidorSolicitudesController extends Controller implements HasMiddlewar
         ]);
     }
 
+    public function detalle(Request $request, int $id): JsonResponse
+    {
+        $this->requireMaster($request);
+
+        $repartidor = Repartidor::withoutGlobalScope(OwnerScope::class)
+            ->with('user:id,name,email,rut,telefono,created_at')
+            ->findOrFail($id);
+        $user = $repartidor->user;
+        $empresa = (int) $repartidor->owner_id !== (int) $repartidor->user_id
+            ? User::withoutGlobalScopes()->find($repartidor->owner_id)
+            : null;
+        $disk = Storage::disk('public');
+        $documentos = collect($repartidor->documentos ?? [])->map(function (mixed $documento, string|int $key) use ($id, $disk): ?array {
+            if (is_string($documento)) {
+                $url = filter_var($documento, FILTER_VALIDATE_URL) && in_array(parse_url($documento, PHP_URL_SCHEME), ['http', 'https'], true)
+                    ? $documento : null;
+                if ($url === null) {
+                    return null;
+                }
+
+                $tipo = (string) $key;
+
+                return ['tipo' => $tipo, 'label' => self::DOCUMENT_LABELS[$tipo] ?? Str::headline($tipo),
+                    'nombre' => basename((string) parse_url($url, PHP_URL_PATH)) ?: 'Documento', 'url' => $url,
+                    'mime_type' => null, 'bytes' => null, 'subido_at' => null];
+            }
+            if (! is_array($documento)) {
+                return null;
+            }
+
+            $tipo = (string) ($documento['tipo'] ?? $key);
+            $path = (string) ($documento['path'] ?? '');
+            $fileExists = $path !== '' && $disk->exists($path);
+            $url = $fileExists ? route('admin.repartidores.documento', ['id' => $id, 'tipo' => $tipo]) : null;
+            $legacyUrl = $documento['url'] ?? null;
+            if ($url === null && is_string($legacyUrl) && filter_var($legacyUrl, FILTER_VALIDATE_URL)
+                && in_array(parse_url($legacyUrl, PHP_URL_SCHEME), ['http', 'https'], true)) {
+                $url = $legacyUrl;
+            }
+
+            return ['tipo' => $tipo, 'label' => self::DOCUMENT_LABELS[$tipo] ?? Str::headline($tipo),
+                'nombre' => (string) ($documento['nombre'] ?? 'Documento'), 'url' => $url,
+                'mime_type' => $fileExists ? $disk->mimeType($path) : null,
+                'bytes' => $fileExists ? $disk->size($path) : null,
+                'subido_at' => $documento['subido_at'] ?? null];
+        })->filter()->values()->all();
+
+        return response()->json(['success' => true, 'data' => [
+            'id' => $repartidor->id,
+            'solicitud' => [
+                'tipo' => $repartidor->driver_type,
+                'estado' => $repartidor->approval_status,
+                'fecha' => $user?->created_at?->toISOString(),
+            ],
+            'persona' => [
+                'nombre' => $user?->name,
+                'email' => $user?->email,
+                'telefono' => $user?->telefono,
+                'rut' => $user?->rut,
+            ],
+            'vehiculo' => [
+                'tipo' => $repartidor->vehiculo_tipo,
+                'radio_km' => $repartidor->radio_km,
+            ],
+            'empresa' => $empresa ? ['codigo' => $empresa->id, 'nombre' => $empresa->name] : null,
+            'independiente' => $empresa === null,
+            'antecedentes' => [
+                'aceptados' => $repartidor->antecedentes_aceptados_at !== null,
+                'fecha' => $repartidor->antecedentes_aceptados_at?->toISOString(),
+            ],
+            'documentos' => $documentos,
+        ]]);
+    }
+
+    public function documento(Request $request, int $id, string $tipo): StreamedResponse
+    {
+        $this->requireMaster($request);
+
+        $repartidor = Repartidor::withoutGlobalScope(OwnerScope::class)->findOrFail($id);
+        $documento = $repartidor->documentos[$tipo] ?? null;
+        abort_unless(is_array($documento) && filled($documento['path'] ?? null), 404);
+
+        $disk = Storage::disk('public');
+        $path = (string) $documento['path'];
+        abort_unless($disk->exists($path), 404);
+        $filename = Str::of((string) ($documento['nombre'] ?? 'documento'))
+            ->replaceMatches('/[\r\n"\\\\]/', '')
+            ->limit(180, '')
+            ->toString();
+
+        return $disk->response($path, $filename, ['Content-Disposition' => 'inline']);
+    }
+
     /**
      * Aprueba un repartidor solicitante.
      *
@@ -63,7 +169,7 @@ class RepartidorSolicitudesController extends Controller implements HasMiddlewar
      */
     public function aprobar(Request $request, int $id): JsonResponse
     {
-        abort_unless($request->user()->hasRole('Master'), 403, 'Solo el rol Master puede aprobar solicitudes de repartidores.');
+        $this->requireMaster($request);
 
         $repartidor = Repartidor::where('id', $id)
             ->where('approval_status', Repartidor::APPROVAL_PENDING)
@@ -170,5 +276,10 @@ class RepartidorSolicitudesController extends Controller implements HasMiddlewar
                 'rejected_reason' => $repartidor->rejected_reason,
             ],
         ]);
+    }
+
+    private function requireMaster(Request $request): void
+    {
+        abort_unless($request->user()?->hasRole('Master'), 403, 'Solo el rol Master puede revisar o aprobar solicitudes de repartidores.');
     }
 }

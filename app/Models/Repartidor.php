@@ -47,10 +47,12 @@ class Repartidor extends Model
         'user_id',
         'estado',
         'driver_type',
+        'vehiculo_tipo',
         'approval_status',
         'is_online',
         'comision_pct',
         'rejected_reason',
+        'antecedentes_aceptados_at',
         'documentos',
         'capacidad_max',
         'lat',
@@ -74,6 +76,7 @@ class Repartidor extends Model
             'documentos' => 'array',
             'last_position_at' => 'datetime',
             'last_online_at' => 'datetime',
+            'antecedentes_aceptados_at' => 'datetime',
         ];
     }
 

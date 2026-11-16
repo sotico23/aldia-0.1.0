@@ -51,6 +51,7 @@ export default [
         },
     },
     {path: '/configuracion-web', component: 'Backend/ConfiguracionWeb/Index', props: {settings: {app_name: 'RedCliente', app_logo: null, theme_preset: 'emerald'}, countries: countryFixtures}, countryManagement: true, setup: "[...document.querySelectorAll('button')].find(button => button.innerText.trim().endsWith('Países'))?.click()"},
+    {path: '/repartidor-solicitudes-review', component: 'Backend/ConfiguracionWeb/RepartidorSolicitudes', roles: ['Master'], props: {}},
     {path: '/paises', component: 'Backend/Paises/Index', props: {countries: countryFixtures}, countryManagement: true},
     {
         path: '/inventarios',

@@ -71,6 +71,8 @@ class DriverRegistrationController extends Controller
                 'user_id' => $user->id,
                 'driver_type' => Repartidor::TYPE_FREELANCER,
                 'approval_status' => Repartidor::APPROVAL_PENDING,
+                'vehiculo_tipo' => $validated['vehiculo_tipo'],
+                'antecedentes_aceptados_at' => ($validated['antecedentes_aceptados'] ?? false) ? now() : null,
                 'is_online' => false,
                 'estado' => 'offline',
                 'capacidad_max' => 1,

@@ -32,6 +32,7 @@ class RegisterFreelancerRequest extends FormRequest
             'vehiculo_tipo' => ['required', 'string', 'in:bicicleta,moto,auto,camioneta,pie'],
             'radio_km' => ['nullable', 'numeric', 'min:1', 'max:50'],
             'owner_id' => ['nullable', 'integer', 'min:1', 'exists:users,id'],
+            'antecedentes_aceptados' => ['sometimes', 'accepted'],
         ];
     }
 

@@ -32,6 +32,8 @@ Route::middleware(['permission:admin.countries.viewAny'])->group(function () {
 Route::middleware(['permission:admin.web-settings.viewAny'])->group(function () {
     Route::prefix('admin/repartidores')->name('admin.repartidores.')->group(function () {
         Route::get('solicitudes', [RepartidorSolicitudesController::class, 'index'])->name('solicitudes');
+        Route::get('{id}/detalle', [RepartidorSolicitudesController::class, 'detalle'])->name('detalle');
+        Route::get('{id}/documentos/{tipo}', [RepartidorSolicitudesController::class, 'documento'])->name('documento');
         Route::post('{id}/aprobar', [RepartidorSolicitudesController::class, 'aprobar'])->name('aprobar');
         Route::post('{id}/rechazar', [RepartidorSolicitudesController::class, 'rechazar'])->name('rechazar');
     });

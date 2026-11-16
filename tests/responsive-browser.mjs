@@ -126,6 +126,35 @@ export async function startFixtureServer() {
         try {
             const url = new URL(request.url, 'http://127.0.0.1');
             if (request.method === 'GET') readRequests.push({ path: url.pathname, query: Object.fromEntries(url.searchParams) });
+            if (request.method === 'GET' && url.pathname === '/admin/repartidores/solicitudes') {
+                response.writeHead(200, { 'Content-Type': 'application/json' });
+                response.end(JSON.stringify({ data: [{
+                    id: 1, user_id: 2, nombre: 'Repartidor de prueba', rut: '12.345.678-9',
+                    email: 'repartidor@example.test', telefono: '+56912345678',
+                    fecha_registro: '2026-11-15T12:00:00Z', documentos: { cedula_frontal: {} },
+                    estado: 'offline', approval_status: 'pending_approval', driver_type: 'freelancer',
+                }] }));
+                return;
+            }
+            if (request.method === 'GET' && url.pathname === '/admin/repartidores/1/detalle') {
+                response.writeHead(200, { 'Content-Type': 'application/json' });
+                response.end(JSON.stringify({ data: {
+                    id: 1,
+                    solicitud: { tipo: 'freelancer', estado: 'pending_approval', fecha: '2026-11-15T12:00:00Z' },
+                    persona: { nombre: 'Repartidor de prueba', email: 'repartidor@example.test', telefono: '+56912345678', rut: '12.345.678-9' },
+                    vehiculo: { tipo: 'moto', radio_km: '18.00' },
+                    empresa: null,
+                    independiente: true,
+                    antecedentes: { aceptados: true, fecha: '2026-11-15T12:00:00Z' },
+                    documentos: [{ tipo: 'cedula_frontal', label: 'Cédula de identidad · frontal', nombre: 'cedula-frontal.jpg', url: '/admin/repartidores/1/documentos/cedula_frontal', mime_type: 'image/jpeg', bytes: 2048, subido_at: '2026-11-15T12:05:00Z' }],
+                } }));
+                return;
+            }
+            if (request.method === 'GET' && /^\/admin\/repartidores\/\d+\/documentos\//.test(url.pathname)) {
+                response.writeHead(200, { 'Content-Type': 'image/svg+xml' });
+                response.end('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="600" height="400" fill="#d1fae5"/></svg>');
+                return;
+            }
             if (request.method !== 'GET' && request.method !== 'HEAD') {
                 writeRequests.push({ method: request.method, path: url.pathname });
                 if (url.pathname.startsWith('/prospectos/google-maps/')) {
@@ -275,7 +304,7 @@ export async function startFixtureServer() {
                 component = backendFixture.component;
                 props = {
                     ...sharedProps,
-                    auth: { user: { ...fixtureUser, permissions: ['*'] } },
+                    auth: { user: { ...fixtureUser, permissions: ['*'], roles: backendFixture.roles ?? [] } },
                     ...backendFixture.props,
                     ...(url.pathname === '/entregas/registro' ? { initial_tab: 'history' } : {}),
                 };
