@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Repartidor;
 use App\Models\User;
 use App\Services\Auth\ApiAuthService;
@@ -10,6 +11,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 uses(TestCase::class);
@@ -118,4 +122,68 @@ test('un fallo al crear el perfil revierte tambien el usuario', function () {
     Event::listen('eloquent.creating: '.Repartidor::class, fn () => throw new RuntimeException('Fallo de prueba'));
     $this->postJson('/api/v1/driver/register', freelancerRegistrationData())->assertStatus(500);
     expect(User::count())->toBe(1)->and(Repartidor::count())->toBe(0);
+});
+
+test('la pestaña de solicitudes usa la sesión web y el rol Master puede aprobar', function () {
+    $this->withoutMiddleware(HandleInertiaRequests::class);
+    $master = User::withoutEvents(fn () => User::factory()->create([
+        'name' => 'Master', 'email' => 'master@example.test', 'is_active' => true,
+    ]));
+    Role::findOrCreate('Master', 'web');
+    Role::findOrCreate(Repartidor::defaultRole(), 'web');
+    $master->assignRole('Master');
+
+    $driverUser = User::withoutEvents(fn () => User::factory()->create([
+        'name' => 'Solicitante', 'email' => 'solicitante@example.test', 'is_active' => true,
+        'owner_id' => 10,
+    ]));
+    $driver = Repartidor::create([
+        'owner_id' => 10, 'user_id' => $driverUser->id, 'estado' => 'offline',
+        'driver_type' => Repartidor::TYPE_FREELANCER,
+        'approval_status' => Repartidor::APPROVAL_PENDING,
+    ]);
+    Event::fake();
+
+    $this->actingAs($master)->getJson('/admin/repartidores/solicitudes')
+        ->assertOk()->assertJsonPath('data.0.id', $driver->id);
+    $this->postJson("/admin/repartidores/{$driver->id}/aprobar")
+        ->assertOk()->assertJsonPath('data.approval_status', Repartidor::APPROVAL_APPROVED);
+
+    expect($driver->fresh()->estado)->toBe('disponible')
+        ->and($driverUser->fresh()->hasRole(Repartidor::defaultRole()))->toBeTrue();
+});
+
+test('un usuario con permisos administrativos pero sin rol Master no puede aprobar', function () {
+    $this->withoutMiddleware(HandleInertiaRequests::class);
+    $administrator = User::withoutEvents(fn () => User::factory()->create([
+        'name' => 'Administrador', 'email' => 'admin@example.test', 'is_active' => true,
+    ]));
+    foreach (['admin.web-settings.viewAny', 'admin.usuarios.viewAny', 'admin.usuarios.edit'] as $permission) {
+        $administrator->givePermissionTo(Permission::findOrCreate($permission, 'web'));
+    }
+
+    $driverUser = User::withoutEvents(fn () => User::factory()->create([
+        'name' => 'Solicitante', 'email' => 'solicitante@example.test', 'is_active' => true,
+        'owner_id' => 10,
+    ]));
+    $driver = Repartidor::create([
+        'owner_id' => 10, 'user_id' => $driverUser->id, 'estado' => 'offline',
+        'driver_type' => Repartidor::TYPE_FREELANCER,
+        'approval_status' => Repartidor::APPROVAL_PENDING,
+    ]);
+
+    $this->actingAs($administrator)->getJson('/admin/repartidores/solicitudes')->assertOk();
+    $this->postJson("/admin/repartidores/{$driver->id}/aprobar")
+        ->assertForbidden()->assertJsonPath('message', 'Solo el rol Master puede aprobar solicitudes de repartidores.');
+    $superAdmin = User::withoutEvents(fn () => User::factory()->create([
+        'name' => 'Super Admin', 'email' => 'super-admin@example.test', 'is_active' => true,
+    ]));
+    Role::findOrCreate('Super Admin', 'web');
+    $superAdmin->assignRole('Super Admin');
+    $this->actingAs($superAdmin)->postJson("/admin/repartidores/{$driver->id}/aprobar")->assertForbidden();
+
+    Sanctum::actingAs($administrator);
+    $this->postJson("/api/v1/admin/repartidores/{$driver->id}/aprobar")->assertForbidden();
+
+    expect($driver->fresh()->approval_status)->toBe(Repartidor::APPROVAL_PENDING);
 });

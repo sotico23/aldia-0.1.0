@@ -8,6 +8,7 @@ use App\Http\Controllers\Backend\GatewaySettingsController;
 use App\Http\Controllers\Backend\MailTemplateController;
 use App\Http\Controllers\Backend\MarketplaceSettingsController;
 use App\Http\Controllers\Backend\PaisController;
+use App\Http\Controllers\Backend\RepartidorSolicitudesController;
 use App\Http\Controllers\Backend\ReporteController;
 use App\Http\Controllers\Backend\UsuarioRolController;
 use App\Http\Controllers\Backend\WebhookSettingsController;
@@ -29,6 +30,12 @@ Route::middleware(['permission:admin.countries.viewAny'])->group(function () {
 });
 
 Route::middleware(['permission:admin.web-settings.viewAny'])->group(function () {
+    Route::prefix('admin/repartidores')->name('admin.repartidores.')->group(function () {
+        Route::get('solicitudes', [RepartidorSolicitudesController::class, 'index'])->name('solicitudes');
+        Route::post('{id}/aprobar', [RepartidorSolicitudesController::class, 'aprobar'])->name('aprobar');
+        Route::post('{id}/rechazar', [RepartidorSolicitudesController::class, 'rechazar'])->name('rechazar');
+    });
+
     Route::post('configuracion-web/test-social', [WebSettingController::class, 'testSocialConnection'])->name('configuracion-web.test-social');
     Route::post('web-settings/telegram-login/test', [WebSettingController::class, 'testTelegramLogin'])->name('web-settings.telegram-login.test');
     Route::post('web-settings/telegram-login/disconnect', [WebSettingController::class, 'disconnectTelegramLogin'])->name('web-settings.telegram-login.disconnect');

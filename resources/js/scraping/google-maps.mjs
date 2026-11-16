@@ -29,6 +29,10 @@ export function mapIdentity(url) {
     } catch { return null; }
 }
 
+export function browserExecutionIssue(platform, userId) {
+    return platform !== 'win32' && userId === 0 ? 'browser_root_not_supported' : null;
+}
+
 export class CdpClient {
     constructor(socket) {
         this.socket = socket;
@@ -156,6 +160,8 @@ export async function scrape(input, chromeBinary) {
     const limit = Math.max(1, Math.min(20, Number(input.limit) || 10));
     const results = [];
     let deadline;
+    const executionIssue = browserExecutionIssue(process.platform, process.getuid?.());
+    if (executionIssue) return { status: 'failed', results, reason: executionIssue };
     try {
         return await withBrowser(chromeBinary, async page => {
             const work = async () => {
@@ -205,7 +211,11 @@ export async function scrape(input, chromeBinary) {
             return Promise.race([work(), new Promise((_, reject) => { deadline = setTimeout(() => reject(new Error('deadline')), 190000); })]);
         });
     } catch (error) {
-        return { status: error.message === 'blocked' ? 'blocked' : 'failed', results: [] };
+        const knownReasons = new Set(['browser_start_failed', 'browser_start_timeout', 'browser_connection_timeout',
+            'browser_connection_failed', 'browser_page_missing', 'browser_command_failed', 'browser_command_timeout',
+            'browser_closed', 'page_read_failed', 'search_layout_unavailable', 'deadline']);
+        return { status: error.message === 'blocked' ? 'blocked' : 'failed', results: [],
+            reason: knownReasons.has(error.message) ? error.message : 'maps_search_failed' };
     } finally { clearTimeout(deadline); }
 }
 

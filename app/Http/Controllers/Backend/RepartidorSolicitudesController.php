@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Backend;
 
+use App\Events\RepartidorEstadoActualizado;
 use App\Http\Controllers\Controller;
 use App\Models\Repartidor;
 use App\Models\User;
@@ -9,7 +10,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Broadcast;
 
 class RepartidorSolicitudesController extends Controller implements HasMiddleware
@@ -29,8 +29,6 @@ class RepartidorSolicitudesController extends Controller implements HasMiddlewar
      */
     public function index(Request $request): JsonResponse
     {
-        $ownerId = (int) $request->user()->getOwnerId();
-
         $solicitudes = Repartidor::where('approval_status', Repartidor::APPROVAL_PENDING)
             ->where('driver_type', Repartidor::TYPE_FREELANCER)
             ->with('user:id,name,email,rut,telefono,created_at')
@@ -65,6 +63,8 @@ class RepartidorSolicitudesController extends Controller implements HasMiddlewar
      */
     public function aprobar(Request $request, int $id): JsonResponse
     {
+        abort_unless($request->user()->hasRole('Master'), 403, 'Solo el rol Master puede aprobar solicitudes de repartidores.');
+
         $repartidor = Repartidor::where('id', $id)
             ->where('approval_status', Repartidor::APPROVAL_PENDING)
             ->first();
@@ -100,7 +100,7 @@ class RepartidorSolicitudesController extends Controller implements HasMiddlewar
             return (int) $u->id === (int) $user->id;
         });
 
-        broadcast(new \App\Events\RepartidorEstadoActualizado($user, 'aprobado', 'Tu solicitud de repartidor ha sido aprobada. Ya puedes recibir entregas.'));
+        broadcast(new RepartidorEstadoActualizado($user, 'aprobado', 'Tu solicitud de repartidor ha sido aprobada. Ya puedes recibir entregas.'));
 
         return response()->json([
             'success' => true,
@@ -155,7 +155,7 @@ class RepartidorSolicitudesController extends Controller implements HasMiddlewar
         ]);
 
         // Emitir notificación en tiempo real al usuario
-        broadcast(new \App\Events\RepartidorEstadoActualizado($user, 'rechazado', 'Tu solicitud de repartidor ha sido rechazada.'.($validated['motivo'] ? ' Motivo: '.$validated['motivo'] : '')));
+        broadcast(new RepartidorEstadoActualizado($user, 'rechazado', 'Tu solicitud de repartidor ha sido rechazada.'.($validated['motivo'] ? ' Motivo: '.$validated['motivo'] : '')));
 
         return response()->json([
             'success' => true,

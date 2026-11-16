@@ -1,4 +1,14 @@
 import axios from 'axios';
+import {
+    CheckCircle2,
+    Loader2,
+    Mail,
+    Phone,
+    Save,
+    ShieldAlert,
+    User,
+    X,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -9,8 +19,6 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Dialog,
     DialogContent,
@@ -20,6 +28,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import {
     Table,
     TableBody,
@@ -28,17 +37,12 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { usePermissions } from '@/hooks/use-permissions';
 import {
-    CheckCircle2,
-    Loader2,
-    Mail,
-    Phone,
-    RefreshCw,
-    Save,
-    ShieldAlert,
-    User,
-    X,
-} from 'lucide-react';
+    aprobar as aprobarRoute,
+    rechazar as rechazarRoute,
+    solicitudes as solicitudesRoute,
+} from '@/routes/admin/repartidores';
 
 type RepartidorSolicitud = {
     id: number;
@@ -55,6 +59,8 @@ type RepartidorSolicitud = {
 };
 
 export default function RepartidorSolicitudes() {
+    const { hasRole } = usePermissions();
+    const isMaster = hasRole('Master');
     const [solicitudes, setSolicitudes] = useState<RepartidorSolicitud[]>([]);
     const [loading, setLoading] = useState(false);
     const [rejecting, setRejecting] = useState<number | null>(null);
@@ -67,22 +73,22 @@ export default function RepartidorSolicitudes() {
         cargarSolicitudes();
     }, []);
 
-    const cargarSolicitudes = async () => {
+    async function cargarSolicitudes(): Promise<void> {
         setLoading(true);
         try {
-            const res = await axios.get('/api/v1/admin/repartidores/solicitudes');
+            const res = await axios.get(solicitudesRoute.url());
             setSolicitudes(res.data.data ?? []);
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Error al cargar solicitudes.');
         } finally {
             setLoading(false);
         }
-    };
+    }
 
     const aprobar = async (id: number) => {
         setApproving(id);
         try {
-            const res = await axios.post(`/api/v1/admin/repartidores/${id}/aprobar`);
+            const res = await axios.post(aprobarRoute(id).url);
             toast.success(res.data.message || 'Repartidor aprobado.');
             setSolicitudes((prev) => prev.filter((s) => s.id !== id));
         } catch (error: any) {
@@ -95,7 +101,7 @@ export default function RepartidorSolicitudes() {
     const rechazar = async (id: number, motivo: string) => {
         setRejecting(id);
         try {
-            const res = await axios.post(`/api/v1/admin/repartidores/${id}/rechazar`, {
+            const res = await axios.post(rechazarRoute(id).url, {
                 motivo,
             });
             toast.success(res.data.message || 'Solicitud rechazada.');
@@ -135,6 +141,11 @@ export default function RepartidorSolicitudes() {
                     <p className="text-sm text-muted-foreground">
                         Gestiona las solicitudes de repartidores freelancers pendientes de aprobación.
                     </p>
+                    {!isMaster && (
+                        <p className="mt-1 text-sm text-amber-700">
+                            Solo el rol Master puede aprobar solicitudes.
+                        </p>
+                    )}
                 </div>
                 <Button
                     variant="outline"
@@ -230,7 +241,7 @@ export default function RepartidorSolicitudes() {
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex gap-1 justify-end">
-                                                <Button
+                                                {isMaster && <Button
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={() => aprobar(s.id)}
@@ -243,7 +254,7 @@ export default function RepartidorSolicitudes() {
                                                         <CheckCircle2 className="h-3 w-3" />
                                                     )}
                                                     Aprobar
-                                                </Button>
+                                                </Button>}
                                                 <Button
                                                     variant="destructive"
                                                     size="sm"

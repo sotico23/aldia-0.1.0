@@ -238,6 +238,19 @@ test('un bloqueo o fallo del navegador queda visible y no crea prospectos', func
     expect($run->fresh()->status)->toBe($status)->and($run->fresh()->error)->not->toBeNull()->and(Prospecto::count())->toBe(0);
 })->with(['blocked', 'failed']);
 
+test('explica cuando Chrome falla porque el worker se ejecuta como root', function () {
+    Process::fake(['*' => Process::result(output: json_encode([
+        'status' => 'failed', 'results' => [], 'reason' => 'browser_root_not_supported',
+    ]))]);
+    $run = scrapingRun();
+
+    (new ScrapeGoogleMapsProspectos($run->id))->handle(app(ProspectoScrapingService::class));
+
+    expect($run->fresh()->status)->toBe('failed')
+        ->and($run->fresh()->error)->toContain('ejecutando como root')
+        ->and($run->fresh()->error)->toContain('sandbox');
+});
+
 test('elimina enlaces peligrosos y no acepta seleccionar negocios fuera del resultado', function () {
     $payload = scrapingEnginePayload();
     $payload['results'][0]['website'] = 'javascript:alert(1)';

@@ -137,10 +137,22 @@ class ProspectoScrapingService
                 'website' => $this->safeUrl($row['website'] ?? null), 'maps_url' => $url];
         }
 
+        $failureMessages = [
+            'browser_root_not_supported' => 'El worker se está ejecutando como root. Chrome/Chromium requiere un usuario sin privilegios; inicia el worker como www-data (o el usuario de la aplicación) y conserva el sandbox del navegador.',
+            'browser_start_failed' => 'Chrome/Chromium no pudo iniciar. Comprueba sus dependencias del sistema y permisos de ejecución.',
+            'browser_start_timeout' => 'Chrome/Chromium no abrió el puerto de depuración. Comprueba permisos de escritura en el directorio temporal.',
+            'browser_connection_timeout' => 'El motor no logró conectarse con Chrome/Chromium dentro del tiempo esperado.',
+            'browser_connection_failed' => 'Chrome/Chromium inició, pero rechazó la conexión local de depuración.',
+            'browser_page_missing' => 'Chrome/Chromium inició sin crear una pestaña para Google Maps.',
+            'browser_command_timeout' => 'Chrome/Chromium dejó de responder durante la búsqueda.',
+            'search_layout_unavailable' => 'Google Maps no cargó la lista de negocios. Comprueba la salida a Internet y DNS del servidor.',
+            'deadline' => 'La búsqueda superó el tiempo máximo permitido.',
+        ];
+
         return ['status' => $payload['status'], 'results' => array_values($results),
             'error' => $payload['status'] === 'completed' ? null : ($payload['status'] === 'blocked'
                 ? 'Google solicitó una verificación o bloqueó la consulta. No se intentó eludirla. Prueba más tarde.'
-                : 'No se pudo leer Google Maps. Revisa la conexión del servidor e intenta una búsqueda más específica.'),
+                : ($failureMessages[$payload['reason'] ?? ''] ?? 'No se pudo leer Google Maps. Revisa la conexión del servidor e intenta una búsqueda más específica.')),
         ];
     }
 
