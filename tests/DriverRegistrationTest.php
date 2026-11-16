@@ -114,6 +114,35 @@ test('guarda la aceptación de antecedentes enviada desde la app', function () {
         ->and($driver->antecedentes_aceptados_at)->not->toBeNull();
 });
 
+test('guarda el certificado de antecedentes penales en almacenamiento privado', function () {
+    Storage::fake('public');
+    Storage::fake('local');
+    $user = User::withoutEvents(fn () => User::factory()->create([
+        'name' => 'Repartidor', 'email' => 'documento@example.test', 'is_active' => true,
+    ]));
+    Role::findOrCreate(Repartidor::defaultRole(), 'web');
+    $user->assignRole(Repartidor::defaultRole());
+    Repartidor::create([
+        'owner_id' => $user->id, 'user_id' => $user->id, 'estado' => 'offline',
+        'driver_type' => Repartidor::TYPE_FREELANCER,
+        'approval_status' => Repartidor::APPROVAL_PENDING,
+    ]);
+    Sanctum::actingAs($user);
+
+    $response = $this->postJson('/api/v1/driver/documents', [
+        'tipo' => 'antecedentes_penales',
+        'archivo' => UploadedFile::fake()->create('antecedentes-penales.pdf', 64, 'application/pdf'),
+    ]);
+
+    $response->assertOk()
+        ->assertJsonPath('data.tipo', 'antecedentes_penales')
+        ->assertJsonPath('data.url', '');
+    $documento = Repartidor::where('user_id', $user->id)->firstOrFail()->documentos['antecedentes_penales'];
+    expect($documento['disk'])->toBe('local');
+    Storage::disk('local')->assertExists($documento['path']);
+    Storage::disk('public')->assertMissing($documento['path']);
+});
+
 test('un codigo invalido devuelve validacion y no crea cuentas', function ($company) {
     $this->postJson('/api/v1/driver/register', [...freelancerRegistrationData(), 'owner_id' => $company])
         ->assertUnprocessable()->assertJsonValidationErrors('owner_id');
@@ -173,6 +202,7 @@ test('la pestaña de solicitudes usa la sesión web y el rol Master puede aproba
 test('Master puede revisar todos los datos y abrir documentos de una solicitud', function () {
     $this->withoutMiddleware(HandleInertiaRequests::class);
     Storage::fake('public');
+    Storage::fake('local');
     $master = User::withoutEvents(fn () => User::factory()->create([
         'name' => 'Master', 'email' => 'master@example.test', 'is_active' => true,
     ]));
@@ -183,6 +213,7 @@ test('Master puede revisar todos los datos y abrir documentos de una solicitud',
         'telefono' => '+56911112222', 'rut' => '12.345.678-9', 'owner_id' => 10,
     ]));
     $path = UploadedFile::fake()->create('cedula.png', 5, 'image/png')->store('driver-documents/'.$driverUser->id, 'public');
+    $criminalRecordPath = UploadedFile::fake()->create('antecedentes.pdf', 10, 'application/pdf')->store('driver-documents/'.$driverUser->id, 'local');
     $driver = Repartidor::create([
         'owner_id' => 10, 'user_id' => $driverUser->id, 'estado' => 'offline',
         'driver_type' => Repartidor::TYPE_FREELANCER,
@@ -192,6 +223,9 @@ test('Master puede revisar todos los datos y abrir documentos de una solicitud',
         'documentos' => ['cedula_frontal' => [
             'tipo' => 'cedula_frontal', 'nombre' => 'cedula.png', 'path' => $path,
             'subido_at' => now()->toISOString(),
+        ], 'antecedentes_penales' => [
+            'tipo' => 'antecedentes_penales', 'nombre' => 'antecedentes.pdf', 'path' => $criminalRecordPath,
+            'disk' => 'local', 'subido_at' => now()->toISOString(),
         ]],
     ]);
 
@@ -202,10 +236,13 @@ test('Master puede revisar todos los datos y abrir documentos de una solicitud',
         ->assertJsonPath('data.vehiculo.radio_km', '18.00')
         ->assertJsonPath('data.antecedentes.aceptados', true)
         ->assertJsonPath('data.documentos.0.tipo', 'cedula_frontal')
+        ->assertJsonPath('data.documentos.1.tipo', 'antecedentes_penales')
         ->assertJsonMissingPath('data.persona.password');
 
     $this->getJson("/admin/repartidores/{$driver->id}/documentos/cedula_frontal")
         ->assertOk()->assertHeader('content-type', 'image/png');
+    $this->getJson("/admin/repartidores/{$driver->id}/documentos/antecedentes_penales")
+        ->assertOk()->assertHeader('content-type', 'application/pdf');
 });
 
 test('un usuario con permisos administrativos pero sin rol Master no puede aprobar', function () {

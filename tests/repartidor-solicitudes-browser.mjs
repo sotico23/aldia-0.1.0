@@ -42,8 +42,17 @@ try {
             `${width}px muestra consentimiento`,
         );
         assert.ok(
+            await evaluate('document.querySelector("[role=dialog]").innerText.includes("Certificado de antecedentes penales") && document.querySelector("[role=dialog]").innerText.includes("antecedentes-penales.pdf")'),
+            `${width}px muestra el certificado penal`,
+        );
+        assert.ok(
             await evaluate('document.querySelector("[role=dialog] img")?.naturalWidth > 0'),
             `${width}px vista previa de foto cargada`,
+        );
+        await evaluate('(() => { const body = document.querySelector("[role=dialog] .overflow-y-auto"); body.scrollTop = body.scrollHeight; })()');
+        assert.ok(
+            await evaluate('document.querySelector("[role=dialog] h2")?.getBoundingClientRect().top >= 0'),
+            `${width}px título permanece visible al recorrer el modal`,
         );
         assert.equal(browser.exceptions.length, 0, browser.exceptions.join('\n'));
     }

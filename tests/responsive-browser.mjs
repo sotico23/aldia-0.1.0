@@ -146,7 +146,10 @@ export async function startFixtureServer() {
                     empresa: null,
                     independiente: true,
                     antecedentes: { aceptados: true, fecha: '2026-11-15T12:00:00Z' },
-                    documentos: [{ tipo: 'cedula_frontal', label: 'Cédula de identidad · frontal', nombre: 'cedula-frontal.jpg', url: '/admin/repartidores/1/documentos/cedula_frontal', mime_type: 'image/jpeg', bytes: 2048, subido_at: '2026-11-15T12:05:00Z' }],
+                    documentos: [
+                        { tipo: 'cedula_frontal', label: 'Cédula de identidad · frontal', nombre: 'cedula-frontal.jpg', url: '/admin/repartidores/1/documentos/cedula_frontal', mime_type: 'image/jpeg', bytes: 2048, subido_at: '2026-11-15T12:05:00Z' },
+                        { tipo: 'antecedentes_penales', label: 'Certificado de antecedentes penales', nombre: 'antecedentes-penales.pdf', url: '/admin/repartidores/1/documentos/antecedentes_penales', mime_type: 'application/pdf', bytes: 4096, subido_at: '2026-11-15T12:06:00Z' },
+                    ],
                 } }));
                 return;
             }

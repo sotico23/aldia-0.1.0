@@ -22,6 +22,7 @@ class RepartidorSolicitudesController extends Controller implements HasMiddlewar
         'cedula_frontal' => 'Cédula de identidad · frontal',
         'cedula_reverso' => 'Cédula de identidad · reverso',
         'licencia' => 'Licencia de conducir',
+        'antecedentes_penales' => 'Certificado de antecedentes penales',
         'permiso_circulacion' => 'Permiso de circulación',
         'foto_vehiculo' => 'Foto del vehículo',
         'otro' => 'Otro documento',
@@ -80,8 +81,7 @@ class RepartidorSolicitudesController extends Controller implements HasMiddlewar
         $empresa = (int) $repartidor->owner_id !== (int) $repartidor->user_id
             ? User::withoutGlobalScopes()->find($repartidor->owner_id)
             : null;
-        $disk = Storage::disk('public');
-        $documentos = collect($repartidor->documentos ?? [])->map(function (mixed $documento, string|int $key) use ($id, $disk): ?array {
+        $documentos = collect($repartidor->documentos ?? [])->map(function (mixed $documento, string|int $key) use ($id): ?array {
             if (is_string($documento)) {
                 $url = filter_var($documento, FILTER_VALIDATE_URL) && in_array(parse_url($documento, PHP_URL_SCHEME), ['http', 'https'], true)
                     ? $documento : null;
@@ -100,6 +100,11 @@ class RepartidorSolicitudesController extends Controller implements HasMiddlewar
             }
 
             $tipo = (string) ($documento['tipo'] ?? $key);
+            $diskName = $documento['disk'] ?? 'public';
+            if (! in_array($diskName, ['local', 'public'], true)) {
+                return null;
+            }
+            $disk = Storage::disk($diskName);
             $path = (string) ($documento['path'] ?? '');
             $fileExists = $path !== '' && $disk->exists($path);
             $url = $fileExists ? route('admin.repartidores.documento', ['id' => $id, 'tipo' => $tipo]) : null;
@@ -151,7 +156,9 @@ class RepartidorSolicitudesController extends Controller implements HasMiddlewar
         $documento = $repartidor->documentos[$tipo] ?? null;
         abort_unless(is_array($documento) && filled($documento['path'] ?? null), 404);
 
-        $disk = Storage::disk('public');
+        $diskName = $documento['disk'] ?? 'public';
+        abort_unless(in_array($diskName, ['local', 'public'], true), 404);
+        $disk = Storage::disk($diskName);
         $path = (string) $documento['path'];
         abort_unless($disk->exists($path), 404);
         $filename = Str::of((string) ($documento['nombre'] ?? 'documento'))

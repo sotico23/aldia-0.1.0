@@ -24,6 +24,7 @@ class DriverDocumentsController extends Controller
         'cedula_frontal',
         'cedula_reverso',
         'licencia',
+        'antecedentes_penales',
         'permiso_circulacion',
         'foto_vehiculo',
         'otro',
@@ -56,18 +57,22 @@ class DriverDocumentsController extends Controller
 
         // Eliminar el archivo anterior del mismo tipo para no acumular basura.
         $anterior = $documentos[$tipo]['path'] ?? null;
+        $discoAnterior = $documentos[$tipo]['disk'] ?? 'public';
 
         $archivo = $request->file('archivo');
-        $path = $archivo->store('driver-documents/'.$repartidor->user_id, 'public');
+        $disco = $tipo === 'antecedentes_penales' ? 'local' : 'public';
+        $path = $archivo->store('driver-documents/'.$repartidor->user_id, $disco);
 
-        if ($anterior && $anterior !== $path && Storage::disk('public')->exists($anterior)) {
-            Storage::disk('public')->delete($anterior);
+        if ($anterior && ($discoAnterior !== $disco || $anterior !== $path)
+            && Storage::disk($discoAnterior)->exists($anterior)) {
+            Storage::disk($discoAnterior)->delete($anterior);
         }
 
         $documentos[$tipo] = [
             'tipo' => $tipo,
             'nombre' => $archivo->getClientOriginalName(),
             'path' => $path,
+            'disk' => $disco,
             'subido_at' => now()->toISOString(),
         ];
 
@@ -115,12 +120,13 @@ class DriverDocumentsController extends Controller
     private function documentoResource(array $documento): array
     {
         $path = $documento['path'] ?? '';
+        $disco = $documento['disk'] ?? 'public';
 
         return [
             'tipo' => $documento['tipo'] ?? 'otro',
             'nombre' => $documento['nombre'] ?? 'Documento',
             'path' => $path,
-            'url' => $path !== '' ? url(Storage::disk('public')->url($path)) : '',
+            'url' => $path !== '' && $disco === 'public' ? url(Storage::disk($disco)->url($path)) : '',
             'subido_at' => $documento['subido_at'] ?? null,
         ];
     }

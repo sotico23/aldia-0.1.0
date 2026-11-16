@@ -114,6 +114,9 @@ export default function RepartidorSolicitudes() {
     const [reviewLoading, setReviewLoading] = useState(false);
     const [review, setReview] = useState<RepartidorReview | null>(null);
     const [reviewError, setReviewError] = useState<string | null>(null);
+    const documentoAntecedentesPenales = review?.documentos.find(
+        (documento) => documento.tipo === 'antecedentes_penales',
+    ) ?? null;
 
     useEffect(() => {
         cargarSolicitudes();
@@ -394,108 +397,125 @@ export default function RepartidorSolicitudes() {
             </Dialog>
 
             <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
-                <DialogContent className="max-h-[90dvh] w-[calc(100vw-1rem)] max-w-4xl overflow-y-auto sm:w-full">
-                    <DialogHeader>
+                <DialogContent className="flex h-[90dvh] max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-4xl flex-col overflow-hidden p-0 sm:w-full">
+                    <DialogHeader className="shrink-0 border-b px-4 py-4 sm:px-6">
                         <DialogTitle>Revisión de solicitud de repartidor</DialogTitle>
                         <DialogDescription>
                             Revisa los datos enviados y los archivos antes de tomar una decisión.
                         </DialogDescription>
                     </DialogHeader>
-                    {reviewLoading && (
-                        <div className="flex min-h-40 items-center justify-center gap-2 text-sm text-muted-foreground">
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                            Cargando datos de la solicitud…
-                        </div>
-                    )}
-                    {reviewError && (
-                        <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                            {reviewError}
-                        </p>
-                    )}
-                    {review && (
-                        <div className="space-y-5">
-                            <section className="space-y-3">
-                                <h3 className="font-semibold">Datos personales</h3>
-                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                                    <ReviewField label="Nombre completo" value={review.persona.nombre ?? ''} />
-                                    <ReviewField label="RUT / identificación" value={review.persona.rut ?? ''} />
-                                    <ReviewField label="Correo electrónico" value={review.persona.email ?? ''} />
-                                    <ReviewField label="Teléfono" value={review.persona.telefono ?? ''} />
-                                    <ReviewField label="Fecha de solicitud" value={formatReviewDate(review.solicitud.fecha)} />
-                                    <ReviewField label="Estado" value={review.solicitud.estado.replaceAll('_', ' ')} />
-                                </div>
-                            </section>
-
-                            <section className="space-y-3">
-                                <h3 className="font-semibold">Vehículo y cobertura</h3>
-                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                    <ReviewField label="Tipo de vehículo" value={review.vehiculo.tipo ?? ''} />
-                                    <ReviewField label="Radio de reparto" value={review.vehiculo.radio_km !== null ? `${review.vehiculo.radio_km} km` : ''} />
-                                </div>
-                            </section>
-
-                            <section className="space-y-3">
-                                <h3 className="font-semibold">Empresa y antecedentes</h3>
-                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                    <ReviewField
-                                        label="Vinculación"
-                                        value={review.empresa ? `${review.empresa.nombre} (código ${review.empresa.codigo})` : 'Independiente, sin empresa'}
-                                    />
-                                    <ReviewField
-                                        label="Autorización para verificar antecedentes"
-                                        value={review.antecedentes.aceptados ? `Aceptada · ${formatReviewDate(review.antecedentes.fecha)}` : 'Sin registro de aceptación'}
-                                    />
-                                </div>
-                            </section>
-
-                            <section className="space-y-3">
-                                <div>
-                                    <h3 className="font-semibold">Documentos y fotos</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        La contraseña no se muestra ni se almacena en texto plano.
-                                    </p>
-                                </div>
-                                {review.documentos.length === 0 ? (
-                                    <div className="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">
-                                        No se recibieron documentos.
+                    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+                        {reviewLoading && (
+                            <div className="flex min-h-40 items-center justify-center gap-2 text-sm text-muted-foreground">
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                                Cargando datos de la solicitud…
+                            </div>
+                        )}
+                        {reviewError && (
+                            <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                                {reviewError}
+                            </p>
+                        )}
+                        {review && (
+                            <div className="space-y-5">
+                                <section className="space-y-3">
+                                    <h3 className="font-semibold">Datos personales</h3>
+                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                        <ReviewField label="Nombre completo" value={review.persona.nombre ?? ''} />
+                                        <ReviewField label="RUT / identificación" value={review.persona.rut ?? ''} />
+                                        <ReviewField label="Correo electrónico" value={review.persona.email ?? ''} />
+                                        <ReviewField label="Teléfono" value={review.persona.telefono ?? ''} />
+                                        <ReviewField label="Fecha de solicitud" value={formatReviewDate(review.solicitud.fecha)} />
+                                        <ReviewField label="Estado" value={review.solicitud.estado.replaceAll('_', ' ')} />
                                     </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                        {review.documentos.map((documento) => {
-                                            const esImagen = documento.mime_type?.startsWith('image/')
-                                                || /\.(jpe?g|png|webp)$/i.test(documento.nombre);
-                                            return (
-                                                <article key={`${documento.tipo}-${documento.nombre}`} className="min-w-0 overflow-hidden rounded-lg border">
-                                                    <div className="flex items-start gap-2 border-b p-3">
-                                                        {esImagen ? <ImageIcon className="mt-0.5 h-4 w-4 shrink-0" /> : <FileText className="mt-0.5 h-4 w-4 shrink-0" />}
-                                                        <div className="min-w-0">
-                                                            <p className="break-words text-sm font-medium">{documento.label}</p>
-                                                            <p className="break-all text-xs text-muted-foreground">{documento.nombre}</p>
+                                </section>
+
+                                <section className="space-y-3">
+                                    <h3 className="font-semibold">Vehículo y cobertura</h3>
+                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                        <ReviewField label="Tipo de vehículo" value={review.vehiculo.tipo ?? ''} />
+                                        <ReviewField label="Radio de reparto" value={review.vehiculo.radio_km !== null ? `${review.vehiculo.radio_km} km` : ''} />
+                                    </div>
+                                </section>
+
+                                <section className="space-y-3">
+                                    <h3 className="font-semibold">Empresa y antecedentes</h3>
+                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                        <ReviewField
+                                            label="Vinculación"
+                                            value={review.empresa ? `${review.empresa.nombre} (código ${review.empresa.codigo})` : 'Independiente, sin empresa'}
+                                        />
+                                        <ReviewField
+                                            label="Autorización para verificar antecedentes"
+                                            value={review.antecedentes.aceptados ? `Aceptada · ${formatReviewDate(review.antecedentes.fecha)}` : 'Sin registro de aceptación'}
+                                        />
+                                        <div className="min-w-0 rounded-lg border bg-muted/30 p-3">
+                                            <p className="text-xs text-muted-foreground">Certificado de antecedentes penales</p>
+                                            {documentoAntecedentesPenales ? (
+                                                <a
+                                                    href={documentoAntecedentesPenales.url ?? undefined}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="mt-1 block break-all text-sm font-medium text-primary underline-offset-4 hover:underline"
+                                                >
+                                                    {documentoAntecedentesPenales.nombre}
+                                                </a>
+                                            ) : (
+                                                <p className="mt-1 break-words text-sm font-medium">No adjuntado</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section className="space-y-3">
+                                    <div>
+                                        <h3 className="font-semibold">Documentos y fotos</h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            La contraseña no se muestra ni se almacena en texto plano.
+                                        </p>
+                                    </div>
+                                    {review.documentos.length === 0 ? (
+                                        <div className="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">
+                                            No se recibieron documentos.
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                            {review.documentos.map((documento) => {
+                                                const esImagen = documento.mime_type?.startsWith('image/')
+                                                    || /\.(jpe?g|png|webp)$/i.test(documento.nombre);
+                                                return (
+                                                    <article key={`${documento.tipo}-${documento.nombre}`} className="min-w-0 overflow-hidden rounded-lg border">
+                                                        <div className="flex items-start gap-2 border-b p-3">
+                                                            {esImagen ? <ImageIcon className="mt-0.5 h-4 w-4 shrink-0" /> : <FileText className="mt-0.5 h-4 w-4 shrink-0" />}
+                                                            <div className="min-w-0">
+                                                                <p className="break-words text-sm font-medium">{documento.label}</p>
+                                                                <p className="break-all text-xs text-muted-foreground">{documento.nombre}</p>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    {documento.url && esImagen && (
-                                                        <a href={documento.url} target="_blank" rel="noopener noreferrer" className="flex h-48 items-center justify-center bg-muted/30 p-2">
-                                                            <img src={documento.url} alt={documento.label} className="max-h-full max-w-full object-contain" />
-                                                        </a>
-                                                    )}
-                                                    <div className="flex flex-wrap items-center justify-between gap-2 p-3 text-xs text-muted-foreground">
-                                                        <span>{formatDocumentSize(documento.bytes)}</span>
-                                                        <span>{documento.subido_at ? formatReviewDate(documento.subido_at) : 'Fecha no disponible'}</span>
-                                                        {documento.url && !esImagen && (
-                                                            <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => abrirDocumento(documento.url!)}>
-                                                                Abrir documento
-                                                            </Button>
+                                                        {documento.url && esImagen && (
+                                                            <a href={documento.url} target="_blank" rel="noopener noreferrer" className="flex h-48 items-center justify-center bg-muted/30 p-2">
+                                                                <img src={documento.url} alt={documento.label} className="max-h-full max-w-full object-contain" />
+                                                            </a>
                                                         )}
-                                                        {!documento.url && <span className="text-amber-700">Archivo no disponible</span>}
-                                                    </div>
-                                                </article>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </section>
-                        </div>
-                    )}
+                                                        <div className="flex flex-wrap items-center justify-between gap-2 p-3 text-xs text-muted-foreground">
+                                                            <span>{formatDocumentSize(documento.bytes)}</span>
+                                                            <span>{documento.subido_at ? formatReviewDate(documento.subido_at) : 'Fecha no disponible'}</span>
+                                                            {documento.url && !esImagen && (
+                                                                <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => abrirDocumento(documento.url!)}>
+                                                                    Abrir documento
+                                                                </Button>
+                                                            )}
+                                                            {!documento.url && <span className="text-amber-700">Archivo no disponible</span>}
+                                                        </div>
+                                                    </article>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </section>
+                            </div>
+                        )}
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>
