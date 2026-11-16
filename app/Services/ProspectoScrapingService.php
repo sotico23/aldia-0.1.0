@@ -71,9 +71,10 @@ class ProspectoScrapingService
 
             return ['node' => $nodeCheck, 'chrome' => $chromeCheck];
         });
-        $connection = (string) SystemSettings::get('QUEUE_CONNECTION', config('queue.default'));
+        $databaseSettings = SystemSettings::loadFromDatabase();
+        $connection = (string) ($databaseSettings['QUEUE_CONNECTION'] ?? SystemSettings::get('QUEUE_CONNECTION', config('queue.default')));
         $retryKey = $connection === 'redis' ? 'REDIS_QUEUE_RETRY_AFTER' : 'DB_QUEUE_RETRY_AFTER';
-        $retryAfter = (int) SystemSettings::get($retryKey, config("queue.connections.{$connection}.retry_after", 0));
+        $retryAfter = (int) ($databaseSettings[$retryKey] ?? SystemSettings::get($retryKey, config("queue.connections.{$connection}.retry_after", 0)));
         $minimumRetryAfter = 300;
         $queueReady = in_array($connection, ['database', 'redis'], true) && $retryAfter >= $minimumRetryAfter;
         $runtimeReady = $runtime['node']['ready'] && $runtime['chrome']['ready'];

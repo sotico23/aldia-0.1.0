@@ -153,9 +153,10 @@ test('sin cola asincrona rechaza la busqueda en lugar de bloquear la pagina', fu
 test('una reserva menor que el minimo no habilita el motor y se puede configurar manualmente', function () {
     config()->set('queue.connections.database.retry_after', 90);
     expect(app(ProspectoScrapingService::class)->health()['queue_ready'])->toBeFalse();
-    $this->patch('/prospectos/google-maps/configuracion', ['node_binary' => 'node', 'chrome_binary' => '/test/chromium', 'queue_connection' => 'database', 'queue_retry_after' => 420])->assertRedirect();
+    $this->patch('/prospectos/google-maps/configuracion', ['node_binary' => 'node', 'chrome_binary' => '/test/chromium', 'queue_connection' => 'database', 'queue_retry_after' => 420])
+        ->assertRedirect()->assertSessionHas('success', fn (string $message): bool => str_contains($message, '420 segundos'));
+    config()->set('queue.connections.database.retry_after', 90);
     expect(SystemSettings::get('DB_QUEUE_RETRY_AFTER'))->toBe('420')
-        ->and(config('queue.connections.database.retry_after'))->toBe(420)
         ->and(app(ProspectoScrapingService::class)->health()['queue_retry_after'])->toBe(420)
         ->and(app(ProspectoScrapingService::class)->health()['queue_ready'])->toBeTrue();
 });

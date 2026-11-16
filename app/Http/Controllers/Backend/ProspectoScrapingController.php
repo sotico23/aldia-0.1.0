@@ -31,26 +31,29 @@ class ProspectoScrapingController extends Controller implements HasMiddleware
 
     public function configure(ConfigureProspectoScrapingRequest $request, ProspectoScrapingService $engine): RedirectResponse
     {
+        $queueConnection = $request->validated('queue_connection');
+        $retryAfter = (int) ($request->validated('queue_retry_after') ?? 300);
+        $retryKey = $queueConnection === 'redis' ? 'REDIS_QUEUE_RETRY_AFTER' : 'DB_QUEUE_RETRY_AFTER';
         $settings = [
             'SCRAPING_NODE_BINARY' => ['value' => $request->validated('node_binary') ?: 'node', 'group' => 'prospecting'],
             'SCRAPING_CHROME_BINARY' => ['value' => $request->validated('chrome_binary') ?: '', 'group' => 'prospecting'],
         ];
         if ($request->has('queue_connection')) {
-            $settings['QUEUE_CONNECTION'] = ['value' => $request->validated('queue_connection'), 'group' => 'prospecting'];
-            $retryKey = $request->validated('queue_connection') === 'redis' ? 'REDIS_QUEUE_RETRY_AFTER' : 'DB_QUEUE_RETRY_AFTER';
-            $retryAfter = (int) ($request->validated('queue_retry_after') ?? 300);
+            $settings['QUEUE_CONNECTION'] = ['value' => $queueConnection, 'group' => 'prospecting'];
             $settings[$retryKey] = ['value' => (string) $retryAfter, 'group' => 'prospecting'];
         }
         SystemSettings::save($settings);
         if ($request->has('queue_connection')) {
-            $connection = $request->validated('queue_connection');
-            $retryAfter = (int) ($request->validated('queue_retry_after') ?? 300);
-            config(['queue.default' => $connection, "queue.connections.{$connection}.retry_after" => $retryAfter]);
+            $savedSettings = SystemSettings::loadFromDatabase();
+            if (($savedSettings['QUEUE_CONNECTION'] ?? null) !== $queueConnection || (int) ($savedSettings[$retryKey] ?? 0) !== $retryAfter) {
+                return back()->with('warning', 'No se pudo confirmar el guardado de la conexión y reserva de la cola en la tabla de configuración.');
+            }
+            config(['queue.default' => $queueConnection, "queue.connections.{$queueConnection}.retry_after" => $retryAfter]);
         }
         $health = $engine->health(refresh: true);
 
         return $health['ready'] && $health['queue_ready']
-            ? back()->with('success', 'Configuración guardada y requisitos comprobados. Ya puedes buscar negocios.')
+            ? back()->with('success', "Configuración guardada. Reserva {$health['queue_retry_after']} segundos confirmada y requisitos comprobados. Ya puedes buscar negocios.")
             : back()->with('warning', 'Configuración guardada, pero falta un requisito: '.$health['message']);
     }
 
