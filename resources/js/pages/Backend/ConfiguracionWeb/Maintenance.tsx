@@ -88,10 +88,10 @@ export default function Maintenance({ commands, status }: Props) {
             ]}
         >
             <Head title="Mantenimiento del servidor" />
-            <div className="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-6 p-4 sm:p-6">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">
+            <div className="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-4 p-3 [overflow-wrap:anywhere] sm:gap-6 sm:p-6">
+                <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0 flex-1">
+                        <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
                             Mantenimiento del servidor
                         </h1>
                         <p className="mt-1 text-muted-foreground">
@@ -99,13 +99,17 @@ export default function Maintenance({ commands, status }: Props) {
                             desde el panel.
                         </p>
                     </div>
-                    <Button variant="outline" asChild>
+                    <Button
+                        className="h-auto min-h-10 w-full shrink-0 whitespace-normal sm:w-auto"
+                        variant="outline"
+                        asChild
+                    >
                         <Link href={settingsIndex()}>
                             Volver a Configuración Web
                         </Link>
                     </Button>
                 </div>
-                <Card>
+                <Card className="min-w-0">
                     <CardHeader>
                         <CardTitle>Estado actual</CardTitle>
                         <CardDescription>
@@ -114,7 +118,7 @@ export default function Maintenance({ commands, status }: Props) {
                             desplegar su actualización.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="grid gap-3 text-sm sm:grid-cols-3">
+                    <CardContent className="grid min-w-0 grid-cols-1 gap-3 text-sm sm:grid-cols-2 xl:grid-cols-3">
                         <p>
                             Rutas:{' '}
                             <strong>
@@ -144,11 +148,13 @@ export default function Maintenance({ commands, status }: Props) {
                 {running && (
                     <p
                         role="status"
-                        className="flex items-center gap-2 rounded-lg border p-4 text-sm"
+                        className="flex min-w-0 items-start gap-2 rounded-lg border p-4 text-sm"
                     >
-                        <Loader2 className="size-4 animate-spin" />
-                        Ejecutando {running}. Espera el resultado antes de
-                        iniciar otra tarea.
+                        <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin" />
+                        <span className="min-w-0">
+                            Ejecutando {running}. Espera el resultado antes de
+                            iniciar otra tarea.
+                        </span>
                     </p>
                 )}
                 {error && (
@@ -160,13 +166,13 @@ export default function Maintenance({ commands, status }: Props) {
                     </p>
                 )}
                 {result && (
-                    <Card aria-live="polite">
+                    <Card className="min-w-0" aria-live="polite">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
+                            <CardTitle className="flex items-start gap-2 leading-snug">
                                 {result.success ? (
-                                    <CheckCircle2 className="size-5 text-emerald-600" />
+                                    <CheckCircle2 className="size-5 shrink-0 text-emerald-600" />
                                 ) : (
-                                    <XCircle className="size-5 text-destructive" />
+                                    <XCircle className="size-5 shrink-0 text-destructive" />
                                 )}
                                 {result.success
                                     ? 'Tarea completada'
@@ -178,32 +184,35 @@ export default function Maintenance({ commands, status }: Props) {
                                 {new Date(result.executed_at).toLocaleString()}
                             </CardDescription>
                         </CardHeader>
-                        <CardContent>
-                            <pre className="max-h-80 overflow-auto rounded-md bg-muted p-4 font-mono text-xs break-all whitespace-pre-wrap">
+                        <CardContent className="min-w-0">
+                            <pre className="max-h-80 w-full max-w-full min-w-0 overflow-auto rounded-md bg-muted p-4 font-mono text-xs break-all whitespace-pre-wrap">
                                 {result.output || 'La tarea no produjo salida.'}
                             </pre>
                         </CardContent>
                     </Card>
                 )}
                 {groups.map((group) => (
-                    <section key={group} className="flex flex-col gap-3">
+                    <section
+                        key={group}
+                        className="flex min-w-0 flex-col gap-3"
+                    >
                         <h2 className="text-lg font-semibold">{group}</h2>
-                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
                             {commands
                                 .filter((command) => command.group === group)
                                 .map((command) => (
                                     <Card
                                         key={command.key}
-                                        className="flex flex-col"
+                                        className="flex min-w-0 flex-col"
                                     >
-                                        <CardHeader className="flex-1">
-                                            <CardTitle className="text-base">
+                                        <CardHeader className="min-w-0 flex-1">
+                                            <CardTitle className="text-base leading-snug">
                                                 {command.label}
                                             </CardTitle>
                                             <CardDescription>
                                                 {command.description}
                                             </CardDescription>
-                                            <code className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
+                                            <code className="flex min-w-0 items-start gap-2 pt-2 text-xs text-muted-foreground">
                                                 <Terminal className="size-3.5 shrink-0" />
                                                 {command.key}
                                             </code>
@@ -242,9 +251,11 @@ export default function Maintenance({ commands, status }: Props) {
                 open={pending !== null}
                 onOpenChange={(open) => !open && setPending(null)}
             >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{pending?.label}</DialogTitle>
+                <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] min-w-0 gap-5 overflow-y-auto p-5 [overflow-wrap:anywhere] sm:max-w-lg sm:p-6 md:max-w-lg lg:max-w-lg xl:max-w-lg">
+                    <DialogHeader className="min-w-0 pr-8 text-left">
+                        <DialogTitle className="leading-snug">
+                            {pending?.label}
+                        </DialogTitle>
                         <DialogDescription>
                             {pending?.description}
                         </DialogDescription>
@@ -253,14 +264,18 @@ export default function Maintenance({ commands, status }: Props) {
                         Esta tarea se ejecutará en el servidor actual y puede
                         afectar a los usuarios conectados.
                     </p>
-                    <DialogFooter>
+                    <DialogFooter className="min-w-0 gap-2">
                         <Button
+                            className="h-auto min-h-10 w-full whitespace-normal sm:w-auto"
                             variant="outline"
                             onClick={() => setPending(null)}
                         >
                             Cancelar
                         </Button>
-                        <Button onClick={() => pending && void run(pending)}>
+                        <Button
+                            className="h-auto min-h-10 w-full whitespace-normal sm:w-auto"
+                            onClick={() => pending && void run(pending)}
+                        >
                             Confirmar ejecución
                         </Button>
                     </DialogFooter>
