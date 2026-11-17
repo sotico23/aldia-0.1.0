@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Bot\VentaBotController;
 use App\Http\Controllers\Api\ChannelController;
 use App\Http\Controllers\Api\Delivery\DeliveryOrdenController;
 use App\Http\Controllers\Api\Delivery\PushDeviceController;
+use App\Http\Controllers\Api\Delivery\RoadAlertController;
 use App\Http\Controllers\Api\Delivery\ZoneController;
 use App\Http\Controllers\Api\Driver\DriverDocumentsController;
 use App\Http\Controllers\Api\Driver\DriverEarningsController;
@@ -180,6 +181,8 @@ Route::prefix('v1/delivery')
         Route::post('availability', [DeliveryOrdenController::class, 'availability']);
         Route::get('orders', [DeliveryOrdenController::class, 'orders']);
         Route::get('stores', [DeliveryOrdenController::class, 'stores']);
+        Route::get('road-alerts', [RoadAlertController::class, 'index']);
+        Route::post('road-alerts', [RoadAlertController::class, 'store'])->middleware('throttle:6,1');
 
         Route::post('orders/{pedido}/accept', [DeliveryOrdenController::class, 'accept']);
         Route::post('orders/{pedido}/aceptar', [DeliveryOrdenController::class, 'accept']);

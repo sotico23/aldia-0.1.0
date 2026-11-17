@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import axios from 'axios';
 import {
     LayoutGrid,
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { lazy, Suspense, useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
+import { index as maintenanceIndex } from '@/actions/App/Http/Controllers/Backend/MaintenanceController';
 import ErrorBoundary from '@/components/error-boundary';
 import RichEditor from '@/components/rich-editor';
 import { Button } from '@/components/ui/button';
@@ -522,7 +523,7 @@ export default function Index({
     };
     themePresets?: ThemePreset[];
 }) {
-    const { hasPermission } = usePermissions();
+    const { hasPermission, hasRole } = usePermissions();
     const canAccess = hasPermission('admin.web-settings.viewAny');
     const isN8nAllowed = hasPermission([
         'admin.web-settings.viewAny',
@@ -904,6 +905,15 @@ export default function Index({
                             </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
+                            {hasRole(['Master', 'Super Admin']) && (
+                                <Button variant="outline" asChild>
+                                    <Link href={maintenanceIndex()}>
+                                        <ServerCog className="h-4 w-4" />
+                                        Mantenimiento
+                                    </Link>
+                                </Button>
+                            )}
+
                             <a
                                 href="/configuracion-web/servidor"
                                 className="inline-flex items-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground"

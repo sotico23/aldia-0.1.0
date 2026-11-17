@@ -6,6 +6,7 @@ use App\Http\Controllers\Backend\FinancialAutomationController;
 use App\Http\Controllers\Backend\FinancialSettingsController;
 use App\Http\Controllers\Backend\GatewaySettingsController;
 use App\Http\Controllers\Backend\MailTemplateController;
+use App\Http\Controllers\Backend\MaintenanceController;
 use App\Http\Controllers\Backend\MarketplaceSettingsController;
 use App\Http\Controllers\Backend\PaisController;
 use App\Http\Controllers\Backend\RepartidorSolicitudesController;
@@ -68,6 +69,13 @@ Route::middleware(['permission:admin.web-settings.viewAny'])->group(function () 
 
         Route::get('configuracion-web/financial-automations', [FinancialAutomationController::class, 'show'])->name('configuracion-web.financial-automations');
         Route::put('configuracion-web/financial-automations', [FinancialAutomationController::class, 'update'])->name('configuracion-web.financial-automations.update');
+    });
+
+    Route::middleware(['role:Master|Super Admin', 'permission:admin.web-settings.edit'])->group(function () {
+        Route::get('configuracion-web/mantenimiento', [MaintenanceController::class, 'index'])
+            ->name('configuracion-web.maintenance');
+        Route::post('configuracion-web/mantenimiento/ejecutar', [MaintenanceController::class, 'execute'])
+            ->name('configuracion-web.maintenance.execute')->middleware('throttle:10,1');
     });
 
     Route::get('configuracion-web/servidor', SystemSettingsPage::class)
