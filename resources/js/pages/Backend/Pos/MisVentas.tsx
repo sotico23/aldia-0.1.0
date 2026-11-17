@@ -327,7 +327,7 @@ function TicketContenido({
                 </div>
             </div>
 
-            <div className="overflow-hidden rounded-lg border">
+            <div className="min-w-0 max-w-full overflow-x-auto rounded-lg border">
                 <table className="w-full text-xs">
                     <thead className="bg-muted/50">
                         <tr>

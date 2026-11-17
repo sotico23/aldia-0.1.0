@@ -49,7 +49,7 @@ export default function AutomationHistory({ executions }: { executions: any }) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Historial de Automatizaciones" />
 
-            <div className="mx-auto max-w-6xl px-4 py-8">
+            <div className="mx-auto max-w-6xl px-4 py-8 w-full min-w-0">
                 <div className="mb-8 flex items-start gap-6 rounded-[2rem] border border-purple-100 bg-purple-50 p-8 dark:border-purple-900/30 dark:bg-purple-950/20">
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-purple-100 dark:bg-purple-900/50">
                         <History className="h-7 w-7 text-purple-600 dark:text-purple-400" />

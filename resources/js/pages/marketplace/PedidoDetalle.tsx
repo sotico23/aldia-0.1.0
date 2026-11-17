@@ -352,7 +352,7 @@ export default function PedidoDetalle({
         >
             <Head title={`Pedido #${pedido.numero_pedido}`} />
 
-            <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 w-full min-w-0">
                 {/* Header */}
                 <div className="mb-8 flex flex-col justify-between border-b pb-4 md:flex-row md:items-center">
                     <div className="mb-4 flex items-center space-x-4 md:mb-0">

@@ -68,7 +68,7 @@ export default function Ambiente({ config }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Ambiente de Trabajo - SII" />
 
-            <div className="mx-auto max-w-4xl p-4 sm:p-6 md:p-8">
+            <div className="mx-auto max-w-4xl p-4 sm:p-6 md:p-8 w-full min-w-0">
                 <div className="mb-8 flex items-center gap-4">
                     <div className="rounded-2xl bg-violet-500/10 p-3">
                         <Globe className="h-8 w-8 text-violet-600" />

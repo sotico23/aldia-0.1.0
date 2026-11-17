@@ -198,7 +198,7 @@ export default function MisPedidos({ compras, ventas }: Props) {
             >
                 <Head title="Mis Pedidos" />
 
-                <div className="mx-auto max-w-4xl py-8">
+                <div className="mx-auto max-w-4xl py-8 w-full min-w-0">
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
                         Mis Pedidos
                     </h1>
@@ -235,7 +235,7 @@ export default function MisPedidos({ compras, ventas }: Props) {
         >
             <Head title="Mis Pedidos" />
 
-            <div className="mx-auto max-w-4xl py-8">
+            <div className="mx-auto max-w-4xl py-8 w-full min-w-0">
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
                     Mis Pedidos
                 </h1>

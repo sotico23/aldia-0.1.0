@@ -64,7 +64,7 @@ export default function SubirCaf() {
         <>
             <Head title="Subir CAF – SII" />
             <AppLayout breadcrumbs={breadcrumbs}>
-                <div className="mx-auto max-w-2xl p-4 md:p-6">
+                <div className="mx-auto max-w-2xl p-4 md:p-6 w-full min-w-0">
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">

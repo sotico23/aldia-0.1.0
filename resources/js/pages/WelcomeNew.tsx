@@ -133,7 +133,7 @@ export default function WelcomeNew({
             {/* Hero Section */}
             <section className="relative overflow-hidden py-12 sm:py-20 lg:py-32">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-100/50 via-transparent to-transparent"></div>
-                <div className="mx-auto max-w-7xl px-4">
+                <div className="mx-auto max-w-7xl px-4 w-full min-w-0">
                     <div className="text-center">
                         {hero.badge && (
                             <div className="mb-4 inline-flex max-w-full items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-medium text-amber-700 sm:mb-6 sm:text-sm">
@@ -147,7 +147,7 @@ export default function WelcomeNew({
                         <h1 className="mb-4 text-3xl font-extrabold tracking-tight break-words text-gray-900 sm:mb-6 sm:text-5xl lg:text-6xl">
                             {hero.titulo}
                         </h1>
-                        <p className="mx-auto mb-6 max-w-2xl text-base text-gray-600 sm:mb-10 sm:text-lg">
+                        <p className="mx-auto mb-6 max-w-2xl text-base text-gray-600 sm:mb-10 sm:text-lg w-full min-w-0">
                             {hero.subtitulo}
                         </p>
                         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -197,7 +197,7 @@ export default function WelcomeNew({
             {/* Promociones */}
             {promociones && promociones.length > 0 && (
                 <section className="bg-gradient-to-b from-amber-50/30 to-white py-16">
-                    <div className="mx-auto max-w-7xl px-4">
+                    <div className="mx-auto max-w-7xl px-4 w-full min-w-0">
                         <div className="mb-12 text-center">
                             <span className="mb-2 inline-block rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
                                 Ofertas Especiales
@@ -279,7 +279,7 @@ export default function WelcomeNew({
 
             {/* Características */}
             <section className="bg-white py-20">
-                <div className="mx-auto max-w-7xl px-4">
+                <div className="mx-auto max-w-7xl px-4 w-full min-w-0">
                     <div className="mb-16 text-center">
                         <h2 className="mb-4 text-3xl font-bold text-gray-900 sm:text-4xl">
                             Todo lo que necesitas para tu negocio
@@ -312,7 +312,7 @@ export default function WelcomeNew({
 
             {/* Planes de Precios */}
             <section className="bg-gradient-to-b from-gray-50 to-amber-50/30 py-20">
-                <div className="mx-auto max-w-7xl px-4">
+                <div className="mx-auto max-w-7xl px-4 w-full min-w-0">
                     <div className="mb-16 text-center">
                         <h2 className="mb-4 text-3xl font-bold text-gray-900 sm:text-4xl">
                             Planes para cada etapa de tu negocio
@@ -397,7 +397,7 @@ export default function WelcomeNew({
 
             {/* CTA Final */}
             <section className="bg-gray-900 py-20">
-                <div className="mx-auto max-w-4xl px-4 text-center">
+                <div className="mx-auto max-w-4xl px-4 text-center w-full min-w-0">
                     <h2 className="mb-4 text-3xl font-bold text-white sm:text-4xl">
                         {cta.titulo}
                     </h2>
@@ -430,7 +430,7 @@ export default function WelcomeNew({
 
             {/* Footer */}
             <footer className="border-t border-gray-200 bg-white py-12">
-                <div className="mx-auto max-w-7xl px-4">
+                <div className="mx-auto max-w-7xl px-4 w-full min-w-0">
                     <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
                         <div className="flex items-center gap-2">
                             {appLogo ? (

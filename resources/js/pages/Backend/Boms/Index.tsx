@@ -413,7 +413,7 @@ export default function Index({ boms }: { boms: PaginatedData }) {
                                         </p>
                                     ) : (
                                         <>
-                                            <div className="hidden md:block">
+                                            <div className="hidden min-w-0 overflow-x-auto md:block">
                                                 <table className="w-full text-xs sm:text-sm">
                                                     <thead>
                                                         <tr className="border-b">

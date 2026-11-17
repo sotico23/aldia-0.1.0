@@ -98,7 +98,7 @@ export default function MercadoPagoConfig({ config }: { config: any }) {
         >
             <Head title="Configuración de MercadoPago" />
 
-            <div className="mx-auto max-w-6xl px-4 py-8">
+            <div className="mx-auto max-w-6xl px-4 py-8 w-full min-w-0">
                 <div className="mb-8 flex items-start gap-6 rounded-[2rem] border border-emerald-100 bg-emerald-50 p-8 dark:border-emerald-900/30 dark:bg-emerald-950/20">
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-900/50">
                         <CreditCard className="h-7 w-7 text-emerald-600 dark:text-emerald-400" />

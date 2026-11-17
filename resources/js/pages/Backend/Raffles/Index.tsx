@@ -437,7 +437,7 @@ export default function RafflesIndex({ raffles }: Props) {
         >
             <Head title="Rifas y Sorteos" />
 
-            <div className="mx-auto max-w-7xl p-4 sm:p-6">
+            <div className="mx-auto max-w-7xl p-4 sm:p-6 w-full min-w-0">
                 <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">

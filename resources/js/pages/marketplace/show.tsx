@@ -873,7 +873,7 @@ export default function MarketplaceShow({
 
             {/* Header Area */}
             <div className="border-b border-slate-200 bg-white shadow-sm">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full min-w-0">
                     {/* Cover Photo */}
                     <div className="group relative h-64 w-full overflow-hidden rounded-b-xl bg-gradient-to-r from-slate-200 to-slate-300 sm:h-80 md:h-96">
                         {store.user.cover_photo_url && (

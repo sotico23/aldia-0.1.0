@@ -16,7 +16,7 @@ export function AppContent({
         return (
             <SidebarInset
                 {...props}
-                className={cn('h-full overflow-x-hidden', className)}
+                className={cn('h-full min-w-0 overflow-x-hidden', className)}
             >
                 {children}
             </SidebarInset>
@@ -26,7 +26,7 @@ export function AppContent({
     return (
         <main
             className={cn(
-                'mx-auto flex h-full w-full max-w-7xl flex-1 flex-col gap-4 overflow-x-hidden rounded-xl',
+                'mx-auto flex h-full w-full min-w-0 max-w-7xl flex-1 flex-col gap-4 overflow-x-hidden rounded-xl',
                 className,
             )}
             {...props}

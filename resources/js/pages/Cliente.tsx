@@ -506,7 +506,7 @@ export default function ClientDashboard({
                     />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-7xl flex-col justify-between gap-4 px-4 py-6 md:flex-row md:items-end md:px-8">
+                <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-7xl flex-col justify-between gap-4 px-4 py-6 md:flex-row md:items-end md:px-8 w-full min-w-0">
                     <div className="flex items-center gap-4">
                         <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-white/20 bg-white p-1.5 shadow-xl md:h-20 md:w-20">
                             {business.logo ? (
@@ -552,7 +552,7 @@ export default function ClientDashboard({
             </div>
 
             {/* Content Container */}
-            <main className="mx-auto mt-8 grid max-w-7xl grid-cols-1 gap-8 px-4 md:px-8 lg:grid-cols-12">
+            <main className="mx-auto mt-8 grid max-w-7xl grid-cols-1 gap-8 px-4 md:px-8 lg:grid-cols-12 w-full min-w-0">
                 {/* Main section */}
                 <div className="space-y-6 lg:col-span-8">
                     {/* Navigation Tabs */}
@@ -617,7 +617,7 @@ export default function ClientDashboard({
                                         {' '}
                                         No se encontraron productos{' '}
                                     </h3>{' '}
-                                    <p className="mx-auto max-w-sm text-sm text-slate-500">
+                                    <p className="mx-auto max-w-sm text-sm text-slate-500 w-full min-w-0">
                                         {' '}
                                         El negocio aún no tiene productos
                                         disponibles para su catálogo.{' '}
@@ -943,7 +943,7 @@ export default function ClientDashboard({
                                         <h3 className="text-lg font-black">
                                             No tienes pedidos anteriores
                                         </h3>
-                                        <p className="mx-auto max-w-sm text-sm text-slate-500">
+                                        <p className="mx-auto max-w-sm text-sm text-slate-500 w-full min-w-0">
                                             Todos tus pedidos confirmados o en
                                             tránsito se desplegarán en esta
                                             sección.

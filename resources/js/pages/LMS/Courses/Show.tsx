@@ -68,7 +68,7 @@ export default function Show({
                 <div className="absolute -top-24 -left-20 h-96 w-96 rounded-full bg-emerald-600/20 blur-[120px]" />
                 <div className="absolute -right-20 -bottom-24 h-96 w-96 rounded-full bg-emerald-600/20 blur-[120px]" />
 
-                <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full min-w-0">
                     <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
                         <div className="space-y-6">
                             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-bold tracking-wider text-emerald-400 uppercase">
@@ -195,7 +195,7 @@ export default function Show({
             </div>
 
             {/* Content Section */}
-            <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 w-full min-w-0">
                 <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
                     <div className="space-y-12 lg:col-span-2">
                         {/* What you'll learn */}

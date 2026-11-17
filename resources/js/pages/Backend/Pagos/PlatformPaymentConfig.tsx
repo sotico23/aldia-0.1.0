@@ -88,7 +88,7 @@ export default function PlatformPaymentConfig({ config }: { config: any }) {
             ]}
         >
             <Head title="Pago Plataforma" />
-            <div className="mx-auto max-w-2xl space-y-6 p-6">
+            <div className="mx-auto max-w-2xl space-y-6 p-6 w-full min-w-0">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">
                         Plataforma de Pago Principal

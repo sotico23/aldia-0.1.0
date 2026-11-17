@@ -383,7 +383,7 @@ export default function Dashboard({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
-            <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 w-full min-w-0">
                 {/* Header */}
                 <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>

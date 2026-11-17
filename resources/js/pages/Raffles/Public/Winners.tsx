@@ -44,7 +44,7 @@ export default function RaffleWinners({ raffle }: Props) {
             <Head title={`Ganadores - ${raffle.title}`} />
 
             <div className="px-4 py-20">
-                <div className="mx-auto max-w-4xl">
+                <div className="mx-auto max-w-4xl w-full min-w-0">
                     {/* Header */}
                     <div className="mb-16 text-center">
                         <div className="mb-6 inline-flex items-center gap-3">
@@ -157,7 +157,7 @@ export default function RaffleWinners({ raffle }: Props) {
 
             {/* Footer */}
             <footer className="border-t border-white/10 px-4 py-8">
-                <div className="mx-auto max-w-4xl text-center text-sm text-zinc-500">
+                <div className="mx-auto max-w-4xl text-center text-sm text-zinc-500 w-full min-w-0">
                     <p>© 2026 {raffle.title}</p>
                 </div>
             </footer>

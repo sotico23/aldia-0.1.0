@@ -438,7 +438,7 @@ export default function Index({ integraciones }: PageProps) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Conexiones e Integraciones API" />
 
-            <div className="mx-auto flex max-w-7xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex max-w-7xl flex-col gap-6 p-4 sm:p-6 w-full min-w-0">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">

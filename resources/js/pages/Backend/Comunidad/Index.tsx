@@ -310,7 +310,7 @@ export default function ComunidadIndex({ publicaciones }: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Publicaciones de la Comunidad" />
-            <div className="mx-auto max-w-2xl space-y-6 p-6">
+            <div className="mx-auto max-w-2xl space-y-6 p-6 w-full min-w-0">
                 <div className="flex flex-col justify-between gap-2 border-b pb-4 sm:flex-row sm:items-center">
                     <h1 className="text-2xl font-bold">
                         Publicaciones de la Comunidad

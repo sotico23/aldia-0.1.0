@@ -205,7 +205,7 @@ export default function ProveedorDashboard({
 
             <div className="min-h-screen bg-gray-50">
                 <header className="border-b bg-white shadow-sm">
-                    <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+                    <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 w-full min-w-0">
                         <div className="flex items-center gap-3">
                             {business.logo ? (
                                 <img
@@ -242,7 +242,7 @@ export default function ProveedorDashboard({
                     </div>
                 </header>
 
-                <div className="mx-auto max-w-6xl px-4 py-6">
+                <div className="mx-auto max-w-6xl px-4 py-6 w-full min-w-0">
                     <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
                         <div className="border-b bg-gray-50">
                             <nav className="flex">

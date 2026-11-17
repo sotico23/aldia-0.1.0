@@ -176,7 +176,7 @@ export default function TicketRecarga({
                                     <h4 className="mb-3 text-sm font-bold">
                                         Detalle de Productos
                                     </h4>
-                                    <div className="overflow-hidden rounded-lg border">
+                                    <div className="min-w-0 max-w-full overflow-x-auto rounded-lg border">
                                         <table className="w-full text-xs">
                                             <thead>
                                                 <tr className="border-b bg-muted/50">

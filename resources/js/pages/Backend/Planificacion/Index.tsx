@@ -301,7 +301,7 @@ export default function Index({
                                     Limpiar
                                 </Button>
                             </div>
-                            <div className="hidden md:block">
+                            <div className="hidden min-w-0 overflow-x-auto md:block">
                                 {viewMode === 'table' ? (
                                     <table className="w-full text-xs sm:text-sm">
                                         <thead>

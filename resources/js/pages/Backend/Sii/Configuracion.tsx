@@ -86,7 +86,7 @@ export default function ConfiguracionEmisor({
         <>
             <Head title="Configuración Emisor – SII" />
             <AppLayout breadcrumbs={breadcrumbs}>
-                <div className="mx-auto max-w-4xl p-4 md:p-6">
+                <div className="mx-auto max-w-4xl p-4 md:p-6 w-full min-w-0">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Datos de Empresa */}
                         <Card>

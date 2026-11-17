@@ -24,7 +24,7 @@ export default function PublicPage({
 
             {/* Header */}
             <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md">
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
+                <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 w-full min-w-0">
                     <Link href="/" className="flex items-center gap-2">
                         {appLogo ? (
                             <img
@@ -59,7 +59,7 @@ export default function PublicPage({
             </header>
 
             {/* Content */}
-            <main className="container mx-auto max-w-4xl flex-grow px-4 py-12">
+            <main className="container mx-auto max-w-4xl flex-grow px-4 py-12 w-full min-w-0">
                 <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm md:p-12">
                     <h1 className="mb-8 border-b border-gray-100 pb-4 text-3xl font-extrabold text-gray-900 md:text-4xl">
                         {title}
@@ -95,7 +95,7 @@ export default function PublicPage({
 
             {/* Footer */}
             <footer className="border-t border-gray-200 bg-white py-8">
-                <div className="mx-auto max-w-7xl px-4 text-center">
+                <div className="mx-auto max-w-7xl px-4 text-center w-full min-w-0">
                     <p className="text-sm text-gray-500">
                         © 2026 {appName}. Todos los derechos reservados.
                     </p>

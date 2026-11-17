@@ -61,7 +61,7 @@ export default function Recommend({
         >
             <Head title="Recomienda y Gana" />
 
-            <div className="mx-auto max-w-4xl p-6">
+            <div className="mx-auto max-w-4xl p-6 w-full min-w-0">
                 <div className="mb-8">
                     <h1 className="flex items-center gap-2 text-3xl font-bold text-zinc-900 dark:text-white">
                         <Award className="h-8 w-8 text-primary" />

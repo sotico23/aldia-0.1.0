@@ -101,7 +101,7 @@ export default function ObservabilityDashboard({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Observabilidad del Sistema" />
 
-            <div className="mx-auto max-w-7xl space-y-8 px-4 py-8">
+            <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 w-full min-w-0">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-black tracking-tight">

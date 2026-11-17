@@ -22,7 +22,7 @@ export default function Index({ courses }: { courses: Course[] }) {
         >
             <Head title="Cursos de Programación | LMS" />
 
-            <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 w-full min-w-0">
                 <div className="mb-16 text-center">
                     <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl dark:text-white">
                         Aprende de los mejores instructores

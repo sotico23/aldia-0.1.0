@@ -146,7 +146,7 @@ export default function Documentos({ documentos, filtros }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Documentos Emitidos - SII" />
 
-            <div className="mx-auto max-w-7xl p-4 sm:p-6 md:p-8">
+            <div className="mx-auto max-w-7xl p-4 sm:p-6 md:p-8 w-full min-w-0">
                 <div className="mb-8 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <div className="rounded-2xl bg-primary/10 p-3">

@@ -299,7 +299,7 @@ export default function Index({
         <>
             <Head title="Reportes BI" />
             <AppLayout breadcrumbs={breadcrumbs}>
-                <div className="mx-auto flex max-w-[1600px] flex-col gap-6 p-6">
+                <div className="mx-auto flex max-w-[1600px] flex-col gap-6 p-6 w-full min-w-0">
                     {/* Header */}
                     <div>
                         <h1 className="text-2xl font-extrabold tracking-tight">

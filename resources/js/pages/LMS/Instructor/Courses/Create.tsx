@@ -39,7 +39,7 @@ export default function Create({ categories }: { categories: any[] }) {
         >
             <Head title="Crear Curso | Instructor" />
 
-            <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8 w-full min-w-0">
                 <div className="mb-6">
                     <Button variant="ghost" asChild className="mb-4 pl-0">
                         <Link href="/instructor/cursos">

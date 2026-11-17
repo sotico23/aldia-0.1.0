@@ -10,7 +10,7 @@ export default function WebpayError({ error }: { error?: string }) {
         <AppLayout>
             <Head title="Error de Pago - Webpay Plus" />
 
-            <div className="mx-auto flex max-w-4xl flex-col items-center justify-center px-4 py-16 text-center">
+            <div className="mx-auto flex max-w-4xl flex-col items-center justify-center px-4 py-16 text-center w-full min-w-0">
                 <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
                     <AlertCircle className="h-12 w-12 text-red-600 dark:text-red-500" />
                 </div>

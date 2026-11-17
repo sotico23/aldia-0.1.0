@@ -34,7 +34,7 @@ export default function InstructorDashboard({ stats }: { stats: Stats }) {
         >
             <Head title="Dashboard del Instructor" />
 
-            <div className="mx-auto max-w-7xl p-6">
+            <div className="mx-auto max-w-7xl p-6 w-full min-w-0">
                 <div className="mb-8 flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">

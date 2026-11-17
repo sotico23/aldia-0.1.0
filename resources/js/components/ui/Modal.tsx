@@ -56,10 +56,10 @@ export function Modal({
                             leaveTo="opacity-0 scale-95"
                         >
                             <Dialog.Panel
-                                className={`w-full ${sizeClasses[size]} transform overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-2xl transition-all`}
+                                className={`w-full min-w-0 max-h-[calc(100dvh-2rem)] ${sizeClasses[size]} transform overflow-y-auto [overflow-wrap:anywhere] rounded-xl bg-white dark:bg-gray-800 shadow-2xl transition-all`}
                             >
                                 {(title || showCloseButton) && (
-                                    <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                                    <div className="flex items-start justify-between gap-3 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
                                         <div>
                                             {title && (
                                                 <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -75,7 +75,7 @@ export function Modal({
                                         {showCloseButton && (
                                             <button
                                                 type="button"
-                                                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                                className="shrink-0 rounded-lg p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                                                 onClick={onClose}
                                             >
                                                 <svg

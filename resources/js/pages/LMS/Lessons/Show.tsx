@@ -93,7 +93,7 @@ export default function LessonShow({
         >
             <Head title={`${lesson.title} | ${lesson.module.course.title}`} />
 
-            <div className="mx-auto flex max-w-7xl flex-col gap-6 p-6 lg:flex-row">
+            <div className="mx-auto flex max-w-7xl flex-col gap-6 p-6 lg:flex-row w-full min-w-0">
                 {/* Contenido Principal */}
                 <div className="flex-1 space-y-6">
                     {/* Video Player */}

@@ -36,7 +36,7 @@ export default function Network({ affiliates, points }: Props) {
         >
             <Head title="Mis Afiliados" />
 
-            <div className="mx-auto max-w-6xl p-6">
+            <div className="mx-auto max-w-6xl p-6 w-full min-w-0">
                 <div className="mb-8">
                     <h1 className="flex items-center gap-2 text-3xl font-bold text-zinc-900 dark:text-white">
                         <Users className="h-8 w-8 text-primary" />

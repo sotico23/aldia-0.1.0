@@ -60,7 +60,7 @@ export default function StudentProgress({
         >
             <Head title="Mi Progreso y Notas" />
 
-            <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+            <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 w-full min-w-0">
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
                         Mi Rendimiento Académico

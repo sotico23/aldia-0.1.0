@@ -864,7 +864,7 @@ export default function CajeroDashboard({
                                     )}
                                 </div>
 
-                                <div className="overflow-hidden rounded-lg border border-border/60">
+                                <div className="min-w-0 max-w-full overflow-x-auto rounded-lg border border-border/60">
                                     <table className="w-full text-xs">
                                         <thead className="bg-muted/50">
                                             <tr>

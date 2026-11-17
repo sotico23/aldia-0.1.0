@@ -46,7 +46,7 @@ export default function Fundacion({
             <section className="relative overflow-hidden pt-10 pb-16 sm:pt-20 sm:pb-32">
                 <div className="absolute inset-0 z-0 bg-rose-900/5" />
 
-                <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full min-w-0">
                     <div className="items-center lg:grid lg:grid-cols-12 lg:gap-16">
                         <div className="mb-12 text-center lg:col-span-5 lg:mb-0 lg:text-left">
                             <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-rose-100 px-4 py-2 text-sm font-semibold tracking-wider text-rose-700 uppercase">
@@ -115,7 +115,7 @@ export default function Fundacion({
 
             {/* Dynamic Content Section */}
             <section className="flex-grow bg-white py-24">
-                <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
+                <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 w-full min-w-0">
                     <HeartHandshake className="mx-auto mb-8 h-16 w-16 text-rose-500" />
                     <h2 className="mb-8 text-3xl font-bold text-stone-900">
                         {nav_extra?.fundacion_purpose_title ||
@@ -135,7 +135,7 @@ export default function Fundacion({
 
             {/* Footer Minimal */}
             <footer className="bg-stone-900 py-12 text-stone-400">
-                <div className="mx-auto max-w-7xl px-4 text-center">
+                <div className="mx-auto max-w-7xl px-4 text-center w-full min-w-0">
                     <Globe2 className="mx-auto mb-4 h-8 w-8 text-stone-600" />
                     <p className="font-semibold text-stone-300">
                         Fundación {appName}

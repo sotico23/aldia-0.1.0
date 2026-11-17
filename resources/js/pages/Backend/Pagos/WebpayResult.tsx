@@ -18,7 +18,7 @@ export default function WebpayResult({
         <AppLayout breadcrumbs={[{ title: 'Resultado del Pago', href: '#' }]}>
             <Head title="Resultado Webpay" />
 
-            <div className="mx-auto flex max-w-4xl flex-col items-center justify-center px-4 py-16 text-center">
+            <div className="mx-auto flex max-w-4xl flex-col items-center justify-center px-4 py-16 text-center w-full min-w-0">
                 {success ? (
                     <>
                         <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">

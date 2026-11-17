@@ -147,7 +147,7 @@ export default function NotificationsSettings() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Notificaciones" />
 
-            <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-8">
+            <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-8 w-full min-w-0">
                 <div className="flex items-center gap-3">
                     <Bell className="h-6 w-6 text-primary" />
                     <div>

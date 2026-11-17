@@ -78,7 +78,7 @@ export default function Folios({ cafs }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Gestión de Folios (CAF) - SII" />
 
-            <div className="mx-auto max-w-6xl px-4 py-8">
+            <div className="mx-auto max-w-6xl px-4 py-8 w-full min-w-0">
                 <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                     <div className="flex items-center gap-4">
                         <div className="rounded-2xl bg-amber-500/10 p-3">

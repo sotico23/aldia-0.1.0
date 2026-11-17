@@ -589,7 +589,7 @@ export default function Profile() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Mi Perfil" />
             <div className="min-h-screen bg-[#f0f2f5] pb-12">
-                <div className="mx-auto max-w-5xl">
+                <div className="mx-auto max-w-5xl w-full min-w-0">
                     <input
                         ref={profileInputRef}
                         type="file"

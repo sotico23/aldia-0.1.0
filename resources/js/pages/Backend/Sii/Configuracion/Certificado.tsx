@@ -150,7 +150,7 @@ export default function Certificado({ config }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Certificado Digital - SII" />
 
-            <div className="mx-auto max-w-5xl px-4 py-8">
+            <div className="mx-auto max-w-5xl px-4 py-8 w-full min-w-0">
                 <div className="mb-8 flex items-center gap-4">
                     <div className="rounded-2xl bg-primary/10 p-3">
                         <Shield className="h-8 w-8 text-primary" />

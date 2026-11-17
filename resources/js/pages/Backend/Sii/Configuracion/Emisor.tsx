@@ -64,7 +64,7 @@ export default function Emisor({ config }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Datos del Emisor - SII" />
 
-            <div className="mx-auto max-w-5xl p-4 sm:p-6 md:p-8">
+            <div className="mx-auto max-w-5xl p-4 sm:p-6 md:p-8 w-full min-w-0">
                 <div className="mb-8 flex items-center gap-4">
                     <div className="rounded-2xl bg-emerald-500/10 p-3">
                         <Building2 className="h-8 w-8 text-emerald-600" />

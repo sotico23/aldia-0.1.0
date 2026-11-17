@@ -534,7 +534,7 @@ export default function Index({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Asistencia de Empleados" />
-            <div className="mx-auto max-w-7xl space-y-6 p-6">
+            <div className="mx-auto max-w-7xl space-y-6 p-6 w-full min-w-0">
                 {/* Header */}
                 <div className="flex flex-col justify-between gap-4 border-b pb-5 md:flex-row md:items-center">
                     <div>

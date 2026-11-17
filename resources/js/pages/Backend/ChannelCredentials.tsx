@@ -688,7 +688,7 @@ export default function ChannelCredentials({
         <ErrorBoundary>
             <Head title="Automatiza tu negocio" />
             <AppLayout breadcrumbs={breadcrumbs}>
-                <div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
+                <div className="mx-auto flex max-w-5xl flex-col gap-6 p-6 w-full min-w-0">
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-2xl font-bold tracking-tight">

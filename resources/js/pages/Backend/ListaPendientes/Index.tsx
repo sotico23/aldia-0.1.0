@@ -106,7 +106,7 @@ export default function Index({ pendientes }: { pendientes: Tarea[] }) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Lista de Pendientes" />
-            <div className="mx-auto max-w-[1600px] p-6">
+            <div className="mx-auto max-w-[1600px] p-6 w-full min-w-0">
                 <div className="mb-6">
                     <h1 className="text-3xl font-extrabold tracking-tight">
                         Lista de Pendientes

@@ -90,7 +90,7 @@ export default function ChatInbox({
         >
             <Head title="Bandeja de Entrada | Chat Marketplace" />
 
-            <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 w-full min-w-0">
                 <div className="mb-8">
                     <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
                         Centro de Mensajes

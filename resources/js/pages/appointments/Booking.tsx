@@ -116,7 +116,7 @@ export default function Booking({
             <Head title={`Reservar en ${profile.title}`} />
 
             <header className="sticky top-0 z-50 border-b border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                <div className="mx-auto flex max-w-4xl items-center justify-between">
+                <div className="mx-auto flex max-w-4xl items-center justify-between w-full min-w-0">
                     <div className="flex items-center gap-2 text-slate-900 dark:text-white">
                         {profile.logo ? (
                             <img
@@ -143,7 +143,7 @@ export default function Booking({
                 </div>
             </header>
 
-            <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8 w-full min-w-0">
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900">
                     {step === 1 ? (
                         <div className="space-y-8 p-8">

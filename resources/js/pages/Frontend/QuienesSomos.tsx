@@ -44,8 +44,8 @@ export default function QuienesSomos({
             {/* Hero Section */}
             <section className="relative overflow-hidden bg-white pt-10 pb-16 sm:pt-16 sm:pb-32">
                 <div className="absolute inset-x-0 bottom-0 h-1/2 bg-slate-50" />
-                <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="mx-auto mb-8 max-w-3xl text-center sm:mb-16">
+                <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full min-w-0">
+                    <div className="mx-auto mb-8 max-w-3xl text-center sm:mb-16 w-full min-w-0">
                         <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
                             Sobre{' '}
                             <span className="bg-gradient-to-r from-amber-500 to-orange-600 bg-clip-text text-amber-500 text-transparent">
@@ -59,7 +59,7 @@ export default function QuienesSomos({
                         </p>
                     </div>
 
-                    <div className="group relative mx-auto max-w-5xl overflow-hidden rounded-3xl shadow-2xl shadow-amber-900/10">
+                    <div className="group relative mx-auto max-w-5xl overflow-hidden rounded-3xl shadow-2xl shadow-amber-900/10 w-full min-w-0">
                         <div className="absolute inset-0 z-10 bg-gradient-to-t from-gray-900/60 to-transparent" />
                         <img
                             src={image || '/images/about_us_team.png'}
@@ -81,7 +81,7 @@ export default function QuienesSomos({
 
             {/* Content & Mission */}
             <section className="flex-grow bg-slate-50 py-20">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full min-w-0">
                     <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
                         <div className="prose prose-lg prose-amber min-w-0 break-words text-gray-600 lg:col-span-2">
                             <h2 className="mb-6 border-b border-gray-200 pb-4 text-3xl font-bold text-gray-900">
@@ -148,7 +148,7 @@ export default function QuienesSomos({
 
             {/* Footer */}
             <footer className="border-t border-gray-200 bg-white py-12">
-                <div className="mx-auto max-w-7xl px-4 text-center">
+                <div className="mx-auto max-w-7xl px-4 text-center w-full min-w-0">
                     <img
                         src={appLogo || ''}
                         className="mx-auto mb-6 h-12 opacity-60 grayscale"

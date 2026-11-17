@@ -179,7 +179,7 @@ export default function RafflePublicShow({
             <div className="relative px-4 py-16 lg:py-24">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-500/20 via-transparent to-transparent" />
 
-                <div className="relative z-10 mx-auto max-w-5xl">
+                <div className="relative z-10 mx-auto max-w-5xl w-full min-w-0">
                     {/* Badge tipo */}
                     <div className="mb-6 flex justify-center">
                         <Badge className="border-white/20 bg-white/10 px-4 py-1.5 text-sm backdrop-blur">
@@ -197,7 +197,7 @@ export default function RafflePublicShow({
                             {raffle.title}
                         </h1>
                         {raffle.description && (
-                            <p className="mx-auto max-w-2xl text-lg text-zinc-300">
+                            <p className="mx-auto max-w-2xl text-lg text-zinc-300 w-full min-w-0">
                                 {raffle.description}
                             </p>
                         )}
@@ -369,7 +369,7 @@ export default function RafflePublicShow({
 
             {/* Sección de Premios */}
             <div className="bg-black/30 px-4 py-16">
-                <div className="mx-auto max-w-5xl">
+                <div className="mx-auto max-w-5xl w-full min-w-0">
                     <div className="mb-10 text-center">
                         <h2 className="mb-2 flex items-center justify-center gap-3 text-3xl font-bold">
                             <Trophy className="h-8 w-8 text-yellow-400" />
@@ -429,7 +429,7 @@ export default function RafflePublicShow({
 
             {/* Footer */}
             <footer className="border-t border-white/10 bg-black/20 px-4 py-8">
-                <div className="mx-auto max-w-5xl text-center">
+                <div className="mx-auto max-w-5xl text-center w-full min-w-0">
                     <p className="text-sm text-zinc-500">
                         © {new Date().getFullYear()} {raffle.title}. Todos los
                         derechos reservados.

@@ -86,7 +86,7 @@ export default function Confirmacion({
         >
             <Head title={`Pedido ${pedido.numero_pedido} | Confirmación`} />
 
-            <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+            <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 w-full min-w-0">
                 <div className="rounded-2xl bg-white p-6 text-center shadow-sm ring-1 ring-slate-200 sm:p-8 dark:bg-slate-900 dark:ring-slate-800">
                     <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
                         <CheckCircle2 className="h-10 w-10 text-green-600" />

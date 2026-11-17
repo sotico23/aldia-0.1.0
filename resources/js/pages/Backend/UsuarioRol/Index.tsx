@@ -675,7 +675,7 @@ export default function Index({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Gestión de Accesos" />
 
-            <div className="mx-auto flex max-w-7xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex max-w-7xl flex-col gap-6 p-4 sm:p-6 w-full min-w-0">
                 {/* Header */}
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -760,7 +760,7 @@ export default function Index({
                 <Tabs
                     value={activeTab}
                     onValueChange={setActiveTab}
-                    className="w-full"
+                    className="w-full min-w-0"
                 >
                     <TabsList className="w-full justify-start overflow-x-auto rounded-xl border bg-muted/50 p-1">
                         {canSeeTiendas && (
@@ -866,7 +866,7 @@ export default function Index({
                             </div>
 
                             {viewMode === 'cards' ? (
-                                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
                                     {filteredUserGroups.map(
                                         ({ user, assignments }) => {
                                             // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -885,7 +885,7 @@ export default function Index({
                                                     <CardHeader className="pb-0">
                                                         <div className="flex items-start justify-between">
                                                             <div className="flex items-center gap-3">
-                                                                <Avatar className="h-10 w-10 ring-2 ring-background">
+                                                                <Avatar className="h-10 w-10 shrink-0 ring-2 ring-background">
                                                                     <AvatarImage
                                                                         src={
                                                                             user.profile_photo_url ??
@@ -901,7 +901,7 @@ export default function Index({
                                                                             .toUpperCase()}
                                                                     </AvatarFallback>
                                                                 </Avatar>
-                                                                <div>
+                                                                <div className="min-w-0 flex-1">
                                                                     <CardTitle className="text-sm font-bold">
                                                                         {
                                                                             user.name
@@ -1170,7 +1170,7 @@ export default function Index({
                                                             </div>
                                                         )}
                                                         <Separator className="my-2" />
-                                                        <div className="flex flex-wrap gap-1.5">
+                                                        <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
                                                             {canEdit && (
                                                                 <TooltipProvider>
                                                                     <Tooltip>
@@ -2362,7 +2362,7 @@ export default function Index({
                             </div>
 
                             {/* All users grid */}
-                            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
                                 {(searchQuery
                                     ? masterData.all_users.filter(
                                           (u) =>
@@ -2404,7 +2404,7 @@ export default function Index({
                                             <CardHeader className="pb-2">
                                                 <div className="flex items-start justify-between">
                                                     <div className="flex items-center gap-3">
-                                                        <Avatar className="h-10 w-10 ring-2 ring-background">
+                                                        <Avatar className="h-10 w-10 shrink-0 ring-2 ring-background">
                                                             <AvatarImage
                                                                 src={
                                                                     user.profile_photo_url ??
@@ -2492,7 +2492,7 @@ export default function Index({
                                                     </Badge>
                                                 )}
                                                 <Separator className="my-2" />
-                                                <div className="flex flex-wrap gap-1.5">
+                                                <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
                                                     {canEdit && (
                                                         <TooltipProvider>
                                                             <Tooltip>
