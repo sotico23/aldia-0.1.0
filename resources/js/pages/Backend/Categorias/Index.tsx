@@ -1372,8 +1372,8 @@ export default function Index({
 
                 {/* Modal de detalle */}
                 <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-                    <DialogContent className="max-h-[92vh] w-[95vw] max-w-3xl overflow-hidden border-none bg-white p-0 shadow-2xl">
-                        <DialogHeader className="relative overflow-hidden px-4 pt-8 pb-14 sm:px-8 sm:pt-10 sm:pb-20">
+                    <DialogContent className="flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-3xl flex-col gap-0 overflow-hidden border-none bg-white p-0 shadow-2xl sm:max-w-3xl sm:p-0">
+                        <DialogHeader className="relative shrink-0 overflow-hidden px-4 py-5 pr-10 sm:px-6 sm:py-6 sm:pr-12">
                             <div className="absolute inset-0 bg-gradient-to-br from-purple-700 via-violet-800 to-emerald-950" />
                             <div className="absolute top-0 right-0 p-4 text-white opacity-20 sm:p-8">
                                 <Eye className="h-16 w-16 rotate-12 sm:h-24 sm:w-24" />
@@ -1383,7 +1383,7 @@ export default function Index({
                                 <Badge className="w-fit border-none bg-white/20 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase hover:bg-white/30">
                                     Detalle de Categoría
                                 </Badge>
-                                <DialogTitle className="text-xl font-black tracking-tight break-words text-white uppercase sm:text-3xl">
+                                <DialogTitle className="text-xl leading-tight font-black tracking-tight break-words text-white uppercase sm:text-2xl">
                                     {viendo?.nombre}
                                 </DialogTitle>
                                 <DialogDescription className="text-xs font-medium text-purple-100/80 sm:text-base">
@@ -1394,7 +1394,7 @@ export default function Index({
                         </DialogHeader>
 
                         {viendo && (
-                            <div className="relative z-20 -mt-8 mb-4 flex max-h-[calc(92vh-180px)] flex-col gap-4 overflow-y-auto px-4 sm:-mt-10 sm:mb-6 sm:gap-6 sm:px-8">
+                            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4 sm:gap-6 sm:px-6">
                                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
                                     {[
                                         {
@@ -1441,7 +1441,7 @@ export default function Index({
                                     ))}
                                 </div>
 
-                                <div className="grid grid-cols-1 items-start gap-4 sm:gap-6 lg:grid-cols-2">
+                                <div className="grid min-w-0 grid-cols-1 items-start gap-4 sm:gap-6 md:grid-cols-2">
                                     <div className="flex flex-col gap-2">
                                         <Label className="text-[10px] font-bold text-muted-foreground uppercase">
                                             Imagen Representativa
@@ -1476,7 +1476,7 @@ export default function Index({
                                                     </CardTitle>
                                                 </div>
                                             </CardHeader>
-                                            <CardContent className="p-4 text-sm leading-relaxed font-medium break-words text-gray-600 italic sm:p-5">
+                                            <CardContent className="p-4 text-sm leading-relaxed font-medium break-words whitespace-pre-wrap text-gray-600 sm:p-5">
                                                 {viendo.descripcion ||
                                                     'Esta categoría no cuenta con una descripción detallada en el sistema.'}
                                             </CardContent>
@@ -1503,7 +1503,7 @@ export default function Index({
                             </div>
                         )}
 
-                        <DialogFooter className="border-t bg-gray-50 p-4 sm:p-6">
+                        <DialogFooter className="shrink-0 border-t bg-gray-50 p-3 sm:p-4">
                             <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                                 {viendo?.mostrar_en_perfil &&
                                     viendo.public_profile_id !== null &&

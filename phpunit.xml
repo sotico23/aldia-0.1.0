@@ -18,6 +18,7 @@
             <file>tests/LivewireSidebarsTest.php</file>
             <file>tests/MarketplaceStoreImagesTest.php</file>
             <file>tests/ResponsiveLayoutTest.php</file>
+            <file>tests/CatalogDetailsResponsiveTest.php</file>
             <file>tests/DashboardInventoryValueTest.php</file>
             <file>tests/CountryManagementTest.php</file>
         </testsuite>

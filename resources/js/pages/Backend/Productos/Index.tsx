@@ -297,6 +297,7 @@ export default function Index({
     };
 }) {
     const { hasPermission } = usePermissions();
+    const canView = hasPermission('comercial.productos.view');
     const canCreate = hasPermission('comercial.productos.create');
     const canEdit = hasPermission('comercial.productos.edit');
     const canDelete = hasPermission('comercial.productos.delete');
@@ -543,7 +544,9 @@ export default function Index({
                     result.mensaje ||
                     'Producto encontrado y datos precargados. Revisa y ajusta antes de guardar.',
             });
-            toast.success(result.mensaje || 'Producto encontrado y datos precargados.');
+            toast.success(
+                result.mensaje || 'Producto encontrado y datos precargados.',
+            );
         } catch (error) {
             if (requestId !== skuLookupRequest.current) {
                 return;
@@ -578,7 +581,7 @@ export default function Index({
             Number(data.precio_compra) > 0 ||
             Number(data.precio_venta) > 0 ||
             data.stock_minimo > 0 ||
-            data.warehouse_ids.length > 0
+            data.warehouse_ids.length > 0,
         );
     }, [data]);
 
@@ -603,9 +606,7 @@ export default function Index({
         if (d.inventarios?.length) {
             setData(
                 'warehouse_ids',
-                d.inventarios
-                    .map((inv: any) => inv.almacen_id)
-                    .filter(Boolean),
+                d.inventarios.map((inv: any) => inv.almacen_id).filter(Boolean),
             );
         }
 
@@ -1574,7 +1575,7 @@ export default function Index({
                                                                         <th className="px-6 py-4 text-left">
                                                                             Estado
                                                                         </th>
-                                                                        <th className="px-6 py-4 text-right">
+                                                                        <th className="sticky right-0 z-20 bg-background px-4 py-4 text-right">
                                                                             Acciones
                                                                         </th>
                                                                     </tr>
@@ -1694,23 +1695,29 @@ export default function Index({
                                                                                         </Badge>
                                                                                     )}
                                                                                 </td>
-                                                                                <td className="px-6 py-4 text-right">
+                                                                                <td className="sticky right-0 z-10 bg-background px-4 py-4 text-right">
                                                                                     <div className="flex justify-end gap-1">
-                                                                                        <Button
-                                                                                            variant="ghost"
-                                                                                            size="icon"
-                                                                                            className="h-8 w-8 text-emerald-600 hover:bg-emerald-50"
-                                                                                            onClick={() => {
-                                                                                                setViendo(
-                                                                                                    p,
-                                                                                                );
-                                                                                                setIsViewOpen(
-                                                                                                    true,
-                                                                                                );
-                                                                                            }}
-                                                                                        >
-                                                                                            <Eye className="h-4 w-4" />
-                                                                                        </Button>
+                                                                                        {canView && (
+                                                                                            <Button
+                                                                                                aria-label={`Ver detalle de ${p.nombre}`}
+                                                                                                title="Ver detalle"
+                                                                                                variant="ghost"
+                                                                                                size="sm"
+                                                                                                className="h-8 gap-1 px-2 text-emerald-600 hover:bg-emerald-50"
+                                                                                                onClick={() => {
+                                                                                                    setViendo(
+                                                                                                        p,
+                                                                                                    );
+                                                                                                    setIsViewOpen(
+                                                                                                        true,
+                                                                                                    );
+                                                                                                }}
+                                                                                            >
+                                                                                                <Eye className="h-4 w-4" />{' '}
+                                                                                                Ver
+                                                                                                detalle
+                                                                                            </Button>
+                                                                                        )}
                                                                                         {canEdit && (
                                                                                             <Button
                                                                                                 variant="ghost"
@@ -1822,22 +1829,27 @@ export default function Index({
                                                                                         )}
                                                                                     </span>
                                                                                     <div className="flex items-center gap-1">
-                                                                                        <Button
-                                                                                            variant="ghost"
-                                                                                            size="sm"
-                                                                                            className="h-8 px-2 text-xs"
-                                                                                            onClick={() => {
-                                                                                                setViendo(
-                                                                                                    p,
-                                                                                                );
-                                                                                                setIsViewOpen(
-                                                                                                    true,
-                                                                                                );
-                                                                                            }}
-                                                                                        >
-                                                                                            <Eye className="mr-1 h-3.5 w-3.5" />
-                                                                                            Ver
-                                                                                        </Button>
+                                                                                        {canView && (
+                                                                                            <Button
+                                                                                                aria-label={`Ver detalle de ${p.nombre}`}
+                                                                                                title="Ver detalle"
+                                                                                                variant="ghost"
+                                                                                                size="sm"
+                                                                                                className="h-8 px-2 text-xs"
+                                                                                                onClick={() => {
+                                                                                                    setViendo(
+                                                                                                        p,
+                                                                                                    );
+                                                                                                    setIsViewOpen(
+                                                                                                        true,
+                                                                                                    );
+                                                                                                }}
+                                                                                            >
+                                                                                                <Eye className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                                                Ver
+                                                                                                detalle
+                                                                                            </Button>
+                                                                                        )}
                                                                                         {canEdit && (
                                                                                             <Button
                                                                                                 variant="ghost"
@@ -2008,22 +2020,27 @@ export default function Index({
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex items-center gap-1 pt-1">
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="sm"
-                                                                            className="h-8 px-2 text-xs"
-                                                                            onClick={() => {
-                                                                                setViendo(
-                                                                                    p,
-                                                                                );
-                                                                                setIsViewOpen(
-                                                                                    true,
-                                                                                );
-                                                                            }}
-                                                                        >
-                                                                            <Eye className="mr-1 h-3.5 w-3.5" />{' '}
-                                                                            Ver
-                                                                        </Button>
+                                                                        {canView && (
+                                                                            <Button
+                                                                                aria-label={`Ver detalle de ${p.nombre}`}
+                                                                                title="Ver detalle"
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="h-8 px-2 text-xs"
+                                                                                onClick={() => {
+                                                                                    setViendo(
+                                                                                        p,
+                                                                                    );
+                                                                                    setIsViewOpen(
+                                                                                        true,
+                                                                                    );
+                                                                                }}
+                                                                            >
+                                                                                <Eye className="mr-1 h-3.5 w-3.5" />{' '}
+                                                                                Ver
+                                                                                detalle
+                                                                            </Button>
+                                                                        )}
                                                                         {canEdit && (
                                                                             <Button
                                                                                 variant="ghost"
@@ -2129,7 +2146,10 @@ export default function Index({
                                                                 )
                                                             }
                                                             onKeyDown={(e) => {
-                                                                if (e.key === 'Enter') {
+                                                                if (
+                                                                    e.key ===
+                                                                    'Enter'
+                                                                ) {
                                                                     e.preventDefault();
                                                                     void handleCodigoLookup(
                                                                         data.codigo,
@@ -2168,22 +2188,26 @@ export default function Index({
                                                     {skuHydrationNotice && (
                                                         <p
                                                             className={`text-xs ${
-                                                                skuHydrationNotice.type === 'success'
-                                                                    ? 'text-emerald-700 font-bold'
-                                                                    : 'text-amber-700 font-bold'
-                                                            } flex items-center gap-1.5 mb-1`}
+                                                                skuHydrationNotice.type ===
+                                                                'success'
+                                                                    ? 'font-bold text-emerald-700'
+                                                                    : 'font-bold text-amber-700'
+                                                            } mb-1 flex items-center gap-1.5`}
                                                         >
-                                                            {skuHydrationNotice.type === 'success' ? (
+                                                            {skuHydrationNotice.type ===
+                                                            'success' ? (
                                                                 <Info className="h-3.5 w-3.5" />
                                                             ) : (
                                                                 <AlertCircle className="h-3.5 w-3.5" />
                                                             )}
-                                                            {skuHydrationNotice.message}
+                                                            {
+                                                                skuHydrationNotice.message
+                                                            }
                                                         </p>
                                                     )}
                                                     {skuHydrationLoading && (
                                                         <p
-                                                            className="text-xs text-muted-foreground flex items-center gap-1.5 mb-1"
+                                                            className="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground"
                                                             role="status"
                                                         >
                                                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -3623,15 +3647,18 @@ export default function Index({
                 />
 
                 {/* View Dialog */}
-                <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-                    <DialogContent className="max-h-[85vh] max-w-[90vw] overflow-y-auto border-none bg-white p-0 shadow-xl md:max-w-2xl">
-                        <DialogHeader className="relative overflow-hidden px-4 py-4 md:px-6 md:py-5">
+                <Dialog
+                    open={isViewOpen && canView}
+                    onOpenChange={setIsViewOpen}
+                >
+                    <DialogContent className="flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-2xl flex-col gap-0 overflow-hidden border-none bg-white p-0 shadow-xl sm:max-w-2xl sm:p-0">
+                        <DialogHeader className="relative shrink-0 overflow-hidden px-4 py-4 md:px-6 md:py-5">
                             <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-900 opacity-90" />
                             <div className="absolute top-0 right-0 p-3 text-white opacity-15 md:p-4">
                                 <Eye className="h-12 w-12 rotate-12 md:h-16 md:w-16" />
                             </div>
 
-                            <div className="relative z-10 flex items-center justify-between pr-8 text-white">
+                            <div className="relative z-10 flex min-w-0 flex-wrap items-start justify-between gap-2 pr-8 text-white">
                                 <div>
                                     <Badge className="mb-1 w-fit border-none bg-white/20 px-2 py-0.5 text-[9px] font-bold tracking-widest text-white uppercase">
                                         Producto
@@ -3649,8 +3676,8 @@ export default function Index({
                         </DialogHeader>
 
                         {viendo && (
-                            <div className="relative z-20 -mt-2 mb-3 flex max-h-[calc(85vh-100px)] flex-col gap-3 overflow-y-auto px-4 md:-mt-4 md:mb-4 md:gap-4 md:px-6">
-                                <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+                            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4 md:gap-4 md:px-6">
+                                <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3">
                                     <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2">
                                         <p className="text-[8px] font-bold text-emerald-600 uppercase">
                                             SKU
@@ -3693,9 +3720,8 @@ export default function Index({
                                         <p className="truncate text-xs font-semibold text-indigo-800">
                                             {formatCurrency(
                                                 Number(
-                                                    viendo
-                                                        .comision_cajero_por_unidad ||
-                                                    0,
+                                                    viendo.comision_cajero_por_unidad ||
+                                                        0,
                                                 ),
                                             )}
                                         </p>
@@ -3912,7 +3938,7 @@ export default function Index({
                             </div>
                         )}
 
-                        <DialogFooter className="border-t bg-gray-50 p-3">
+                        <DialogFooter className="shrink-0 border-t bg-gray-50 p-3">
                             <Button
                                 variant="outline"
                                 onClick={() => setIsViewOpen(false)}
@@ -3928,13 +3954,16 @@ export default function Index({
                 <Dialog open={showSkuConfirm} onOpenChange={setShowSkuConfirm}>
                     <DialogContent className="sm:max-w-md">
                         <DialogHeader>
-                            <DialogTitle>¿Aplicar datos del producto encontrado?</DialogTitle>
+                            <DialogTitle>
+                                ¿Aplicar datos del producto encontrado?
+                            </DialogTitle>
                             <DialogDescription>
-                                Ya hay datos digitados en este formulario. Al aplicar
-                                se sobrescribirán nombre, categoría, precios, stock,
-                                unidad de medida, imágenes y variantes del SKU{' '}
-                                <strong>{pendingSkuData?.codigo}</strong>. Los campos
-                                que ya tengas llenados se reemplazarán.
+                                Ya hay datos digitados en este formulario. Al
+                                aplicar se sobrescribirán nombre, categoría,
+                                precios, stock, unidad de medida, imágenes y
+                                variantes del SKU{' '}
+                                <strong>{pendingSkuData?.codigo}</strong>. Los
+                                campos que ya tengas llenados se reemplazarán.
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter className="flex gap-2">
