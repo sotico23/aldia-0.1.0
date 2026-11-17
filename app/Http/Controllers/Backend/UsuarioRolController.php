@@ -8,6 +8,7 @@ use App\Models\PublicProfile;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\UserPurgeService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -22,9 +23,7 @@ use Throwable;
 
 class UsuarioRolController extends Controller
 {
-    public function __construct(private readonly UserPurgeService $userPurgeService)
-    {
-    }
+    public function __construct(private readonly UserPurgeService $userPurgeService) {}
 
     public function index(): Response
     {
@@ -47,13 +46,14 @@ class UsuarioRolController extends Controller
             ->whereNull('owner_id')
             ->orderBy('name');
 
-        if ($userLevel > 0) {
+        if (! $isMaster && $userLevel > 0) {
             $systemQuery->where('level', '>', $userLevel);
         }
 
-        // Custom roles (owner_id = $ownerId): no level filter, owner sees all
+        // Master includes roles from every business; other users keep their tenant scope.
         $customRoles = Role::with('permissions')
-            ->where('owner_id', $ownerId)
+            ->whereNotNull('owner_id')
+            ->when(! $isMaster, fn (Builder $query): Builder => $query->where('owner_id', $ownerId))
             ->orderBy('name')
             ->get();
 
@@ -271,7 +271,7 @@ class UsuarioRolController extends Controller
 
         $role = Role::create([
             'name' => $validated['name'],
-            'owner_id' => $currentUser->getOwnerId(),
+            'owner_id' => $currentUser->hasRole('Master') ? null : $currentUser->getOwnerId(),
             'created_by' => $currentUser->id,
             'level' => $roleLevel,
         ]);
@@ -306,7 +306,7 @@ class UsuarioRolController extends Controller
                 abort(403, 'No tienes permiso para modificar roles.');
             }
 
-            if ($role->owner_id !== $currentUser->getOwnerId()) {
+            if (! $currentUser->hasRole('Master') && (int) $role->owner_id !== $currentUser->getOwnerId()) {
                 abort(403, 'Este rol pertenece a otro negocio.');
             }
         }
@@ -357,7 +357,7 @@ class UsuarioRolController extends Controller
                 abort(403, 'No tienes permiso para eliminar roles.');
             }
 
-            if ($role->owner_id !== $currentUser->getOwnerId()) {
+            if (! $currentUser->hasRole('Master') && (int) $role->owner_id !== $currentUser->getOwnerId()) {
                 abort(403, 'Este rol pertenece a otro negocio.');
             }
         }

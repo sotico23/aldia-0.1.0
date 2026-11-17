@@ -46,6 +46,11 @@ import {
     Star,
 } from 'lucide-react';
 import { useState, useMemo, useRef } from 'react';
+import {
+    storeRole,
+    updateRole,
+    destroyRole,
+} from '@/actions/App/Http/Controllers/Backend/UsuarioRolController';
 import InputError from '@/components/input-error';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -311,7 +316,7 @@ export default function Index({
     const canCreate = hasPermission('admin.usuarios.create');
     const canEdit = hasPermission('admin.usuarios.edit');
     const canDelete = can_delete_users;
-    const canManageRoles = hasPermission('admin.roles.custom');
+    const canManageRoles = is_master || hasPermission('admin.roles.custom');
     const canSeeTiendas = user_level <= 1;
 
     const [activeTab, setActiveTab] = useState('asignaciones');
@@ -449,13 +454,12 @@ export default function Index({
         );
     }, [roles, searchQuery]);
 
-    const systemRoles = useMemo(
-        () => filteredRoles.filter((r) => r.owner_id === null),
-        [filteredRoles],
-    );
-    const customRoles = useMemo(
-        () => filteredRoles.filter((r) => r.owner_id !== null),
-        [filteredRoles],
+    const manageableRoles = useMemo(
+        () =>
+            is_master
+                ? filteredRoles
+                : filteredRoles.filter((role) => role.owner_id !== null),
+        [filteredRoles, is_master],
     );
 
     const getModuleSummary = (
@@ -480,7 +484,7 @@ export default function Index({
     const handleSaveRole = (e: React.FormEvent) => {
         e.preventDefault();
         if (editingRole) {
-            rolForm.put(route('usuarios-roles.role.update', editingRole.id), {
+            rolForm.put(updateRole.url(editingRole.id), {
                 onSuccess: () => {
                     setIsRolOpen(false);
                     setEditingRole(null);
@@ -489,7 +493,7 @@ export default function Index({
                 preserveScroll: true,
             });
         } else {
-            rolForm.post(route('usuarios-roles.role.store'), {
+            rolForm.post(storeRole.url(), {
                 onSuccess: () => {
                     setIsRolOpen(false);
                     rolForm.reset();
@@ -568,7 +572,7 @@ export default function Index({
                 '¿Eliminar este rol? Los usuarios asignados perderán sus permisos.',
             )
         ) {
-            router.delete(route('usuarios-roles.role.destroy', id), {
+            router.delete(destroyRole.url(id), {
                 preserveScroll: true,
             });
         }
@@ -675,7 +679,7 @@ export default function Index({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Gestión de Accesos" />
 
-            <div className="mx-auto flex max-w-7xl flex-col gap-6 p-4 sm:p-6 w-full min-w-0">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-6 p-4 sm:p-6">
                 {/* Header */}
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -1582,159 +1586,16 @@ export default function Index({
                             )}
                         </div>
 
-                        {systemRoles.length > 0 && is_master && (
-                            <div>
-                                <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                                    <Lock className="h-4 w-4" /> Roles del
-                                    Sistema
-                                </h3>
-                                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                    {systemRoles.map((role) => {
-                                        const lc = getLevelColor(role.level);
-                                        const cnt = role.permissions.length;
-                                        const pct =
-                                            totalPermisosCount > 0
-                                                ? Math.round(
-                                                      (cnt /
-                                                          totalPermisosCount) *
-                                                          100,
-                                                  )
-                                                : 0;
-                                        const summary = getModuleSummary(
-                                            role.permissions.map((p) => p.id),
-                                        );
-                                        return (
-                                            <Card
-                                                key={role.id}
-                                                className={`overflow-hidden border-l-4 ${lc.border} bg-gradient-to-br ${lc.bg.replace('from-', 'from-').replace('to-', '/5 to-').replace('from-', 'from-')} bg-opacity-5`}
-                                            >
-                                                <CardHeader className="pb-2">
-                                                    <div className="flex items-start justify-between">
-                                                        <Badge
-                                                            variant="outline"
-                                                            className={`text-[9px] ${lc.text} border-current/30`}
-                                                        >
-                                                            {lc.label}
-                                                        </Badge>
-                                                        <div className="flex gap-0.5">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-6 w-6"
-                                                                title="Ver"
-                                                                onClick={() =>
-                                                                    setViewingRole(
-                                                                        role,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Eye className="h-3 w-3" />
-                                                            </Button>
-                                                            {canEdit && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-6 w-6"
-                                                                    title="Editar"
-                                                                    disabled={
-                                                                        !is_master
-                                                                    }
-                                                                    onClick={() =>
-                                                                        openEditRole(
-                                                                            role,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Pencil className="h-3 w-3" />
-                                                                </Button>
-                                                            )}
-                                                            {canDelete && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-6 w-6 text-destructive"
-                                                                    disabled={
-                                                                        !is_master
-                                                                    }
-                                                                    onClick={() =>
-                                                                        handleDeleteRole(
-                                                                            role.id,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Trash2 className="h-3 w-3" />
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    <CardTitle className="text-base font-bold">
-                                                        {role.name}
-                                                    </CardTitle>
-                                                </CardHeader>
-                                                <CardContent className="pt-0">
-                                                    <div className="mb-2 flex items-center gap-2">
-                                                        <Progress
-                                                            value={pct}
-                                                            className="h-1.5 flex-1"
-                                                        />
-                                                        <span className="text-[10px] text-muted-foreground">
-                                                            {cnt}/
-                                                            {totalPermisosCount}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {summary
-                                                            .slice(0, 4)
-                                                            .map((m) => (
-                                                                <Badge
-                                                                    key={
-                                                                        m.module
-                                                                    }
-                                                                    variant="secondary"
-                                                                    className="gap-0.5 px-1.5 py-0 text-[9px]"
-                                                                >
-                                                                    <span>
-                                                                        {getModuleIcon(
-                                                                            m.module,
-                                                                        )}
-                                                                    </span>
-                                                                    {m.module} (
-                                                                    {m.count})
-                                                                </Badge>
-                                                            ))}
-                                                        {summary.length > 4 && (
-                                                            <Badge
-                                                                variant="outline"
-                                                                className="px-1.5 py-0 text-[9px]"
-                                                            >
-                                                                +
-                                                                {summary.length -
-                                                                    4}
-                                                            </Badge>
-                                                        )}
-                                                        {summary.length ===
-                                                            0 && (
-                                                            <span className="text-[10px] text-muted-foreground">
-                                                                Sin permisos
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
-
                         <div>
                             <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                                <Shield className="h-4 w-4" /> Roles
-                                Personalizados
+                                <Shield className="h-4 w-4" />
+                                {is_master
+                                    ? 'Todos los roles'
+                                    : 'Roles del negocio'}
                             </h3>
-                            {customRoles.length > 0 ? (
+                            {manageableRoles.length > 0 ? (
                                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                    {customRoles.map((role) => {
+                                    {manageableRoles.map((role) => {
                                         const lc = getLevelColor(role.level);
                                         const cnt = role.permissions.length;
                                         const pct =
@@ -1760,9 +1621,12 @@ export default function Index({
                                                             className="gap-1 text-[9px]"
                                                         >
                                                             <Tag className="h-2.5 w-2.5" />{' '}
-                                                            Personalizado
+                                                            {role.owner_id ===
+                                                            null
+                                                                ? 'Plataforma'
+                                                                : 'Negocio'}
                                                         </Badge>
-                                                        <div className="flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                                                        <div className="flex shrink-0 gap-0.5">
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"

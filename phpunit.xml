@@ -10,6 +10,7 @@
             <file>tests/DriverRegistrationTest.php</file>
             <file>tests/RoadAlertTest.php</file>
             <file>tests/MaintenanceCommandsTest.php</file>
+            <file>tests/MasterRoleManagementTest.php</file>
             <file>tests/MaintenanceResponsiveTest.php</file>
             <file>tests/ProspectoScrapingTest.php</file>
         </testsuite>
