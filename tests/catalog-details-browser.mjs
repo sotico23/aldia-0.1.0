@@ -233,7 +233,7 @@ try {
                 for(const mode of ${JSON.stringify(kind === 'products' ? ['table', 'cards'] : ['table'])}){
                     if(mode==='cards'){document.querySelector('button:has(svg.lucide-layout-grid)').click();await wait();}
                     const button=visible(selector)[0];check(!!button,'Missing detail button');if(!button)continue;
-                    if(${kind === 'products'}){const initial=button.getBoundingClientRect();check(initial.left>=0&&initial.right<=innerWidth,'Detail action requires horizontal scrolling');}
+                    if(${kind === 'products'}){const initial=button.getBoundingClientRect();check(initial.left>=0&&initial.right<=innerWidth,'Detail action requires horizontal scrolling: '+mode+' '+JSON.stringify({left:initial.left,right:initial.right,width:innerWidth,parents:(()=>{const result=[];let node=button.parentElement;for(let i=0;node&&i<6;i++,node=node.parentElement){result.push({tag:node.tagName,classes:node.className,width:node.getBoundingClientRect().width,display:getComputedStyle(node).display})}return result})()}));}
                     button.scrollIntoView({block:'center',inline:'nearest'});await wait();const r=button.getBoundingClientRect();
                     check(r.left>=0&&r.right<=innerWidth,'Detail button hidden outside viewport');
                     check(button.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)),'Detail button is covered');

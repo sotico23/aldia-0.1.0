@@ -1754,7 +1754,7 @@ export default function Index({
                                                                 </tbody>
                                                             </table>
                                                         </div>
-                                                        <div className="grid gap-2 p-2 sm:p-3 md:hidden">
+                                                        <div className="grid min-w-0 grid-cols-1 gap-2 p-2 sm:p-3 md:hidden">
                                                             {grupo.data.map(
                                                                 (p) => (
                                                                     <div
@@ -1822,7 +1822,7 @@ export default function Index({
                                                                                         }}
                                                                                     />
                                                                                 </div>
-                                                                                <div className="mt-2 flex items-center justify-between border-t pt-2">
+                                                                                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t pt-2">
                                                                                     <span className="text-xs font-black">
                                                                                         {formatCurrency(
                                                                                             p.precio_venta,
@@ -2019,7 +2019,7 @@ export default function Index({
                                                                             </span>
                                                                         </div>
                                                                     </div>
-                                                                    <div className="flex items-center gap-1 pt-1">
+                                                                    <div className="flex flex-wrap items-center gap-1 pt-1">
                                                                         {canView && (
                                                                             <Button
                                                                                 aria-label={`Ver detalle de ${p.nombre}`}

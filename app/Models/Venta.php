@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 
 class Venta extends Model
@@ -174,6 +176,23 @@ class Venta extends Model
     public function cupon(): BelongsTo
     {
         return $this->belongsTo(Cupon::class);
+    }
+
+    /**
+     * Movimientos financieros (ledger) derivados de esta venta, por ejemplo la
+     * comisión del cajero que cerró la venta o la reversa por anulación.
+     */
+    public function walletTransactions(): MorphMany
+    {
+        return $this->morphMany(WalletTransaction::class, 'reference');
+    }
+
+    /**
+     * Relación polimórfica inversa hacia el movimiento de billetera.
+     */
+    public function walletTransaction(): MorphTo
+    {
+        return $this->morphTo('reference');
     }
 
     public function almacenes(): BelongsToMany

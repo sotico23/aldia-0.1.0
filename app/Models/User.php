@@ -191,6 +191,11 @@ class User extends Authenticatable
         return $this->hasOne(Proveedor::class);
     }
 
+    public function wallet(): HasOne
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
     public function countryModel(): BelongsTo
     {
         return $this->belongsTo(Country::class, 'country', 'code');

@@ -12,6 +12,7 @@ use App\Http\Controllers\Backend\PaisController;
 use App\Http\Controllers\Backend\RepartidorSolicitudesController;
 use App\Http\Controllers\Backend\ReporteController;
 use App\Http\Controllers\Backend\UsuarioRolController;
+use App\Http\Controllers\Backend\WalletSettingsController;
 use App\Http\Controllers\Backend\WebhookSettingsController;
 use App\Http\Controllers\Backend\WebSettingController;
 use App\Livewire\SystemSettingsPage;
@@ -64,6 +65,9 @@ Route::middleware(['permission:admin.web-settings.viewAny'])->group(function () 
 
         Route::get('configuracion-web/marketplace-settings', [MarketplaceSettingsController::class, 'show'])->name('configuracion-web.marketplace-settings');
         Route::put('configuracion-web/marketplace-settings', [MarketplaceSettingsController::class, 'update'])->name('configuracion-web.marketplace-settings.update');
+
+        Route::get('configuracion-web/wallet-settings', [WalletSettingsController::class, 'show'])->name('configuracion-web.wallet-settings');
+        Route::put('configuracion-web/wallet-settings', [WalletSettingsController::class, 'update'])->name('configuracion-web.wallet-settings.update');
 
         Route::get('configuracion-web/webhook-settings', [WebhookSettingsController::class, 'show'])->name('configuracion-web.webhook-settings');
 

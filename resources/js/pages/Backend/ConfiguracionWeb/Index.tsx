@@ -41,6 +41,7 @@ const EmailMarketingPage = lazy(() => import('./EmailMarketing'));
 const GlobalPayments = lazy(() => import('./GlobalPayments'));
 const Gateways = lazy(() => import('./Gateways'));
 const Marketplace = lazy(() => import('./Marketplace'));
+const WalletSettings = lazy(() => import('./WalletSettings'));
 const WebhooksPage = lazy(() => import('./Webhooks'));
 const FinancialAutomations = lazy(() => import('./FinancialAutomations'));
 const RepartidorSolicitudes = lazy(() => import('./RepartidorSolicitudes'));
@@ -866,6 +867,7 @@ export default function Index({
         { id: 'global-payments', label: 'Pagos Globales', icon: '💳' },
         { id: 'gateways', label: 'Gateways', icon: '🏦' },
         { id: 'marketplace', label: 'Marketplace', icon: '💰' },
+        { id: 'wallets', label: 'Billeteras', icon: '👛' },
         { id: 'webhooks', label: 'Webhooks', icon: '🔔' },
         { id: 'cta', label: 'CTA Final', icon: '📢' },
         { id: 'pages', label: 'Páginas', icon: '📄' },
@@ -1693,6 +1695,22 @@ export default function Index({
                                     }
                                 >
                                     <Marketplace />
+                                </Suspense>
+                            </ErrorBoundary>
+                        )}
+
+                        {activeSection === 'wallets' && (
+                            <ErrorBoundary>
+                                <Suspense
+                                    fallback={
+                                        <Card>
+                                            <CardContent className="flex h-64 items-center justify-center">
+                                                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                                            </CardContent>
+                                        </Card>
+                                    }
+                                >
+                                    <WalletSettings />
                                 </Suspense>
                             </ErrorBoundary>
                         )}

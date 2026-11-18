@@ -7,6 +7,9 @@ use App\Events\MailConfigErrorOccurred;
 use App\Events\OrderStatusChanged;
 use App\Events\PaymentSuccessful;
 use App\Events\PedidoCreado;
+use App\Events\SaleCancelled;
+use App\Events\SaleCompleted;
+use App\Events\SaleRefunded;
 use App\Events\SubscriptionExpired;
 use App\Events\SubscriptionRenewed;
 use App\Events\WebhookReceived;
@@ -18,12 +21,14 @@ use App\Listeners\NotifyLowStock;
 use App\Listeners\SendOrderStatusChangedNotification;
 use App\Listeners\SendPaymentSuccessfulNotification;
 use App\Listeners\SendPedidoCreadoBuyerNotification;
+use App\Listeners\WalletSaleListener;
 use App\Models\Conversacion;
 use App\Models\Conversation;
 use App\Models\Mensaje;
 use App\Models\MensajeConversacion;
 use App\Models\Message;
 use App\Models\Pedido;
+use App\Models\Venta;
 use App\Models\WebSetting;
 use App\Observers\ConversacionObserver;
 use App\Observers\ConversationObserver;
@@ -32,6 +37,7 @@ use App\Observers\MensajeObserver;
 use App\Observers\MessageObserver;
 use App\Observers\PedidoEntregaObserver;
 use App\Observers\PedidoPushObserver;
+use App\Observers\WalletSaleObserver;
 use App\Policies\PedidoRecibidoPolicy;
 use App\Support\AgentContext;
 use Carbon\CarbonImmutable;
@@ -287,6 +293,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Pedido::observe(PedidoEntregaObserver::class);
         Pedido::observe(PedidoPushObserver::class);
+        Venta::observe(WalletSaleObserver::class);
         Conversacion::observe(ConversacionObserver::class);
         Conversation::observe(ConversationObserver::class);
         MensajeConversacion::observe(MensajeConversacionObserver::class);
@@ -334,6 +341,21 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(
             WebhookReceived::class,
             LogWebhookReceived::class,
+        );
+
+        Event::listen(
+            SaleCompleted::class,
+            [WalletSaleListener::class, 'handleSaleCompleted'],
+        );
+
+        Event::listen(
+            SaleCancelled::class,
+            [WalletSaleListener::class, 'handleSaleCancelled'],
+        );
+
+        Event::listen(
+            SaleRefunded::class,
+            [WalletSaleListener::class, 'handleSaleRefunded'],
         );
     }
 }

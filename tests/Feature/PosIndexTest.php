@@ -77,10 +77,10 @@ test('el registro de pos expone todos los productos activos del inventario del t
             ->where('productos', function ($productos) {
                 $nombres = collect($productos)->pluck('nombre')->sort()->values()->all();
 
-                expect($nombres)->toBe([
+                return $nombres === [
                     'Producto con stock',
                     'Producto sin cantidad',
                     'Producto sin inventario',
-                ]);
+                ];
             }));
 });

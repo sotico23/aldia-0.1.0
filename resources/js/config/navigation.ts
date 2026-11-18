@@ -267,6 +267,11 @@ export const mainNavItems: ExtendedNavItem[] = [
                 href: buildRouteUrl('/impuestos'),
                 permission: 'finanzas.impuestos.viewAny',
             },
+            {
+                title: 'Billeteras',
+                href: buildRouteUrl('/billeteras'),
+                permission: 'finanzas.wallets.viewAny',
+            },
         ],
     },
     {
@@ -442,6 +447,7 @@ export const mainNavItems: ExtendedNavItem[] = [
             'ventas.pos-reportes.viewAny',
             'comercial.mensajes-marketplace.viewAny',
             'ventas.variantes.viewAny',
+            'finanzas.wallets.view',
         ],
         items: [
             {
@@ -458,6 +464,11 @@ export const mainNavItems: ExtendedNavItem[] = [
                 title: 'Mis Ventas',
                 href: buildRouteUrl('/pos/mis-ventas'),
                 permission: 'ventas.pos.viewAny',
+            },
+            {
+                title: 'Mi Billetera',
+                href: buildRouteUrl('/billetera'),
+                permission: 'finanzas.wallets.view',
             },
             {
                 title: 'Cierre de Caja',

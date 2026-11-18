@@ -177,6 +177,8 @@ class PermissionsSeeder extends Seeder
             'ventas.cupones.view',
             'ventas.cupones.create',
             'ventas.cupones.edit',
+            // Finanzas — billeteras digitales y comisiones de cajeros
+            'finanzas.wallets.view',
         ];
         $roleEmpleado->syncPermissions($empleadoPermissions);
 
@@ -305,6 +307,7 @@ class PermissionsSeeder extends Seeder
                 'contabilidad',
                 'impuestos',
                 'sii',
+                'wallets',
             ],
             'admin' => [
                 'configuracion',

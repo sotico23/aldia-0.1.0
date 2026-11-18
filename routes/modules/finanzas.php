@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Backend\CajeroWalletController;
 use App\Http\Controllers\Backend\CobranzaController;
 use App\Http\Controllers\Backend\ContabilidadController;
 use App\Http\Controllers\Backend\FacturacionController;
@@ -7,6 +8,7 @@ use App\Http\Controllers\Backend\ImpuestoController;
 use App\Http\Controllers\Backend\PagoController;
 use App\Http\Controllers\Backend\SiiController;
 use App\Http\Controllers\Backend\TesoreriaController;
+use App\Http\Controllers\Backend\WalletController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['permission:finanzas.cobranzas.viewAny'])->group(function () {
@@ -23,6 +25,19 @@ Route::middleware(['permission:finanzas.pagos.viewAny'])->group(function () {
     Route::get('pagos/export-excel', [PagoController::class, 'exportExcel'])->name('pagos.exportExcel');
     Route::post('pagos/import', [PagoController::class, 'importCsv'])->name('pagos.import');
     Route::post('pagos/import-excel', [PagoController::class, 'importExcel'])->name('pagos.importExcel');
+});
+
+// Billeteras digitales (Wallet) y comisiones de cajeros.
+Route::middleware(['permission:finanzas.wallets.viewAny'])->group(function () {
+    Route::get('billeteras', [WalletController::class, 'index'])->name('billeteras.index');
+    Route::get('billeteras/historial', [WalletController::class, 'historial'])->name('billeteras.historial');
+    Route::post('billeteras/{wallet}/recargas', [WalletController::class, 'recargas'])->name('billeteras.recargas')->middleware('permission:finanzas.wallets.create');
+    Route::post('billeteras/commission-rules', [WalletController::class, 'commissionRules'])->name('billeteras.commission-rules.store')->middleware('permission:finanzas.wallets.edit');
+});
+
+// Billetera personal del cajero autenticado.
+Route::middleware(['permission:finanzas.wallets.view|finanzas.wallets.viewAny', 'throttle:dashboard'])->group(function () {
+    Route::get('billetera', [CajeroWalletController::class, 'index'])->name('cajero.billetera');
 });
 
 Route::middleware(['permission:finanzas.tesoreria.viewAny'])->group(function () {

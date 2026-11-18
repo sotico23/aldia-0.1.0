@@ -182,6 +182,11 @@ return [
                 'href' => '/impuestos',
                 'permission' => 'finanzas.impuestos.viewAny',
             ],
+            [
+                'title' => 'Billeteras',
+                'href' => '/billeteras',
+                'permission' => 'finanzas.wallets.viewAny',
+            ],
         ],
     ],
     [
@@ -352,6 +357,7 @@ return [
             'ventas.pos-reportes.viewAny',
             'comercial.mensajes-marketplace.viewAny',
             'ventas.variantes.viewAny',
+            'finanzas.wallets.view',
         ],
         'items' => [
             [
@@ -368,6 +374,11 @@ return [
                 'title' => 'Mis Ventas',
                 'href' => '/pos/mis-ventas',
                 'permission' => 'ventas.pos.viewAny',
+            ],
+            [
+                'title' => 'Mi Billetera',
+                'href' => '/billetera',
+                'permission' => 'finanzas.wallets.view',
             ],
             [
                 'title' => 'Cierre de Caja',

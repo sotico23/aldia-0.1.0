@@ -52,6 +52,7 @@ class PermissionHelper
         'finanzas.pagos' => 'FACTURACIÓN:Pagos',
         'finanzas.contabilidad' => 'FACTURACIÓN:Contabilidad',
         'finanzas.impuestos' => 'FACTURACIÓN:Impuestos',
+        'finanzas.wallets' => 'FACTURACIÓN:Billeteras',
 
         // FINANZAS (Pagos en Línea)
         'finanzas.tesoreria' => 'FINANZAS:Tesorería',
@@ -146,7 +147,7 @@ class PermissionHelper
     private static array $subgroupOrder = [
         'COMERCIAL' => ['Fundamental', 'CRM & Ventas'],
         'OPERACIONES' => ['Inventario', 'Producción', 'Monitoreo'],
-        'FACTURACIÓN' => ['Facturación', 'Cobranzas', 'Pagos', 'Contabilidad', 'Impuestos'],
+        'FACTURACIÓN' => ['Facturación', 'Cobranzas', 'Pagos', 'Contabilidad', 'Impuestos', 'Billeteras'],
         'FINANZAS' => ['Configuración', 'Webpay', 'PayPal', 'MercadoPago', 'Movimientos', 'Comisiones', 'SII (DTE)', 'Tesorería', 'Cupones'],
         'RRHH' => ['Empleados', 'Nómina', 'Asistencia', 'Préstamos y Adelantos', 'Reclutamiento', 'Evaluaciones'],
         'PROYECTOS' => ['Proyectos', 'Hitos y Tareas', 'Timesheets', 'Gastos Proyecto'],
@@ -171,6 +172,7 @@ class PermissionHelper
         'mensajes-marketplace' => 'Mensajes Marketplace',
         'variantes' => 'Variantes / SKUs',
         'zonas-reparto' => 'Zonas de Reparto',
+        'wallets' => 'Billeteras',
     ];
 
     /**
