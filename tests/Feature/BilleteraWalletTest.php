@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\CommissionRule;
+use App\Models\Empleado;
 use App\Models\User;
 use App\Models\Venta;
 use App\Models\Wallet;
@@ -576,6 +577,69 @@ test('un administrador de comercio solo ve las billeteras de su propio tenant', 
             ->has('wallets', 1)
             ->where('wallets.0.user_id', $propio->id)
             ->where('tenant_id', $admin->id));
+});
+
+test('el modal de recarga lista cajeros aunque todavia no tengan billetera', function () {
+    $cajero = User::withoutEvents(fn (): User => User::factory()->create([
+        'creator_id' => $this->master->id,
+        'owner_id' => $this->master->id,
+        'has_explicit_role' => true,
+    ]));
+
+    Empleado::factory()->create([
+        'user_id' => $cajero->id,
+        'owner_id' => $this->master->id,
+        'creator_id' => $this->master->id,
+    ]);
+
+    expect(Wallet::query()->where('user_id', $cajero->id)->exists())->toBeFalse();
+
+    $this->actingAs($this->master)
+        ->get(route('billeteras.index'))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Backend/Wallets/Index')
+            ->where('cajeros', fn ($cajeros) => collect($cajeros)->contains(
+                fn (array $opcion) => $opcion['user_id'] === $cajero->id
+                    && $opcion['wallet_id'] === null
+                    && $opcion['name'] === $cajero->name
+            )));
+});
+
+test('el master recarga a un cajero sin billetera y la billetera se crea automaticamente', function () {
+    $cajero = User::withoutEvents(fn (): User => User::factory()->create([
+        'creator_id' => $this->master->id,
+        'owner_id' => $this->master->id,
+        'has_explicit_role' => true,
+    ]));
+
+    Empleado::factory()->create([
+        'user_id' => $cajero->id,
+        'owner_id' => $this->master->id,
+        'creator_id' => $this->master->id,
+    ]);
+
+    $this->withoutMiddleware(ValidateCsrfToken::class);
+
+    $this->actingAs($this->master)
+        ->post(route('billeteras.recargas.cajero', $cajero), [
+            'amount' => 18000,
+            'note' => 'Primera recarga del cajero',
+        ])
+        ->assertRedirect();
+
+    $wallet = Wallet::query()->where('user_id', $cajero->id)->first();
+
+    expect($wallet)->not->toBeNull()
+        ->and((float) $wallet->balance)->toBe(18000.0);
+
+    $this->assertDatabaseHas('wallet_transactions', [
+        'wallet_id' => $wallet->id,
+        'type' => 'credit',
+        'category' => 'master_recharge',
+        'amount' => 18000,
+        'created_by' => $this->master->id,
+    ]);
 });
 
 test('el seeder de permisos registra billeteras y las asigna a los roles base', function () {

@@ -32,6 +32,7 @@ Route::middleware(['permission:finanzas.wallets.viewAny'])->group(function () {
     Route::get('billeteras', [WalletController::class, 'index'])->name('billeteras.index');
     Route::get('billeteras/historial', [WalletController::class, 'historial'])->name('billeteras.historial');
     Route::post('billeteras/{wallet}/recargas', [WalletController::class, 'recargas'])->name('billeteras.recargas')->middleware('permission:finanzas.wallets.create');
+    Route::post('billeteras/cajeros/{cajero}/recargas', [WalletController::class, 'recargasCajero'])->name('billeteras.recargas.cajero')->middleware('permission:finanzas.wallets.create');
     Route::post('billeteras/commission-rules', [WalletController::class, 'commissionRules'])->name('billeteras.commission-rules.store')->middleware('permission:finanzas.wallets.edit');
 });
 

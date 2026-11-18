@@ -42,6 +42,16 @@ interface WalletItem {
     total_comisiones: number;
 }
 
+interface CajeroOpcion {
+    user_id: number;
+    wallet_id: number | null;
+    name: string;
+    email: string;
+    balance: number;
+    currency: string;
+    status: string | null;
+}
+
 interface CommissionRule {
     id: number;
     tenant_id: number | null;
@@ -88,12 +98,14 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Index({
     wallets = [],
+    cajeros = [],
     commission_rules = [],
     transacciones = null,
     filtros,
     tenant_id = 0,
 }: {
     wallets?: WalletItem[];
+    cajeros?: CajeroOpcion[];
     commission_rules?: CommissionRule[];
     transacciones?: TransaccionesPaginadas | null;
     filtros?: Partial<Filtros>;
@@ -104,7 +116,7 @@ export default function Index({
     const canEdit = hasPermission('finanzas.wallets.edit');
 
     const [isOpen, setIsOpen] = useState(false);
-    const [walletIdRecarga, setWalletIdRecarga] = useState('');
+    const [cajeroIdRecarga, setCajeroIdRecarga] = useState('');
 
     const [filtrosForm, setFiltrosForm] = useState<Filtros>({
         cashier_id: filtros?.cashier_id ?? '',
@@ -130,13 +142,13 @@ export default function Index({
 
     const cashiers = (wallets ?? []).filter((w) => w.cashier);
 
-    const walletSeleccionada = wallets.find(
-        (w) => String(w.id) === walletIdRecarga,
+    const cajeroSeleccionado = cajeros.find(
+        (cajero) => String(cajero.user_id) === cajeroIdRecarga,
     );
 
-    const abrirRecarga = (wallet?: WalletItem) => {
-        const id = wallet?.id ?? wallets[0]?.id;
-        setWalletIdRecarga(id ? String(id) : '');
+    const abrirRecarga = (cajeroId?: number) => {
+        const id = cajeroId ?? cajeros[0]?.user_id;
+        setCajeroIdRecarga(id ? String(id) : '');
         recargaForm.reset();
         recargaForm.clearErrors();
         setIsOpen(true);
@@ -145,11 +157,11 @@ export default function Index({
     const submitRecarga = (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!walletIdRecarga) {
+        if (!cajeroIdRecarga) {
             return;
         }
 
-        recargaForm.post(`/billeteras/${walletIdRecarga}/recargas`, {
+        recargaForm.post(`/billeteras/cajeros/${cajeroIdRecarga}/recargas`, {
             preserveScroll: true,
             onSuccess: () => {
                 setIsOpen(false);
@@ -373,7 +385,9 @@ export default function Index({
                                                                 className="h-8"
                                                                 onClick={() =>
                                                                     abrirRecarga(
-                                                                        wallet,
+                                                                        wallet
+                                                                            .cashier
+                                                                            ?.id,
                                                                     )
                                                                 }
                                                             >
@@ -810,7 +824,7 @@ export default function Index({
                     <DialogHeader className="bg-gradient-to-r from-green-600 to-emerald-700 px-4 py-3 text-white md:px-6 md:py-4">
                         <DialogTitle className="text-lg font-black tracking-tight md:text-xl">
                             Recarga Master —{' '}
-                            {walletSeleccionada?.cashier?.name ?? 'Cajero'}
+                            {cajeroSeleccionado?.name ?? 'Cajero'}
                         </DialogTitle>
                         <DialogDescription className="text-white/90">
                             Confirma la recarga del saldo disponible
@@ -826,9 +840,9 @@ export default function Index({
                                     Billetera
                                 </Label>
                                 <select
-                                    value={walletIdRecarga}
+                                    value={cajeroIdRecarga}
                                     onChange={(e) =>
-                                        setWalletIdRecarga(e.target.value)
+                                        setCajeroIdRecarga(e.target.value)
                                     }
                                     className="flex h-9 w-full rounded-md border bg-background px-2 py-1 text-sm"
                                     required
@@ -836,13 +850,19 @@ export default function Index({
                                     <option value="">
                                         Selecciona un cajero
                                     </option>
-                                    {cashiers.map((w) => (
-                                        <option key={w.id} value={w.id}>
-                                            {w.cashier?.name} —{' '}
-                                            {formatCurrency(
-                                                Number(w.balance) || 0,
-                                                w.currency,
-                                            )}
+                                    {cajeros.map((cajero) => (
+                                        <option
+                                            key={cajero.user_id}
+                                            value={cajero.user_id}
+                                        >
+                                            {cajero.name} —{' '}
+                                            {cajero.wallet_id
+                                                ? formatCurrency(
+                                                      Number(cajero.balance) ||
+                                                          0,
+                                                      cajero.currency,
+                                                  )
+                                                : 'Sin billetera'}
                                         </option>
                                     ))}
                                 </select>
@@ -906,7 +926,7 @@ export default function Index({
                             <Button
                                 type="submit"
                                 disabled={
-                                    recargaForm.processing || !walletIdRecarga
+                                    recargaForm.processing || !cajeroIdRecarga
                                 }
                                 className="rounded-full px-6"
                             >

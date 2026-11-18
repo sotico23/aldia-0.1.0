@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CommissionRuleRequest;
 use App\Http\Requests\WalletRechargeRequest;
 use App\Models\CommissionRule;
+use App\Models\Empleado;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
@@ -87,6 +88,7 @@ class WalletController extends Controller
 
         return Inertia::render('Backend/Wallets/Index', [
             'wallets' => $walletsData,
+            'cajeros' => $this->cajerosDisponibles($scopedOwnerId),
             'commission_rules' => $reglas,
             'transacciones' => $transaccionesPropiedad,
             'filtros' => [
@@ -116,6 +118,37 @@ class WalletController extends Controller
     public function recargas(WalletRechargeRequest $request, Wallet $wallet): RedirectResponse
     {
         $validated = $request->validated();
+
+        $transaction = $this->walletService->rechargeFromMaster(
+            wallet: $wallet,
+            amount: (float) $validated['amount'],
+            masterUser: Auth::user(),
+            note: isset($validated['note']) ? (string) $validated['note'] : null,
+        );
+
+        return redirect()
+            ->back()
+            ->with('success', 'Recarga de billetera exitosa. Transacción: '.$transaction->id);
+    }
+
+    /**
+     * Recarga Master a un cajero que aún no tiene billetera. La billetera se
+     * crea de forma diferida para que el master pueda cargar saldo sin esperar
+     * a que el cajero abra su propio panel.
+     */
+    public function recargasCajero(WalletRechargeRequest $request, User $cajero): RedirectResponse
+    {
+        $validated = $request->validated();
+
+        $wallet = Wallet::query()->firstOrCreate(
+            ['user_id' => $cajero->id],
+            [
+                'balance' => 0,
+                'currency' => 'CLP',
+                'status' => 'active',
+                'allow_overdraft' => false,
+            ],
+        );
 
         $transaction = $this->walletService->rechargeFromMaster(
             wallet: $wallet,
@@ -169,6 +202,40 @@ class WalletController extends Controller
         return redirect()
             ->back()
             ->with('success', 'Regla de comisión actualizada correctamente.');
+    }
+
+    /**
+     * Cajeros que pueden recibir una recarga: empleados con cuenta de usuario
+     * y usuarios que ya tienen billetera. Incluye la billetera (si existe)
+     * para que el modal muestre el saldo y se pueda recargar sin ambigüedad.
+     *
+     * @return array<int, array{user_id: int, wallet_id: int|null, name: string, email: string, balance: float, currency: string, status: string|null}>
+     */
+    private function cajerosDisponibles(?int $ownerId): array
+    {
+        $empleadosConUsuario = Empleado::query()
+            ->whereNotNull('user_id')
+            ->when($ownerId !== null, fn ($query) => $query->where('owner_id', $ownerId))
+            ->pluck('user_id');
+
+        return User::query()
+            ->with('wallet')
+            ->when($ownerId !== null, fn ($query) => $query->where('owner_id', $ownerId))
+            ->where(fn ($query) => $query
+                ->whereHas('wallet')
+                ->orWhereIn('id', $empleadosConUsuario))
+            ->orderBy('name')
+            ->get()
+            ->map(fn (User $user): array => [
+                'user_id' => $user->id,
+                'wallet_id' => $user->wallet?->id,
+                'name' => $user->name,
+                'email' => (string) $user->email,
+                'balance' => (float) ($user->wallet?->balance ?? 0),
+                'currency' => (string) ($user->wallet?->currency ?? 'CLP'),
+                'status' => $user->wallet?->status,
+            ])
+            ->all();
     }
 
     /**
