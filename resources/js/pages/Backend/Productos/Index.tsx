@@ -14,7 +14,10 @@ import {
     Eye,
     Image as ImageIcon,
     Video,
+    ArrowDown,
     ArrowDownZA,
+    ArrowUp,
+    ArrowUpDown,
     LayoutGrid,
     List,
     Layers,
@@ -269,6 +272,96 @@ function buildSkuRows(
     });
 }
 
+type SortField =
+    | 'nombre'
+    | 'categoria'
+    | 'descripcion'
+    | 'precio_venta'
+    | 'stock'
+    | 'estado';
+
+type SortDirection = 'asc' | 'desc';
+
+function SortableHeader({
+    field,
+    label,
+    className,
+    sort,
+    direction,
+    onSort,
+}: {
+    field: SortField;
+    label: string;
+    className?: string;
+    sort: SortField | null;
+    direction: SortDirection;
+    onSort: (field: SortField) => void;
+}) {
+    const active = sort === field;
+    const Icon = active
+        ? direction === 'asc'
+            ? ArrowUp
+            : ArrowDown
+        : ArrowUpDown;
+
+    return (
+        <th
+            className={className}
+            aria-sort={
+                active
+                    ? direction === 'asc'
+                        ? 'ascending'
+                        : 'descending'
+                    : 'none'
+            }
+        >
+            <button
+                type="button"
+                onClick={() => onSort(field)}
+                title={`Ordenar por ${label}`}
+                className={`inline-flex items-center gap-1 rounded transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none ${
+                    active ? 'text-foreground' : ''
+                }`}
+            >
+                <span>{label}</span>
+                <Icon
+                    className={`h-3 w-3 shrink-0 ${
+                        active ? 'opacity-100' : 'opacity-40'
+                    }`}
+                    aria-hidden="true"
+                />
+            </button>
+        </th>
+    );
+}
+
+function buildProductosQuery(params: {
+    searchTerm: string;
+    categoriaFilter: string;
+    stockBajoFilter: boolean;
+    almacenFilter: string;
+}): Record<string, string> {
+    const query: Record<string, string> = {};
+
+    if (params.searchTerm) {
+        query.search = params.searchTerm;
+    }
+
+    if (params.categoriaFilter !== 'all') {
+        query.categoria_id = params.categoriaFilter;
+    }
+
+    if (params.stockBajoFilter) {
+        query.stock_bajo = '1';
+    }
+
+    if (params.almacenFilter !== 'all') {
+        query.almacen_id = params.almacenFilter;
+    }
+
+    return query;
+}
+
 export default function Index({
     productos,
     categorias,
@@ -294,6 +387,8 @@ export default function Index({
         categoria_id?: string;
         stock_bajo?: string;
         almacen_id?: string;
+        sort?: string;
+        direction?: string;
     };
 }) {
     const { hasPermission } = usePermissions();
@@ -325,6 +420,40 @@ export default function Index({
     const [almacenFilter, setAlmacenFilter] = useState(
         filters.almacen_id || 'all',
     );
+
+    const sortField = (filters.sort as SortField | undefined) ?? null;
+    const sortDirection: SortDirection =
+        filters.direction === 'desc' ? 'desc' : 'asc';
+
+    const toggleSort = (field: SortField) => {
+        const defaultDirection: SortDirection =
+            field === 'precio_venta' || field === 'stock' ? 'desc' : 'asc';
+        const nextDirection: SortDirection =
+            sortField === field
+                ? sortDirection === 'asc'
+                    ? 'desc'
+                    : 'asc'
+                : defaultDirection;
+
+        router.get(
+            '/productos',
+            {
+                ...buildProductosQuery({
+                    searchTerm,
+                    categoriaFilter,
+                    stockBajoFilter,
+                    almacenFilter,
+                }),
+                sort: field,
+                direction: nextDirection,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
+    };
 
     // Variant UI state
     const [selectedVariantIds, setSelectedVariantIds] = useState<number[]>([]);
@@ -720,11 +849,24 @@ export default function Index({
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            const query: any = {};
-            if (searchTerm) query.search = searchTerm;
-            if (categoriaFilter !== 'all') query.categoria_id = categoriaFilter;
-            if (stockBajoFilter) query.stock_bajo = '1';
-            if (almacenFilter !== 'all') query.almacen_id = almacenFilter;
+            const query = buildProductosQuery({
+                searchTerm,
+                categoriaFilter,
+                stockBajoFilter,
+                almacenFilter,
+            });
+            const params = new URLSearchParams(window.location.search);
+            const sort = params.get('sort');
+
+            if (sort) {
+                query.sort = sort;
+
+                const direction = params.get('direction');
+
+                if (direction) {
+                    query.direction = direction;
+                }
+            }
 
             router.get('/productos', query, {
                 preserveState: true,
@@ -773,8 +915,15 @@ export default function Index({
                     return actual <= minimo;
                 }).length,
             }))
-            .sort((a, b) => a.nombre.localeCompare(b.nombre));
-    }, [productos.data]);
+            .sort((a, b) => {
+                const comparison = a.nombre.localeCompare(b.nombre);
+
+                return filters.sort === 'categoria' &&
+                    filters.direction === 'desc'
+                    ? -comparison
+                    : comparison;
+            });
+    }, [productos.data, filters.sort, filters.direction]);
 
     const appendProductImagesToFormData = (formData: FormData) => {
         formData.append('manage_images', '1');
@@ -1553,28 +1702,90 @@ export default function Index({
                                                             <table className="w-full">
                                                                 <thead>
                                                                     <tr className="border-b bg-muted/5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                                                                        <th className="px-6 py-4 text-left">
-                                                                            SKU
-                                                                            /
-                                                                            Producto
-                                                                        </th>
-                                                                        <th className="px-6 py-4 text-left">
-                                                                            Categoría
-                                                                        </th>
-                                                                        <th className="px-6 py-4 text-left">
-                                                                            Descripción
-                                                                        </th>
-                                                                        <th className="px-6 py-4 text-right">
-                                                                            Precio
-                                                                            Venta
-                                                                        </th>
-                                                                        <th className="px-6 py-4 text-center">
-                                                                            Stock
-                                                                            Actual
-                                                                        </th>
-                                                                        <th className="px-6 py-4 text-left">
-                                                                            Estado
-                                                                        </th>
+                                                                        <SortableHeader
+                                                                            field="nombre"
+                                                                            label="SKU / Producto"
+                                                                            className="px-6 py-4 text-left"
+                                                                            sort={
+                                                                                sortField
+                                                                            }
+                                                                            direction={
+                                                                                sortDirection
+                                                                            }
+                                                                            onSort={
+                                                                                toggleSort
+                                                                            }
+                                                                        />
+                                                                        <SortableHeader
+                                                                            field="categoria"
+                                                                            label="Categoría"
+                                                                            className="px-6 py-4 text-left"
+                                                                            sort={
+                                                                                sortField
+                                                                            }
+                                                                            direction={
+                                                                                sortDirection
+                                                                            }
+                                                                            onSort={
+                                                                                toggleSort
+                                                                            }
+                                                                        />
+                                                                        <SortableHeader
+                                                                            field="descripcion"
+                                                                            label="Descripción"
+                                                                            className="px-6 py-4 text-left"
+                                                                            sort={
+                                                                                sortField
+                                                                            }
+                                                                            direction={
+                                                                                sortDirection
+                                                                            }
+                                                                            onSort={
+                                                                                toggleSort
+                                                                            }
+                                                                        />
+                                                                        <SortableHeader
+                                                                            field="precio_venta"
+                                                                            label="Precio Venta"
+                                                                            className="px-6 py-4 text-right"
+                                                                            sort={
+                                                                                sortField
+                                                                            }
+                                                                            direction={
+                                                                                sortDirection
+                                                                            }
+                                                                            onSort={
+                                                                                toggleSort
+                                                                            }
+                                                                        />
+                                                                        <SortableHeader
+                                                                            field="stock"
+                                                                            label="Stock Actual"
+                                                                            className="px-6 py-4 text-center"
+                                                                            sort={
+                                                                                sortField
+                                                                            }
+                                                                            direction={
+                                                                                sortDirection
+                                                                            }
+                                                                            onSort={
+                                                                                toggleSort
+                                                                            }
+                                                                        />
+                                                                        <SortableHeader
+                                                                            field="estado"
+                                                                            label="Estado"
+                                                                            className="px-6 py-4 text-left"
+                                                                            sort={
+                                                                                sortField
+                                                                            }
+                                                                            direction={
+                                                                                sortDirection
+                                                                            }
+                                                                            onSort={
+                                                                                toggleSort
+                                                                            }
+                                                                        />
                                                                         <th className="sticky right-0 z-20 bg-background px-4 py-4 text-right">
                                                                             Acciones
                                                                         </th>

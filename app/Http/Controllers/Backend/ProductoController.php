@@ -9,6 +9,7 @@ use App\Http\Controllers\Traits\HasBulkOperations;
 use App\Imports\ProductosImport;
 use App\Models\Almacen;
 use App\Models\Categoria;
+use App\Models\Inventario;
 use App\Models\Producto;
 use App\Models\ProductoVariante;
 use App\Models\PublicProfile;
@@ -21,10 +22,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -236,9 +237,39 @@ class ProductoController extends Controller implements HasMiddleware
             });
         }
 
-        $productos = $query->orderBy('created_at', 'desc')
-            ->paginate(15)
-            ->withQueryString();
+        $sort = (string) $request->input('sort', '');
+        $direction = $request->input('direction') === 'desc' ? 'desc' : 'asc';
+
+        $sortableColumns = [
+            'nombre' => 'productos.nombre',
+            'descripcion' => 'productos.descripcion',
+            'precio_venta' => 'productos.precio_venta',
+            'estado' => 'productos.activo',
+        ];
+
+        if (isset($sortableColumns[$sort])) {
+            $query->orderBy($sortableColumns[$sort], $direction);
+        } elseif ($sort === 'categoria') {
+            $query->orderBy(
+                Categoria::query()
+                    ->select('nombre')
+                    ->whereColumn('categorias.id', 'productos.categoria_id'),
+                $direction,
+            );
+        } elseif ($sort === 'stock') {
+            $query->orderBy(
+                Inventario::query()
+                    ->selectRaw('COALESCE(SUM(cantidad), 0)')
+                    ->whereColumn('inventarios.producto_id', 'productos.id'),
+                $direction,
+            );
+        } else {
+            $query->orderBy('productos.created_at', 'desc');
+        }
+
+        $query->orderBy('productos.id');
+
+        $productos = $query->paginate(15)->withQueryString();
 
         $categorias = Categoria::where('tipo', 'producto')
             ->where('activo', true)
@@ -265,7 +296,7 @@ class ProductoController extends Controller implements HasMiddleware
             'almacenes' => $almacenes,
             'productosEnvase' => $productosEnvase,
             'variantesDisponibles' => $variantesDisponibles,
-            'filters' => $request->only(['search', 'categoria_id', 'stock_bajo', 'almacen_id']),
+            'filters' => $request->only(['search', 'categoria_id', 'stock_bajo', 'almacen_id', 'sort', 'direction']),
         ]);
     }
 
