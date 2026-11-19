@@ -22,7 +22,8 @@ import { Label } from '@/components/ui/label';
 import Pagination from '@/components/ui/Pagination';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
-import { formatCurrency, formatDateCLP } from '@/lib/utils';
+import { formatDateCLP } from '@/lib/utils';
+import { formatWalletAmount as formatCurrency } from '@/lib/wallet';
 import type { BreadcrumbItem } from '@/types';
 
 interface WalletCashier {
@@ -33,6 +34,7 @@ interface WalletCashier {
 
 interface WalletItem {
     id: number;
+    account_number: string;
     user_id: number;
     balance: number;
     currency: string;
@@ -289,7 +291,7 @@ export default function Index({
                         <Card>
                             <CardHeader className="pb-2">
                                 <CardDescription>
-                                    Cajeros con billetera
+                                    Usuarios con billetera
                                 </CardDescription>
                                 <CardTitle className="text-2xl">
                                     {cashiers.length}
@@ -305,7 +307,7 @@ export default function Index({
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Cajeros y saldos</CardTitle>
+                            <CardTitle>Usuarios y saldos</CardTitle>
                             <CardDescription>
                                 Saldo actual, estado de billetera y comisiones
                                 generadas por cajero
@@ -346,6 +348,9 @@ export default function Index({
                                                     </div>
                                                     <div className="text-[10px] text-muted-foreground">
                                                         {wallet.cashier?.email}
+                                                    </div>
+                                                    <div className="font-mono text-xs">
+                                                        {wallet.account_number}
                                                     </div>
                                                 </td>
                                                 <td className="py-3 text-right font-bold">
@@ -682,6 +687,9 @@ export default function Index({
                                     <option value="withdrawal">Retiro</option>
                                     <option value="adjustment">Ajuste</option>
                                     <option value="refund">Reversa</option>
+                                    <option value="transfer">
+                                        Transferencia
+                                    </option>
                                 </select>
                                 <Input
                                     type="date"
@@ -824,7 +832,7 @@ export default function Index({
                     <DialogHeader className="bg-gradient-to-r from-green-600 to-emerald-700 px-4 py-3 text-white md:px-6 md:py-4">
                         <DialogTitle className="text-lg font-black tracking-tight md:text-xl">
                             Recarga Master —{' '}
-                            {cajeroSeleccionado?.name ?? 'Cajero'}
+                            {cajeroSeleccionado?.name ?? 'Usuario'}
                         </DialogTitle>
                         <DialogDescription className="text-white/90">
                             Confirma la recarga del saldo disponible
@@ -848,7 +856,7 @@ export default function Index({
                                     required
                                 >
                                     <option value="">
-                                        Selecciona un cajero
+                                        Selecciona un usuario
                                     </option>
                                     {cajeros.map((cajero) => (
                                         <option

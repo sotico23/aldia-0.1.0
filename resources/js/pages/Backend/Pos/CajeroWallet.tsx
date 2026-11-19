@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { useState } from 'react';
+import { index as manageWallets } from '@/actions/App/Http/Controllers/Backend/WalletController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,9 +14,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Pagination from '@/components/ui/Pagination';
+import WalletOperations, {
+    type WalletPaymentRequests,
+} from '@/components/wallet-operations';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
-import { formatCurrency, formatDateCLP } from '@/lib/utils';
+import { formatDateCLP } from '@/lib/utils';
+import { formatWalletAmount as formatCurrency } from '@/lib/wallet';
 import type { BreadcrumbItem } from '@/types';
 
 interface WalletCashier {
@@ -26,6 +31,7 @@ interface WalletCashier {
 
 interface Wallet {
     id: number;
+    account_number: string;
     user_id: number;
     balance: number;
     currency: string;
@@ -65,15 +71,20 @@ export default function CajeroWallet({
     transacciones,
     filtros,
     moneda,
+    payment_requests,
 }: {
     wallet: Wallet;
     comisiones_mes: number;
     transacciones: TransaccionesPaginadas | null;
     filtros?: { desde?: string; hasta?: string };
     moneda: string;
+    payment_requests?: WalletPaymentRequests;
 }) {
-    const { hasPermission } = usePermissions();
-    const puedeVerBilletera = hasPermission('finanzas.wallets.view');
+    const { hasPermission, hasRole } = usePermissions();
+    const puedeVerBilletera = hasPermission([
+        'finanzas.wallets.view',
+        'finanzas.wallets.viewAny',
+    ]);
 
     const [filtrosForm, setFiltrosForm] = useState({
         desde: filtros?.desde ?? '',
@@ -138,13 +149,20 @@ export default function CajeroWallet({
             <Head title="Mi Billetera" />
             <AppLayout breadcrumbs={breadcrumbs}>
                 <div className="flex flex-col gap-4 p-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                             <h1 className="text-2xl font-bold">Mi Billetera</h1>
                             <p className="text-muted-foreground">
                                 Saldo disponible y comisiones acumuladas
                             </p>
                         </div>
+                        {hasRole(['Master', 'Super Admin']) && (
+                            <Button asChild variant="outline">
+                                <Link href={manageWallets()}>
+                                    Agregar saldo a usuario
+                                </Link>
+                            </Button>
+                        )}
                         <Badge
                             className={
                                 wallet.status === 'active'
@@ -155,6 +173,11 @@ export default function CajeroWallet({
                             {wallet.status}
                         </Badge>
                     </div>
+
+                    <WalletOperations
+                        wallet={wallet}
+                        requests={payment_requests}
+                    />
 
                     <div className="grid gap-4 md:grid-cols-3">
                         <Card>

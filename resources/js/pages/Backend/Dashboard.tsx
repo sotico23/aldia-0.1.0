@@ -1,12 +1,21 @@
-import { Head } from '@inertiajs/react';
-import { CalendarCheck, Clock, TrendingDown, TrendingUp } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import {
+    CalendarCheck,
+    Clock,
+    TrendingDown,
+    TrendingUp,
+    Wallet,
+} from 'lucide-react';
+import { index as personalWallet } from '@/actions/App/Http/Controllers/Backend/CajeroWalletController';
 import AgendaWidget from '@/components/dashboard/AgendaWidget';
 import type { DashboardWidget } from '@/components/dashboard/DashboardLayout';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import ProduccionMrpWidget from '@/components/dashboard/ProduccionMrpWidget';
 import QuickAccessWidget from '@/components/dashboard/QuickAccessWidget';
 import RendimientoInventarioWidget from '@/components/dashboard/RendimientoInventarioWidget';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import { formatCurrency } from '@/lib/utils';
 
@@ -34,6 +43,11 @@ export default function Dashboard({
     agendaAppointments?: any[];
     agendaWeekAppointments?: any[];
 }) {
+    const { hasPermission } = usePermissions();
+    const canViewWallet = hasPermission([
+        'finanzas.wallets.view',
+        'finanzas.wallets.viewAny',
+    ]);
     const widgets: DashboardWidget[] = [
         {
             key: 'metrics_summary',
@@ -170,13 +184,23 @@ export default function Dashboard({
             <Head title="Dashboard - Red-Cliente" />
 
             <div className="flex min-h-[calc(100vh-4rem)] flex-col gap-4 bg-slate-50 p-4 md:p-6">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-800">
-                        Panel General
-                    </h1>
-                    <p className="text-sm font-medium text-slate-500">
-                        Vista Dinámica
-                    </p>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                        <h1 className="text-2xl font-black text-slate-800">
+                            Panel General
+                        </h1>
+                        <p className="text-sm font-medium text-slate-500">
+                            Vista Dinámica
+                        </p>
+                    </div>
+                    {canViewWallet && (
+                        <Button asChild size="lg" className="w-full sm:w-auto">
+                            <Link href={personalWallet()}>
+                                <Wallet aria-hidden="true" />
+                                Mi billetera
+                            </Link>
+                        </Button>
+                    )}
                 </div>
 
                 <DashboardLayout widgets={widgets} savedLayout={savedLayout} />

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CommissionRuleRequest;
 use App\Http\Requests\WalletRechargeRequest;
 use App\Models\CommissionRule;
-use App\Models\Empleado;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
@@ -205,25 +204,17 @@ class WalletController extends Controller
     }
 
     /**
-     * Cajeros que pueden recibir una recarga: empleados con cuenta de usuario
-     * y usuarios que ya tienen billetera. Incluye la billetera (si existe)
+     * Usuarios activos que pueden recibir una recarga. Incluye la billetera (si existe)
      * para que el modal muestre el saldo y se pueda recargar sin ambigüedad.
      *
      * @return array<int, array{user_id: int, wallet_id: int|null, name: string, email: string, balance: float, currency: string, status: string|null}>
      */
     private function cajerosDisponibles(?int $ownerId): array
     {
-        $empleadosConUsuario = Empleado::query()
-            ->whereNotNull('user_id')
-            ->when($ownerId !== null, fn ($query) => $query->where('owner_id', $ownerId))
-            ->pluck('user_id');
-
         return User::query()
             ->with('wallet')
+            ->where('is_active', true)
             ->when($ownerId !== null, fn ($query) => $query->where('owner_id', $ownerId))
-            ->where(fn ($query) => $query
-                ->whereHas('wallet')
-                ->orWhereIn('id', $empleadosConUsuario))
             ->orderBy('name')
             ->get()
             ->map(fn (User $user): array => [
@@ -253,6 +244,7 @@ class WalletController extends Controller
 
         return [
             'id' => $wallet->id,
+            'account_number' => $wallet->account_number,
             'user_id' => $wallet->user_id,
             'balance' => (float) $wallet->balance,
             'currency' => $wallet->currency,
