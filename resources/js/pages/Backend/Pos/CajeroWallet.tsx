@@ -14,6 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Pagination from '@/components/ui/Pagination';
+import type { ClienteFrecuente } from '@/components/wallet-frequent-clients';
 import WalletOperations, {
     type WalletPaymentRequests,
 } from '@/components/wallet-operations';
@@ -72,6 +73,8 @@ export default function CajeroWallet({
     filtros,
     moneda,
     payment_requests,
+    wallet_action,
+    clientes_frecuentes,
 }: {
     wallet: Wallet;
     comisiones_mes: number;
@@ -79,12 +82,11 @@ export default function CajeroWallet({
     filtros?: { desde?: string; hasta?: string };
     moneda: string;
     payment_requests?: WalletPaymentRequests;
+    wallet_action?: 'transfer' | 'request' | 'link' | null;
+    clientes_frecuentes?: ClienteFrecuente[];
 }) {
-    const { hasPermission, hasRole } = usePermissions();
-    const puedeVerBilletera = hasPermission([
-        'finanzas.wallets.view',
-        'finanzas.wallets.viewAny',
-    ]);
+    const { canUsePersonalWallet: puedeVerBilletera, hasRole } =
+        usePermissions();
 
     const [filtrosForm, setFiltrosForm] = useState({
         desde: filtros?.desde ?? '',
@@ -177,6 +179,8 @@ export default function CajeroWallet({
                     <WalletOperations
                         wallet={wallet}
                         requests={payment_requests}
+                        initialAction={wallet_action}
+                        clientesFrecuentes={clientes_frecuentes}
                     />
 
                     <div className="grid gap-4 md:grid-cols-3">

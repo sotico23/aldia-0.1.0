@@ -37,5 +37,11 @@ export function usePermissions() {
         return user.permissions.includes(permission);
     };
 
-    return { hasRole, hasPermission, user };
+    const canUsePersonalWallet = hasPermission([
+        'finanzas.wallets.view',
+        'finanzas.wallets.viewAny',
+        'ventas.pos.viewAny',
+    ]);
+
+    return { hasRole, hasPermission, canUsePersonalWallet, user };
 }

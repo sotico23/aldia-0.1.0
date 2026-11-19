@@ -12,7 +12,7 @@ class WalletTransferRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()?->canAny(['finanzas.wallets.view', 'finanzas.wallets.viewAny']) ?? false;
+        return $this->user()?->canUsePersonalWallet() ?? false;
     }
 
     /**

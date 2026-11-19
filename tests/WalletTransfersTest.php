@@ -3,6 +3,7 @@
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\HandleRegionalSettings;
 use App\Http\Middleware\TrackPageViews;
+use App\Models\ClienteFrecuente;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletPaymentRequest;
@@ -46,7 +47,7 @@ beforeEach(function () {
         $table->boolean('is_active')->default(true);
         $table->timestamps();
     });
-    foreach (['2026_03_08_214259_create_permission_tables.php', '2026_05_13_233332_add_level_to_roles_table.php', '2026_05_31_210237_add_owner_id_to_roles_table.php', '2026_11_17_204443_create_wallets_table.php', '2026_11_17_204444_create_wallet_transactions_table.php'] as $migration) {
+    foreach (['2026_03_08_214259_create_permission_tables.php', '2026_05_13_233332_add_level_to_roles_table.php', '2026_05_31_210237_add_owner_id_to_roles_table.php', '2026_11_17_204443_create_wallets_table.php', '2026_11_17_204444_create_wallet_transactions_table.php', '2026_11_18_224550_create_clientes_frecuentes_table.php'] as $migration) {
         (require database_path('migrations/'.$migration))->up();
     }
     app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -196,6 +197,94 @@ test('wallet page exposes only personal payment requests and its permanent numbe
         ->assertOk()->assertJsonPath('props.wallet.account_number', $this->senderWallet->account_number)
         ->assertJsonCount(1, 'props.payment_requests.data')->assertJsonPath('props.payment_requests.data.0.id', $request->id)
         ->assertJsonPath('props.payment_requests.data.0.incoming', true);
+});
+
+test('cashier can create update and delete own frequent clients', function () {
+    $this->actingAs($this->sender)->post(route('billetera.frecuentes.store'), [
+        'nombre' => '  Cliente Uno  ',
+        'account_number' => $this->recipientWallet->account_number,
+        'nota' => '  Mayorista  ',
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $cliente = ClienteFrecuente::firstOrFail();
+    expect((int) $cliente->wallet_id)->toBe($this->senderWallet->id)
+        ->and($cliente->nombre)->toBe('Cliente Uno')
+        ->and($cliente->nota)->toBe('Mayorista');
+
+    $this->actingAs($this->sender)->put(route('billetera.frecuentes.update', $cliente), [
+        'nombre' => 'Cliente Actualizado',
+        'account_number' => $this->recipientWallet->account_number,
+        'nota' => '',
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    expect($cliente->fresh()->nombre)->toBe('Cliente Actualizado')
+        ->and($cliente->fresh()->nota)->toBeNull();
+
+    $this->actingAs($this->sender)->delete(route('billetera.frecuentes.destroy', $cliente))
+        ->assertRedirect()->assertSessionHasNoErrors();
+
+    expect(ClienteFrecuente::count())->toBe(0);
+});
+
+test('frequent clients are scoped to the wallet and validate the destination', function () {
+    $cliente = ClienteFrecuente::create([
+        'wallet_id' => $this->senderWallet->id,
+        'nombre' => 'Cliente del cajero',
+        'account_number' => $this->recipientWallet->account_number,
+    ]);
+    $third = User::withoutEvents(fn (): User => User::factory()->create());
+    $thirdWallet = Wallet::factory()->create(['user_id' => $third->id]);
+
+    $this->actingAs($this->recipient)->put(route('billetera.frecuentes.update', $cliente), [
+        'nombre' => 'Intruso',
+        'account_number' => $thirdWallet->account_number,
+    ])->assertForbidden();
+    $this->actingAs($this->recipient)->delete(route('billetera.frecuentes.destroy', $cliente))->assertForbidden();
+
+    expect($cliente->fresh()->nombre)->toBe('Cliente del cajero');
+
+    $this->actingAs($this->sender)->postJson(route('billetera.frecuentes.store'), [
+        'nombre' => 'Mi propia billetera',
+        'account_number' => $this->senderWallet->account_number,
+    ])->assertUnprocessable()->assertJsonValidationErrors('account_number');
+
+    $this->actingAs($this->sender)->postJson(route('billetera.frecuentes.store'), [
+        'nombre' => 'Inexistente',
+        'account_number' => '1234567890123456',
+    ])->assertUnprocessable()->assertJsonValidationErrors('account_number');
+
+    $this->actingAs($this->sender)->postJson(route('billetera.frecuentes.store'), [
+        'nombre' => 'Duplicado',
+        'account_number' => $this->recipientWallet->account_number,
+    ])->assertUnprocessable()->assertJsonValidationErrors('account_number');
+
+    $this->actingAs($this->sender)->postJson(route('billetera.frecuentes.store'), [
+        'nombre' => 'Formato inválido',
+        'account_number' => '123',
+    ])->assertUnprocessable()->assertJsonValidationErrors('account_number');
+
+    expect(ClienteFrecuente::count())->toBe(1);
+});
+
+test('wallet page lists only the authenticated wallet frequent clients', function () {
+    ClienteFrecuente::create([
+        'wallet_id' => $this->senderWallet->id,
+        'nombre' => 'Cliente propio',
+        'account_number' => $this->recipientWallet->account_number,
+        'nota' => 'Preferente',
+    ]);
+    ClienteFrecuente::create([
+        'wallet_id' => $this->recipientWallet->id,
+        'nombre' => 'Cliente ajeno',
+        'account_number' => $this->senderWallet->account_number,
+    ]);
+
+    $this->actingAs($this->sender)->withHeader('X-Inertia', 'true')->get(route('cajero.billetera'))
+        ->assertOk()
+        ->assertJsonCount(1, 'props.clientes_frecuentes')
+        ->assertJsonPath('props.clientes_frecuentes.0.nombre', 'Cliente propio')
+        ->assertJsonPath('props.clientes_frecuentes.0.account_number', $this->recipientWallet->account_number)
+        ->assertJsonPath('props.clientes_frecuentes.0.nota', 'Preferente');
 });
 
 test('master can recharge any active user including one without a wallet', function () {

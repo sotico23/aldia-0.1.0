@@ -2,6 +2,9 @@ import { Head, Link, router } from '@inertiajs/react';
 import {
     AlertTriangle,
     ArrowRight,
+    ArrowLeftRight,
+    HandCoins,
+    QrCode,
     Banknote,
     CalendarDays,
     ChevronLeft,
@@ -23,6 +26,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
+import { index as personalWallet } from '@/actions/App/Http/Controllers/Backend/CajeroWalletController';
 import { show as ventaDetalle } from '@/actions/App/Http/Controllers/Backend/PosVentasController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,8 +46,10 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { useCountry } from '@/hooks/use-country';
+import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import { cn, formatCurrency } from '@/lib/utils';
+import { formatWalletAmount } from '@/lib/wallet';
 
 interface VentaResumen {
     id: number;
@@ -122,6 +128,12 @@ interface DetalleVenta {
 }
 
 interface Props {
+    wallet_summary?: {
+        account_number: string;
+        balance: string;
+        currency: string;
+        status: string;
+    } | null;
     cajero: {
         id: number;
         nombre: string;
@@ -251,8 +263,10 @@ export default function CajeroDashboard({
     stock_critico,
     tips,
     moneda,
+    wallet_summary,
 }: Props) {
     const { currency } = useCountry();
+    const { canUsePersonalWallet } = usePermissions();
     const currencyCode = currency.code || moneda;
 
     const [tipActivo, setTipActivo] = useState(0);
@@ -281,6 +295,7 @@ export default function CajeroDashboard({
                 'stock_critico',
                 'tips',
                 'contexto',
+                'wallet_summary',
             ],
             onStart: () => setRefrescando(true),
             onFinish: () => setRefrescando(false),
@@ -369,7 +384,15 @@ export default function CajeroDashboard({
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                        {canUsePersonalWallet && (
+                            <Button asChild variant="outline" size="sm">
+                                <Link href={personalWallet()}>
+                                    <Wallet aria-hidden="true" />
+                                    Mi billetera
+                                </Link>
+                            </Button>
+                        )}
                         <Button
                             type="button"
                             variant="outline"
@@ -392,6 +415,79 @@ export default function CajeroDashboard({
                         </Button>
                     </div>
                 </div>
+
+                {canUsePersonalWallet && (
+                    <Card className="min-w-0 border-primary/20 bg-primary/5">
+                        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0 space-y-1">
+                                <CardTitle className="flex items-center gap-2">
+                                    <Wallet className="size-5 shrink-0 text-primary" />
+                                    Mi billetera
+                                </CardTitle>
+                                <CardDescription>
+                                    Tu saldo, transferencias y cobros
+                                    personales.
+                                </CardDescription>
+                                {wallet_summary && (
+                                    <p className="font-mono text-xs break-all text-muted-foreground">
+                                        {wallet_summary.account_number}
+                                    </p>
+                                )}
+                            </div>
+                            {wallet_summary && (
+                                <div className="shrink-0">
+                                    <p className="text-xs text-muted-foreground">
+                                        Saldo disponible
+                                    </p>
+                                    <p className="text-2xl font-bold">
+                                        {formatWalletAmount(
+                                            wallet_summary.balance,
+                                            wallet_summary.currency,
+                                        )}
+                                    </p>
+                                </div>
+                            )}
+                        </CardHeader>
+                        <CardContent className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                            <Button asChild variant="outline">
+                                <Link href={personalWallet()}>
+                                    <Wallet aria-hidden="true" />
+                                    Ver movimientos
+                                </Link>
+                            </Button>
+                            <Button asChild variant="outline">
+                                <Link
+                                    href={personalWallet({
+                                        query: { action: 'transfer' },
+                                    })}
+                                >
+                                    <ArrowLeftRight aria-hidden="true" />
+                                    Transferir
+                                </Link>
+                            </Button>
+                            <Button asChild variant="outline">
+                                <Link
+                                    href={personalWallet({
+                                        query: { action: 'request' },
+                                    })}
+                                >
+                                    <HandCoins aria-hidden="true" />
+                                    Solicitar pago
+                                </Link>
+                            </Button>
+                            <Button asChild>
+                                <Link
+                                    href={personalWallet({
+                                        query: { action: 'link' },
+                                    })}
+                                >
+                                    <QrCode aria-hidden="true" />
+                                    Enlace y QR
+                                </Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     <KpiCard
@@ -864,7 +960,7 @@ export default function CajeroDashboard({
                                     )}
                                 </div>
 
-                                <div className="min-w-0 max-w-full overflow-x-auto rounded-lg border border-border/60">
+                                <div className="max-w-full min-w-0 overflow-x-auto rounded-lg border border-border/60">
                                     <table className="w-full text-xs">
                                         <thead className="bg-muted/50">
                                             <tr>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Backend\CajeroWalletController;
+use App\Http\Controllers\Backend\ClienteFrecuenteController;
 use App\Http\Controllers\Backend\CobranzaController;
 use App\Http\Controllers\Backend\ContabilidadController;
 use App\Http\Controllers\Backend\FacturacionController;
@@ -40,7 +41,7 @@ Route::middleware(['permission:finanzas.wallets.viewAny'])->group(function () {
 });
 
 // Billetera personal del cajero autenticado.
-Route::middleware(['permission:finanzas.wallets.view|finanzas.wallets.viewAny', 'throttle:dashboard'])->group(function () {
+Route::middleware(['permission:finanzas.wallets.view|finanzas.wallets.viewAny|ventas.pos.viewAny', 'throttle:dashboard'])->group(function () {
     Route::get('billetera', [CajeroWalletController::class, 'index'])->name('cajero.billetera');
     Route::post('billetera/enlaces', [WalletPaymentLinkController::class, 'store'])->name('billetera.enlaces.store')->middleware('throttle:20,1');
     Route::get('billetera/enlaces/{paymentRequest:share_token}', [WalletPaymentLinkController::class, 'show'])->name('billetera.enlaces.show');
@@ -49,6 +50,9 @@ Route::middleware(['permission:finanzas.wallets.view|finanzas.wallets.viewAny', 
     Route::post('billetera/transferencias', [WalletTransferController::class, 'store'])->name('billetera.transferencias.store')->middleware('throttle:20,1');
     Route::post('billetera/solicitudes', [WalletPaymentRequestController::class, 'store'])->name('billetera.solicitudes.store')->middleware('throttle:20,1');
     Route::post('billetera/solicitudes/{paymentRequest}/resolver', [WalletPaymentRequestController::class, 'resolve'])->name('billetera.solicitudes.resolve')->middleware('throttle:20,1');
+    Route::post('billetera/frecuentes', [ClienteFrecuenteController::class, 'store'])->name('billetera.frecuentes.store')->middleware('throttle:20,1');
+    Route::put('billetera/frecuentes/{clienteFrecuente}', [ClienteFrecuenteController::class, 'update'])->name('billetera.frecuentes.update')->middleware('throttle:20,1');
+    Route::delete('billetera/frecuentes/{clienteFrecuente}', [ClienteFrecuenteController::class, 'destroy'])->name('billetera.frecuentes.destroy')->middleware('throttle:20,1');
 });
 
 Route::middleware(['permission:finanzas.tesoreria.viewAny'])->group(function () {

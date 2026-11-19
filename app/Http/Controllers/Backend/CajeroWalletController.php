@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
+use App\Models\ClienteFrecuente;
 use App\Models\User;
 use App\Models\WalletPaymentRequest;
 use App\Services\WalletService;
@@ -52,6 +53,17 @@ class CajeroWalletController extends Controller
         ];
 
         return Inertia::render('Backend/Pos/CajeroWallet', [
+            'wallet_action' => in_array($request->query('action'), ['transfer', 'request', 'link'], true)
+                ? $request->query('action') : null,
+            'clientes_frecuentes' => $wallet->clientesFrecuentes()
+                ->orderBy('nombre')
+                ->get()
+                ->map(fn (ClienteFrecuente $cliente): array => [
+                    'id' => $cliente->id,
+                    'nombre' => $cliente->nombre,
+                    'account_number' => $cliente->account_number,
+                    'nota' => $cliente->nota,
+                ]),
             'payment_requests' => WalletPaymentRequest::query()
                 ->where(fn ($query) => $query->where('requester_wallet_id', $wallet->id)->orWhere('payer_wallet_id', $wallet->id))
                 ->with(['requesterWallet.user:id,name', 'payerWallet.user:id,name'])

@@ -8,6 +8,7 @@ use App\Models\DetalleVenta;
 use App\Models\Producto;
 use App\Models\User;
 use App\Models\Venta;
+use App\Services\WalletService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -17,6 +18,8 @@ use Inertia\Response;
 
 class CajeroDashboardController extends Controller
 {
+    public function __construct(private readonly WalletService $walletService) {}
+
     /**
      * Panel individual del cajero autenticado: KPIs, ranking de productos,
      * ventas recientes y consejos calculados a partir de su propia operacion.
@@ -86,8 +89,13 @@ class CajeroDashboardController extends Controller
         ];
 
         $empleado = $user->empleado()->with('almacen:id,nombre')->first();
+        $wallet = $user->canUsePersonalWallet() ? $this->walletService->walletFor($user) : null;
 
         return Inertia::render('Backend/Pos/CajeroDashboard', [
+            'wallet_summary' => $wallet ? [
+                'account_number' => $wallet->account_number, 'balance' => $wallet->balance,
+                'currency' => $wallet->currency, 'status' => $wallet->status,
+            ] : null,
             'cajero' => [
                 'id' => $user->id,
                 'nombre' => $user->name,

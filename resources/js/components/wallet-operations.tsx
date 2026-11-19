@@ -34,6 +34,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Pagination from '@/components/ui/Pagination';
+import WalletFrequentClients, {
+    type ClienteFrecuente,
+} from '@/components/wallet-frequent-clients';
 import { formatWalletAmount as formatCurrency } from '@/lib/wallet';
 
 interface PaymentRequest {
@@ -69,6 +72,8 @@ const statuses: Record<string, string> = {
 export default function WalletOperations({
     wallet,
     requests,
+    initialAction,
+    clientesFrecuentes = [],
 }: {
     wallet: {
         account_number: string;
@@ -77,10 +82,12 @@ export default function WalletOperations({
         status: string;
     };
     requests?: WalletPaymentRequests;
+    initialAction?: 'transfer' | 'request' | 'link' | null;
+    clientesFrecuentes?: ClienteFrecuente[];
 }) {
     usePoll(30000, { only: ['wallet', 'payment_requests', 'transacciones'] });
     const [mode, setMode] = useState<'transfer' | 'request' | 'link' | null>(
-        null,
+        initialAction ?? null,
     );
     const [recipient, setRecipient] = useState<Recipient | null>(null);
     const [checking, setChecking] = useState(false);
@@ -95,10 +102,18 @@ export default function WalletOperations({
     const decision = useForm({ decision: '' });
     const active = wallet.status === 'active';
 
-    function open(nextMode: 'transfer' | 'request' | 'link') {
+    function open(
+        nextMode: 'transfer' | 'request' | 'link',
+        accountNumber = '',
+    ) {
         operation.reset();
         operation.clearErrors();
-        operation.setData('request_key', crypto.randomUUID());
+        operation.setData({
+            account_number: accountNumber,
+            amount: '',
+            note: '',
+            request_key: crypto.randomUUID(),
+        });
         setRecipient(null);
         setMode(nextMode);
     }
@@ -232,6 +247,14 @@ export default function WalletOperations({
                     </div>
                 </CardContent>
             </Card>
+
+            <WalletFrequentClients
+                clientes={clientesFrecuentes}
+                disabled={!active}
+                onUse={(cliente, action) => {
+                    open(action, cliente.account_number);
+                }}
+            />
 
             <Card className="min-w-0">
                 <CardHeader>
@@ -419,6 +442,7 @@ export default function WalletOperations({
                                             required
                                             pattern="[0-9]{16}"
                                             maxLength={16}
+                                            list="wallet-frequent-clients"
                                             value={
                                                 operation.data.account_number
                                             }
@@ -429,6 +453,22 @@ export default function WalletOperations({
                                                 )
                                             }
                                         />
+                                        {clientesFrecuentes.length > 0 && (
+                                            <datalist id="wallet-frequent-clients">
+                                                {clientesFrecuentes.map(
+                                                    (cliente) => (
+                                                        <option
+                                                            key={cliente.id}
+                                                            value={
+                                                                cliente.account_number
+                                                            }
+                                                        >
+                                                            {cliente.nombre}
+                                                        </option>
+                                                    ),
+                                                )}
+                                            </datalist>
+                                        )}
                                     </div>
                                 )}
                                 <div className="space-y-2">

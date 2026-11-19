@@ -43,11 +43,7 @@ export default function Dashboard({
     agendaAppointments?: any[];
     agendaWeekAppointments?: any[];
 }) {
-    const { hasPermission } = usePermissions();
-    const canViewWallet = hasPermission([
-        'finanzas.wallets.view',
-        'finanzas.wallets.viewAny',
-    ]);
+    const { canUsePersonalWallet } = usePermissions();
     const widgets: DashboardWidget[] = [
         {
             key: 'metrics_summary',
@@ -193,7 +189,7 @@ export default function Dashboard({
                             Vista Dinámica
                         </p>
                     </div>
-                    {canViewWallet && (
+                    {canUsePersonalWallet && (
                         <Button asChild size="lg" className="w-full sm:w-auto">
                             <Link href={personalWallet()}>
                                 <Wallet aria-hidden="true" />

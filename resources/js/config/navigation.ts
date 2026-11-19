@@ -18,6 +18,7 @@ import {
     UsersRound,
     Wrench,
 } from 'lucide-react';
+import { index as personalWallet } from '@/actions/App/Http/Controllers/Backend/CajeroWalletController';
 import { deliveryHistory } from '@/actions/App/Http/Controllers/Backend/EntregaController';
 import { dashboard } from '@/routes';
 
@@ -448,6 +449,7 @@ export const mainNavItems: ExtendedNavItem[] = [
             'comercial.mensajes-marketplace.viewAny',
             'ventas.variantes.viewAny',
             'finanzas.wallets.view',
+            'finanzas.wallets.viewAny',
         ],
         items: [
             {
@@ -467,8 +469,12 @@ export const mainNavItems: ExtendedNavItem[] = [
             },
             {
                 title: 'Mi Billetera',
-                href: buildRouteUrl('/billetera'),
-                permission: 'finanzas.wallets.view',
+                href: personalWallet(),
+                permission: [
+                    'finanzas.wallets.view',
+                    'finanzas.wallets.viewAny',
+                    'ventas.pos.viewAny',
+                ],
             },
             {
                 title: 'Cierre de Caja',

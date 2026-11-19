@@ -146,7 +146,7 @@ class WalletTransferService
 
     private function authorize(User $actor): void
     {
-        if (! $actor->is_active || ! $actor->canAny(['finanzas.wallets.view', 'finanzas.wallets.viewAny'])) {
+        if (! $actor->canUsePersonalWallet()) {
             throw new AuthorizationException('No tienes permiso para operar la billetera.');
         }
     }

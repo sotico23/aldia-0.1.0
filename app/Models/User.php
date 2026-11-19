@@ -314,6 +314,13 @@ class User extends Authenticatable
             ->contains('owner');
     }
 
+    public function canUsePersonalWallet(): bool
+    {
+        return (bool) $this->is_active && $this->canAny([
+            'finanzas.wallets.view', 'finanzas.wallets.viewAny', 'ventas.pos.viewAny',
+        ]);
+    }
+
     public function isTenantOwner(): bool
     {
         return $this->owner_id === null && $this->creator_id === null;
