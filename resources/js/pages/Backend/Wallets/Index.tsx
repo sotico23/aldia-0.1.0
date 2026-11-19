@@ -876,12 +876,16 @@ export default function Index({
                                 </select>
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-bold uppercase">
+                                <Label
+                                    htmlFor="wallet-recharge-amount"
+                                    className="text-xs font-bold uppercase"
+                                >
                                     Monto (CLP)
                                 </Label>
                                 <Input
+                                    id="wallet-recharge-amount"
                                     type="number"
-                                    step="1"
+                                    step="0.01"
                                     min="0.01"
                                     value={recargaForm.data.amount}
                                     onChange={(e) =>

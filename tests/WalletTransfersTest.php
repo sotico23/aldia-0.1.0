@@ -202,10 +202,10 @@ test('master can recharge any active user including one without a wallet', funct
     $master = User::withoutEvents(fn (): User => User::factory()->create());
     $master->assignRole(Role::create(['name' => 'Master', 'guard_name' => 'web', 'level' => 0]));
     $newUser = User::withoutEvents(fn (): User => User::factory()->create());
-    $this->actingAs($master)->post(route('billeteras.recargas.cajero', $newUser), ['amount' => '50', 'note' => 'Saldo inicial'])
+    $this->actingAs($master)->post(route('billeteras.recargas.cajero', $newUser), ['amount' => '500', 'note' => 'Saldo inicial'])
         ->assertRedirect()->assertSessionHasNoErrors();
     $wallet = app(WalletService::class)->walletFor($newUser);
-    expect($wallet->account_number)->toMatch('/^[0-9]{16}$/')->and($wallet->balance)->toBe('50.00');
+    expect($wallet->account_number)->toMatch('/^[0-9]{16}$/')->and($wallet->balance)->toBe('500.00');
     $this->actingAs($this->sender)->postJson(route('billeteras.recargas.cajero', $newUser), ['amount' => '50'])->assertForbidden();
 });
 

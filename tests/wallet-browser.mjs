@@ -26,8 +26,15 @@ const compiled = await build({
         contents: `import React from 'react'; import {createRoot} from 'react-dom/client';
             import Wallet from './resources/js/pages/Backend/Pos/CajeroWallet';
             import PaymentLink from './resources/js/pages/Backend/Wallets/PaymentLink';
+            import MasterWallet from './resources/js/pages/Backend/Wallets/Index';
+            import {formatWalletAmount} from './resources/js/lib/wallet';
             import {Html5Qrcode} from 'html5-qrcode';
             const root = createRoot(document.getElementById('root'));
+            window.walletAmount=formatWalletAmount;
+            window.renderMasterWallet=()=>{
+                window.masterWallet=true;window.submissions=[];
+                root.render(<MasterWallet key={'master-'+innerWidth} wallets={[]} cajeros={[{user_id:2,wallet_id:null,name:'Usuario de prueba',email:'prueba@example.com',balance:0,currency:'CLP',status:null}]} commission_rules={[]} />);
+            };
             const linkFixture = ${JSON.stringify(linkFixture)};
             window.renderPaymentLink = (mode) => {
                 window.submissions=[];
@@ -45,6 +52,7 @@ const compiled = await build({
                 finally {scanner.clear();reader.remove();}
             };
             window.renderWallet = (balance = 100) => {
+                window.masterWallet=false;
                 window.submissions = [];
                 root.render(<Wallet key={balance+'-'+innerWidth} wallet={{id:1,user_id:1,account_number:'1234567890123456',balance,currency:'CLP',status:'active',total_comisiones:0}}
                     comisiones_mes={0} transacciones={{data:[],links:[],meta:{from:0,to:0,total:0}}} moneda="CLP"
@@ -80,7 +88,7 @@ const compiled = await build({
                                 : path === '@inertiajs/react'
                                   ? `import {useState,useRef} from 'react';
                             export const Head=()=>null; export const usePoll=()=>{};
-                            export const usePage=()=>({props:{auth:{user:{roles:[],permissions:['finanzas.wallets.view']}}}});
+                            export const usePage=()=>({props:{auth:{user:{roles:[],permissions:window.masterWallet?['*']:['finanzas.wallets.view']}}}});
                             export const Link=({href,children,...props})=><a href={typeof href==='string'?href:href.url} {...props}>{children}</a>;
                             export const router={get(){}};
                             export function useForm(initial){
@@ -214,6 +222,16 @@ try {
             window.renderWallet(0);await wait();check(button('Transferir')?.disabled,'Empty wallet can transfer');
             check(!button('Solicitar pago')?.disabled,'Empty wallet cannot request payment');
             button('Revisar pago')?.click();await wait();dialogBounds();check(button('Confirmar pago')?.disabled,'Insufficient balance can confirm payment');
+            window.renderMasterWallet();await wait();button('Recargar saldo')?.click();await wait();
+            const recharge=document.getElementById('wallet-recharge-amount');check(!!recharge,'Missing master recharge amount');
+            if(recharge){
+                for(const amount of ['1','500','1000','25000','500.00']){type('wallet-recharge-amount',amount);await wait();check(recharge.checkValidity(),'Browser rejects whole peso amount '+amount+': '+recharge.validationMessage);}
+                for(const amount of ['0','-1','0.001']){type('wallet-recharge-amount',amount);await wait();check(!recharge.checkValidity(),'Browser accepts invalid amount '+amount);}
+                type('wallet-recharge-amount','500');await wait();button('Confirmar recarga')?.click();await wait();
+                check(window.submissions.length===1&&window.submissions[0].data.amount==='500','Integer recharge requires .00 or does not submit');
+                check(window.submissions[0]?.url==='/billeteras/cajeros/2/recargas','Wrong recharge endpoint');
+            }
+            check(window.walletAmount('1000.00','CLP')==='$1.000','Whole CLP amounts show unnecessary decimals');
             return {width:innerWidth,failures};
         })()`,
         });
