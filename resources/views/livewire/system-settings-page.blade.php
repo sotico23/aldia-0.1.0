@@ -27,21 +27,15 @@
         </div>
     @endif
 
-    @error('database')
-        <div class="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-600 dark:text-rose-400">
-            {{ $message }}
-        </div>
-    @enderror
-
     <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
         <strong class="font-semibold">Importante:</strong> los cambios de base de datos, Redis y Reverb se aplican en la
         siguiente petición. Los valores públicos de <code class="font-mono">VITE_*</code> se entregan dinámicamente
         al navegador; recarga la página para aplicar los cambios. Reinicia los procesos de larga duración afectados.
     </div>
 
-    <form wire:submit="save" class="space-y-6">
+    <div class="space-y-6">
         @foreach ($groups as $groupId => $group)
-            <section class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-xs">
+            <form wire:key="system-settings-{{ $groupId }}" wire:submit="save('{{ $groupId }}')" class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-xs">
                 <div class="border-b border-border/60 bg-muted/30 px-5 py-4 sm:px-6">
                     <h2 class="text-base font-bold text-foreground">{{ $group['label'] ?? $groupId }}</h2>
 
@@ -173,23 +167,39 @@
                             </div>
                         @endforeach
                     </div>
+                    @if ($groupId === 'prospecting')
+                        <p class="text-xs text-muted-foreground">La prueba del motor usa los ajustes guardados.</p>
+                    @endif
+
+                    @if ($status = session("system-settings-group-status.{$groupId}"))
+                        <p role="status" class="text-sm font-medium text-emerald-600 dark:text-emerald-400">{{ $status }}</p>
+                    @endif
+
+                    @error($groupId === 'database' ? 'database' : "connection.{$groupId}")
+                        <p role="alert" class="text-sm font-medium text-rose-600 dark:text-rose-400">{{ $message }}</p>
+                    @enderror
+
+                    <div class="flex flex-wrap justify-end gap-3">
+                        <button
+                            type="button"
+                            wire:click="checkConnection('{{ $groupId }}')"
+                            wire:loading.attr="disabled"
+                            class="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent disabled:opacity-60"
+                        >
+                            <span wire:loading.remove wire:target="checkConnection('{{ $groupId }}')">Probar conexión</span>
+                            <span wire:loading wire:target="checkConnection('{{ $groupId }}')">Probando…</span>
+                        </button>
+                        <button
+                            type="submit"
+                            wire:loading.attr="disabled"
+                            class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+                        >
+                            <span wire:loading.remove wire:target="save('{{ $groupId }}')">Guardar Configuración</span>
+                            <span wire:loading wire:target="save('{{ $groupId }}')">Guardando…</span>
+                        </button>
+                    </div>
                 </div>
-            </section>
+            </form>
         @endforeach
-
-        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p class="text-xs text-muted-foreground">
-                Los secretos se cifran con la <code class="font-mono">APP_KEY</code> de la aplicación.
-            </p>
-
-            <button
-                type="submit"
-                wire:loading.attr="disabled"
-                class="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-                <span wire:loading.remove>Guardar Configuración</span>
-                <span wire:loading>Guardando...</span>
-            </button>
-        </div>
-    </form>
+    </div>
 </div>

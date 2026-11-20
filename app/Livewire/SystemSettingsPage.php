@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Services\SystemSettingsConnectionCheck;
 use App\Support\SystemSettings;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -58,15 +59,15 @@ class SystemSettingsPage extends Component
         $this->databaseOverrideEnabled = ($stored[SystemSettings::DB_OVERRIDE_KEY] ?? '0') === '1';
     }
 
-    public function save(): void
+    public function save(?string $group = null): void
     {
-        $fields = SystemSettings::fields();
+        $fields = $group === null ? SystemSettings::fields() : $this->fieldsForGroup($group);
 
         $this->validate($this->rules($fields));
 
         $entries = $this->buildEntries($fields);
 
-        if ($this->databaseOverrideEnabled && ! $this->testDatabaseConnection($entries)) {
+        if (isset($fields['DB_CONNECTION']) && $this->databaseOverrideEnabled && ! $this->testDatabaseConnection($entries)) {
             return;
         }
 
@@ -87,7 +88,68 @@ class SystemSettingsPage extends Component
             }
         }
 
-        session()->flash('system-settings-status', 'Configuración guardada correctamente.');
+        session()->flash(
+            $group === null ? 'system-settings-status' : "system-settings-group-status.{$group}",
+            'Configuración guardada correctamente.',
+        );
+    }
+
+    public function checkConnection(string $group, SystemSettingsConnectionCheck $check): void
+    {
+        $fields = $this->fieldsForGroup($group);
+        $this->resetValidation("connection.{$group}");
+        $this->validate($this->rules($fields, testingConnection: true));
+
+        $entries = $this->buildEntries($fields);
+
+        if ($group === 'database') {
+            $this->resetValidation('database');
+
+            if ($this->testDatabaseConnection($entries)) {
+                session()->flash('system-settings-group-status.database', 'Conexión a la base de datos verificada.');
+            }
+
+            return;
+        }
+
+        $stored = SystemSettings::values();
+        $values = [];
+
+        foreach ($fields as $key => $field) {
+            $value = array_key_exists($key, $entries) ? $entries[$key]['value'] : ($stored[$key] ?? null);
+            $target = $field['config'][0] ?? null;
+            $values[$key] = $value ?? $field['default'] ?? ($target === null ? null : config($target));
+        }
+
+        try {
+            $message = $check->check($group, $values);
+        } catch (Throwable) {
+            $message = null;
+        }
+
+        if ($message === null) {
+            $this->addError("connection.{$group}", match ($group) {
+                'app' => 'Google Maps no aceptó la prueba. Revisa la clave del servidor y la API de Geocoding.',
+                'mail' => 'No se pudo establecer la conexión SMTP. Selecciona SMTP y revisa el host, puerto y las credenciales.',
+                'aws' => 'No se pudo acceder al bucket. Revisa la región, las credenciales y el permiso s3:ListBucket.',
+                'sii' => 'No se pudo verificar el SII. Revisa que las URL pertenezcan a sii.cl y usen HTTPS.',
+                default => 'No se pudo verificar la conexión. Revisa la configuración e inténtalo nuevamente.',
+            });
+
+            return;
+        }
+
+        session()->flash("system-settings-group-status.{$group}", $message);
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function fieldsForGroup(string $group): array
+    {
+        abort_unless(array_key_exists($group, SystemSettings::groups()), 404);
+
+        return array_filter(SystemSettings::fields(), fn (array $field): bool => $field['group'] === $group);
     }
 
     public function clearSecret(string $key): void
@@ -158,11 +220,13 @@ class SystemSettingsPage extends Component
             ];
         }
 
-        $entries[SystemSettings::DB_OVERRIDE_KEY] = [
-            'value' => $this->databaseOverrideEnabled ? '1' : '0',
-            'secret' => false,
-            'group' => 'database',
-        ];
+        if (isset($fields['DB_CONNECTION'])) {
+            $entries[SystemSettings::DB_OVERRIDE_KEY] = [
+                'value' => $this->databaseOverrideEnabled ? '1' : '0',
+                'secret' => false,
+                'group' => 'database',
+            ];
+        }
 
         return $entries;
     }
@@ -171,7 +235,7 @@ class SystemSettingsPage extends Component
      * @param  array<string, array<string, mixed>>  $fields
      * @return array<string, mixed>
      */
-    private function rules(array $fields): array
+    private function rules(array $fields, bool $testingConnection = false): array
     {
         $rules = [];
 
@@ -197,7 +261,7 @@ class SystemSettingsPage extends Component
             );
         }
 
-        if ($this->databaseOverrideEnabled) {
+        if (isset($fields['DB_CONNECTION']) && ($this->databaseOverrideEnabled || $testingConnection)) {
             $rules['values.DB_CONNECTION'] = ['required', 'string', Rule::in(array_keys($fields['DB_CONNECTION']['options'] ?? []))];
             $rules['values.DB_DATABASE'] = ['required', 'string', 'max:255'];
 
@@ -220,29 +284,36 @@ class SystemSettingsPage extends Component
     {
         $driver = $entries['DB_CONNECTION']['value'] ?? null;
 
-        if ($driver === null || $driver === 'sqlite') {
-            return true;
-        }
-
         $host = $entries['DB_HOST']['value'] ?? null;
         $port = $entries['DB_PORT']['value'] ?? null;
         $database = $entries['DB_DATABASE']['value'] ?? null;
         $username = $entries['DB_USERNAME']['value'] ?? null;
         $password = array_key_exists('DB_PASSWORD', $entries)
             ? $entries['DB_PASSWORD']['value']
-            : SystemSettings::get('DB_PASSWORD');
+            : SystemSettings::get('DB_PASSWORD', config("database.connections.{$driver}.password"));
 
         try {
+            if ($driver === 'sqlite' && $database !== ':memory:') {
+                if (! is_file($database) && ! is_file(base_path($database))) {
+                    throw new \RuntimeException('SQLite database does not exist.');
+                }
+
+                $database = is_file($database) ? $database : base_path($database);
+            }
+
             $dsn = match ($driver) {
+                'sqlite' => 'sqlite:'.$database,
                 'pgsql' => sprintf('pgsql:host=%s;port=%s;dbname=%s', $host, $port ?: 5432, $database),
                 'sqlsrv' => sprintf('sqlsrv:Server=%s,%s;Database=%s', $host, $port ?: 1433, $database),
                 default => sprintf('mysql:host=%s;port=%s;dbname=%s', $host, $port ?: 3306, $database),
             };
 
-            new PDO($dsn, (string) $username, (string) $password, [
+            $connection = new PDO($dsn, (string) $username, (string) $password, [
                 PDO::ATTR_TIMEOUT => 5,
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             ]);
+
+            $connection->query('SELECT 1');
 
             return true;
         } catch (Throwable $exception) {
@@ -250,7 +321,7 @@ class SystemSettingsPage extends Component
                 'driver' => $driver,
                 'host' => $host,
                 'database' => $database,
-                'error' => $exception->getMessage(),
+                'exception' => $exception::class,
             ]);
 
             $this->addError(

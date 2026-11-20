@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\ChannelController;
 use App\Http\Controllers\Api\Delivery\DeliveryOrdenController;
 use App\Http\Controllers\Api\Delivery\PushDeviceController;
 use App\Http\Controllers\Api\Delivery\RoadAlertController;
+use App\Http\Controllers\Api\Delivery\RoadReportController;
 use App\Http\Controllers\Api\Delivery\ZoneController;
 use App\Http\Controllers\Api\Driver\DriverDocumentsController;
 use App\Http\Controllers\Api\Driver\DriverEarningsController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\Api\InternalAutomationSendController;
 use App\Http\Controllers\Api\Pos\PosApiController;
 use App\Http\Controllers\Api\TenantDataController;
 use App\Http\Controllers\Api\TrackingController;
+use App\Http\Controllers\Api\V1\MasterConfigController;
 use App\Http\Controllers\Backend\GlobalSearchController;
 use App\Http\Controllers\Backend\RepartidorSolicitudesController;
 use App\Http\Controllers\Backend\SiiController;
@@ -184,6 +186,10 @@ Route::prefix('v1/delivery')
         Route::get('road-alerts', [RoadAlertController::class, 'index']);
         Route::post('road-alerts', [RoadAlertController::class, 'store'])->middleware('throttle:6,1');
 
+        // Reportes viales en tiempo real (estilo Waze)
+        Route::get('reports', [RoadReportController::class, 'index']);
+        Route::post('reports', [RoadReportController::class, 'store']);
+
         Route::post('orders/{pedido}/accept', [DeliveryOrdenController::class, 'accept']);
         Route::post('orders/{pedido}/aceptar', [DeliveryOrdenController::class, 'accept']);
         Route::post('orders/{pedido}/pickup', [DeliveryOrdenController::class, 'pickup']);
@@ -249,6 +255,18 @@ Route::prefix('v1/driver')->group(function () {
             ->name('api.v1.driver.marketplace.orders.claim');
     });
 });
+
+// Configuración de marca y registro de la aplicación
+Route::get('v1/app/config', [MasterConfigController::class, 'publicConfig']);
+
+// Panel Master: Métricas de Rendimiento y Configuración Global del App
+Route::prefix('v1/master')
+    ->middleware(['auth:sanctum', 'throttle:delivery'])
+    ->group(function () {
+        Route::get('dashboard', [MasterConfigController::class, 'dashboard']);
+        Route::get('config', [MasterConfigController::class, 'getConfig']);
+        Route::post('config', [MasterConfigController::class, 'updateConfig']);
+    });
 
 // Punto de Venta (POS Móvil) e Inventario
 Route::prefix('v1/pos')

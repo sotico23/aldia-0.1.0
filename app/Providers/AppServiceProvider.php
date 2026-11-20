@@ -13,6 +13,7 @@ use App\Events\SaleRefunded;
 use App\Events\SubscriptionExpired;
 use App\Events\SubscriptionRenewed;
 use App\Events\WebhookReceived;
+use App\Http\Middleware\CheckPermission;
 use App\Listeners\HandleSubscriptionExpired;
 use App\Listeners\HandleSubscriptionRenewed;
 use App\Listeners\LogMailConfigError;
@@ -55,6 +56,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Livewire\Livewire;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 use SocialiteProviders\Telegram\Provider as TelegramProvider;
 
@@ -70,6 +72,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Livewire::addPersistentMiddleware([CheckPermission::class]);
+
         $this->configureDefaults();
 
         $this->configureRateLimiting();

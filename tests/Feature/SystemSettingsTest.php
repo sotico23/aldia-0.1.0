@@ -5,6 +5,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Support\SystemSettings;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
 
@@ -161,4 +162,69 @@ test('el componente livewire permite eliminar un secreto almacenado', function (
 
     expect(Setting::query()->where('key', 'MAIL_PASSWORD')->exists())->toBeFalse()
         ->and(SystemSettings::get('MAIL_PASSWORD'))->toBeNull();
+});
+
+test('guardar una sección ignora cambios y errores de las otras secciones', function () {
+    Livewire::test(SystemSettingsPage::class)
+        ->set('databaseOverrideEnabled', true)
+        ->set('values.DB_DATABASE', '')
+        ->set('values.REDIS_PORT', 'invalido')
+        ->set('values.MAIL_HOST', 'smtp.nuevo.test')
+        ->set('secrets.MAIL_PASSWORD', 'clave-nueva')
+        ->set('secrets.OPENROUTER_API_KEY', 'borrador')
+        ->call('save', 'mail')
+        ->assertHasNoErrors()
+        ->assertSee('Configuración guardada correctamente.')
+        ->assertSet('secrets.MAIL_PASSWORD', '')
+        ->assertSet('secrets.OPENROUTER_API_KEY', 'borrador');
+
+    expect(SystemSettings::get('MAIL_HOST'))->toBe('smtp.nuevo.test')
+        ->and(SystemSettings::get('MAIL_PASSWORD'))->toBe('clave-nueva')
+        ->and(SystemSettings::get('OPENROUTER_API_KEY'))->toBeNull()
+        ->and(SystemSettings::get('REDIS_PORT'))->toBeNull()
+        ->and(SystemSettings::get(SystemSettings::DB_OVERRIDE_KEY))->toBeNull();
+});
+
+test('probar OpenRouter usa la clave ingresada sin guardarla', function () {
+    Http::fake(['openrouter.ai/api/v1/key' => Http::response(['data' => ['label' => 'prueba']])]);
+
+    Livewire::test(SystemSettingsPage::class)
+        ->set('secrets.OPENROUTER_API_KEY', 'clave-temporal')
+        ->call('checkConnection', 'openrouter')
+        ->assertHasNoErrors()
+        ->assertSee('OpenRouter aceptó la clave de API.');
+
+    Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'Bearer clave-temporal'));
+    expect(SystemSettings::get('OPENROUTER_API_KEY'))->toBeNull();
+});
+
+test('probar OpenRouter muestra un error local si el proveedor rechaza la clave', function () {
+    Http::fake(['openrouter.ai/api/v1/key' => Http::response(['error' => 'rechazada'], 401)]);
+
+    Livewire::test(SystemSettingsPage::class)
+        ->set('secrets.OPENROUTER_API_KEY', 'clave-invalida')
+        ->call('checkConnection', 'openrouter')
+        ->assertHasErrors('connection.openrouter')
+        ->assertSee('No se pudo verificar la conexión.');
+});
+
+test('probar SQLite comprueba que la base exista y permite una conexión en memoria', function () {
+    Livewire::test(SystemSettingsPage::class)
+        ->set('values.DB_CONNECTION', 'sqlite')
+        ->set('values.DB_DATABASE', 'base-para-prueba-inexistente.sqlite')
+        ->call('checkConnection', 'database')
+        ->assertHasErrors('database')
+        ->set('values.DB_DATABASE', ':memory:')
+        ->call('checkConnection', 'database')
+        ->assertHasNoErrors()
+        ->assertSee('Conexión a la base de datos verificada.');
+});
+
+test('cada sección incluye los dos botones de configuración', function () {
+    $settings = Livewire::test(SystemSettingsPage::class);
+
+    foreach (array_keys(SystemSettings::groups()) as $group) {
+        $settings->assertSeeHtml("wire:submit=\"save('{$group}')\"")
+            ->assertSeeHtml("wire:click=\"checkConnection('{$group}')\"");
+    }
 });
