@@ -26,10 +26,9 @@ export default function StoreLocationMap(props: Props) {
                 className="rounded-lg bg-muted p-3 text-sm text-muted-foreground"
                 data-testid="store-map-unconfigured"
             >
-                Puedes guardar el punto de retiro con el GPS o las coordenadas.
-                Para seleccionar en el mapa y buscar direcciones, configura
-                Google Maps API Key (frontend) en Configuración web → Servidor.
-                Flutter usa las coordenadas guardadas y no requiere esa clave.
+                Configura la clave de Google Maps para el navegador en
+                Configuración web para buscar direcciones. También puedes usar
+                el GPS.
             </p>
         );
     }
@@ -48,8 +47,8 @@ function ConfiguredMap(props: Props & { apiKey: string }) {
     if (loadError)
         return (
             <p role="alert" className="text-sm text-destructive">
-                No se pudo cargar el mapa. Puedes usar el GPS o ingresar las
-                coordenadas.
+                No se pudo cargar Google Maps. Revisa la clave del navegador o
+                usa el GPS.
             </p>
         );
     if (!isLoaded)
@@ -64,7 +63,6 @@ function ConfiguredMap(props: Props & { apiKey: string }) {
 
 function MapPicker({ latitude, longitude, address, onChange }: Props) {
     const [message, setMessage] = useState('');
-    const [searching, setSearching] = useState(false);
     const hasPoint =
         latitude.trim() !== '' &&
         longitude.trim() !== '' &&
@@ -88,47 +86,13 @@ function MapPicker({ latitude, longitude, address, onChange }: Props) {
         }
     }
 
-    async function searchAddress() {
-        setSearching(true);
-        setMessage('Buscando dirección…');
-        try {
-            const result = await new google.maps.Geocoder().geocode({
-                address: address.trim(),
-            });
-            const match = result.results[0];
-            if (!match) {
-                setMessage(
-                    'No se encontró la dirección. Agrega comuna y ciudad o marca el punto en el mapa.',
-                );
-                return;
-            }
-            onChange(
-                match.geometry.location.lat().toFixed(7),
-                match.geometry.location.lng().toFixed(7),
-                match.formatted_address,
-            );
-            setMessage(
-                'Dirección encontrada. Ajusta el marcador a la entrada del comercio y guarda los cambios.',
-            );
-        } catch {
-            setMessage(
-                'No se pudo buscar la dirección. Marca el punto en el mapa o usa el GPS. Revisa que Geocoding API esté habilitada para la clave del navegador.',
-            );
-        } finally {
-            setSearching(false);
-        }
-    }
-
     return (
         <div className="space-y-3" data-testid="store-location-map">
-            <Button
-                type="button"
-                variant="outline"
-                disabled={!address.trim() || searching}
-                onClick={searchAddress}
-            >
-                {searching ? 'Buscando…' : 'Buscar dirección en el mapa'}
-            </Button>
+            <AddressSearch
+                key={address}
+                address={address}
+                onChange={onChange}
+            />
             <p className="text-sm text-muted-foreground">
                 Haz clic en la entrada del comercio o arrastra el marcador hasta
                 el lugar de retiro.
@@ -158,6 +122,85 @@ function MapPicker({ latitude, longitude, address, onChange }: Props) {
             <p aria-live="polite" className="text-sm text-muted-foreground">
                 {message}
             </p>
+        </div>
+    );
+}
+
+function AddressSearch({
+    address,
+    onChange,
+}: Pick<Props, 'address' | 'onChange'>) {
+    const [results, setResults] = useState<google.maps.GeocoderResult[]>([]);
+    const [searching, setSearching] = useState(false);
+    const [message, setMessage] = useState('');
+
+    async function searchAddress() {
+        setSearching(true);
+        setResults([]);
+        setMessage('');
+
+        try {
+            const { results } = await new google.maps.Geocoder().geocode({
+                address: address.trim(),
+            });
+            setResults(results);
+            if (results.length === 0) {
+                setMessage(
+                    'No encontramos esa dirección. Agrega el número y la comuna.',
+                );
+            }
+        } catch (error) {
+            setMessage(
+                String(error).includes('ZERO_RESULTS')
+                    ? 'No encontramos esa dirección. Agrega el número y la comuna.'
+                    : 'No se pudo buscar la dirección en Google Maps. Intenta nuevamente.',
+            );
+        } finally {
+            setSearching(false);
+        }
+    }
+
+    return (
+        <div className="space-y-2">
+            <Button
+                type="button"
+                variant="outline"
+                disabled={!address.trim() || searching}
+                onClick={searchAddress}
+            >
+                {searching ? 'Buscando…' : 'Buscar dirección en Google Maps'}
+            </Button>
+            {results.length > 0 && (
+                <ul
+                    aria-label="Direcciones de Google Maps"
+                    className="divide-y rounded-lg border"
+                >
+                    {results.map((result) => (
+                        <li key={result.place_id}>
+                            <button
+                                type="button"
+                                className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                                onClick={() => {
+                                    const { location } = result.geometry;
+                                    onChange(
+                                        location.lat().toFixed(7),
+                                        location.lng().toFixed(7),
+                                        result.formatted_address,
+                                    );
+                                    setResults([]);
+                                }}
+                            >
+                                {result.formatted_address}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            )}
+            {message && (
+                <p role="alert" className="text-sm text-destructive">
+                    {message}
+                </p>
+            )}
         </div>
     );
 }

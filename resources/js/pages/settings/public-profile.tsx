@@ -8,7 +8,7 @@ import {
     FileText,
     CheckCircle2,
 } from 'lucide-react';
-import { useState, type FormEventHandler } from 'react';
+import { useRef, useState, type FormEventHandler } from 'react';
 import InputError from '@/components/input-error';
 import StoreLocationMap from '@/components/store-location-map';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,7 @@ export default function EditPublicProfile({
 }: {
     publicProfile: PublicProfile;
 }) {
+    const locationRequest = useRef(0);
     const [locationMessage, setLocationMessage] = useState('');
     const { data, setData, patch, errors, processing, recentlySuccessful } =
         useForm({
@@ -126,12 +127,17 @@ export default function EditPublicProfile({
                                     <Input
                                         id="pickup_address"
                                         value={data.pickup_address}
-                                        onChange={(event) =>
-                                            setData(
-                                                'pickup_address',
-                                                event.target.value,
-                                            )
-                                        }
+                                        onChange={(event) => {
+                                            locationRequest.current++;
+                                            setLocationMessage('');
+                                            setData((current) => ({
+                                                ...current,
+                                                pickup_address:
+                                                    event.target.value,
+                                                pickup_lat: '',
+                                                pickup_lng: '',
+                                            }));
+                                        }}
                                         placeholder="Calle, número, comuna y ciudad"
                                     />
                                     <InputError
@@ -146,6 +152,8 @@ export default function EditPublicProfile({
                                             longitude,
                                             address,
                                         ) => {
+                                            locationRequest.current++;
+                                            setLocationMessage('');
                                             setData((current) => ({
                                                 ...current,
                                                 pickup_lat: latitude,
@@ -164,69 +172,36 @@ export default function EditPublicProfile({
                                             ? 'La tienda está desactivada y no aparecerá en el mapa de repartidores.'
                                             : locationReady
                                               ? 'Datos completos para el mapa de repartidores. Guarda los cambios para publicarlos.'
-                                              : 'Para aparecer en el mapa, completa la dirección y ambas coordenadas del punto de retiro.'}
+                                              : 'Para aparecer en el mapa, selecciona la dirección del comercio o marca el punto de retiro en el mapa.'}
                                     </p>
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        <div className="space-y-1">
-                                            <Label htmlFor="pickup_lat">
-                                                Latitud
-                                            </Label>
-                                            <Input
-                                                id="pickup_lat"
-                                                type="number"
-                                                step="any"
-                                                min="-90"
-                                                max="90"
-                                                value={data.pickup_lat}
-                                                onChange={(event) =>
-                                                    setData(
-                                                        'pickup_lat',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                            />
-                                            <InputError
-                                                message={errors.pickup_lat}
-                                            />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <Label htmlFor="pickup_lng">
-                                                Longitud
-                                            </Label>
-                                            <Input
-                                                id="pickup_lng"
-                                                type="number"
-                                                step="any"
-                                                min="-180"
-                                                max="180"
-                                                value={data.pickup_lng}
-                                                onChange={(event) =>
-                                                    setData(
-                                                        'pickup_lng',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                            />
-                                            <InputError
-                                                message={errors.pickup_lng}
-                                            />
-                                        </div>
-                                    </div>
+                                    <InputError
+                                        message={
+                                            errors.pickup_lat ??
+                                            errors.pickup_lng
+                                        }
+                                    />
                                     <Button
                                         type="button"
                                         variant="outline"
                                         onClick={() => {
                                             if (!navigator.geolocation) {
                                                 setLocationMessage(
-                                                    'El navegador no permite obtener tu ubicación. Ingresa las coordenadas del comercio.',
+                                                    'El navegador no permite obtener tu ubicación. Busca la dirección en Google Maps.',
                                                 );
                                                 return;
                                             }
+                                            const request =
+                                                ++locationRequest.current;
                                             setLocationMessage(
                                                 'Obteniendo ubicación…',
                                             );
                                             navigator.geolocation.getCurrentPosition(
                                                 (position) => {
+                                                    if (
+                                                        request !==
+                                                        locationRequest.current
+                                                    )
+                                                        return;
                                                     setData((current) => ({
                                                         ...current,
                                                         pickup_lat:
@@ -242,10 +217,16 @@ export default function EditPublicProfile({
                                                         'Ubicación obtenida. Guarda los cambios para publicarla.',
                                                     );
                                                 },
-                                                () =>
+                                                () => {
+                                                    if (
+                                                        request !==
+                                                        locationRequest.current
+                                                    )
+                                                        return;
                                                     setLocationMessage(
-                                                        'No se pudo obtener la ubicación. Autoriza el acceso o ingresa las coordenadas.',
-                                                    ),
+                                                        'No se pudo obtener la ubicación. Autoriza el acceso o busca la dirección en Google Maps.',
+                                                    );
+                                                },
                                                 {
                                                     enableHighAccuracy: true,
                                                     timeout: 15000,

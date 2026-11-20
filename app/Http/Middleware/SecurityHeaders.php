@@ -22,7 +22,7 @@ class SecurityHeaders
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('X-XSS-Protection', '1; mode=block');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
-        $response->headers->set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
+        $response->headers->set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=(self)');
 
         $host = parse_url(config('app.url'), PHP_URL_HOST) ?: 'localhost';
         $reverbHost = config('reverb.public.host') ?: $host;
@@ -35,7 +35,7 @@ class SecurityHeaders
 
         if (app()->environment('production') && ! Vite::isRunningHot()) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-            $response->headers->set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'nonce-{$nonce}' https://telegram.org https://oauth.telegram.org; style-src 'self' 'nonce-{$nonce}' https://fonts.bunny.net; img-src 'self' data: https:; font-src 'self' https://fonts.bunny.net; connect-src 'self' {$reverbOrigins} https://api.telegram.org https://graph.facebook.com; frame-src https://telegram.org https://oauth.telegram.org; frame-ancestors 'none'; report-uri /api/v1/csp-report; report-to csp-endpoint;");
+            $response->headers->set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'nonce-{$nonce}' https://telegram.org https://oauth.telegram.org https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'nonce-{$nonce}' https://fonts.bunny.net https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.bunny.net https://fonts.gstatic.com; connect-src 'self' {$reverbOrigins} https://api.telegram.org https://graph.facebook.com https://maps.googleapis.com https://maps.gstatic.com https://maps.google.com; frame-src https://telegram.org https://oauth.telegram.org; worker-src 'self' blob:; frame-ancestors 'none'; report-uri /api/v1/csp-report; report-to csp-endpoint;");
             $response->headers->set('Report-To', json_encode([
                 'group' => 'csp-endpoint',
                 'max_age' => 10886400,
@@ -46,7 +46,7 @@ class SecurityHeaders
             $viteOrigins = $viteHosts->flatMap(fn ($h) => ["http://{$h}:5173", "https://{$h}:5173"])->unique()->implode(' ');
             $wsOrigins = $viteHosts->flatMap(fn ($h) => ["ws://{$h}:5173", "wss://{$h}:5173"])->unique()->implode(' ');
 
-            $response->headers->set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' {$viteOrigins} https://telegram.org https://oauth.telegram.org; style-src 'self' 'unsafe-inline' https://fonts.bunny.net; img-src 'self' data: https:; font-src 'self' https://fonts.bunny.net; connect-src 'self' {$viteOrigins} {$wsOrigins} {$reverbOrigins} https://api.telegram.org https://graph.facebook.com; frame-src https://telegram.org https://oauth.telegram.org; frame-ancestors 'none';");
+            $response->headers->set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' {$viteOrigins} https://telegram.org https://oauth.telegram.org https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.bunny.net https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.bunny.net https://fonts.gstatic.com; connect-src 'self' {$viteOrigins} {$wsOrigins} {$reverbOrigins} https://api.telegram.org https://graph.facebook.com https://maps.googleapis.com https://maps.gstatic.com https://maps.google.com; frame-src https://telegram.org https://oauth.telegram.org; worker-src 'self' blob:; frame-ancestors 'none';");
         }
 
         return $response;
