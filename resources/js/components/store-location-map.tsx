@@ -1,13 +1,20 @@
+import { usePage } from '@inertiajs/react';
 import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { clientConfig } from '@/lib/client-config';
+import type { ClientConfig } from '@/lib/client-config';
 
 type Props = {
     latitude: string;
     longitude: string;
     address: string;
-    onChange: (latitude: string, longitude: string, address?: string) => void;
+    reverseLookup: number | null;
+    onChange: (
+        latitude: string,
+        longitude: string,
+        address?: string,
+        lookupId?: number,
+    ) => void;
 };
 
 export default function StoreLocationMap(props: Props) {
@@ -16,23 +23,66 @@ export default function StoreLocationMap(props: Props) {
             typeof window !== 'undefined' &&
             typeof window.google?.maps?.Map === 'function',
     );
-    const apiKey = clientConfig.google_maps_api_key ?? '';
+    const { client_config: clientConfig } = usePage<{
+        client_config?: ClientConfig;
+    }>().props;
+    const apiKey = clientConfig?.google_maps_api_key ?? '';
     if (!apiKey) {
         return (
             <p
                 className="rounded-lg bg-muted p-3 text-sm text-muted-foreground"
                 data-testid="store-map-unconfigured"
             >
-                Configura la clave de Google Maps para el navegador en
-                Configuración web para buscar direcciones. También puedes usar
-                el GPS.
+                {clientConfig?.google_maps_api_key_conflict
+                    ? 'La clave de Google Maps del navegador debe ser distinta de la clave del servidor. Configura una clave separada para Maps JavaScript API.'
+                    : 'Configura la clave de Google Maps para el navegador en Configuración web para buscar direcciones. También puedes usar el GPS.'}
             </p>
         );
     }
-    return existingSdk ? (
+    return (
+        <MapsWithCredentials
+            key={apiKey}
+            {...props}
+            apiKey={apiKey}
+            existingSdk={existingSdk}
+        />
+    );
+}
+
+function MapsWithCredentials(
+    props: Props & { apiKey: string; existingSdk: boolean },
+) {
+    const [authFailed, setAuthFailed] = useState(false);
+
+    useEffect(() => {
+        const browser = window as Window & { gm_authFailure?: () => void };
+        const previous = browser.gm_authFailure;
+        const onFailure = () => {
+            setAuthFailed(true);
+            previous?.();
+        };
+        browser.gm_authFailure = onFailure;
+
+        return () => {
+            if (browser.gm_authFailure === onFailure) {
+                browser.gm_authFailure = previous;
+            }
+        };
+    }, []);
+
+    if (authFailed) {
+        return (
+            <p role="alert" className="text-sm text-destructive">
+                Google Maps rechazó la clave del navegador. Revisa el dominio
+                autorizado, Maps JavaScript API y la facturación.
+            </p>
+        );
+    }
+
+    return props.existingSdk ? (
         <MapPicker {...props} />
     ) : (
-        <ConfiguredMap {...props} apiKey={apiKey} />
+        <ConfiguredMap {...props} />
     );
 }
 
@@ -40,6 +90,11 @@ function ConfiguredMap(props: Props & { apiKey: string }) {
     const { isLoaded, loadError } = useLoadScript({
         id: 'store-location-map-script',
         googleMapsApiKey: props.apiKey,
+        nonce:
+            typeof document !== 'undefined'
+                ? document.querySelector<HTMLScriptElement>('script[nonce]')
+                      ?.nonce
+                : undefined,
     });
     if (loadError)
         return (
@@ -58,8 +113,15 @@ function ConfiguredMap(props: Props & { apiKey: string }) {
     return <MapPicker {...props} />;
 }
 
-function MapPicker({ latitude, longitude, address, onChange }: Props) {
+function MapPicker({
+    latitude,
+    longitude,
+    address,
+    reverseLookup,
+    onChange,
+}: Props) {
     const [message, setMessage] = useState('');
+    const onChangeRef = useRef(onChange);
     const hasPoint =
         latitude.trim() !== '' &&
         longitude.trim() !== '' &&
@@ -71,15 +133,66 @@ function MapPicker({ latitude, longitude, address, onChange }: Props) {
         ? { lat: Number(latitude), lng: Number(longitude) }
         : null;
 
+    useEffect(() => {
+        onChangeRef.current = onChange;
+    }, [onChange]);
+
+    useEffect(() => {
+        if (!hasPoint || reverseLookup === null) {
+            return;
+        }
+
+        let isCurrent = true;
+        const latitudeValue = Number(latitude);
+        const longitudeValue = Number(longitude);
+
+        void new google.maps.Geocoder()
+            .geocode({
+                location: { lat: latitudeValue, lng: longitudeValue },
+            })
+            .then(({ results }) => {
+                if (!isCurrent) {
+                    return;
+                }
+
+                if (results.length === 0) {
+                    setMessage(
+                        'No encontramos una dirección para este punto. Puedes escribirla manualmente.',
+                    );
+
+                    return;
+                }
+
+                onChangeRef.current(
+                    latitude,
+                    longitude,
+                    results[0].formatted_address,
+                    reverseLookup,
+                );
+                setMessage(
+                    'Dirección actualizada desde el punto seleccionado.',
+                );
+            })
+            .catch(() => {
+                if (isCurrent) {
+                    setMessage(
+                        'No se pudo identificar la dirección de este punto. Puedes escribirla manualmente.',
+                    );
+                }
+            });
+
+        return () => {
+            isCurrent = false;
+        };
+    }, [hasPoint, latitude, longitude, reverseLookup]);
+
     function selectPoint(event: google.maps.MapMouseEvent) {
         if (event.latLng) {
             onChange(
                 event.latLng.lat().toFixed(7),
                 event.latLng.lng().toFixed(7),
             );
-            setMessage(
-                'Punto de retiro seleccionado. Revisa la dirección y guarda los cambios.',
-            );
+            setMessage('Punto de retiro seleccionado. Buscando la dirección…');
         }
     }
 
@@ -88,7 +201,10 @@ function MapPicker({ latitude, longitude, address, onChange }: Props) {
             <AddressSearch
                 key={address}
                 address={address}
-                onChange={onChange}
+                onChange={(lat, lng, selectedAddress) => {
+                    setMessage('');
+                    onChange(lat, lng, selectedAddress);
+                }}
             />
             <p className="text-sm text-muted-foreground">
                 Haz clic en la entrada del comercio o arrastra el marcador hasta

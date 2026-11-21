@@ -28,12 +28,14 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
         $authData = null;
         $countrySettings = $this->getCountrySettings($request);
-        $serverMapsKey = SystemSettings::effectiveValue('GOOGLE_MAPS_API_KEY');
-        $frontendMapsKey = SystemSettings::effectiveValue('VITE_GOOGLE_MAPS_API_KEY');
-        $googleMapsBrowserKey = is_string($frontendMapsKey) && $frontendMapsKey !== ''
-            && (! is_string($serverMapsKey) || $serverMapsKey === '' || ! hash_equals($serverMapsKey, $frontendMapsKey))
-                ? $frontendMapsKey
-                : null;
+        $mapsKeys = SystemSettings::currentValues(['GOOGLE_MAPS_API_KEY', 'VITE_GOOGLE_MAPS_API_KEY']);
+        $serverMapsKey = trim((string) $mapsKeys['GOOGLE_MAPS_API_KEY']);
+        $runtimeMapsKey = trim((string) config('services.google.maps_api_key'));
+        $frontendMapsKey = trim((string) $mapsKeys['VITE_GOOGLE_MAPS_API_KEY']);
+        $googleMapsKeyConflict = $frontendMapsKey !== '' && (
+            hash_equals($serverMapsKey, $frontendMapsKey) || hash_equals($runtimeMapsKey, $frontendMapsKey)
+        );
+        $googleMapsBrowserKey = $frontendMapsKey !== '' && ! $googleMapsKeyConflict ? $frontendMapsKey : null;
 
         if ($user) {
             $unreadMessages = $this->getCachedUnreadMessages($user->id);
@@ -78,6 +80,7 @@ class HandleInertiaRequests extends Middleware
             'client_config' => [
                 'app_name' => config('services.frontend.app_name', config('app.name', 'Laravel')),
                 'google_maps_api_key' => $googleMapsBrowserKey,
+                'google_maps_api_key_conflict' => $googleMapsKeyConflict,
                 'reverb' => [
                     'key' => config('services.frontend.reverb.key', ''),
                     'host' => config('services.frontend.reverb.host', ''),

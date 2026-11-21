@@ -47,6 +47,8 @@ export default function EditPublicProfile({
     publicProfile: PublicProfile;
 }) {
     const locationRequest = useRef(0);
+    const [reverseLookup, setReverseLookup] = useState<number | null>(null);
+    const [manualPoint, setManualPoint] = useState(false);
     const [locationMessage, setLocationMessage] = useState('');
     const { data, setData, patch, errors, processing, recentlySuccessful } =
         useForm({
@@ -130,12 +132,17 @@ export default function EditPublicProfile({
                                         onChange={(event) => {
                                             locationRequest.current++;
                                             setLocationMessage('');
+                                            setReverseLookup(null);
                                             setData((current) => ({
                                                 ...current,
                                                 pickup_address:
                                                     event.target.value,
-                                                pickup_lat: '',
-                                                pickup_lng: '',
+                                                pickup_lat: manualPoint
+                                                    ? current.pickup_lat
+                                                    : '',
+                                                pickup_lng: manualPoint
+                                                    ? current.pickup_lng
+                                                    : '',
                                             }));
                                         }}
                                         placeholder="Calle, número, comuna y ciudad"
@@ -147,20 +154,36 @@ export default function EditPublicProfile({
                                         latitude={data.pickup_lat}
                                         longitude={data.pickup_lng}
                                         address={data.pickup_address}
+                                        reverseLookup={reverseLookup}
                                         onChange={(
                                             latitude,
                                             longitude,
                                             address,
+                                            lookupId,
                                         ) => {
-                                            locationRequest.current++;
+                                            if (
+                                                lookupId !== undefined &&
+                                                lookupId !==
+                                                    locationRequest.current
+                                            )
+                                                return;
+
+                                            const request =
+                                                ++locationRequest.current;
                                             setLocationMessage('');
+                                            setReverseLookup(
+                                                address === undefined
+                                                    ? request
+                                                    : null,
+                                            );
+                                            setManualPoint(
+                                                address === undefined,
+                                            );
                                             setData((current) => ({
                                                 ...current,
                                                 pickup_lat: latitude,
                                                 pickup_lng: longitude,
-                                                pickup_address:
-                                                    address ??
-                                                    current.pickup_address,
+                                                pickup_address: address ?? '',
                                             }));
                                         }}
                                     />
@@ -192,6 +215,7 @@ export default function EditPublicProfile({
                                             }
                                             const request =
                                                 ++locationRequest.current;
+                                            setReverseLookup(null);
                                             setLocationMessage(
                                                 'Obteniendo ubicación…',
                                             );
@@ -202,8 +226,11 @@ export default function EditPublicProfile({
                                                         locationRequest.current
                                                     )
                                                         return;
+                                                    setManualPoint(true);
+                                                    setReverseLookup(request);
                                                     setData((current) => ({
                                                         ...current,
+                                                        pickup_address: '',
                                                         pickup_lat:
                                                             position.coords.latitude.toFixed(
                                                                 7,
@@ -214,7 +241,7 @@ export default function EditPublicProfile({
                                                             ),
                                                     }));
                                                     setLocationMessage(
-                                                        'Ubicación obtenida. Guarda los cambios para publicarla.',
+                                                        'Ubicación obtenida. Si la dirección queda vacía, escríbela antes de guardar.',
                                                     );
                                                 },
                                                 () => {

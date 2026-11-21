@@ -85,6 +85,34 @@ class SystemSettings
         return filled($fieldDefault) ? $fieldDefault : $default;
     }
 
+    /**
+     * Resolve settings that need to reflect database edits during a request.
+     *
+     * @param  list<string>  $keys
+     * @return array<string, mixed>
+     */
+    public static function currentValues(array $keys): array
+    {
+        try {
+            $stored = Setting::query()
+                ->whereIn('key', $keys)
+                ->get(['key', 'value', 'is_encrypted'])
+                ->pluck('value', 'key');
+        } catch (Throwable) {
+            $stored = collect();
+        }
+
+        $values = [];
+
+        foreach ($keys as $key) {
+            $values[$key] = filled($stored->get($key))
+                ? $stored->get($key)
+                : self::effectiveValue($key);
+        }
+
+        return $values;
+    }
+
     public static function has(string $key): bool
     {
         return filled(self::get($key));

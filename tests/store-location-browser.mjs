@@ -74,15 +74,15 @@ try {
         await evaluate(`navigator.geolocation.getCurrentPosition = success => success({coords: {latitude: -33.456789, longitude: -70.654321}});
             [...document.querySelectorAll('button')].find(button => button.textContent.includes('Usar mi ubicación')).click()`);
         await waitFor(
-            'document.querySelector("[role=status]").textContent.includes("Guarda los cambios")',
+            'document.querySelector("[role=status]").textContent.includes("Ubicación obtenida")',
             'GPS obtenido',
         );
         await evaluate(`const field = document.querySelector('#pickup_address');
             Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(field, 'Nueva calle');
             field.dispatchEvent(new Event('input', {bubbles: true}));`);
         await waitFor(
-            'document.querySelector("[data-testid=store-map-readiness]").textContent.includes("selecciona la dirección")',
-            'aviso de ubicación incompleta',
+            'document.querySelector("[data-testid=store-map-readiness]").textContent.includes("Datos completos")',
+            'GPS con dirección ingresada manualmente',
         );
         await evaluate(`document.querySelector('[role=switch]').click()`);
         await waitFor(
@@ -110,7 +110,11 @@ try {
             trigger(instance, name, value) { instance.listeners?.[name]?.(value); }
         };
         function sdkObject() {
-            return new Proxy({listeners: {}, mapTypes: {set() {}}}, { get(target, property) {
+            return new Proxy({
+                listeners: {}, mapTypes: {set() {}},
+                setCenter(center) { this.center = center; },
+                setPosition(position) { this.position = position; },
+            }, { get(target, property) {
                 if (property in target) return target[property];
                 return () => {};
             }});
@@ -118,7 +122,8 @@ try {
         window.google = {maps: {version: 'test', event: events,
             Map: function() { return window.testStoreMap = sdkObject(); },
             Marker: function() { return window.testStoreMarker = sdkObject(); },
-            Geocoder: function() { this.geocode = async () => {
+            Geocoder: function() { this.geocode = async ({ location }) => {
+                if (location) return {results: [{formatted_address: "Punto " + location.lat}]};
                 if (window.testGeocodingFails) throw new Error('REQUEST_DENIED');
                 return {results: [
                     {place_id: 'first', formatted_address: 'Primera calle 123', geometry: {location: {lat: () => -33.41, lng: () => -70.61}}},
@@ -133,13 +138,38 @@ try {
         '!!document.querySelector("[data-testid=store-location-map]") && !!window.testStoreMarker',
         'mapa configurado',
     );
+    assert.equal(
+        await evaluate('document.querySelector("#pickup_address").value'),
+        'Comercio 123',
+    );
     await evaluate(
         `google.maps.event.trigger(window.testStoreMap, 'click', {latLng: {lat: () => -33.48, lng: () => -70.69}})`,
     );
     await waitFor(
-        'document.querySelector("[data-testid=store-location-map]").textContent.includes("Punto de retiro seleccionado")',
-        'seleccionar punto en mapa',
+        'document.querySelector("#pickup_address").value === "Punto -33.48"',
+        'geocodificar clic',
     );
+    await evaluate(
+        `google.maps.event.trigger(window.testStoreMarker, 'dragend', {latLng: {lat: () => -33.49, lng: () => -70.70}})`,
+    );
+    await waitFor(
+        'document.querySelector("#pickup_address").value === "Punto -33.49"',
+        'geocodificar arrastre',
+    );
+    await evaluate(`navigator.geolocation.getCurrentPosition = success => success({coords: {latitude: -33.456789, longitude: -70.654321}});
+        [...document.querySelectorAll('button')].find(button => button.textContent.includes('Usar mi ubicación')).click()`);
+    await waitFor(
+        'document.querySelector("#pickup_address").value === "Punto -33.456789"',
+        'geocodificar GPS',
+    );
+    assert.deepEqual(await evaluate('window.testStoreMap.center'), {
+        lat: -33.456789,
+        lng: -70.654321,
+    });
+    assert.deepEqual(await evaluate('window.testStoreMarker.position'), {
+        lat: -33.456789,
+        lng: -70.654321,
+    });
     await evaluate(
         `[...document.querySelectorAll('button')].find(button => button.textContent.includes('Buscar dirección en Google Maps')).click()`,
     );
@@ -149,7 +179,7 @@ try {
     );
     assert.equal(
         await evaluate('document.querySelector("#pickup_address").value'),
-        'Comercio 123',
+        'Punto -33.456789',
     );
     await evaluate(
         'document.querySelectorAll("[data-testid=store-location-map] ul button")[1].click()',
@@ -167,6 +197,11 @@ try {
     assert.equal(
         await evaluate('document.querySelector("#pickup_address").value'),
         'Segunda calle 789',
+    );
+    await evaluate('window.gm_authFailure()');
+    await waitFor(
+        'document.querySelector("main").textContent.includes("Google Maps rechaz")',
+        'clave rechazada',
     );
     assert.equal(browser.exceptions.length, 0, browser.exceptions.join('\n'));
     console.log(

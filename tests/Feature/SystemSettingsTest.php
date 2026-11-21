@@ -1,13 +1,13 @@
 <?php
 
-use App\Livewire\SystemSettingsPage;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Livewire\SystemSettingsPage;
 use App\Models\Setting;
 use App\Models\User;
 use App\Support\SystemSettings;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Http\Request;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
 
@@ -90,8 +90,33 @@ test('solo comparte la clave Maps publica con el navegador', function () {
     $shared = app(HandleInertiaRequests::class)->share($request);
 
     expect($shared['client_config']['google_maps_api_key'])->toBe('browser-public-key')
+        ->and($shared['client_config']['google_maps_api_key_conflict'])->toBeFalse()
         ->and(json_encode($shared))->not->toContain('server-only-secret');
 });
+
+test('la tienda recibe la clave de navegador vigente en la base de datos', function (string $override) {
+    config([
+        'services.frontend.google_maps_api_key' => 'old-browser-key',
+        'services.google.maps_api_key' => 'server-runtime-key',
+    ]);
+
+    SystemSettings::save([
+        SystemSettings::DB_OVERRIDE_KEY => ['value' => $override, 'group' => 'database'],
+        'GOOGLE_MAPS_API_KEY' => ['value' => 'server-db-key', 'secret' => true, 'group' => 'app'],
+        'VITE_GOOGLE_MAPS_API_KEY' => ['value' => 'current-browser-key', 'secret' => true, 'group' => 'app'],
+    ]);
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('public-profile.edit'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('settings/public-profile')
+            ->where('client_config.google_maps_api_key', 'current-browser-key')
+            ->where('client_config.google_maps_api_key_conflict', false)
+        )
+        ->assertDontSee('server-runtime-key')
+        ->assertDontSee('server-db-key');
+})->with(['0', '1']);
 
 test('no comparte con el navegador una clave Maps reutilizada por el servidor', function () {
     SystemSettings::save([
@@ -104,6 +129,7 @@ test('no comparte con el navegador una clave Maps reutilizada por el servidor', 
     $shared = app(HandleInertiaRequests::class)->share($request);
 
     expect($shared['client_config']['google_maps_api_key'])->toBeNull()
+        ->and($shared['client_config']['google_maps_api_key_conflict'])->toBeTrue()
         ->and(json_encode($shared))->not->toContain('same-key');
 });
 

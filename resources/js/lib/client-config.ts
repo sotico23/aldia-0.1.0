@@ -1,6 +1,7 @@
-type ClientConfig = {
+export type ClientConfig = {
     app_name?: string;
     google_maps_api_key?: string | null;
+    google_maps_api_key_conflict?: boolean;
     reverb?: {
         key?: string | null;
         host?: string | null;
