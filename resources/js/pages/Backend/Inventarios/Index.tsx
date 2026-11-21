@@ -195,6 +195,10 @@ export default function Index({
     ventasPorFecha?: { fecha: string; ventas: number }[];
     ventasPorAlmacen?: { fecha: string; almacen: string; cantidad: number }[];
 }) {
+    const maxStockMagnitude = Math.max(
+        1,
+        ...productosTopStock.map(({ stock }) => Math.abs(stock)),
+    );
     const { hasPermission } = usePermissions();
     const canCreate = hasPermission('inventario.inventarios.create');
     const canEdit = hasPermission('inventario.inventarios.edit');
@@ -365,7 +369,7 @@ export default function Index({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Control de Stock e Inventario" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
                 {/* Header Section with Quick Stats */}
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
@@ -411,7 +415,7 @@ export default function Index({
                 </div>
 
                 {/* Charts Section */}
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-4">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-4">
                     {/* Stock por Bodega */}
                     <Card className="border-none shadow-lg">
                         <CardHeader className="pb-2">
@@ -514,36 +518,49 @@ export default function Index({
                                 Top 10 Productos (Mayor Stock)
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="h-48">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart
-                                    data={productosTopStock}
-                                    layout="vertical"
-                                >
-                                    <CartesianGrid
-                                        strokeDasharray="3 3"
-                                        className="stroke-muted"
-                                    />
-                                    <XAxis
-                                        type="number"
-                                        tick={{ fontSize: 10 }}
-                                        className="fill-muted-foreground"
-                                    />
-                                    <YAxis
-                                        dataKey="nombre"
-                                        type="category"
-                                        tick={{ fontSize: 9 }}
-                                        className="fill-muted-foreground"
-                                        width={80}
-                                    />
-                                    <RechartsTooltip />
-                                    <Bar
-                                        dataKey="stock"
-                                        fill="#10b981"
-                                        radius={[0, 4, 4, 0]}
-                                    />
-                                </BarChart>
-                            </ResponsiveContainer>
+                        <CardContent>
+                            {productosTopStock.length > 0 ? (
+                                <ol role="list" className="space-y-3">
+                                    {productosTopStock.map(
+                                        ({ nombre, stock }, index) => (
+                                            <li
+                                                key={index}
+                                                className="space-y-1"
+                                            >
+                                                <div className="flex items-start justify-between gap-2 text-xs leading-snug">
+                                                    <span className="wrap-anywhere">
+                                                        {nombre}
+                                                    </span>
+                                                    <span className="shrink-0 font-semibold tabular-nums">
+                                                        {stock.toLocaleString(
+                                                            'es-CL',
+                                                        )}
+                                                    </span>
+                                                </div>
+                                                <div
+                                                    aria-hidden="true"
+                                                    className="h-1.5 overflow-hidden rounded-full bg-muted"
+                                                >
+                                                    <div
+                                                        className={
+                                                            stock < 0
+                                                                ? 'h-full rounded-full bg-destructive'
+                                                                : 'h-full rounded-full bg-emerald-500'
+                                                        }
+                                                        style={{
+                                                            width: `${(Math.abs(stock) / maxStockMagnitude) * 100}%`,
+                                                        }}
+                                                    />
+                                                </div>
+                                            </li>
+                                        ),
+                                    )}
+                                </ol>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">
+                                    Sin productos para mostrar
+                                </p>
+                            )}
                         </CardContent>
                     </Card>
 
@@ -597,12 +614,12 @@ export default function Index({
                     {/* Table Section */}
                     <Card className="overflow-hidden border-none shadow-xl shadow-foreground/5 lg:col-span-2">
                         <CardHeader className="bg-gradient-to-r from-muted/50 to-transparent pb-4">
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
                                     <Boxes className="h-5 w-5 text-primary" />
                                     <CardTitle>Listado Consolidado</CardTitle>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
                                     <div className="flex items-center gap-1 rounded-lg border bg-background/50 p-0.5">
                                         <Button
                                             variant={
@@ -648,12 +665,12 @@ export default function Index({
                                         className="h-10 border-none bg-background/50 pr-10 pl-10 focus-visible:ring-primary/20"
                                     />
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex min-w-0 flex-wrap gap-2">
                                     <Select
                                         value={almacenFilter}
                                         onValueChange={setAlmacenFilter}
                                     >
-                                        <SelectTrigger className="h-10 w-full border-none bg-background/50 font-bold sm:w-[180px]">
+                                        <SelectTrigger className="h-10 min-w-0 flex-1 border-none bg-background/50 font-bold sm:w-[180px] sm:flex-none">
                                             <SelectValue placeholder="Bodega" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -1218,7 +1235,7 @@ export default function Index({
                                     )}
                                 </div>
                             )}
-                            <div className="border-t border-muted/50 p-4">
+                            <div className="overflow-x-auto border-t border-muted/50 p-4 [&_nav]:flex-wrap [&_nav]:justify-center">
                                 <Pagination
                                     links={inventarios.links}
                                     meta={inventarios.meta || inventarios}
@@ -1255,7 +1272,7 @@ export default function Index({
                                         </p>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] gap-4">
                                         <div className="rounded-2xl border border-muted/20 bg-background/40 p-4 backdrop-blur-sm transition-all hover:border-primary/30">
                                             <p className="mb-1 text-[10px] font-black text-muted-foreground uppercase">
                                                 Ventas Diarias (Avg)

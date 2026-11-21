@@ -33,6 +33,7 @@ test('inventarios index only sums stock of the authenticated owner', function ()
         'user_id' => $owner->id,
         'owner_id' => $owner->getOwnerId(),
         'categoria_id' => $categoria->id,
+        'nombre' => 'Deslizadores para muebles con adhesivo de alta resistencia',
         'activo' => true,
         'is_service' => false,
     ]);
@@ -60,5 +61,8 @@ test('inventarios index only sums stock of the authenticated owner', function ()
     $response->assertInertia(fn (Assert $page) => $page
         ->where('inventarios.data.0.id', $producto->id)
         ->where('inventarios.data.0.total_stock', 50)
+        ->has('productosTopStock', 1)
+        ->where('productosTopStock.0.nombre', $producto->nombre)
+        ->where('productosTopStock.0.stock', 50)
     );
 });
