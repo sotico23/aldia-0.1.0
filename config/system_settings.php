@@ -79,7 +79,7 @@ return [
                     'type' => 'password',
                     'secret' => true,
                     'config' => ['services.frontend.google_maps_api_key'],
-                    'help' => 'Se entrega al navegador como configuración pública. Restringe esta clave en Google Cloud.',
+                    'help' => 'Debe ser distinta de la clave del servidor. Se entrega al navegador como configuración pública; restríngela por dominio y API en Google Cloud.',
                 ],
             ],
         ],

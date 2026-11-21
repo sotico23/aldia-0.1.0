@@ -1,11 +1,13 @@
 <?php
 
 use App\Livewire\SystemSettingsPage;
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Setting;
 use App\Models\User;
 use App\Support\SystemSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Request;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
 
@@ -33,6 +35,76 @@ test('guarda valores sensibles cifrados y los descifra al leerlos', function () 
     expect($raw)->not->toBe('super-secret-smtp')
         ->and(SystemSettings::get('MAIL_PASSWORD'))->toBe('super-secret-smtp')
         ->and(SystemSettings::get('MAIL_HOST'))->toBe('smtp.example.com');
+});
+
+test('resuelve las claves de Google Maps desde la base de datos o la configuracion', function () {
+    config([
+        'services.google.maps_api_key' => 'server-env-key',
+        'services.frontend.google_maps_api_key' => 'frontend-env-key',
+    ]);
+
+    expect(SystemSettings::effectiveValue('GOOGLE_MAPS_API_KEY'))->toBe('server-env-key')
+        ->and(SystemSettings::effectiveValue('VITE_GOOGLE_MAPS_API_KEY'))->toBe('frontend-env-key');
+
+    SystemSettings::save([
+        'GOOGLE_MAPS_API_KEY' => ['value' => 'server-db-key', 'secret' => true, 'group' => 'app'],
+        'VITE_GOOGLE_MAPS_API_KEY' => ['value' => 'frontend-db-key', 'secret' => true, 'group' => 'app'],
+    ]);
+
+    expect(SystemSettings::effectiveValue('GOOGLE_MAPS_API_KEY'))->toBe('server-db-key')
+        ->and(SystemSettings::effectiveValue('VITE_GOOGLE_MAPS_API_KEY'))->toBe('frontend-db-key');
+});
+
+test('cifra las claves Maps y conserva las existentes al guardar campos vacios', function () {
+    SystemSettings::save([
+        'GOOGLE_MAPS_API_KEY' => ['value' => 'server-secret', 'secret' => true, 'group' => 'app'],
+        'VITE_GOOGLE_MAPS_API_KEY' => ['value' => 'frontend-public-key', 'secret' => true, 'group' => 'app'],
+    ]);
+
+    foreach (['GOOGLE_MAPS_API_KEY' => 'server-secret', 'VITE_GOOGLE_MAPS_API_KEY' => 'frontend-public-key'] as $key => $plainText) {
+        $setting = Setting::query()->where('key', $key)->firstOrFail();
+        $raw = DB::table('settings')->where('key', $key)->value('value');
+
+        expect($setting->is_encrypted)->toBeTrue()
+            ->and($raw)->not->toBe($plainText);
+    }
+
+    Livewire::test(SystemSettingsPage::class)
+        ->set('secrets.GOOGLE_MAPS_API_KEY', '')
+        ->set('secrets.VITE_GOOGLE_MAPS_API_KEY', '')
+        ->call('save', 'app')
+        ->assertHasNoErrors();
+
+    expect(SystemSettings::effectiveValue('GOOGLE_MAPS_API_KEY'))->toBe('server-secret')
+        ->and(SystemSettings::effectiveValue('VITE_GOOGLE_MAPS_API_KEY'))->toBe('frontend-public-key');
+});
+
+test('solo comparte la clave Maps publica con el navegador', function () {
+    SystemSettings::save([
+        'GOOGLE_MAPS_API_KEY' => ['value' => 'server-only-secret', 'secret' => true, 'group' => 'app'],
+        'VITE_GOOGLE_MAPS_API_KEY' => ['value' => 'browser-public-key', 'secret' => true, 'group' => 'app'],
+    ]);
+
+    $request = Request::create('/');
+    $request->setLaravelSession(app('session')->driver());
+    $shared = app(HandleInertiaRequests::class)->share($request);
+
+    expect($shared['client_config']['google_maps_api_key'])->toBe('browser-public-key')
+        ->and(json_encode($shared))->not->toContain('server-only-secret');
+});
+
+test('no comparte con el navegador una clave Maps reutilizada por el servidor', function () {
+    SystemSettings::save([
+        'GOOGLE_MAPS_API_KEY' => ['value' => 'same-key', 'secret' => true, 'group' => 'app'],
+        'VITE_GOOGLE_MAPS_API_KEY' => ['value' => 'same-key', 'secret' => true, 'group' => 'app'],
+    ]);
+
+    $request = Request::create('/');
+    $request->setLaravelSession(app('session')->driver());
+    $shared = app(HandleInertiaRequests::class)->share($request);
+
+    expect($shared['client_config']['google_maps_api_key'])->toBeNull()
+        ->and(json_encode($shared))->not->toContain('same-key');
 });
 
 test('inyecta los valores almacenados en la configuracion de laravel', function () {

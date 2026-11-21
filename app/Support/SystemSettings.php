@@ -62,6 +62,29 @@ class SystemSettings
         return array_key_exists($key, $values) ? $values[$key] : $default;
     }
 
+    public static function effectiveValue(string $key, mixed $default = null): mixed
+    {
+        $value = self::get($key);
+
+        if (filled($value)) {
+            return $value;
+        }
+
+        $field = self::fields()[$key] ?? [];
+
+        foreach ((array) ($field['config'] ?? []) as $target) {
+            $configured = config($target);
+
+            if (filled($configured)) {
+                return $configured;
+            }
+        }
+
+        $fieldDefault = $field['default'] ?? null;
+
+        return filled($fieldDefault) ? $fieldDefault : $default;
+    }
+
     public static function has(string $key): bool
     {
         return filled(self::get($key));

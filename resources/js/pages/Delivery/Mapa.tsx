@@ -73,10 +73,7 @@ export default function MapaRepartidor({
     pool,
     activos,
 }: Props) {
-    const googleMapsApiKey =
-        clientConfig.google_maps_api_key ??
-        import.meta.env.VITE_GOOGLE_MAPS_API_KEY ??
-        '';
+    const googleMapsApiKey = clientConfig.google_maps_api_key ?? '';
     const { isLoaded } = useJsApiLoader({
         id: 'repartidor-map',
         googleMapsApiKey,

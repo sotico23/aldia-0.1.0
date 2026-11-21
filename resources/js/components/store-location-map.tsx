@@ -16,10 +16,7 @@ export default function StoreLocationMap(props: Props) {
             typeof window !== 'undefined' &&
             typeof window.google?.maps?.Map === 'function',
     );
-    const apiKey =
-        clientConfig.google_maps_api_key ??
-        import.meta.env.VITE_GOOGLE_MAPS_API_KEY ??
-        '';
+    const apiKey = clientConfig.google_maps_api_key ?? '';
     if (!apiKey) {
         return (
             <p

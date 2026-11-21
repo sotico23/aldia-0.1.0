@@ -162,10 +162,7 @@ export default function Index({
     rendimiento,
     historial,
 }: Props) {
-    const googleMapsApiKey =
-        clientConfig.google_maps_api_key ??
-        import.meta.env.VITE_GOOGLE_MAPS_API_KEY ??
-        '';
+    const googleMapsApiKey = clientConfig.google_maps_api_key ?? '';
     const mapConfigured = Boolean(googleMapsApiKey);
     const { isLoaded } = useJsApiLoader({
         id: 'zonas-reparto-map',

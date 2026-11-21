@@ -38,10 +38,7 @@ export default function MapaVehiculos({
 }: {
     vehiculos: Vehiculo[];
 }) {
-    const googleMapsApiKey =
-        clientConfig.google_maps_api_key ??
-        import.meta.env.VITE_GOOGLE_MAPS_API_KEY ??
-        '';
+    const googleMapsApiKey = clientConfig.google_maps_api_key ?? '';
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey,

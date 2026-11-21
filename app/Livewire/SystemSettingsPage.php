@@ -112,11 +112,12 @@ class SystemSettingsPage extends Component
             return;
         }
 
-        $stored = SystemSettings::values();
         $values = [];
 
         foreach ($fields as $key => $field) {
-            $value = array_key_exists($key, $entries) ? $entries[$key]['value'] : ($stored[$key] ?? null);
+            $value = array_key_exists($key, $entries)
+                ? $entries[$key]['value']
+                : SystemSettings::effectiveValue($key);
             $target = $field['config'][0] ?? null;
             $values[$key] = $value ?? $field['default'] ?? ($target === null ? null : config($target));
         }

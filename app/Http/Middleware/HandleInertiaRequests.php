@@ -9,6 +9,7 @@ use App\Models\Message;
 use App\Models\Pedido;
 use App\Models\WebSetting;
 use App\Scopes\OwnerScope;
+use App\Support\SystemSettings;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -27,6 +28,12 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
         $authData = null;
         $countrySettings = $this->getCountrySettings($request);
+        $serverMapsKey = SystemSettings::effectiveValue('GOOGLE_MAPS_API_KEY');
+        $frontendMapsKey = SystemSettings::effectiveValue('VITE_GOOGLE_MAPS_API_KEY');
+        $googleMapsBrowserKey = is_string($frontendMapsKey) && $frontendMapsKey !== ''
+            && (! is_string($serverMapsKey) || $serverMapsKey === '' || ! hash_equals($serverMapsKey, $frontendMapsKey))
+                ? $frontendMapsKey
+                : null;
 
         if ($user) {
             $unreadMessages = $this->getCachedUnreadMessages($user->id);
@@ -70,7 +77,7 @@ class HandleInertiaRequests extends Middleware
             'name' => $webSettings['app_name'] ?? config('app.name', 'Al Dia'),
             'client_config' => [
                 'app_name' => config('services.frontend.app_name', config('app.name', 'Laravel')),
-                'google_maps_api_key' => config('services.frontend.google_maps_api_key'),
+                'google_maps_api_key' => $googleMapsBrowserKey,
                 'reverb' => [
                     'key' => config('services.frontend.reverb.key', ''),
                     'host' => config('services.frontend.reverb.host', ''),
