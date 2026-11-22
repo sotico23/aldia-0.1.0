@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\BelongsToOwner;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -58,5 +59,21 @@ class PublicProfile extends Model
     public function productos(): HasMany
     {
         return $this->hasMany(Producto::class, 'public_profile_id');
+    }
+
+    public function reactions(): HasMany
+    {
+        return $this->hasMany(StoreReaction::class);
+    }
+
+    public function scopeWithReactionStats(Builder $query): Builder
+    {
+        $ratings = fn (Builder $query) => $query->whereBetween('rating', [1, 5]);
+
+        return $query->withCount([
+            'reactions as likes_count' => fn (Builder $query) => $query->where('like', StoreReaction::LIKE),
+            'reactions as dislikes_count' => fn (Builder $query) => $query->where('like', StoreReaction::DISLIKE),
+            'reactions as rating_count' => $ratings,
+        ])->withSum(['reactions as rating_total' => $ratings], 'rating');
     }
 }

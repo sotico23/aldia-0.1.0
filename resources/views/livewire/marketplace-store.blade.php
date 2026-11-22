@@ -56,35 +56,57 @@
                         @endif
                     </h1>
 
-                    <div class="mt-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-slate-500 sm:justify-start">
-                        <span class="inline-flex items-center gap-1">
-                            <svg class="h-4 w-4 text-amber-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.91c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.98 9.1c-.784-.57-.38-1.81.588-1.81h4.91a1 1 0 00.95-.69l1.62-4.674z"/>
-                            </svg>
+                    @php
+                        $valoracionActual = (int) ($userReaction->rating ?? 0);
+                        $reaccionActual = (int) ($userReaction->like ?? 0);
+                    @endphp
+                    <div class="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-slate-500 sm:justify-start">
+                        <div class="inline-flex items-center" role="group" aria-label="Valorar tienda">
+                            @foreach (range(1, 5) as $estrella)
+                                <button
+                                    type="button"
+                                    wire:click="valorar({{ $estrella }})"
+                                    wire:loading.attr="disabled"
+                                    @disabled(! $usuarioAutenticado)
+                                    aria-label="{{ $estrella }} {{ $estrella === 1 ? 'estrella' : 'estrellas' }}"
+                                    aria-pressed="{{ $valoracionActual === $estrella ? 'true' : 'false' }}"
+                                    class="inline-flex size-8 items-center justify-center rounded hover:text-amber-500 disabled:cursor-not-allowed {{ $estrella <= $valoracionActual ? 'text-amber-500' : 'text-slate-400' }}"
+                                >
+                                    <svg class="size-4" viewBox="0 0 20 20" fill="{{ $estrella <= $valoracionActual ? 'currentColor' : 'none' }}" stroke="currentColor" aria-hidden="true">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.91c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.98 9.1c-.784-.57-.38-1.81.588-1.81h4.91a1 1 0 00.95-.69l1.62-4.674z"/>
+                                    </svg>
+                                </button>
+                            @endforeach
+                        </div>
+                        <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1" aria-live="polite">
                             <span class="font-semibold text-slate-700">{{ $promedio }}</span>
-                            <span>({{ $store->rating_count }} opiniones)</span>
-                        </span>
-                        <span class="inline-flex items-center gap-1">
-                            <svg class="h-4 w-4 text-rose-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/>
-                            </svg>
-                            {{ $store->likes_count }} me gusta
-                        </span>
+                            <span>{{ $store->rating_count ?? 0 }} {{ $store->rating_count === 1 ? 'valoración' : 'valoraciones' }}</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex w-full shrink-0 items-center justify-center gap-2 sm:w-auto sm:pb-2">
-                    <button
-                        type="button"
-                        wire:click="darMeGusta"
-                        @disabled(! $usuarioAutenticado)
-                        class="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-100 px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
-                        </svg>
-                        Me gusta
-                    </button>
+                <div class="flex w-full shrink-0 flex-wrap items-center justify-center gap-2 sm:w-auto sm:pb-2">
+                    @foreach ([1 => 'Me gusta', -1 => 'No me gusta'] as $reaccion => $etiqueta)
+                        <button
+                            type="button"
+                            wire:click="reaccionar({{ $reaccionActual === $reaccion ? 0 : $reaccion }})"
+                            wire:loading.attr="disabled"
+                            @disabled(! $usuarioAutenticado)
+                            aria-pressed="{{ $reaccionActual === $reaccion ? 'true' : 'false' }}"
+                            class="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 {{ $reaccionActual === $reaccion ? 'bg-slate-200 text-slate-900' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}"
+                        >
+                            @if ($reaccion === 1)
+                                <svg class="h-4 w-4" fill="{{ $reaccionActual === 1 ? 'currentColor' : 'none' }}" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
+                                </svg>
+                            @else
+                                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 3v12m0-12H3v12h4m0-12h12a2 2 0 0 1 2 2.3l-1.5 9a2 2 0 0 1-2 1.7H14l.5 3a2 2 0 0 1-2 2h-.5L7 15"/>
+                                </svg>
+                            @endif
+                            <span aria-live="polite">{{ $reaccion === 1 ? ($store->likes_count ?? 0) : ($store->dislikes_count ?? 0) }} {{ $etiqueta }}</span>
+                        </button>
+                    @endforeach
 
                     <a
                         href="{{ route('chat.start', $store->slug) }}"

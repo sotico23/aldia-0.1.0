@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use App\Models\ClienteFrecuente;
 use App\Models\User;
+use App\Models\Wallet;
 use App\Models\WalletPaymentRequest;
+use App\Models\WalletTransfer;
 use App\Services\WalletService;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -78,9 +81,11 @@ class CajeroWalletController extends Controller
                         ? $payment->requesterWallet->user->name : ($payment->payerWallet?->user?->name ?? 'Enlace de pago compartible'),
                     'created_at' => $payment->created_at->toIso8601String(),
                 ]),
+            'refunds' => fn () => $this->refunds($user, $wallet),
             'wallet' => [
                 'id' => $wallet->id,
                 'account_number' => $wallet->account_number,
+                'username' => $wallet->username,
                 'user_id' => $wallet->user_id,
                 'balance' => $saldo,
                 'currency' => (string) $wallet->currency,
@@ -101,5 +106,47 @@ class CajeroWalletController extends Controller
             ],
             'moneda' => (string) ($user->country ?? 'CLP'),
         ]);
+    }
+
+    private function refunds(User $user, Wallet $wallet): LengthAwarePaginator
+    {
+        $support = $user->hasAnyRole(['Master', 'Super Admin']);
+
+        return WalletTransfer::query()
+            ->where(function ($query) use ($wallet, $support): void {
+                $query->where('sender_wallet_id', $wallet->id)->orWhere('recipient_wallet_id', $wallet->id);
+                if ($support) {
+                    $query->orWhere('refund_status', 'escalated');
+                }
+            })
+            ->with(['senderWallet.user:id,name', 'recipientWallet.user:id,name'])
+            ->orderByRaw("CASE WHEN refund_status = 'escalated' THEN 0 WHEN refund_status = 'pending' THEN 1 ELSE 2 END")
+            ->latest('id')->paginate(10, ['*'], 'refunds_page')->withQueryString()
+            ->through(function (WalletTransfer $transfer) use ($wallet, $support): array {
+                $sent = (int) $transfer->sender_wallet_id === (int) $wallet->id;
+                $received = (int) $transfer->recipient_wallet_id === (int) $wallet->id;
+                $sender = $transfer->senderWallet->user->name;
+                $recipient = $transfer->recipientWallet->user->name;
+
+                return [
+                    'id' => $transfer->id,
+                    'amount' => $transfer->amount,
+                    'currency' => $transfer->currency,
+                    'note' => $transfer->note,
+                    'created_at' => $transfer->created_at?->toIso8601String(),
+                    'counterparty' => match (true) {
+                        $sent => $recipient,
+                        $received => $sender,
+                        default => $sender.' → '.$recipient,
+                    },
+                    'refund_status' => $transfer->refund_status,
+                    'refund_reason' => $transfer->refund_reason,
+                    'refund_response' => $transfer->refund_response,
+                    'can_request' => $sent && $transfer->refund_status === null,
+                    'can_respond' => $received && $transfer->refund_status === 'pending',
+                    'can_escalate' => $sent && $transfer->canEscalateRefund(),
+                    'can_review' => $support && ! $sent && ! $received && $transfer->refund_status === 'escalated',
+                ];
+            });
     }
 }

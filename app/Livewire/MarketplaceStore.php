@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Almacen;
 use App\Models\Categoria;
 use App\Models\PaymentConfig;
+use App\Models\Pedido;
 use App\Models\Producto;
 use App\Models\PublicProfile;
 use App\Models\StoreReaction;
@@ -14,10 +15,12 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class MarketplaceStore extends Component
 {
+    #[Locked]
     public string $slug;
 
     public string $tabActivo = 'productos';
@@ -125,28 +128,36 @@ class MarketplaceStore extends Component
         $this->persistirCarrito();
     }
 
-    public function darMeGusta(): void
+    public function reaccionar(int $reaction): void
     {
-        $store = $this->store();
-
-        if (! $store || ! Auth::check()) {
+        if (! in_array($reaction, [StoreReaction::LIKE, StoreReaction::NEUTRAL, StoreReaction::DISLIKE], true)) {
             return;
         }
 
-        $reaccion = StoreReaction::firstOrNew([
-            'user_id' => Auth::id(),
-            'public_profile_id' => $store->id,
-        ]);
+        $this->guardarReaccion(['like' => $reaction]);
+    }
 
-        $reaccion->like = $reaccion->like ? 0 : 1;
-        $reaccion->save();
+    public function valorar(int $rating): void
+    {
+        if ($rating < 1 || $rating > 5) {
+            return;
+        }
 
-        $store->likes_count = StoreReaction::where('public_profile_id', $store->id)
-            ->where('like', 1)
-            ->count();
-        $store->save();
+        $this->guardarReaccion(['rating' => $rating]);
+    }
 
-        $this->storeCache = $store;
+    /** @param array{like?: int, rating?: int} $vote */
+    private function guardarReaccion(array $vote): void
+    {
+        $userId = Auth::id();
+        $store = $this->store();
+
+        if ($userId === null || ! $store) {
+            return;
+        }
+
+        StoreReaction::saveVote($store->id, $userId, $vote);
+        $this->storeCache = null;
     }
 
     public function guardarOpinion(): void
@@ -181,6 +192,7 @@ class MarketplaceStore extends Component
         }
 
         return $this->storeCache = PublicProfile::withoutGlobalScope(OwnerScope::class)
+            ->withReactionStats()
             ->where('slug', $this->slug)
             ->where('is_active', true)
             ->with(['user', 'categorias' => function ($query) {
@@ -311,7 +323,7 @@ class MarketplaceStore extends Component
         $store = $this->store();
 
         if (! $store || $store->rating_count <= 0) {
-            return '5.0';
+            return 'Sin valoraciones';
         }
 
         return number_format($store->rating_total / $store->rating_count, 1);
@@ -323,7 +335,7 @@ class MarketplaceStore extends Component
             return false;
         }
 
-        return \App\Models\Pedido::where('user_id', Auth::id())
+        return Pedido::where('user_id', Auth::id())
             ->where('public_profile_id', $store->id)
             ->exists();
     }
@@ -369,6 +381,7 @@ class MarketplaceStore extends Component
 
         return view('livewire.marketplace-store', [
             'store' => $store,
+            'userReaction' => Auth::check() ? $store->reactions()->where('user_id', Auth::id())->first() : null,
             'almacenes' => $this->almacenes(),
             'categorias' => $this->categorias(),
             'productos' => $this->productos(),

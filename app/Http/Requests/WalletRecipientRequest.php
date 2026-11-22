@@ -23,7 +23,8 @@ class WalletRecipientRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'account_number' => ['required', 'string', 'regex:/^[0-9]{16}$/'],
+            'username' => ['required_without:account_number', 'nullable', 'string', 'regex:/^@?(?=.*[a-z])[a-z0-9_]{3,30}$/iD'],
+            'account_number' => ['required_without:username', 'prohibits:username', 'nullable', 'string', 'regex:/^[0-9]{16}$/D'],
         ];
     }
 }

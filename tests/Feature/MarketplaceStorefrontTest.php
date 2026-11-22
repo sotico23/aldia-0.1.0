@@ -199,3 +199,64 @@ test('la ruta de todas las categorias lista las categorias visibles de la tienda
             ->where('categorias.0.nombre', 'Accesorios')
         );
 });
+
+test('la cabecera cuenta valoraciones y reacciones guardadas por usuario', function () {
+    $slug = $this->publicProfile->slug;
+
+    Livewire::actingAs($this->buyer)
+        ->test(MarketplaceStore::class, ['slug' => $slug])
+        ->assertSee('Sin valoraciones')
+        ->call('reaccionar', 1)
+        ->call('valorar', 5)
+        ->call('valorar', 5)
+        ->assertSee('1 Me gusta')
+        ->assertSee('1 valoración')
+        ->assertViewHas('promedio', '5.0')
+        ->call('valorar', 6)
+        ->assertViewHas('promedio', '5.0');
+
+    Livewire::actingAs($this->vendor)
+        ->test(MarketplaceStore::class, ['slug' => $slug])
+        ->call('valorar', 3)
+        ->call('reaccionar', 1)
+        ->assertSee('2 Me gusta')
+        ->assertSee('2 valoraciones')
+        ->assertViewHas('promedio', '4.0')
+        ->call('reaccionar', -1)
+        ->assertSee('1 Me gusta')
+        ->assertSee('1 No me gusta')
+        ->call('reaccionar', 0)
+        ->assertSee('0 No me gusta')
+        ->call('valorar', 1);
+
+    $this->get(route('marketplace.show', $slug))
+        ->assertSuccessful()
+        ->assertSee('1 Me gusta')
+        ->assertSee('0 No me gusta')
+        ->assertSee('2 valoraciones')
+        ->assertSee('3.0');
+
+    expect($this->publicProfile->reactions()->count())->toBe(2);
+});
+
+test('la tienda publica requiere una cuenta para votar', function () {
+    Livewire::test(MarketplaceStore::class, ['slug' => $this->publicProfile->slug])
+        ->call('reaccionar', -1)
+        ->call('valorar', 3)
+        ->assertSee('0 No me gusta')
+        ->assertSee('Sin valoraciones');
+
+    expect($this->publicProfile->reactions()->exists())->toBeFalse();
+});
+
+test('la ruta de reacciones actualiza estrellas y corazon en el mismo voto', function () {
+    $slug = $this->publicProfile->slug;
+    $this->actingAs($this->buyer)
+        ->from(route('marketplace.show', $slug))
+        ->post(route('marketplace.react', $slug), ['like' => true, 'rating' => 4])
+        ->assertRedirect(route('marketplace.show', $slug));
+
+    $reaction = $this->publicProfile->reactions()->sole();
+    expect((int) $reaction->like)->toBe(1)
+        ->and((int) $reaction->rating)->toBe(4);
+});

@@ -59,6 +59,7 @@ beforeEach(function () {
     DB::table('wallets')->insert(['user_id' => $this->sender->id, 'balance' => '100.00', 'currency' => 'CLP', 'status' => 'active', 'allow_overdraft' => false]);
     (require database_path('migrations/2026_11_18_205013_add_account_number_and_transfers_to_wallets.php'))->up();
     (require database_path('migrations/2026_11_18_211754_add_share_token_to_wallet_payment_requests.php'))->up();
+    (require database_path('migrations/2026_11_22_200106_add_usernames_and_refunds_to_wallets.php'))->up();
     $this->senderWallet = Wallet::where('user_id', $this->sender->id)->firstOrFail();
     $this->recipientWallet = Wallet::factory()->create(['user_id' => $this->recipient->id]);
     $this->service = app(WalletTransferService::class);
@@ -406,4 +407,67 @@ test('sharing a targeted request still restricts payment and details to its sele
     $this->actingAs($outsider)->get(route('billetera.enlaces.show', $payment->share_token))->assertForbidden();
     $this->actingAs($outsider)->postJson(route('billetera.enlaces.pay', $payment->share_token))->assertForbidden();
     $this->actingAs($this->sender)->withHeader('X-Inertia', 'true')->get(route('billetera.enlaces.show', $payment->share_token))->assertOk();
+});
+
+test('wallet usernames are unique and resolve the exact recipient before payment', function () {
+    $endpoint = route('billetera.usuario.update');
+    $this->actingAs($this->recipient)->put($endpoint, ['username' => '@Cuenta_123'])
+        ->assertRedirect()->assertSessionHasNoErrors();
+    expect($this->recipientWallet->fresh()->username)->toBe('cuenta_123');
+
+    $this->actingAs($this->sender)->put($endpoint, ['username' => 'CUENTA_123'])
+        ->assertSessionHasErrors('username');
+    $this->getJson(route('billetera.destinatario', ['username' => '@CUENTA_123']))
+        ->assertOk()->assertExactJson([
+            'account_number' => $this->recipientWallet->account_number,
+            'name' => $this->recipient->name,
+            'currency' => 'CLP',
+        ]);
+    $this->getJson(route('billetera.destinatario', ['username' => 'cuenta']))
+        ->assertUnprocessable()->assertJsonValidationErrors('username');
+    $this->actingAs($this->recipient)->getJson(route('billetera.destinatario', ['username' => 'cuenta_123']))
+        ->assertUnprocessable()->assertJsonValidationErrors('username');
+});
+
+test('refund disputes are scoped to the payer recipient and independent support', function () {
+    $transfer = $this->service->transfer($this->sender, $this->recipientWallet->account_number, '12.34', (string) Str::uuid());
+    $request = route('billetera.reembolsos.store', $transfer);
+    $resolve = route('billetera.reembolsos.resolve', $transfer);
+    $this->actingAs($this->recipient)->postJson($request, ['reason' => 'No entregado'])->assertForbidden();
+    $this->actingAs($this->sender)->post($request, ['reason' => 'No entregado'])->assertSessionHasNoErrors();
+    $this->postJson($resolve, ['decision' => 'accept'])->assertForbidden();
+    $this->postJson($resolve, ['decision' => 'escalate'])->assertUnprocessable();
+    $this->actingAs($this->recipient)->postJson($resolve, ['decision' => 'reject'])->assertUnprocessable();
+    $this->post($resolve, ['decision' => 'reject', 'response' => 'Entregado'])->assertSessionHasNoErrors();
+    expect($transfer->fresh()->refund_status)->toBe('rejected')
+        ->and($this->senderWallet->fresh()->balance)->toBe('87.66');
+
+    $support = User::withoutEvents(fn (): User => User::factory()->create());
+    $support->assignRole(Role::create(['name' => 'Master', 'guard_name' => 'web', 'level' => 0]));
+    $this->actingAs($support)->postJson($resolve, ['decision' => 'accept'])->assertUnprocessable();
+    $this->actingAs($this->sender)->post($resolve, ['decision' => 'escalate'])->assertSessionHasNoErrors();
+    $this->actingAs($support)->withHeader('X-Inertia', 'true')->get(route('cajero.billetera'))
+        ->assertOk()->assertJsonPath('props.refunds.data.0.can_review', true);
+    $this->flushHeaders();
+
+    $this->post($resolve, ['decision' => 'accept'])->assertSessionHasNoErrors();
+    $this->post($resolve, ['decision' => 'accept'])->assertSessionHasNoErrors();
+    expect($transfer->fresh()->refund_status)->toBe('refunded')
+        ->and($transfer->fresh()->refund_resolved_by)->toBe($support->id)
+        ->and($this->senderWallet->fresh()->balance)->toBe('100.00')
+        ->and($this->recipientWallet->fresh()->balance)->toBe('0.00')
+        ->and(WalletTransaction::where('category', 'refund')->where('reference_id', $transfer->id)->count())->toBe(2);
+});
+
+test('unanswered refunds can be escalated and insufficient funds preserve the claim', function () {
+    $transfer = $this->service->transfer($this->sender, $this->recipientWallet->account_number, '20', (string) Str::uuid());
+    $this->service->requestRefund($this->sender, $transfer, 'Producto no recibido');
+    $this->service->transfer($this->recipient, $this->senderWallet->account_number, '20', (string) Str::uuid());
+    expect(fn () => $this->service->resolveRefund($this->recipient, $transfer, 'accept', null))->toThrow(ValidationException::class);
+    expect($transfer->fresh()->refund_status)->toBe('pending')
+        ->and(WalletTransaction::where('category', 'refund')->count())->toBe(0);
+
+    $this->travel(3)->days();
+    $this->service->resolveRefund($this->sender, $transfer, 'escalate', null);
+    expect($transfer->fresh()->refund_status)->toBe('escalated');
 });

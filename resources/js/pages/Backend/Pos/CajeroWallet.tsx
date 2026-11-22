@@ -18,6 +18,9 @@ import type { ClienteFrecuente } from '@/components/wallet-frequent-clients';
 import WalletOperations, {
     type WalletPaymentRequests,
 } from '@/components/wallet-operations';
+import WalletRefunds, {
+    type WalletRefundsPage,
+} from '@/components/wallet-refunds';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import { formatDateCLP } from '@/lib/utils';
@@ -33,6 +36,7 @@ interface WalletCashier {
 interface Wallet {
     id: number;
     account_number: string;
+    username?: string | null;
     user_id: number;
     balance: number;
     currency: string;
@@ -73,6 +77,7 @@ export default function CajeroWallet({
     filtros,
     moneda,
     payment_requests,
+    refunds,
     wallet_action,
     clientes_frecuentes,
 }: {
@@ -82,6 +87,7 @@ export default function CajeroWallet({
     filtros?: { desde?: string; hasta?: string };
     moneda: string;
     payment_requests?: WalletPaymentRequests;
+    refunds?: WalletRefundsPage;
     wallet_action?: 'transfer' | 'request' | 'link' | null;
     clientes_frecuentes?: ClienteFrecuente[];
 }) {
@@ -182,6 +188,8 @@ export default function CajeroWallet({
                         initialAction={wallet_action}
                         clientesFrecuentes={clientes_frecuentes}
                     />
+
+                    <WalletRefunds refunds={refunds} />
 
                     <div className="grid gap-4 md:grid-cols-3">
                         <Card>

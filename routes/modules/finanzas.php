@@ -12,6 +12,7 @@ use App\Http\Controllers\Backend\TesoreriaController;
 use App\Http\Controllers\Backend\WalletController;
 use App\Http\Controllers\Backend\WalletPaymentLinkController;
 use App\Http\Controllers\Backend\WalletPaymentRequestController;
+use App\Http\Controllers\Backend\WalletRefundController;
 use App\Http\Controllers\Backend\WalletTransferController;
 use Illuminate\Support\Facades\Route;
 
@@ -47,6 +48,9 @@ Route::middleware(['permission:finanzas.wallets.view|finanzas.wallets.viewAny|ve
     Route::get('billetera/enlaces/{paymentRequest:share_token}', [WalletPaymentLinkController::class, 'show'])->name('billetera.enlaces.show');
     Route::post('billetera/enlaces/{paymentRequest:share_token}/pagar', [WalletPaymentLinkController::class, 'pay'])->name('billetera.enlaces.pay')->middleware('throttle:20,1');
     Route::get('billetera/destinatario', [WalletTransferController::class, 'recipient'])->name('billetera.destinatario')->middleware('throttle:30,1');
+    Route::put('billetera/usuario', [WalletTransferController::class, 'updateUsername'])->name('billetera.usuario.update')->middleware('throttle:10,1');
+    Route::post('billetera/transferencias/{transfer}/reembolso', [WalletRefundController::class, 'store'])->name('billetera.reembolsos.store')->middleware('throttle:20,1');
+    Route::post('billetera/transferencias/{transfer}/reembolso/resolver', [WalletRefundController::class, 'resolve'])->name('billetera.reembolsos.resolve')->middleware('throttle:20,1');
     Route::post('billetera/transferencias', [WalletTransferController::class, 'store'])->name('billetera.transferencias.store')->middleware('throttle:20,1');
     Route::post('billetera/solicitudes', [WalletPaymentRequestController::class, 'store'])->name('billetera.solicitudes.store')->middleware('throttle:20,1');
     Route::post('billetera/solicitudes/{paymentRequest}/resolver', [WalletPaymentRequestController::class, 'resolve'])->name('billetera.solicitudes.resolve')->middleware('throttle:20,1');

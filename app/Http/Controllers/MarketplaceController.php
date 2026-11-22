@@ -12,6 +12,7 @@ use App\Models\StoreReaction;
 use App\Models\StoreReview;
 use App\Scopes\OwnerScope;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -117,7 +118,7 @@ class MarketplaceController extends Controller
         ]);
     }
 
-    public function react(Request $request, $slug)
+    public function react(Request $request, string $slug): RedirectResponse
     {
         if (! Auth::check()) {
             return back()->with('error', 'Debes iniciar sesión para interactuar');
@@ -128,56 +129,16 @@ class MarketplaceController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
-        $userId = Auth::id();
-        $existingReaction = StoreReaction::where('user_id', $userId)
-            ->where('public_profile_id', $publicProfile->id)
-            ->first();
-
-        $wasLiked = $existingReaction?->like ?? 0;
-        $previousRating = $existingReaction?->rating;
-
+        $vote = [];
         if ($request->has('like')) {
-            $newLike = $request->boolean('like', false) ? 1 : 0;
-            $likeDiff = $newLike - $wasLiked;
-            $publicProfile->increment('likes_count', $likeDiff);
-
-            if ($existingReaction) {
-                $existingReaction->update(['like' => $newLike]);
-            } else {
-                StoreReaction::create([
-                    'user_id' => $userId,
-                    'public_profile_id' => $publicProfile->id,
-                    'like' => $newLike,
-                ]);
-            }
+            $vote['like'] = $request->boolean('like') ? StoreReaction::LIKE : StoreReaction::NEUTRAL;
         }
-
         if ($request->has('rating')) {
-            $rating = $request->integer('rating');
-            $rating = max(0, min(5, $rating));
-
-            if ($existingReaction) {
-                $oldRating = $existingReaction->rating ?? 0;
-                if ($oldRating > 0) {
-                    $publicProfile->decrement('rating_total', $oldRating);
-                }
-                if ($rating > 0) {
-                    $publicProfile->increment('rating_total', $rating);
-                    $existingReaction->update(['rating' => $rating]);
-                } else {
-                    $existingReaction->update(['rating' => null]);
-                    $publicProfile->decrement('rating_count');
-                }
-            } elseif ($rating > 0) {
-                StoreReaction::create([
-                    'user_id' => $userId,
-                    'public_profile_id' => $publicProfile->id,
-                    'rating' => $rating,
-                ]);
-                $publicProfile->increment('rating_count');
-                $publicProfile->increment('rating_total', $rating);
-            }
+            $rating = max(0, min(5, $request->integer('rating')));
+            $vote['rating'] = $rating ?: null;
         }
+
+        StoreReaction::saveVote($publicProfile->id, Auth::id(), $vote);
 
         return back();
     }

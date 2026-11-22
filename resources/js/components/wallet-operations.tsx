@@ -14,6 +14,7 @@ import {
 import {
     recipient as findRecipient,
     store as transfer,
+    updateUsername,
 } from '@/actions/App/Http/Controllers/Backend/WalletTransferController';
 import { Button } from '@/components/ui/button';
 import {
@@ -77,6 +78,7 @@ export default function WalletOperations({
 }: {
     wallet: {
         account_number: string;
+        username?: string | null;
         balance: number;
         currency: string;
         status: string;
@@ -85,7 +87,9 @@ export default function WalletOperations({
     initialAction?: 'transfer' | 'request' | 'link' | null;
     clientesFrecuentes?: ClienteFrecuente[];
 }) {
-    usePoll(30000, { only: ['wallet', 'payment_requests', 'transacciones'] });
+    usePoll(30000, {
+        only: ['wallet', 'payment_requests', 'transacciones', 'refunds'],
+    });
     const [mode, setMode] = useState<'transfer' | 'request' | 'link' | null>(
         initialAction ?? null,
     );
@@ -100,6 +104,7 @@ export default function WalletOperations({
         request_key: crypto.randomUUID(),
     });
     const decision = useForm({ decision: '' });
+    const username = useForm({ username: wallet.username ?? '' });
     const active = wallet.status === 'active';
 
     function open(
@@ -121,6 +126,7 @@ export default function WalletOperations({
     async function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         if (mode === 'link') {
+            operation.transform((data) => data);
             operation.post(createPaymentLink().url, {
                 onSuccess: () => setMode(null),
             });
@@ -130,11 +136,12 @@ export default function WalletOperations({
             setChecking(true);
             operation.clearErrors();
             try {
+                const identifier = operation.data.account_number.trim();
                 const { data } = await axios.get<Recipient>(
                     findRecipient.url({
-                        query: {
-                            account_number: operation.data.account_number,
-                        },
+                        query: /^[0-9]{16}$/.test(identifier)
+                            ? { account_number: identifier }
+                            : { username: identifier.replace(/^@/, '') },
                     }),
                 );
                 if (data.currency !== wallet.currency) {
@@ -147,7 +154,8 @@ export default function WalletOperations({
                 }
             } catch (error) {
                 const message = axios.isAxiosError(error)
-                    ? error.response?.data?.errors?.account_number?.[0]
+                    ? (error.response?.data?.errors?.account_number?.[0] ??
+                      error.response?.data?.errors?.username?.[0])
                     : null;
                 operation.setError(
                     'account_number',
@@ -159,6 +167,10 @@ export default function WalletOperations({
             }
             return;
         }
+        operation.transform((data) => ({
+            ...data,
+            account_number: recipient.account_number,
+        }));
         operation.post(
             (mode === 'transfer' ? transfer() : requestPayment()).url,
             {
@@ -220,6 +232,64 @@ export default function WalletOperations({
                             <Copy aria-hidden="true" />
                         </Button>
                     </div>
+                    <form
+                        className="space-y-2"
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            username.submit(updateUsername(), {
+                                preserveScroll: true,
+                                onSuccess: () =>
+                                    toast.success(
+                                        'Usuario de billetera guardado',
+                                    ),
+                            });
+                        }}
+                    >
+                        <Label htmlFor="wallet-username">
+                            Tu @usuario de billetera
+                        </Label>
+                        <div className="flex flex-wrap gap-2">
+                            <Input
+                                id="wallet-username"
+                                className="w-full sm:w-60"
+                                autoComplete="off"
+                                autoCapitalize="none"
+                                spellCheck={false}
+                                maxLength={31}
+                                required
+                                value={username.data.username}
+                                onChange={(event) =>
+                                    username.setData(
+                                        'username',
+                                        event.target.value,
+                                    )
+                                }
+                            />
+                            <Button
+                                type="submit"
+                                variant="outline"
+                                disabled={
+                                    username.processing ||
+                                    username.data.username === wallet.username
+                                }
+                            >
+                                Guardar usuario
+                            </Button>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                            Comparte este usuario para recibir pagos. Usa entre
+                            3 y 30 caracteres, con al menos una letra. Puedes
+                            incluir números y guiones bajos.
+                        </p>
+                        {username.errors.username && (
+                            <p
+                                role="alert"
+                                className="text-sm text-destructive"
+                            >
+                                {username.errors.username}
+                            </p>
+                        )}
+                    </form>
                     <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                         <Button
                             disabled={!active || Number(wallet.balance) <= 0}
@@ -433,15 +503,15 @@ export default function WalletOperations({
                                 {mode !== 'link' && (
                                     <div className="space-y-2">
                                         <Label htmlFor="wallet-account">
-                                            Número de billetera del otro usuario
+                                            Número de billetera o @usuario
                                         </Label>
                                         <Input
                                             id="wallet-account"
-                                            inputMode="numeric"
                                             autoComplete="off"
+                                            autoCapitalize="none"
+                                            spellCheck={false}
                                             required
-                                            pattern="[0-9]{16}"
-                                            maxLength={16}
+                                            maxLength={31}
                                             list="wallet-frequent-clients"
                                             value={
                                                 operation.data.account_number
