@@ -33,9 +33,8 @@ export default function StoreLocationMap(props: Props) {
                 className="rounded-lg bg-muted p-3 text-sm text-muted-foreground"
                 data-testid="store-map-unconfigured"
             >
-                {clientConfig?.google_maps_api_key_conflict
-                    ? 'La clave de Google Maps del navegador debe ser distinta de la clave del servidor. Configura una clave separada para Maps JavaScript API.'
-                    : 'Configura la clave de Google Maps para el navegador en Configuración web para buscar direcciones. También puedes usar el GPS.'}
+                Configura la clave de Google Maps en Configuración web para
+                buscar direcciones. Tambi?n puedes usar el GPS.
             </p>
         );
     }

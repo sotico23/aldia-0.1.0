@@ -97,6 +97,8 @@ class SystemSettingsPage extends Component
     public function checkConnection(string $group, SystemSettingsConnectionCheck $check): void
     {
         $fields = $this->fieldsForGroup($group);
+        abort_if($group === 'app', 404);
+
         $this->resetValidation("connection.{$group}");
         $this->validate($this->rules($fields, testingConnection: true));
 
@@ -130,7 +132,6 @@ class SystemSettingsPage extends Component
 
         if ($message === null) {
             $this->addError("connection.{$group}", match ($group) {
-                'app' => 'Google Maps no aceptó la prueba. Revisa la clave del servidor y la API de Geocoding.',
                 'mail' => 'No se pudo establecer la conexión SMTP. Selecciona SMTP y revisa el host, puerto y las credenciales.',
                 'aws' => 'No se pudo acceder al bucket. Revisa la región, las credenciales y el permiso s3:ListBucket.',
                 'sii' => 'No se pudo verificar el SII. Revisa que las URL pertenezcan a sii.cl y usen HTTPS.',
@@ -179,6 +180,7 @@ class SystemSettingsPage extends Component
         return view('livewire.system-settings-page', [
             'groups' => SystemSettings::groups(),
             'fields' => $fields,
+            'googleMapsKey' => SystemSettings::currentValues(['VITE_GOOGLE_MAPS_API_KEY'])['VITE_GOOGLE_MAPS_API_KEY'],
             'envConfigured' => collect($fields)
                 ->mapWithKeys(fn (array $field, string $key): array => [
                     $key => SystemSettings::envHasValue($key),

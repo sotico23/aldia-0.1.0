@@ -19,7 +19,6 @@ class SystemSettingsConnectionCheck
     {
         return match ($group) {
             'prospecting' => $this->prospecting(),
-            'app' => $this->googleMaps($values),
             'mail' => $this->mail($values),
             'redis' => $this->redis($values) ? 'Redis respondió al comando PING.' : null,
             'reverb' => $this->reverb($values) ? 'Reverb aceptó las credenciales de su API.' : null,
@@ -41,22 +40,6 @@ class SystemSettingsConnectionCheck
 
         return $health['ready'] && $health['queue_ready']
             ? 'El motor guardado tiene Node.js, Chromium y los parámetros de cola requeridos.'
-            : null;
-    }
-
-    private function googleMaps(array $values): ?string
-    {
-        if (blank($values['GOOGLE_MAPS_API_KEY'])) {
-            return null;
-        }
-
-        $response = $this->http()->get('https://maps.googleapis.com/maps/api/geocode/json', [
-            'address' => 'Santiago, Chile',
-            'key' => $values['GOOGLE_MAPS_API_KEY'],
-        ]);
-
-        return $response->successful() && $response->json('status') === 'OK'
-            ? 'Google Maps aceptó la clave del servidor en Geocoding.'
             : null;
     }
 

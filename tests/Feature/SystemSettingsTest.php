@@ -37,46 +37,37 @@ test('guarda valores sensibles cifrados y los descifra al leerlos', function () 
         ->and(SystemSettings::get('MAIL_HOST'))->toBe('smtp.example.com');
 });
 
-test('resuelve las claves de Google Maps desde la base de datos o la configuracion', function () {
+test('resuelve la clave de Google Maps desde la base de datos o la configuracion', function () {
     config([
-        'services.google.maps_api_key' => 'server-env-key',
         'services.frontend.google_maps_api_key' => 'frontend-env-key',
     ]);
 
-    expect(SystemSettings::effectiveValue('GOOGLE_MAPS_API_KEY'))->toBe('server-env-key')
-        ->and(SystemSettings::effectiveValue('VITE_GOOGLE_MAPS_API_KEY'))->toBe('frontend-env-key');
+    expect(SystemSettings::effectiveValue('VITE_GOOGLE_MAPS_API_KEY'))->toBe('frontend-env-key');
 
     SystemSettings::save([
-        'GOOGLE_MAPS_API_KEY' => ['value' => 'server-db-key', 'secret' => true, 'group' => 'app'],
         'VITE_GOOGLE_MAPS_API_KEY' => ['value' => 'frontend-db-key', 'secret' => true, 'group' => 'app'],
     ]);
 
-    expect(SystemSettings::effectiveValue('GOOGLE_MAPS_API_KEY'))->toBe('server-db-key')
-        ->and(SystemSettings::effectiveValue('VITE_GOOGLE_MAPS_API_KEY'))->toBe('frontend-db-key');
+    expect(SystemSettings::effectiveValue('VITE_GOOGLE_MAPS_API_KEY'))->toBe('frontend-db-key');
 });
 
-test('cifra las claves Maps y conserva las existentes al guardar campos vacios', function () {
+test('cifra la clave Maps y la conserva al guardar campos vacios', function () {
     SystemSettings::save([
-        'GOOGLE_MAPS_API_KEY' => ['value' => 'server-secret', 'secret' => true, 'group' => 'app'],
         'VITE_GOOGLE_MAPS_API_KEY' => ['value' => 'frontend-public-key', 'secret' => true, 'group' => 'app'],
     ]);
 
-    foreach (['GOOGLE_MAPS_API_KEY' => 'server-secret', 'VITE_GOOGLE_MAPS_API_KEY' => 'frontend-public-key'] as $key => $plainText) {
-        $setting = Setting::query()->where('key', $key)->firstOrFail();
-        $raw = DB::table('settings')->where('key', $key)->value('value');
+    $setting = Setting::query()->where('key', 'VITE_GOOGLE_MAPS_API_KEY')->firstOrFail();
+    $raw = DB::table('settings')->where('key', 'VITE_GOOGLE_MAPS_API_KEY')->value('value');
 
-        expect($setting->is_encrypted)->toBeTrue()
-            ->and($raw)->not->toBe($plainText);
-    }
+    expect($setting->is_encrypted)->toBeTrue()
+        ->and($raw)->not->toBe('frontend-public-key');
 
     Livewire::test(SystemSettingsPage::class)
-        ->set('secrets.GOOGLE_MAPS_API_KEY', '')
         ->set('secrets.VITE_GOOGLE_MAPS_API_KEY', '')
         ->call('save', 'app')
         ->assertHasNoErrors();
 
-    expect(SystemSettings::effectiveValue('GOOGLE_MAPS_API_KEY'))->toBe('server-secret')
-        ->and(SystemSettings::effectiveValue('VITE_GOOGLE_MAPS_API_KEY'))->toBe('frontend-public-key');
+    expect(SystemSettings::effectiveValue('VITE_GOOGLE_MAPS_API_KEY'))->toBe('frontend-public-key');
 });
 
 test('solo comparte la clave Maps publica con el navegador', function () {
@@ -90,14 +81,12 @@ test('solo comparte la clave Maps publica con el navegador', function () {
     $shared = app(HandleInertiaRequests::class)->share($request);
 
     expect($shared['client_config']['google_maps_api_key'])->toBe('browser-public-key')
-        ->and($shared['client_config']['google_maps_api_key_conflict'])->toBeFalse()
         ->and(json_encode($shared))->not->toContain('server-only-secret');
 });
 
 test('la tienda recibe la clave de navegador vigente en la base de datos', function (string $override) {
     config([
         'services.frontend.google_maps_api_key' => 'old-browser-key',
-        'services.google.maps_api_key' => 'server-runtime-key',
     ]);
 
     SystemSettings::save([
@@ -112,13 +101,11 @@ test('la tienda recibe la clave de navegador vigente en la base de datos', funct
         ->assertInertia(fn ($page) => $page
             ->component('settings/public-profile')
             ->where('client_config.google_maps_api_key', 'current-browser-key')
-            ->where('client_config.google_maps_api_key_conflict', false)
         )
-        ->assertDontSee('server-runtime-key')
         ->assertDontSee('server-db-key');
 })->with(['0', '1']);
 
-test('no comparte con el navegador una clave Maps reutilizada por el servidor', function () {
+test('usa la clave del navegador aunque coincida con un ajuste antiguo', function () {
     SystemSettings::save([
         'GOOGLE_MAPS_API_KEY' => ['value' => 'same-key', 'secret' => true, 'group' => 'app'],
         'VITE_GOOGLE_MAPS_API_KEY' => ['value' => 'same-key', 'secret' => true, 'group' => 'app'],
@@ -128,9 +115,7 @@ test('no comparte con el navegador una clave Maps reutilizada por el servidor', 
     $request->setLaravelSession(app('session')->driver());
     $shared = app(HandleInertiaRequests::class)->share($request);
 
-    expect($shared['client_config']['google_maps_api_key'])->toBeNull()
-        ->and($shared['client_config']['google_maps_api_key_conflict'])->toBeTrue()
-        ->and(json_encode($shared))->not->toContain('same-key');
+    expect($shared['client_config']['google_maps_api_key'])->toBe('same-key');
 });
 
 test('inyecta los valores almacenados en la configuracion de laravel', function () {
@@ -322,7 +307,27 @@ test('cada sección incluye los dos botones de configuración', function () {
     $settings = Livewire::test(SystemSettingsPage::class);
 
     foreach (array_keys(SystemSettings::groups()) as $group) {
-        $settings->assertSeeHtml("wire:submit=\"save('{$group}')\"")
-            ->assertSeeHtml("wire:click=\"checkConnection('{$group}')\"");
+        $settings->assertSeeHtml("wire:submit=\"save('{$group}')\"");
+
+        if ($group !== 'app') {
+            $settings->assertSeeHtml("wire:click=\"checkConnection('{$group}')\"");
+        }
     }
+});
+
+test('la prueba de Maps usa la clave vigente en el navegador', function () {
+    SystemSettings::save([
+        'GOOGLE_MAPS_API_KEY' => ['value' => 'legacy-server-key', 'secret' => true, 'group' => 'app'],
+        'VITE_GOOGLE_MAPS_API_KEY' => ['value' => 'browser-key', 'secret' => true, 'group' => 'app'],
+    ]);
+
+    Http::fake();
+
+    Livewire::test(SystemSettingsPage::class)
+        ->assertSeeHtml('data-google-maps-test="browser-key"')
+        ->assertDontSee('legacy-server-key')
+        ->call('checkConnection', 'app')
+        ->assertStatus(404);
+
+    Http::assertNothingSent();
 });

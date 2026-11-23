@@ -27,7 +27,7 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
 
-    @vite('resources/css/app.css')
+    @vite(['resources/css/app.css', 'resources/js/system-settings.ts'])
     @livewireStyles
 </head>
 <body class="min-h-svh bg-background font-sans text-foreground antialiased">

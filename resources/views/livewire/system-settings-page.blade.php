@@ -157,7 +157,8 @@
 
                                 @if ($isSecret)
                                     <p class="mt-1.5 text-xs text-muted-foreground">
-                                        Déjalo vacío para conservar el valor actual. Nunca se muestra en texto plano.
+                                        Déjalo vacío para conservar el valor actual.
+                                        {{ $key === 'VITE_GOOGLE_MAPS_API_KEY' ? 'La clave se usa en el navegador.' : 'Nunca se muestra en texto plano.' }}
                                     </p>
                                 @endif
 
@@ -179,16 +180,28 @@
                         <p role="alert" class="text-sm font-medium text-rose-600 dark:text-rose-400">{{ $message }}</p>
                     @enderror
 
+                    @if ($groupId === 'app')
+                        <p data-google-maps-status role="status" class="text-sm font-medium text-foreground" wire:ignore></p>
+                    @endif
+
                     <div class="flex flex-wrap justify-end gap-3">
-                        <button
-                            type="button"
-                            wire:click="checkConnection('{{ $groupId }}')"
-                            wire:loading.attr="disabled"
-                            class="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent disabled:opacity-60"
-                        >
-                            <span wire:loading.remove wire:target="checkConnection('{{ $groupId }}')">Probar conexión</span>
-                            <span wire:loading wire:target="checkConnection('{{ $groupId }}')">Probando…</span>
-                        </button>
+                        @if ($groupId === 'app')
+                            <button
+                                type="button"
+                                data-google-maps-test="{{ $googleMapsKey }}"
+                                class="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent disabled:opacity-60"
+                            >Probar conexión</button>
+                        @else
+                            <button
+                                type="button"
+                                wire:click="checkConnection('{{ $groupId }}')"
+                                wire:loading.attr="disabled"
+                                class="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent disabled:opacity-60"
+                            >
+                                <span wire:loading.remove wire:target="checkConnection('{{ $groupId }}')">Probar conexión</span>
+                                <span wire:loading wire:target="checkConnection('{{ $groupId }}')">Probando…</span>
+                            </button>
+                        @endif
                         <button
                             type="submit"
                             wire:loading.attr="disabled"
