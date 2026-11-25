@@ -17,6 +17,25 @@ class TelegramWebhookController extends Controller
 
     public function handle(Request $request): JsonResponse
     {
+        // Verificar el secret token de Telegram (X-Telegram-Bot-Api-Secret-Token)
+        // si está configurado. Esto evita que terceros envíen webhooks falsos a
+        // este endpoint. Cuando no está configurado, se acepta el webhook pero
+        // se registra una advertencia para que el operador lo configure.
+        $secretToken = config('services.telegram.webhook_secret_token');
+        if ($secretToken) {
+            $provided = $request->header('X-Telegram-Bot-Api-Secret-Token');
+            if (! $provided || ! hash_equals((string) $secretToken, (string) $provided)) {
+                Log::warning('Telegram webhook: secret token mismatch or missing', [
+                    'ip' => $request->ip(),
+                    'provided' => $provided ? 'present' : 'missing',
+                ]);
+
+                return response()->json(['status' => 'unauthorized'], 401);
+            }
+        } else {
+            Log::warning('Telegram webhook: TELEGRAM_WEBHOOK_SECRET_TOKEN not configured — accepting webhook without signature verification');
+        }
+
         // El detalle del resultado (linked / invalid_token / missing_token) se
         // registra en los logs; Telegram solo necesita un 200 OK para no
         // reintentar el envío en bucle.

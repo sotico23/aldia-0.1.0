@@ -72,6 +72,9 @@ return [
         'redirect' => env('TELEGRAM_LOGIN_REDIRECT_URI') ?: $appUrl.'/auth/telegram/callback',
         // Max age, en segundos, de un auth_date de Telegram Login Widget para evitar ataques replay.
         'login_max_age' => env('TELEGRAM_LOGIN_MAX_AGE', 300),
+        // Secreto para verificar webhooks de Telegram (header X-Telegram-Bot-Api-Secret-Token).
+        // Si se configura, los webhooks sin este header o con valor incorrecto se rechazan con 401.
+        'webhook_secret_token' => env('TELEGRAM_WEBHOOK_SECRET_TOKEN'),
     ],
 
     'whatsapp' => [

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useState, useCallback, useRef, useMemo } from 'react';
 import TipTapEditorWithSource from '@/components/TipTapEditorWithSource';
+import { sanitize } from '@/lib/sanitize';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -878,7 +879,7 @@ export default function CuponesIndex({
                                                     )
                                                 }
                                                 dangerouslySetInnerHTML={{
-                                                    __html: link.label,
+                                                    __html: sanitize(link.label),
                                                 }}
                                             />
                                         ))}
@@ -1355,7 +1356,7 @@ export default function CuponesIndex({
                                                 <div className="[&_img]:max-w-full [&_table]:w-full [&_table]:border-collapse">
                                                     <div
                                                         dangerouslySetInnerHTML={{
-                                                            __html: renderedPreview,
+                                                            __html: sanitize(renderedPreview),
                                                         }}
                                                     />
                                                 </div>

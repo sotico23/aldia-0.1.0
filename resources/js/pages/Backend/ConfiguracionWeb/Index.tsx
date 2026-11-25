@@ -2367,7 +2367,7 @@ export default function Index({
                                                             e.target.value,
                                                         )
                                                     }
-                                                    placeholder="910fb902e5c544a6ed152e2906048266"
+                                                    placeholder="Ingresa tu Facebook Client Secret"
                                                 />
                                             </div>
                                             <div className="space-y-1.5">
