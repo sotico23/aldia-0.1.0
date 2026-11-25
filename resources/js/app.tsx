@@ -4,7 +4,6 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { toast } from 'sonner';
 import '../css/app.css';
-import { initializeTheme } from './hooks/use-appearance';
 import { clientConfig } from './lib/client-config';
 import { applyWebThemeFromPageProps } from './lib/web-theme';
 
@@ -54,6 +53,3 @@ router.on('exception', (event) => {
     console.error('Inertia Exception:', event.detail.exception);
     toast.error('Error de conexión o excepcion interna: Intente más tarde');
 });
-
-// This will set light / dark mode on load...
-initializeTheme();

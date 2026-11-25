@@ -101,44 +101,6 @@
     --sidebar-ring: color-mix(in oklab, var(--brand-primary) 55%, white);
 }
 
-.dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.145 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.145 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --brand-primary: #10b981;
-    --brand-secondary: #34d399;
-    --brand-accent: #6ee7b7;
-    --primary: color-mix(in oklab, var(--brand-primary) 88%, white);
-    --primary-foreground: oklch(0.145 0 0);
-    --secondary: color-mix(in oklab, var(--brand-secondary) 22%, black);
-    --secondary-foreground: color-mix(in oklab, var(--brand-accent) 78%, white);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: color-mix(in oklab, var(--brand-accent) 22%, black);
-    --accent-foreground: color-mix(in oklab, var(--brand-accent) 82%, white);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
-    --border: oklch(0.269 0 0);
-    --input: oklch(0.269 0 0);
-    --ring: var(--brand-primary);
-    --chart-1: var(--brand-primary);
-    --chart-2: var(--brand-secondary);
-    --chart-3: var(--brand-accent);
-    --chart-4: color-mix(in oklab, var(--brand-primary) 70%, white);
-    --chart-5: color-mix(in oklab, var(--brand-primary) 50%, white);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: color-mix(in oklab, var(--brand-primary) 88%, white);
-    --sidebar-primary-foreground: oklch(0.145 0 0);
-    --sidebar-accent: color-mix(in oklab, var(--brand-secondary) 22%, black);
-    --sidebar-accent-foreground: color-mix(in oklab, var(--brand-accent) 82%, white);
-    --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: var(--brand-primary);
-}
-
 @layer base {
     * {
         @apply border-border;

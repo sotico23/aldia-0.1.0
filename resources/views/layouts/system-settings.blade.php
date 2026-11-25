@@ -1,28 +1,19 @@
 @php
     $webSettings = \App\Models\WebSetting::getSettings();
     $theme = $webSettings->themeColors();
-    $appearance = $appearance ?? 'system';
 @endphp
 <!DOCTYPE html>
 <html
     lang="{{ str_replace('_', '-', app()->getLocale()) }}"
-    @class(['dark' => $appearance === 'dark'])
     style="--brand-primary: {{ $theme['primary'] }}; --brand-secondary: {{ $theme['secondary'] }}; --brand-accent: {{ $theme['accent'] }};"
 >
 <head>
     <meta charset="utf-8">
+    <meta name="color-scheme" content="only light">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ $title ?? 'Ajustes del Servidor' }} — {{ $webSettings->app_name ?: config('app.name', 'Laravel') }}</title>
-
-    <script>
-        (function () {
-            if ('{{ $appearance }}' === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                document.documentElement.classList.add('dark');
-            }
-        })();
-    </script>
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />

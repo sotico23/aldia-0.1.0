@@ -15,6 +15,16 @@ test('appearance settings page is not accessible', function () {
         ->assertNotFound();
 });
 
+test('the app uses only light colors even with a previously saved dark preference', function () {
+    $this->withoutVite()
+        ->withUnencryptedCookie('appearance', 'dark')
+        ->get(route('login'))
+        ->assertOk()
+        ->assertSee('<meta name="color-scheme" content="only light">', false)
+        ->assertDontSee('class="dark"', false)
+        ->assertDontSee('prefers-color-scheme');
+});
+
 test('institutional emerald primary color is configured', function () {
     $css = file_get_contents(resource_path('css/app.css'));
 
