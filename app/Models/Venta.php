@@ -210,7 +210,6 @@ class Venta extends Model
     {
         $items = $this->detalleVentas()->with('producto')->get();
         $grouped = [];
-        $envasesEntregados = $items->filter(fn ($item) => $item->producto && $item->producto->envase_retornable === false && $item->producto->esEnvase ?? false)->keyBy('producto_id');
 
         foreach ($items as $item) {
             $producto = $item->producto;
