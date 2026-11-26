@@ -280,10 +280,11 @@ export async function startFixtureServer() {
             };
             let component = components[url.pathname];
             let props = publicProps;
-            if (url.pathname === '/marketplace') {
+            if (url.pathname === '/tiendas') {
                 component = 'marketplace/index';
                 props = {
                     ...sharedProps,
+                    auth: { user: url.searchParams.has('guest') ? null : fixtureUser },
                     profiles: {
                         data: [
                             {
@@ -598,8 +599,15 @@ export async function runResponsiveChecks() {
 
         await setWidth(320);
         await navigate(
-            '/marketplace',
-            'document.body.innerText.includes("Marketplace General")',
+            '/tiendas?guest',
+            'document.querySelector("main a[href=\'/tienda/tienda-prueba\']")?.textContent.includes("Tienda de prueba")',
+        );
+        await assertNoOverflow('directorio público de tiendas');
+        check(browser.exceptions.length === 0, 'El directorio público de tiendas tiene errores JS');
+
+        await navigate(
+            '/tiendas',
+            'document.querySelector("h1")?.textContent.trim() === "Tiendas"',
         );
         for (const width of viewportWidths) {
             await setWidth(width);

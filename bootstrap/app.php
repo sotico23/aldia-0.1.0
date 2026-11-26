@@ -116,7 +116,12 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Rutas con contrato JSON propio (Bot API + API de agente + Auth API).
-        $jsonApiRoutes = ['api/v1/bot/*', 'api/v1/agent/*', 'api/v1/auth/*'];
+        $jsonApiRoutes = [
+            'api/v1/bot/*',
+            'api/v1/agent/*',
+            'api/v1/auth/*',
+            'api/v1/marketplace/*',
+        ];
 
         $exceptions->render(function (ModelNotFoundException $e, Request $request) use ($jsonApiRoutes) {
             if ($request->is($jsonApiRoutes)) {

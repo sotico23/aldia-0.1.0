@@ -55,7 +55,10 @@ import { useCountry } from '@/hooks/use-country';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
 import { logout } from '@/routes';
-import { show as showMarketplace } from '@/routes/marketplace';
+import {
+    index as marketplaceIndex,
+    show as showMarketplace,
+} from '@/routes/marketplace';
 import { edit } from '@/routes/profile';
 import { edit as editPublicProfile } from '@/routes/public-profile';
 import { show as showTwoFactor } from '@/routes/two-factor';
@@ -418,11 +421,11 @@ export function AppRightSidebar() {
                     <CollapsibleContent className="space-y-1 pt-2">
                         <SidebarMenuButton
                             asChild
-                            tooltip={{ children: 'Ver Marketplace' }}
+                            tooltip={{ children: 'Ver tiendas' }}
                         >
-                            <Link href="/tienda" prefetch>
+                            <Link href={marketplaceIndex()} prefetch>
                                 <Store className="h-4 w-4" />
-                                <span>Ver Marketplace</span>
+                                <span>Ver tiendas</span>
                             </Link>
                         </SidebarMenuButton>
 

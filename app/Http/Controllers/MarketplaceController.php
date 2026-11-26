@@ -16,17 +16,28 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 class MarketplaceController extends Controller
 {
-    public function index()
+    public function index(): InertiaResponse
     {
         $profiles = PublicProfile::withoutGlobalScope(OwnerScope::class)
             ->where('is_active', true)
             ->with('user')
             ->latest()
-            ->paginate(12);
+            ->paginate(12)
+            ->through(fn (PublicProfile $profile): array => [
+                ...$profile->only(['id', 'title', 'description', 'slug']),
+                'user' => [
+                    'name' => $profile->user?->name,
+                    'ciudad' => $profile->user?->ciudad,
+                    'region' => $profile->user?->region,
+                    'profile_photo_url' => $profile->user?->profilePhotoUrl(),
+                    'cover_photo_url' => $profile->user?->coverPhotoUrl(),
+                ],
+            ]);
 
         return Inertia::render('marketplace/index', [
             'profiles' => $profiles,

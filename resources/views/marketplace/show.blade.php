@@ -1,7 +1,7 @@
 <x-app-layout
     :title="$store->title"
     :breadcrumbs="[
-        ['title' => 'Marketplace', 'href' => '/tienda'],
+        ['title' => 'Tiendas', 'href' => route('marketplace.index')],
         ['title' => $store->title, 'href' => '/tienda/' . $store->slug],
     ]"
 >

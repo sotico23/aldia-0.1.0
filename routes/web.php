@@ -380,7 +380,8 @@ Route::group(['prefix' => 'auth/{provider}'], function () {
     Route::get('/callback', [SocialiteController::class, 'callback'])->name('socialite.callback');
 });
 
-Route::get('/tienda', [MarketplaceController::class, 'index'])->name('marketplace.index');
+Route::get('/tiendas', [MarketplaceController::class, 'index'])->name('marketplace.index');
+Route::permanentRedirect('/tienda', '/tiendas');
 Route::get('/tienda/{slug}', [MarketplaceController::class, 'show'])->name('marketplace.show');
 Route::get('/tienda/{slug}/productos/mas', [MarketplaceController::class, 'loadMore'])->name('marketplace.loadMore');
 Route::get('/tienda/{slug}/categorias', [MarketplaceController::class, 'categories'])->name('marketplace.categories');

@@ -1,20 +1,21 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Store, MapPin, User, ChevronRight, Search } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
+import { index, show } from '@/routes/marketplace';
 import type { User as UserType } from '@/types';
-
-interface LocalUserType extends UserType {
-    ciudad?: string | null;
-    region?: string | null;
-    cover_photo_url?: string;
-}
 
 interface StoreProfile {
     id: number;
     title: string;
     description: string | null;
     slug: string;
-    user: LocalUserType;
+    user: {
+        name: string | null;
+        ciudad: string | null;
+        region: string | null;
+        profile_photo_url: string | null;
+        cover_photo_url: string | null;
+    };
 }
 
 interface Props {
@@ -29,13 +30,18 @@ interface Props {
 }
 
 export default function MarketplaceIndex({ profiles }: Props) {
-    const { web_settings } = usePage<{ web_settings: any }>().props;
+    const { auth, web_settings } = usePage<{
+        auth: { user: UserType | null };
+        web_settings?: {
+            app_name?: string;
+            app_description?: string;
+            app_keywords?: string;
+        };
+    }>().props;
 
-    return (
-        <AppLayout breadcrumbs={[{ title: 'Marketplace', href: '/tienda' }]}>
-            <Head
-                title={`Marketplace | ${web_settings?.app_name || 'Directorio de Tiendas'}`}
-            >
+    const content = (
+        <>
+            <Head title={`Tiendas | ${web_settings?.app_name || 'RedCliente'}`}>
                 <meta
                     name="description"
                     content={web_settings?.app_description}
@@ -43,12 +49,12 @@ export default function MarketplaceIndex({ profiles }: Props) {
                 <meta name="keywords" content={web_settings?.app_keywords} />
             </Head>
 
-            <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 w-full min-w-0">
+            <div className="mx-auto w-full max-w-7xl min-w-0 px-4 py-8 sm:px-6 lg:px-8">
                 {/* Header Section */}
                 <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                     <div>
                         <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                            Marketplace General
+                            Tiendas
                         </h1>
                         <p className="mt-2 flex items-center gap-2 text-lg text-slate-500 dark:text-slate-400">
                             Descubre empresas y tiendas disponibles en nuestra
@@ -73,7 +79,7 @@ export default function MarketplaceIndex({ profiles }: Props) {
                         {profiles.data.map((store) => (
                             <Link
                                 key={store.id}
-                                href={`/tienda/${store.slug}`}
+                                href={show(store.slug)}
                                 className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md hover:ring-primary dark:bg-slate-900 dark:ring-slate-800 dark:hover:ring-primary"
                             >
                                 <div className="relative h-24 overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-emerald-50 group-hover:to-purple-50 dark:from-slate-800 dark:to-slate-800/80 dark:group-hover:from-emerald-950/50 dark:group-hover:to-purple-900/50">
@@ -155,6 +161,14 @@ export default function MarketplaceIndex({ profiles }: Props) {
                     </div>
                 )}
             </div>
+        </>
+    );
+
+    return auth.user ? (
+        <AppLayout breadcrumbs={[{ title: 'Tiendas', href: index.url() }]}>
+            {content}
         </AppLayout>
+    ) : (
+        <main>{content}</main>
     );
 }

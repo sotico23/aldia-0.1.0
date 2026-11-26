@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\Driver\DriverOnlineController;
 use App\Http\Controllers\Api\Driver\DriverRegistrationController;
 use App\Http\Controllers\Api\InternalAutomationController;
 use App\Http\Controllers\Api\InternalAutomationSendController;
+use App\Http\Controllers\Api\MarketplaceApiController;
 use App\Http\Controllers\Api\Pos\PosApiController;
 use App\Http\Controllers\Api\TenantDataController;
 use App\Http\Controllers\Api\TrackingController;
@@ -253,6 +254,38 @@ Route::prefix('v1/driver')->group(function () {
             ->name('api.v1.driver.marketplace.orders');
         Route::post('marketplace/orders/{pedido}/claim', [DriverMarketplaceController::class, 'claim'])
             ->name('api.v1.driver.marketplace.orders.claim');
+    });
+});
+
+// -----------------------------------------------------------------------------
+// Marketplace público para la APK Al Día Eats.
+// Las rutas de catálogo son públicas ( igual que /tienda/{slug} ); las de
+// pedidos requieren el PAT de Sanctum emitido por /api/v1/auth/login.
+// -----------------------------------------------------------------------------
+Route::prefix('v1/marketplace')->middleware('throttle:60,1')->group(function () {
+    Route::get('stores', [MarketplaceApiController::class, 'stores'])
+        ->name('api.marketplace.stores');
+    Route::get('stores/{slug}', [MarketplaceApiController::class, 'show'])
+        ->name('api.marketplace.stores.show');
+    Route::get('stores/{slug}/categories', [MarketplaceApiController::class, 'categories'])
+        ->name('api.marketplace.stores.categories');
+    Route::get('stores/{slug}/products', [MarketplaceApiController::class, 'products'])
+        ->name('api.marketplace.stores.products');
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('orders', [MarketplaceApiController::class, 'orders'])
+            ->name('api.marketplace.orders');
+        Route::post('orders', [MarketplaceApiController::class, 'storeOrder'])
+            ->name('api.marketplace.orders.store');
+        Route::get('orders/{order}', [MarketplaceApiController::class, 'order'])
+            ->whereNumber('order')
+            ->name('api.marketplace.orders.show');
+        Route::get('orders/{order}/status', [MarketplaceApiController::class, 'orderStatus'])
+            ->whereNumber('order')
+            ->name('api.marketplace.orders.status');
+        Route::post('orders/{order}/cancel', [MarketplaceApiController::class, 'cancelOrder'])
+            ->whereNumber('order')
+            ->name('api.marketplace.orders.cancel');
     });
 });
 
