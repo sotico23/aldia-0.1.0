@@ -17,6 +17,8 @@ use Illuminate\Support\Carbon;
 
 class Venta extends Model
 {
+    public const ESTADOS_PARA_ENTREGA = ['pendiente', 'pagada', 'confirmado'];
+
     use BelongsToOwner, HasFactory;
 
     protected $appends = ['numero_factura'];

@@ -1,4 +1,4 @@
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 
 import {
     Check,
@@ -23,6 +23,7 @@ import {
     ArrowUpDown,
     MessageCircle,
     Tags,
+    Truck,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useState, useMemo, useRef } from 'react';
@@ -86,6 +87,8 @@ import {
     formatRut,
     getLocalDateString,
 } from '@/lib/utils';
+import { index as entregasIndex } from '@/routes/entregas';
+import { status as ventaStatus } from '@/routes/ventas';
 import type { BreadcrumbItem } from '@/types';
 
 interface Cliente {
@@ -135,6 +138,7 @@ interface Venta {
     valor_descuento: number;
     monto_descuento: number;
     user_id?: number;
+    puede_enviar: boolean;
     almacen_id?: number;
     almacen_nombre?: string;
     cliente?: Cliente;
@@ -199,6 +203,7 @@ export default function Index({
     const { currency } = useCountry();
 
     const [isOpen, setIsOpen] = useState(false);
+    const [updatingStatus, setUpdatingStatus] = useState<number | null>(null);
     const [clienteSearch, setClienteSearch] = useState('');
     const [editando, setEditando] = useState<Venta | null>(null);
     const [verModalOpen, setVerModalOpen] = useState(false);
@@ -394,6 +399,9 @@ export default function Index({
 
     const { hasPermission, user } = usePermissions();
     const canCreate = hasPermission('ventas.ventas.create');
+    const canCreateEntrega =
+        hasPermission('flota.entregas.viewAny') &&
+        hasPermission('flota.entregas.create');
     const canEditGlobal = hasPermission('ventas.ventas.edit');
     const canDeleteGlobal = hasPermission('ventas.ventas.delete');
 
@@ -720,11 +728,15 @@ export default function Index({
     };
 
     const handleUpdateStatus = (venta: Venta, nuevoEstado: string) => {
+        setUpdatingStatus(venta.id);
         router.patch(
-            `/ventas/${venta.id}/status`,
+            ventaStatus.url(venta.id),
             { estado: nuevoEstado },
             {
                 preserveScroll: true,
+                onError: () =>
+                    toast.error('No se pudo actualizar el estado de la venta.'),
+                onFinish: () => setUpdatingStatus(null),
             },
         );
     };
@@ -754,6 +766,57 @@ export default function Index({
             </Badge>
         );
     };
+
+    const renderEstadoVenta = (venta: Venta) => {
+        const badge = getEstadoBadge(venta.estado);
+        if (!canEditVenta(venta)) return badge;
+
+        return (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <button
+                        type="button"
+                        aria-label={`Cambiar estado de venta ${venta.numero_factura}: ${venta.estado}`}
+                        className="inline-flex items-center gap-1 rounded-md focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                        disabled={updatingStatus !== null}
+                    >
+                        {badge}
+                        <ChevronDown className="size-3 text-muted-foreground" />
+                    </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    {(['pagada', 'pendiente', 'cancelada'] as const).map(
+                        (estado) => (
+                            <DropdownMenuItem
+                                key={estado}
+                                disabled={venta.estado === estado}
+                                onSelect={() =>
+                                    handleUpdateStatus(venta, estado)
+                                }
+                                className="capitalize"
+                            >
+                                {estado}
+                            </DropdownMenuItem>
+                        ),
+                    )}
+                </DropdownMenuContent>
+            </DropdownMenu>
+        );
+    };
+
+    const renderEnviarEntrega = (venta: Venta) =>
+        canCreateEntrega &&
+        venta.puede_enviar && (
+            <Button variant="outline" size="icon" asChild>
+                <Link
+                    href={entregasIndex.url({ query: { venta_id: venta.id } })}
+                    title="Enviar a reparto"
+                    aria-label="Enviar a reparto"
+                >
+                    <Truck className="size-4" />
+                </Link>
+            </Button>
+        );
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -1409,38 +1472,9 @@ export default function Index({
                                                                                 />
                                                                             </td>
                                                                             <td className="py-3">
-                                                                                <Select
-                                                                                    value={
-                                                                                        venta.estado
-                                                                                    }
-                                                                                    onValueChange={(
-                                                                                        v,
-                                                                                    ) =>
-                                                                                        handleUpdateStatus(
-                                                                                            venta,
-                                                                                            v,
-                                                                                        )
-                                                                                    }
-                                                                                >
-                                                                                    <SelectTrigger className="h-8 w-[120px] border-none bg-transparent p-0 hover:bg-transparent focus:ring-0">
-                                                                                        <SelectValue>
-                                                                                            {getEstadoBadge(
-                                                                                                venta.estado,
-                                                                                            )}
-                                                                                        </SelectValue>
-                                                                                    </SelectTrigger>
-                                                                                    <SelectContent>
-                                                                                        <SelectItem value="pendiente">
-                                                                                            Pendiente
-                                                                                        </SelectItem>
-                                                                                        <SelectItem value="pagada">
-                                                                                            Pagada
-                                                                                        </SelectItem>
-                                                                                        <SelectItem value="cancelada">
-                                                                                            Cancelada
-                                                                                        </SelectItem>
-                                                                                    </SelectContent>
-                                                                                </Select>
+                                                                                {renderEstadoVenta(
+                                                                                    venta,
+                                                                                )}
                                                                             </td>
                                                                             <td className="py-3">
                                                                                 <div className="flex gap-2">
@@ -1501,6 +1535,9 @@ export default function Index({
                                                                                             </DropdownMenuItem>
                                                                                         </DropdownMenuContent>
                                                                                     </DropdownMenu>
+                                                                                    {renderEnviarEntrega(
+                                                                                        venta,
+                                                                                    )}
                                                                                     {canEditVenta(
                                                                                         venta,
                                                                                     ) && (
@@ -1562,8 +1599,8 @@ export default function Index({
                                                                                     'General'}
                                                                             </p>
                                                                         </div>
-                                                                        {getEstadoBadge(
-                                                                            venta.estado,
+                                                                        {renderEstadoVenta(
+                                                                            venta,
                                                                         )}
                                                                     </div>
                                                                     <div className="mt-1">
@@ -1608,6 +1645,9 @@ export default function Index({
                                                                         >
                                                                             <Eye className="h-4 w-4" />
                                                                         </Button>
+                                                                        {renderEnviarEntrega(
+                                                                            venta,
+                                                                        )}
                                                                         {canEditVenta(
                                                                             venta,
                                                                         ) && (
@@ -1661,8 +1701,8 @@ export default function Index({
                                                                             venta.numero_factura
                                                                         }
                                                                     </Badge>
-                                                                    {getEstadoBadge(
-                                                                        venta.estado,
+                                                                    {renderEstadoVenta(
+                                                                        venta,
                                                                     )}
                                                                 </div>
                                                                 <CardTitle className="text-sm font-bold">
@@ -1762,6 +1802,9 @@ export default function Index({
                                                                             </DropdownMenuItem>
                                                                         </DropdownMenuContent>
                                                                     </DropdownMenu>
+                                                                    {renderEnviarEntrega(
+                                                                        venta,
+                                                                    )}
                                                                     {canEditVenta(
                                                                         venta,
                                                                     ) && (

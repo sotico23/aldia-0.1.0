@@ -14,7 +14,7 @@ Route::get('mi-caja', [CajeroDashboardController::class, 'index'])
 
 Route::middleware(['permission:ventas.ventas.viewAny'])->group(function () {
     Route::resource('ventas', VentaController::class)->except(['create', 'show', 'edit'])->middleware('ownership:venta');
-    Route::patch('ventas/{venta}/status', [VentaController::class, 'updateStatus'])->name('ventas.status');
+    Route::patch('ventas/{venta}/status', [VentaController::class, 'updateStatus'])->middleware('ownership:venta')->name('ventas.status');
     Route::get('ventas/export', [VentaController::class, 'exportCsv'])->name('ventas.export');
     Route::get('ventas/export-excel', [VentaController::class, 'exportExcel'])->name('ventas.export_excel');
     Route::post('ventas/import', [VentaController::class, 'importCsv'])->name('ventas.import');

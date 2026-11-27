@@ -21,6 +21,7 @@ import {
     List,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
+import { toast } from 'sonner';
 import { BulkActions } from '@/components/shared/BulkActions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,7 @@ import {
 import { useCountry } from '@/hooks/use-country';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
+import { store as storeEntrega } from '@/routes/entregas';
 import type { BreadcrumbItem } from '@/types';
 import DeliveryHistoryTab, { type DeliveryHistory } from './DeliveryHistoryTab';
 import DeliveryRatesTab, { type DeliveryRate } from './DeliveryRatesTab';
@@ -156,6 +158,26 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Entregas', href: '/entregas' },
 ];
 
+function direccionDeVenta(venta: Venta): string {
+    return [
+        venta.cliente?.direccion,
+        venta.cliente?.comuna,
+        venta.cliente?.ciudad,
+        venta.cliente?.region,
+    ]
+        .filter(Boolean)
+        .join(', ');
+}
+
+function cantidadesDeVenta(venta: Venta): Record<number, number> {
+    return Object.fromEntries(
+        venta.detalle_ventas.map((item) => [
+            item.producto_id || item.id,
+            item.cantidad,
+        ]),
+    );
+}
+
 export default function Index({
     entregas,
     vehiculos,
@@ -169,6 +191,7 @@ export default function Index({
     delivery_rates = [],
     delivery_history = { data: [], links: [], total: 0 },
     initial_tab = 'deliveries',
+    venta_inicial_id = null,
 }: {
     entregas: { data: Entrega[]; links: any[]; meta?: any; total: number };
     vehiculos: Vehiculo[];
@@ -181,6 +204,7 @@ export default function Index({
     grupos_trabajo?: GrupoTrabajo[];
     delivery_rates?: DeliveryRate[];
     delivery_history?: DeliveryHistory;
+    venta_inicial_id?: number | null;
     initial_tab?: 'deliveries' | 'history';
 }) {
     const { currency } = useCountry();
@@ -193,29 +217,32 @@ export default function Index({
         'deliveries' | 'rates' | 'history'
     >(initial_tab);
 
-    const [isOpen, setIsOpen] = useState(false);
+    const ventaInicial = canCreate
+        ? ventas.find((venta) => venta.id === venta_inicial_id)
+        : undefined;
+    const [isOpen, setIsOpen] = useState(Boolean(ventaInicial));
     const [isVerOpen, setIsVerOpen] = useState(false);
     const [editando, setEditando] = useState<Entrega | null>(null);
     const [entregaSeleccionada, setEntregaSeleccionada] =
         useState<Entrega | null>(null);
     const [productosSeleccionados, setProductosSeleccionados] = useState<{
         [key: number]: number;
-    }>({});
+    }>(() => (ventaInicial ? cantidadesDeVenta(ventaInicial) : {}));
     const {
         data,
         setData,
         delete: destroy,
         reset,
     } = useForm({
-        venta_id: '',
+        venta_id: ventaInicial?.id.toString() ?? '',
         grupo_trabajo_id: '',
         vehiculo_id: '',
         conductor_id: '',
         repartidor_id: '',
         estado_asignacion: 'asignado',
-        cliente: '',
-        direccion: '',
-        fecha_entrega: '',
+        cliente: ventaInicial?.cliente?.nombre ?? '',
+        direccion: ventaInicial ? direccionDeVenta(ventaInicial) : '',
+        fecha_entrega: ventaInicial?.fecha?.split('T')[0] ?? '',
         estado: 'pendiente',
         notas: '',
         productos_json: '',
@@ -259,31 +286,17 @@ export default function Index({
         const venta = ventas.find((v) => v.id.toString() === ventaId);
 
         if (venta) {
-            const fullAddress = [
-                venta.cliente?.direccion,
-                venta.cliente?.comuna,
-                venta.cliente?.ciudad,
-                venta.cliente?.region,
-            ]
-                .filter(Boolean)
-                .join(', ');
-
             setData((prev) => ({
                 ...prev,
                 venta_id: ventaId,
                 cliente: venta.cliente?.nombre || '',
-                direccion: fullAddress || '',
+                direccion: direccionDeVenta(venta),
                 fecha_entrega: venta.fecha
                     ? venta.fecha.split('T')[0]
                     : prev.fecha_entrega,
             }));
 
-            // Set productos seleccionados from venta detalle_ventas
-            const productos: { [key: number]: number } = {};
-            venta.detalle_ventas.forEach((item) => {
-                productos[item.producto_id || item.id] = item.cantidad;
-            });
-            setProductosSeleccionados(productos);
+            setProductosSeleccionados(cantidadesDeVenta(venta));
         } else {
             setData('venta_id', ventaId);
             setProductosSeleccionados({});
@@ -359,14 +372,17 @@ export default function Index({
                 });
             });
         } else {
-            import('@inertiajs/react').then(({ router }) => {
-                router.post('/entregas', cleanData, {
-                    onSuccess: () => {
-                        setIsOpen(false);
-                        setProductosSeleccionados({});
-                        reset();
-                    },
-                });
+            router.post(storeEntrega.url(), cleanData, {
+                onSuccess: () => {
+                    setIsOpen(false);
+                    setProductosSeleccionados({});
+                    reset();
+                },
+                onError: (errors) =>
+                    toast.error(
+                        Object.values(errors)[0] ??
+                            'No se pudo crear la entrega.',
+                    ),
             });
         }
     };
@@ -1618,7 +1634,7 @@ export default function Index({
                                                                         'Unid'}
                                                                 </Badge>
                                                             </div>
-                                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                                                                 <div
                                                                     className={`flex flex-col items-center justify-center rounded-lg p-2 text-center ring-1 md:rounded-xl md:p-2 ${item.unidad_medida === 'kg' ? 'bg-emerald-500/5 ring-emerald-500/10' : 'bg-emerald-500/5 ring-emerald-500/10'}`}
                                                                 >
@@ -1801,7 +1817,7 @@ export default function Index({
                                                 <div className="absolute -left-5 z-10 flex h-3 w-3 items-center justify-center rounded-full bg-green-500 shadow-sm ring-2 ring-background transition-transform group-hover:scale-125 md:-left-6 md:h-4 md:w-4">
                                                     <Check className="h-1.5 w-1.5 text-white md:h-2 md:w-2" />
                                                 </div>
-                                                <div className="rounded-xl border border-green-500/10 bg-green-50/50 dark:bg-green-950/20 p-2 md:rounded-2xl md:p-3">
+                                                <div className="rounded-xl border border-green-500/10 bg-green-50/50 p-2 md:rounded-2xl md:p-3 dark:bg-green-950/20">
                                                     <p className="text-[10px] font-black text-green-600 uppercase md:text-xs">
                                                         Creado
                                                     </p>

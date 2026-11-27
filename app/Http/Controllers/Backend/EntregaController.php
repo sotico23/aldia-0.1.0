@@ -25,7 +25,9 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Maatwebsite\Excel\Facades\Excel;
@@ -68,7 +70,7 @@ class EntregaController extends Controller implements HasMiddleware
         $clientes = Cliente::where('owner_id', $ownerId)->orderBy('nombre')->get();
 
         $ventas = Venta::where('owner_id', $ownerId)
-            ->whereIn('estado', ['pagada', 'confirmado'])
+            ->whereIn('estado', Venta::ESTADOS_PARA_ENTREGA)
             ->whereDoesntHave('entrega')
             ->with(['detalleVentas.producto', 'cliente'])
             ->orderBy('created_at', 'desc')
@@ -140,6 +142,7 @@ class EntregaController extends Controller implements HasMiddleware
             'repartidores' => $repartidores,
             'clientes' => $clientes,
             'ventas' => $ventas,
+            'venta_inicial_id' => $request->integer('venta_id') ?: null,
             'grupos_trabajo' => $gruposTrabajo,
             'stats' => $stats,
             'filters' => $request->only(['conductor_id', 'estado']),
@@ -205,11 +208,26 @@ class EntregaController extends Controller implements HasMiddleware
         $ownerId = Auth::user()->getOwnerId();
         $validated['owner_id'] = $ownerId;
 
-        $entrega = Entrega::create($validated);
+        $entrega = DB::transaction(function () use ($validated, $ownerId): Entrega {
+            if (isset($validated['venta_id'])) {
+                $venta = Venta::where('owner_id', $ownerId)
+                    ->whereIn('estado', Venta::ESTADOS_PARA_ENTREGA)
+                    ->lockForUpdate()
+                    ->find($validated['venta_id']);
 
-        $this->syncItemsFromVenta($entrega, $ownerId);
-        app(EntregaPedidoService::class)->sync($entrega);
-        $entrega->refresh();
+                if (! $venta || $venta->entrega()->exists()) {
+                    throw ValidationException::withMessages([
+                        'venta_id' => 'La venta seleccionada no está disponible para una nueva entrega.',
+                    ]);
+                }
+            }
+
+            $entrega = Entrega::create($validated);
+            $this->syncItemsFromVenta($entrega, $ownerId);
+            app(EntregaPedidoService::class)->sync($entrega);
+
+            return $entrega->refresh();
+        });
 
         // Emitir evento de entrega disponible en el pool (Bolsa de Ofertas)
         if ($validated['estado_asignacion'] === 'libre') {
@@ -282,8 +300,6 @@ class EntregaController extends Controller implements HasMiddleware
             ];
 
             if (isset($map[$entrega->estado])) {
-                $venta->update(['estado' => $map[$entrega->estado]]);
-
                 if (str_starts_with($venta->numero, 'PEDIDO-')) {
                     $numeroPedido = substr($venta->numero, 7);
                     $pedido = Pedido::withoutGlobalScope(OwnerScope::class)

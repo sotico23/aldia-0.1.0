@@ -61,7 +61,7 @@ class VentaController extends Controller implements HasMiddleware
     public function index(): Response
     {
         $ownerId = auth()->user()->getOwnerId();
-        $query = Venta::with(['cliente', 'almacen', 'detalleVentas.producto', 'almacenes'])->where('owner_id', $ownerId)->orderBy('created_at', 'desc');
+        $query = Venta::with(['cliente', 'almacen', 'detalleVentas.producto', 'almacenes'])->where('owner_id', $ownerId)->withExists('entrega')->orderBy('created_at', 'desc');
 
         if ($this->usuarioEsCliente()) {
             $query->where(fn ($q) => $q->where(fn ($q) => $q->where('cliente_id', $this->getClienteAuth()->id)));
@@ -72,6 +72,8 @@ class VentaController extends Controller implements HasMiddleware
 
             return [
                 'id' => $venta->id,
+                'user_id' => $venta->user_id,
+                'puede_enviar' => ! $venta->entrega_exists && in_array($venta->estado, Venta::ESTADOS_PARA_ENTREGA, true),
                 'numero_factura' => $venta->numero_factura,
                 'cliente_id' => $venta->cliente_id,
                 'fecha' => $venta->fecha?->format('Y-m-d'),
@@ -628,23 +630,31 @@ class VentaController extends Controller implements HasMiddleware
 
     public function updateStatus(Request $request, Venta $venta): RedirectResponse
     {
+        $this->authorize('update', $venta);
+
         $validated = $request->validate([
             'estado' => 'required|in:pendiente,pagada,cancelada',
         ]);
 
-        $estadoAnterior = $venta->estado;
+        DB::transaction(function () use ($venta, $validated): void {
+            $venta = Venta::query()->lockForUpdate()->findOrFail($venta->id);
+            $estadoAnterior = $venta->estado;
+            $nuevoEstado = $validated['estado'];
 
-        $venta->update([
-            'estado' => $validated['estado'],
-        ]);
+            if ($estadoAnterior === $nuevoEstado) {
+                return;
+            }
 
-        if ($estadoAnterior !== 'pagada' && $venta->estado === 'pagada') {
-            $this->procesarPago($venta);
-        }
+            $venta->update(['estado' => $nuevoEstado]);
 
-        if ($estadoAnterior === 'pagada' && in_array($venta->estado, ['cancelada', 'pendiente'])) {
-            $this->restaurarInventario($venta);
-        }
+            if ($nuevoEstado === 'pagada') {
+                $this->procesarPago($venta);
+            }
+
+            if ($estadoAnterior === 'pagada') {
+                $this->restaurarInventario($venta);
+            }
+        });
 
         return redirect()->back();
     }
