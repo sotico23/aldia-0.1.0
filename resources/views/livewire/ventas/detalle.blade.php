@@ -141,7 +141,9 @@
             <div class="flex flex-wrap gap-2">
                 <a class="{{ $button }}" href="{{ route('ventas.download', $ventaDetalle) }}">PDF formal SII</a>
                 <a class="{{ $button }}" href="{{ route('ventas.download-informal', $ventaDetalle) }}">PDF informal</a>
-                <a class="{{ $primary }}" href="{{ route('ventas.ticket', $ventaDetalle) }}" target="_blank" rel="noopener">Ticket térmico</a>
+                @if(\Illuminate\Support\Facades\Route::has('ventas.ticket'))
+                    <a class="{{ $primary }}" href="{{ route('ventas.ticket', $ventaDetalle) }}" target="_blank" rel="noopener">Ticket térmico</a>
+                @endif
             </div>
             <button type="button" class="{{ $button }} bg-white" wire:click="cerrarDetalle">Cerrar detalle</button>
         </footer>
