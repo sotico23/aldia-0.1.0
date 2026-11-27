@@ -175,6 +175,40 @@ test('importa un CSV y actualiza el listado sin redirigir', function () {
         ->assertNoRedirect();
 });
 
+test('el detalle de la venta muestra los datos completos del cliente y del documento', function () {
+    $owner = User::factory()->create();
+    $owner->givePermissionTo(Permission::findOrCreate('ventas.ventas.viewAny'));
+    $this->actingAs($owner);
+    $ownerId = $owner->getOwnerId();
+
+    $cliente = Cliente::factory()->create([
+        'owner_id' => $ownerId,
+        'nombre' => 'Cliente Detalle',
+        'rut' => '12.345.678-9',
+        'email' => 'cliente@detalle.test',
+        'telefono' => '+56 9 1111 2222',
+    ]);
+    $venta = Venta::factory()->for($owner, 'user')->create([
+        'owner_id' => $ownerId,
+        'cliente_id' => $cliente->id,
+        'numero' => 'DETALLE-COMPLETO',
+        'estado' => 'pagada',
+        'tipo_documento' => 'boleta',
+        'metodo_pago' => 'tarjeta',
+        'notas' => 'Notas del detalle',
+    ]);
+
+    Livewire::test(Index::class)
+        ->call('ver', $venta->id)
+        ->assertSee('DETALLE-COMPLETO')
+        ->assertSee('Cliente Detalle')
+        ->assertSee('12.345.678-9')
+        ->assertSee('cliente@detalle.test')
+        ->assertSee('Boleta electrónica')
+        ->assertSee('tarjeta')
+        ->assertSee('Notas del detalle');
+});
+
 test('el listado separa las ventas pagadas de las no pagadas', function () {
     $owner = User::factory()->create();
     $owner->givePermissionTo(Permission::findOrCreate('ventas.ventas.viewAny'));
@@ -209,7 +243,7 @@ test('el listado separa las ventas pagadas de las no pagadas', function () {
         ->assertSee('PENDIENTE-SEP');
 });
 
-test('el listado ofrece pdf formal sii e informal para cada venta', function () {
+test('el listado ofrece pdf formal sii, informal y ticket térmico para cada venta', function () {
     $owner = User::factory()->create();
     $owner->givePermissionTo(Permission::findOrCreate('ventas.ventas.viewAny'));
     $this->actingAs($owner);
@@ -224,5 +258,7 @@ test('el listado ofrece pdf formal sii e informal para cada venta', function () 
         ->assertSee('PDF formal SII')
         ->assertSee('PDF informal')
         ->assertSee(route('ventas.download', $venta), false)
-        ->assertSee(route('ventas.download-informal', $venta), false);
+        ->assertSee(route('ventas.download-informal', $venta), false)
+        ->assertSee(route('ventas.ticket', $venta), false)
+        ->assertSee('Ticket térmico');
 });

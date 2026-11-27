@@ -24,6 +24,7 @@ use App\Services\Inventory\SalesInventoryService;
 use App\Services\Sii\CafManager;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -551,6 +552,18 @@ class VentaController extends Controller implements HasMiddleware
         $pdf = Pdf::loadView('pdf.venta-informal', compact('venta', 'logo'));
 
         return $pdf->download('venta_'.$venta->numero.'_simple.pdf');
+    }
+
+    /** Vista imprimible en papel térmico de 80 mm (impresora del navegador). */
+    public function printTicket(Venta $venta): View
+    {
+        $venta->load(['cliente', 'detalleVentas.producto', 'almacen']);
+
+        return view('livewire.ventas.ticket-termico', [
+            'venta' => $venta,
+            'emisor' => auth()->user(),
+            'documento' => $venta->folio ?: $venta->numero,
+        ]);
     }
 
     private function resolveLogoPath(): string

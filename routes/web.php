@@ -188,6 +188,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('ventas/export-excel', [VentaController::class, 'exportExcel'])->name('ventas.export_excel');
         Route::get('ventas/{venta}/download', [VentaController::class, 'downloadPdf'])->name('ventas.download');
         Route::get('ventas/{venta}/download-informal', [VentaController::class, 'downloadPdfInformal'])->name('ventas.download-informal');
+        Route::get('ventas/{venta}/ticket', [VentaController::class, 'printTicket'])->name('ventas.ticket');
     });
 
     Route::middleware(['permission:comercial.productos.viewAny'])->group(function () {
