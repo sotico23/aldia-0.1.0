@@ -753,12 +753,12 @@ class VentaController extends Controller implements HasMiddleware
             }
 
             // 2. Registro Contable (Asiento Diario)
-            $existeAsiento = Asiento::where(fn ($q) => $q->where('descripcion', 'LIKE', "%Venta #{$venta->numero}%"))->exists();
-            if (! $existeAsiento) {
+            $numeroAsiento = Asiento::numeroParaVenta($venta);
+            if ($numeroAsiento !== null) {
                 $asiento = Asiento::create([
                     'owner_id' => $venta->owner_id,
                     'fecha' => now(),
-                    'numero' => 'AS-VNT-'.str_pad($venta->id, 6, '0', STR_PAD_LEFT),
+                    'numero' => $numeroAsiento,
                     'descripcion' => "Registro de contable Venta #{$venta->numero}",
                     'tipo' => 'venta',
                     'total_debe' => $venta->total,
