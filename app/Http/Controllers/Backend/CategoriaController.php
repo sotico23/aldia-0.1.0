@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Exports\CategoriasExport;
-use App\Helpers\SearchHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\HasBulkOperations;
 use App\Imports\CategoriasImport;
+use App\Livewire\Categorias\Index as CategoriasIndex;
 use App\Models\Categoria;
 use App\Models\PublicProfile;
 use Illuminate\Http\RedirectResponse;
@@ -14,10 +14,9 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
-use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response;
 
 class CategoriaController extends Controller implements HasMiddleware
 {
@@ -46,89 +45,23 @@ class CategoriaController extends Controller implements HasMiddleware
 
     public function index(Request $request): Response
     {
-        $ownerId = auth()->user()->getOwnerId();
-        $publicProfile = PublicProfile::where('user_id', $ownerId)->first();
-
-        // Auto-sync missing public_profile_id for current owner's categories
-        if ($publicProfile) {
-            Categoria::where('owner_id', $ownerId)
-                ->whereNull('public_profile_id')
-                ->update(['public_profile_id' => $publicProfile->id]);
+        if ($request->header('X-Inertia')) {
+            return Inertia::location(route('categorias.index'));
         }
 
-        $query = Categoria::query()->where('owner_id', $ownerId);
+        config(['livewire.csp_safe' => true]);
 
-        if ($request->filled('search')) {
-            $search = SearchHelper::escapeLike($request->input('search'));
-            $query->where(function ($query) use ($search) {
-                $query->where('nombre', 'like', "%{$search}%")
-                    ->orWhere('descripcion', 'like', "%{$search}%")
-                    ->orWhere('id', 'like', "%{$search}%");
-            });
-        }
-
-        if ($request->filled('tipo')) {
-            $query->where('tipo', $request->input('tipo'));
-        }
-
-        $marketplace = $request->input('marketplace');
-
-        if ($marketplace === '1') {
-            $query->where('mostrar_en_perfil', true)
-                ->whereNotNull('public_profile_id');
-        } elseif ($marketplace === '0') {
-            $query->where(function ($query) {
-                $query->where('mostrar_en_perfil', false)
-                    ->orWhereNull('public_profile_id');
-            });
-        }
-
-        $categorias = $query->orderBy('nombre')->get();
-
-        $ordenTipos = array_flip(array_keys(Categoria::TIPOS));
-
-        $categoriasPorTipo = $categorias
-            ->groupBy('tipo')
-            ->sortBy(fn ($items, $tipo) => [$ordenTipos[$tipo] ?? 999, $tipo])
-            ->map(fn ($items, $tipo) => [
-                'tipo' => $tipo,
-                'label' => Str::headline($tipo),
-                'total' => $items->count(),
-                'activas' => $items->where('activo', true)->count(),
-                'marketplace' => $items
-                    ->filter(fn (Categoria $categoria) => $categoria->mostrar_en_perfil && $categoria->public_profile_id !== null)
-                    ->count(),
-                'data' => $items->values(),
-            ])
-            ->values();
-
-        $tiposDisponibles = collect(array_keys(Categoria::TIPOS))
-            ->merge(Categoria::where('owner_id', $ownerId)->distinct()->pluck('tipo'))
-            ->filter()
-            ->unique()
-            ->values()
-            ->map(fn (string $tipo) => [
-                'value' => $tipo,
-                'label' => Str::headline($tipo),
-            ]);
-
-        return Inertia::render('Backend/Categorias/Index', [
-            'categoriasPorTipo' => $categoriasPorTipo,
-            'tiposDisponibles' => $tiposDisponibles,
-            'resumen' => [
-                'total' => $categorias->count(),
-                'activas' => $categorias->where('activo', true)->count(),
-                'marketplace' => $categorias
-                    ->filter(fn (Categoria $categoria) => $categoria->mostrar_en_perfil && $categoria->public_profile_id !== null)
-                    ->count(),
-                'tipos' => $categoriasPorTipo->count(),
-            ],
-            'tiendaSlug' => $publicProfile?->slug,
-            'filters' => $request->only(['search', 'tipo', 'marketplace']),
-        ]);
+        return app(CategoriasIndex::class)();
     }
 
     public function store(Request $request): RedirectResponse
+    {
+        $this->crearCategoria($request);
+
+        return redirect()->route('categorias.index');
+    }
+
+    public function crearCategoria(Request $request): void
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
@@ -154,11 +87,16 @@ class CategoriaController extends Controller implements HasMiddleware
         }
 
         Categoria::create($data);
+    }
+
+    public function update(Request $request, Categoria $categoria): RedirectResponse
+    {
+        $this->actualizarCategoria($request, $categoria);
 
         return redirect()->route('categorias.index');
     }
 
-    public function update(Request $request, Categoria $categoria): RedirectResponse
+    public function actualizarCategoria(Request $request, Categoria $categoria): void
     {
         if ($categoria->owner_id !== auth()->user()->getOwnerId()) {
             abort(403);
@@ -188,11 +126,16 @@ class CategoriaController extends Controller implements HasMiddleware
         }
 
         $categoria->update($validated);
+    }
+
+    public function destroy(Categoria $categoria): RedirectResponse
+    {
+        $this->eliminarCategoria($categoria);
 
         return redirect()->route('categorias.index');
     }
 
-    public function destroy(Categoria $categoria): RedirectResponse
+    public function eliminarCategoria(Categoria $categoria): void
     {
         if ($categoria->owner_id !== auth()->user()->getOwnerId()) {
             abort(403);
@@ -202,7 +145,5 @@ class CategoriaController extends Controller implements HasMiddleware
             Storage::disk('public')->delete($categoria->imagen);
         }
         $categoria->delete();
-
-        return redirect()->route('categorias.index');
     }
 }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\HasBulkOperations;
 use App\Http\Requests\Backend\StoreEmpleadoRequest;
 use App\Imports\EmpleadosImport;
+use App\Livewire\Empleados\Index as EmpleadosIndex;
 use App\Models\Almacen;
 use App\Models\Empleado;
 use App\Models\Repartidor;
@@ -23,7 +24,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
-use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response;
 use Spatie\Permission\Models\Role;
 
 class EmpleadoController extends Controller implements HasMiddleware
@@ -51,43 +52,32 @@ class EmpleadoController extends Controller implements HasMiddleware
         return new EmpleadosImport;
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $userId = Auth::user()->getOwnerId();
-        $empleados = Empleado::with(['almacen', 'user.roles'])
-            ->where('owner_id', $userId)
-            ->orderBy('nombre')
-            ->paginate(15);
+        if ($request->header('X-Inertia')) {
+            return Inertia::location(route('empleados.index'));
+        }
 
-        $empleados->getCollection()->transform(function ($empleado) {
-            $empleado->user_rol_id = $empleado->user?->roles?->first()?->id;
-            $empleado->user_rol_name = $empleado->user?->roles?->first()?->name;
-            $empleado->es_repartidor = $empleado->user?->hasRole(Repartidor::defaultRole()) ?? false;
+        config(['livewire.csp_safe' => true]);
 
-            return $empleado;
-        });
-
-        $almacenes = Almacen::where('owner_id', $userId)->where('activo', true)->orderBy('nombre')->get();
-
-        $roles = Role::where('owner_id', $userId)->orderBy('name')->get();
-
-        return Inertia::render('Backend/Empleados/Index', [
-            'empleados' => $empleados,
-            'almacenes' => $almacenes,
-            'roles' => $roles,
-        ]);
+        return app(EmpleadosIndex::class)();
     }
 
     public function store(StoreEmpleadoRequest $request, CreateCompanyDriver $createDriver): RedirectResponse
     {
-        $validated = $request->validated();
+        $mensaje = $this->crearEmpleado($request->validated(), $request->user(), $createDriver);
 
+        return redirect()->route('empleados.index')->with('success', $mensaje);
+    }
+
+    public function crearEmpleado(array $validated, User $actor, CreateCompanyDriver $createDriver): string
+    {
         if (empty($validated['almacen_id'])) {
             $validated['almacen_id'] = null;
         }
 
-        if ($request->hasFile('foto')) {
-            $validated['foto'] = $request->file('foto')->store('empleados', 'public');
+        if (isset($validated['foto'])) {
+            $validated['foto'] = $validated['foto']->store('empleados', 'public');
         }
 
         $esRepartidor = (bool) ($validated['es_repartidor'] ?? false);
@@ -101,8 +91,6 @@ class EmpleadoController extends Controller implements HasMiddleware
             $validated['rol_id'],
             $validated['es_repartidor'],
         );
-
-        $actor = $request->user();
 
         DB::transaction(function () use ($validated, $crearUsuario, $esRepartidor, $password, $rolId, $createDriver, $actor) {
             $validated['user_id'] = null;
@@ -149,14 +137,19 @@ class EmpleadoController extends Controller implements HasMiddleware
             Empleado::create($validated);
         });
 
-        $mensaje = $crearUsuario
+        return $crearUsuario
             ? 'Empleado y acceso a plataforma creado correctamente.'
             : 'Empleado creado correctamente.';
-
-        return redirect()->route('empleados.index')->with('success', $mensaje);
     }
 
     public function update(Request $request, Empleado $empleado, CreateCompanyDriver $createDriver): RedirectResponse
+    {
+        $this->actualizarEmpleado($request, $empleado, $createDriver);
+
+        return redirect()->route('empleados.index')->with('success', 'Empleado actualizado correctamente.');
+    }
+
+    public function actualizarEmpleado(Request $request, Empleado $empleado, CreateCompanyDriver $createDriver): void
     {
         $ownerId = Auth::user()->getOwnerId();
 
@@ -313,7 +306,6 @@ class EmpleadoController extends Controller implements HasMiddleware
             }
         });
 
-        return redirect()->route('empleados.index')->with('success', 'Empleado actualizado correctamente.');
     }
 
     private function ensureDriverProfile(User $user, int $ownerId): void
@@ -334,12 +326,17 @@ class EmpleadoController extends Controller implements HasMiddleware
 
     public function destroy(Empleado $empleado): RedirectResponse
     {
+        $this->eliminarEmpleado($empleado);
+
+        return redirect()->route('empleados.index');
+    }
+
+    public function eliminarEmpleado(Empleado $empleado): void
+    {
         if ($empleado->user) {
             $empleado->user->delete();
         }
 
         $empleado->delete();
-
-        return redirect()->route('empleados.index');
     }
 }

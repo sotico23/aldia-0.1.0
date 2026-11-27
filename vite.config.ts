@@ -30,7 +30,9 @@ export default defineConfig({
         jsx: 'automatic',
     },
     server: {
-        host: 'localhost',
+        // 'localhost' puede resolver solo a ::1 en Windows y el navegador
+        // pide 127.0.0.1; fijamos IPv4 para que @vite cargue los estilos.
+        host: '127.0.0.1',
         watch: {
             ignored: [
                 '**/vendor/**',

@@ -1,9 +1,11 @@
 <?php
 
+use App\Livewire\Categorias\Index;
 use App\Models\Categoria;
 use App\Models\PublicProfile;
 use App\Models\User;
-use Inertia\Testing\AssertableInertia as Assert;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
@@ -24,7 +26,20 @@ function crearCategoriaDePrueba(User $user, array $attributes = []): Categoria
     ], $attributes));
 }
 
-test('agrupa las categorías por tipo con resumen y tipos dinámicos', function () {
+test('la página se abre como Livewire y expulsa a Inertia', function () {
+    $this->withoutVite();
+
+    $this->get(route('categorias.index'))
+        ->assertOk()
+        ->assertSeeLivewire(Index::class)
+        ->assertSee('livewire.csp', false);
+
+    $this->get(route('categorias.index'), ['X-Inertia' => 'true'])
+        ->assertStatus(409)
+        ->assertHeader('X-Inertia-Location', route('categorias.index'));
+});
+
+test('agrupa las categorías por tipo con resumen', function () {
     $profile = PublicProfile::factory()->create(['user_id' => $this->user->id]);
 
     crearCategoriaDePrueba($this->user, [
@@ -43,26 +58,21 @@ test('agrupa las categorías por tipo con resumen y tipos dinámicos', function 
         'mostrar_en_perfil' => false,
     ]);
 
-    $this->get(route('categorias.index'))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('Backend/Categorias/Index')
-            ->has('categoriasPorTipo', 2)
-            ->where('categoriasPorTipo.0.tipo', 'producto')
-            ->where('categoriasPorTipo.0.total', 2)
-            ->where('categoriasPorTipo.0.marketplace', 2)
-            ->where('categoriasPorTipo.1.tipo', 'cliente')
-            ->where('categoriasPorTipo.1.total', 1)
-            ->where('resumen.total', 3)
-            ->where('resumen.marketplace', 2)
-            ->where('resumen.tipos', 2)
-            ->has('tiposDisponibles', 4)
-        );
+    Livewire::test(Index::class)
+        ->assertViewHas('porTipo', function ($grupos): bool {
+            return $grupos->count() === 2
+                && $grupos[0]['tipo'] === 'producto'
+                && $grupos[0]['total'] === 2
+                && $grupos[1]['tipo'] === 'cliente'
+                && $grupos[1]['total'] === 1;
+        })
+        ->assertViewHas('resumen', fn (array $resumen): bool => $resumen['total'] === 3
+            && $resumen['marketplace'] === 2
+            && $resumen['tipos'] === 2);
 });
 
 test('filtra las categorías publicadas en el marketplace', function () {
     $profile = PublicProfile::factory()->create(['user_id' => $this->user->id]);
-
     crearCategoriaDePrueba($this->user, [
         'tipo' => 'producto',
         'public_profile_id' => $profile->id,
@@ -74,13 +84,9 @@ test('filtra las categorías publicadas en el marketplace', function () {
         'mostrar_en_perfil' => false,
     ]);
 
-    $this->get(route('categorias.index', ['marketplace' => '1']))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->has('categoriasPorTipo', 1)
-            ->where('categoriasPorTipo.0.total', 1)
-            ->where('resumen.marketplace', 1)
-        );
+    Livewire::test(Index::class)
+        ->set('marketplace', '1')
+        ->assertViewHas('categorias', fn ($categorias): bool => $categorias->total() === 1);
 });
 
 test('busca categorías por nombre o descripción', function () {
@@ -95,13 +101,46 @@ test('busca categorías por nombre o descripción', function () {
         'descripcion' => 'Quesos y leches',
     ]);
 
-    $this->get(route('categorias.index', ['search' => 'jugos']))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->has('categoriasPorTipo', 1)
-            ->where('categoriasPorTipo.0.total', 1)
-            ->where('resumen.total', 1)
-        );
+    Livewire::test(Index::class)
+        ->set('busqueda', 'jugos')
+        ->assertViewHas('categorias', fn ($categorias): bool => $categorias->total() === 1)
+        ->assertSee('Bebidas')
+        ->assertDontSee('Lácteos');
+});
+
+test('crea, edita y elimina categorías sin redirigir', function () {
+    foreach (['comercial.categorias.create', 'comercial.categorias.edit', 'comercial.categorias.delete'] as $permiso) {
+        $this->user->givePermissionTo(Permission::firstOrCreate(['name' => $permiso]));
+    }
+    $categoria = crearCategoriaDePrueba($this->user, ['nombre' => 'Categoría original']);
+
+    Livewire::test(Index::class)
+        ->call('nueva')
+        ->set('form.nombre', 'Categoría creada')
+        ->set('form.tipo', 'servicio')
+        ->call('guardar')
+        ->assertHasNoErrors()
+        ->assertSet('mensaje', 'Categoría creada.')
+        ->assertNoRedirect()
+        ->call('editar', $categoria->id)
+        ->set('form.nombre', 'Categoría editada')
+        ->call('guardar')
+        ->assertHasNoErrors()
+        ->assertSet('mensaje', 'Categoría actualizada.')
+        ->call('eliminar', $categoria->id)
+        ->assertSet('mensaje', 'Categoría eliminada.')
+        ->assertNoRedirect();
+
+    expect(Categoria::find($categoria->id))->toBeNull()
+        ->and(Categoria::where('nombre', 'Categoría creada')->exists())->toBeTrue();
+});
+
+test('una acción rechaza categorías de otra empresa', function () {
+    $this->user->givePermissionTo(Permission::firstOrCreate(['name' => 'comercial.categorias.edit']));
+    $ajena = crearCategoriaDePrueba(User::factory()->create());
+
+    expect(fn () => Livewire::test(Index::class)->call('editar', $ajena->id))
+        ->toThrow(ModelNotFoundException::class);
 });
 
 test('crea categorías con los tipos permitidos y rechaza tipos desconocidos', function () {
