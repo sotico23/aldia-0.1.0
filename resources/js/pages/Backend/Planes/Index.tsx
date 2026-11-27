@@ -1,5 +1,15 @@
-import { Head, Link } from '@inertiajs/react';
-import { Check, Crown, Sparkles, Shield, CreditCard, Info } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import {
+    Check,
+    Crown,
+    Sparkles,
+    Shield,
+    CreditCard,
+    Info,
+    Loader2,
+} from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +30,39 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Planes', href: '/planes' },
 ];
 
-export default function PlanesIndex({ planes }: { planes: Plan[] }) {
+export default function PlanesIndex({
+    planes,
+    config,
+    gateway,
+}: {
+    planes: Plan[];
+    config: { subscriptions_active: boolean; default_currency: string };
+    gateway: string;
+}) {
+    const [suscribiendo, setSuscribiendo] = useState<number | null>(null);
+
+    const suscribirse = (index: number, nombre: string) => {
+        setSuscribiendo(index);
+        router.post(
+            '/planes/suscribirse',
+            { plan: index },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setSuscribiendo(null);
+                    toast.success(`Suscripción al plan ${nombre} registrada.`);
+                },
+                onError: (errores) => {
+                    setSuscribiendo(null);
+                    toast.error(
+                        errores.plan || 'No se pudo completar la suscripción.',
+                    );
+                },
+                onFinish: () => setSuscribiendo(null),
+            },
+        );
+    };
+
     const getPlanStyles = (plan: Plan) => {
         if (plan.popular) {
             return {
@@ -72,6 +114,11 @@ export default function PlanesIndex({ planes }: { planes: Plan[] }) {
                             <h1 className="text-2xl font-black">
                                 Planes y Precios
                             </h1>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                {config.subscriptions_active
+                                    ? `Suscripciones activas · Pasarela: ${gateway} · Moneda: ${config.default_currency}`
+                                    : 'Las suscripciones están desactivadas en Configuración de Pagos Globales.'}
+                            </p>
                         </div>
                     </div>
 
@@ -178,9 +225,22 @@ export default function PlanesIndex({ planes }: { planes: Plan[] }) {
                                     ) : (
                                         <Button
                                             className={`w-full ${styles.button}`}
+                                            disabled={
+                                                !config.subscriptions_active ||
+                                                suscribiendo !== null
+                                            }
+                                            onClick={() =>
+                                                suscribirse(index, plan.nombre)
+                                            }
                                         >
-                                            <CreditCard className="mr-1 h-4 w-4" />
-                                            Suscribirse
+                                            {suscribiendo === index ? (
+                                                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <CreditCard className="mr-1 h-4 w-4" />
+                                            )}
+                                            {suscribiendo === index
+                                                ? 'Procesando...'
+                                                : 'Suscribirse'}
                                         </Button>
                                     )}
                                 </div>

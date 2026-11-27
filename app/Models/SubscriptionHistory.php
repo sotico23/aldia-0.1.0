@@ -10,6 +10,8 @@ class SubscriptionHistory extends Model
 {
     use HasFactory;
 
+    protected $table = 'subscription_history';
+
     public $timestamps = false;
 
     protected $fillable = [

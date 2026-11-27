@@ -225,7 +225,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('mensajes/{usuarioId}', [MensajeController::class, 'conversacion'])->name('mensajes.conversacion')->middleware('permission:general.comunidad.edit');
     Route::post('mensajes', [MensajeController::class, 'enviar'])->name('mensajes.enviar')->middleware('permission:general.comunidad.edit', 'throttle:messages');
 
-    Route::get('planes', PlanController::class)->name('planes.index');
+    Route::get('planes', [PlanController::class, 'index'])->name('planes.index');
+    Route::post('planes/suscribirse', [PlanController::class, 'suscribirse'])->name('planes.subscribe');
 
     Route::get('tareas', [TareaController::class, 'index'])->name('tareas.index')->middleware('permission:general.tareas.create|general.tareas.edit|general.tareas.delete');
     Route::post('tareas', [TareaController::class, 'store'])->name('tareas.store')->middleware('permission:general.tareas.create');
