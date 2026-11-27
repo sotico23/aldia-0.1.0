@@ -1,4 +1,4 @@
-﻿@php
+@php
     $grupos = [
         'Datos personales' => [
             'nombre' => ['Nombre'], 'apellido' => ['Apellido'], 'rut' => ['RUT'],

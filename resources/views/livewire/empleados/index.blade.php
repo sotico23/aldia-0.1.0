@@ -1,4 +1,4 @@
-﻿@php
+@php
     $input = 'w-full rounded-md border border-input bg-background px-3 py-2 text-sm';
     $button = 'inline-flex items-center rounded-md border border-input px-3 py-2 text-sm hover:bg-muted disabled:opacity-50';
     $primary = 'inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50';
