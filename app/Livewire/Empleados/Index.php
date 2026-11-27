@@ -48,6 +48,9 @@ class Index extends Component
     #[Locked]
     public ?int $empleadoId = null;
 
+    #[Locked]
+    public ?int $detalle = null;
+
     public function boot(): void
     {
         Gate::authorize('rrhh.empleados.viewAny');
@@ -63,6 +66,16 @@ class Index extends Component
             $this->form['crear_usuario'] = true;
             $this->form['cargo'] = 'repartidor';
         }
+    }
+
+    public function ver(int $id): void
+    {
+        $this->detalle = $this->empleados()->findOrFail($id)->id;
+    }
+
+    public function cerrarDetalle(): void
+    {
+        $this->reset('detalle');
     }
 
     public function nuevo(): void
@@ -98,7 +111,7 @@ class Index extends Component
 
     public function cerrar(): void
     {
-        $this->reset('formulario', 'form', 'foto', 'empleadoId');
+        $this->reset('formulario', 'form', 'foto', 'empleadoId', 'detalle');
         $this->resetValidation();
     }
 
@@ -159,6 +172,9 @@ class Index extends Component
         $ownerId = auth()->user()->getOwnerId();
 
         return view('livewire.empleados.index', [
+            'empleadoDetalle' => $this->detalle === null
+                ? null
+                : $this->empleados()->with(['almacen:id,nombre', 'user.roles'])->find($this->detalle),
             'empleados' => $this->empleados()->with('almacen:id,nombre')
                 ->when(trim($this->busqueda) !== '', fn (Builder $query) => $query->where(fn (Builder $query) => $query
                     ->where('nombre', 'like', $busqueda)->orWhere('apellido', 'like', $busqueda)

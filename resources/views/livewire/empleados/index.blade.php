@@ -77,6 +77,7 @@
                         <td class="p-3 capitalize">{{ $empleado->estado }}</td>
                         <td class="p-3">
                             <div class="flex gap-2">
+                                <button class="{{ $button }}" type="button" wire:click="ver({{ $empleado->id }})">Ver</button>
                                 @can('rrhh.empleados.edit')
                                     <button class="{{ $button }}" type="button" wire:click="editar({{ $empleado->id }})">Editar</button>
                                 @endcan
@@ -108,5 +109,9 @@
 
     @if($formulario)
         @include('livewire.empleados.formulario')
+    @endif
+
+    @if($detalle && $empleadoDetalle)
+        @include('livewire.empleados.detalle')
     @endif
 </div>
