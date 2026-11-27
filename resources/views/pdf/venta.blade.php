@@ -181,25 +181,25 @@
         <table>
             <tr>
                 <td class="label">Señor(es):</td>
-                <td>{{ $venta->cliente->nombre }}</td>
+                <td>{{ $venta->cliente?->nombre ?? 'Cliente no especificado' }}</td>
                 <td class="label">Fecha:</td>
                 <td class="text-right">{{ \Carbon\Carbon::parse($venta->fecha)->format('d/m/Y') }}</td>
             </tr>
             <tr>
                 <td class="label">R.U.T.:</td>
-                <td>{{ $venta->cliente->rut ?? 'N/A' }}</td>
+                <td>{{ $venta->cliente?->rut ?? 'N/A' }}</td>
                 <td class="label">Estado:</td>
                 <td class="text-right" style="text-transform: uppercase;">{{ $venta->estado }}</td>
             </tr>
             <tr>
                 <td class="label">Dirección:</td>
-                <td colspan="3">{{ $venta->cliente->direccion ?? 'N/A' }}</td>
+                <td colspan="3">{{ $venta->cliente?->direccion ?? 'N/A' }}</td>
             </tr>
             <tr>
                 <td class="label">Teléfono:</td>
-                <td>{{ $venta->cliente->telefono ?? 'N/A' }}</td>
+                <td>{{ $venta->cliente?->telefono ?? 'N/A' }}</td>
                 <td class="label">Email:</td>
-                <td class="text-right">{{ $venta->cliente->email }}</td>
+                <td class="text-right">{{ $venta->cliente?->email ?? 'N/A' }}</td>
             </tr>
         </table>
     </div>
