@@ -38,7 +38,7 @@
             <p class="whitespace-pre-wrap rounded-md bg-muted p-3 text-sm">{{ $ventaDetalle->notas }}</p>
         @endif
         <div class="flex flex-wrap justify-end gap-2">
-            <a class="{{ $button }}" href="{{ route('ventas.download', $ventaDetalle) }}">PDF formal</a>
+            <a class="{{ $button }}" href="{{ route('ventas.download', $ventaDetalle) }}">PDF formal SII</a>
             <a class="{{ $button }}" href="{{ route('ventas.download-informal', $ventaDetalle) }}">PDF informal</a>
         </div>
     </section>

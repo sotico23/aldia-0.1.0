@@ -6,6 +6,7 @@
     $states = ['pagada' => 'Pagada', 'pendiente' => 'Pendiente', 'cancelada' => 'Cancelada', 'anulada' => 'Anulada', 'confirmado' => 'Confirmada', 'completada' => 'Completada', 'enviado' => 'Enviada', 'entregado' => 'Entregada', 'cancelado' => 'Cancelada'];
     $exportFilters = array_filter(['busqueda' => $busqueda, 'estado' => $estado, 'cliente_id' => $cliente, 'fechaDesde' => $desde, 'fechaHasta' => $hasta]);
     $maximo = max(1, $serie->max('monto'));
+    $gruposEtiquetas = ['pagadas' => 'Pagadas', 'no-pagadas' => 'No pagadas'];
 @endphp
 
 <div class="mx-auto max-w-screen-2xl space-y-5 px-4 py-5 sm:px-6">
@@ -104,9 +105,9 @@
         @if($ventas->isEmpty())
             <p class="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No hay ventas que coincidan con estos filtros.</p>
         @elseif($vista === 'tarjetas')
-            @foreach($ventas->getCollection()->groupBy('estado') as $grupo => $registros)
+            @foreach($grupos as $grupo => $registros)
                 <div class="space-y-2" wire:key="grupo-{{ $grupo }}">
-                    <h3 class="font-semibold">{{ $states[$grupo] ?? ucfirst($grupo) }} <span class="text-sm font-normal text-muted-foreground">({{ $registros->count() }})</span></h3>
+                    <h3 class="font-semibold {{ $grupo === 'pagadas' ? 'text-emerald-600 dark:text-emerald-400' : '' }}">{{ $gruposEtiquetas[$grupo] }} <span class="text-sm font-normal text-muted-foreground">({{ $registros->count() }})</span></h3>
                     <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                         @foreach($registros as $venta)
                             <article class="space-y-3 rounded-lg border border-border bg-background p-4" wire:key="tarjeta-{{ $venta->id }}">
@@ -132,38 +133,47 @@
                 </div>
             @endforeach
         @else
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="border-b border-border bg-muted/50">
-                        <tr>
-                            @foreach(['numero' => 'Número', 'cliente' => 'Cliente', 'fecha' => 'Fecha', 'total' => 'Total', 'estado' => 'Estado'] as $campo => $label)
-                                <th scope="col" class="whitespace-nowrap px-3 py-2">
-                                    @if($campo === 'cliente')
-                                        {{ $label }}
-                                    @else
-                                        <button type="button" wire:click="ordenar('{{ $campo }}')" class="hover:underline">
-                                            {{ $label }} @if($orden === $campo) {{ $direccion === 'asc' ? '↑' : '↓' }} @endif
-                                        </button>
-                                    @endif
-                                </th>
-                            @endforeach
-                            <th scope="col" class="px-3 py-2">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
-                        @foreach($ventas as $venta)
-                            <tr wire:key="fila-{{ $venta->id }}">
-                                <td class="px-3 py-3 font-medium">{{ $venta->numero }}</td>
-                                <td class="px-3 py-3">{{ $venta->cliente?->nombre ?: 'Cliente general' }}</td>
-                                <td class="whitespace-nowrap px-3 py-3">{{ $venta->fecha?->format('d-m-Y') }}</td>
-                                <td class="whitespace-nowrap px-3 py-3 font-semibold">{{ $money($venta->total, $venta->currency) }}</td>
-                                <td class="px-3 py-3">@include('livewire.ventas.estado')</td>
-                                <td class="px-3 py-3">@include('livewire.ventas.acciones')</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+            @foreach($grupos as $grupo => $registros)
+                <div class="space-y-2" wire:key="bloque-{{ $grupo }}">
+                    <h3 class="font-semibold {{ $grupo === 'pagadas' ? 'text-emerald-600 dark:text-emerald-400' : '' }}">{{ $gruposEtiquetas[$grupo] }} <span class="text-sm font-normal text-muted-foreground">({{ $registros->count() }})</span></h3>
+                    @if($registros->isEmpty())
+                        <p class="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">No hay ventas {{ strtolower($gruposEtiquetas[$grupo]) }} en esta página.</p>
+                    @else
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="border-b border-border bg-muted/50">
+                                    <tr>
+                                        @foreach(['numero' => 'Número', 'cliente' => 'Cliente', 'fecha' => 'Fecha', 'total' => 'Total', 'estado' => 'Estado'] as $campo => $label)
+                                            <th scope="col" class="whitespace-nowrap px-3 py-2">
+                                                @if($campo === 'cliente')
+                                                    {{ $label }}
+                                                @else
+                                                    <button type="button" wire:click="ordenar('{{ $campo }}')" class="hover:underline">
+                                                        {{ $label }} @if($orden === $campo) {{ $direccion === 'asc' ? '↑' : '↓' }} @endif
+                                                    </button>
+                                                @endif
+                                            </th>
+                                        @endforeach
+                                        <th scope="col" class="px-3 py-2">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-border">
+                                    @foreach($registros as $venta)
+                                        <tr wire:key="fila-{{ $venta->id }}">
+                                            <td class="px-3 py-3 font-medium">{{ $venta->numero }}</td>
+                                            <td class="px-3 py-3">{{ $venta->cliente?->nombre ?: 'Cliente general' }}</td>
+                                            <td class="whitespace-nowrap px-3 py-3">{{ $venta->fecha?->format('d-m-Y') }}</td>
+                                            <td class="whitespace-nowrap px-3 py-3 font-semibold">{{ $money($venta->total, $venta->currency) }}</td>
+                                            <td class="px-3 py-3">@include('livewire.ventas.estado')</td>
+                                            <td class="px-3 py-3">@include('livewire.ventas.acciones')</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </div>
+            @endforeach
         @endif
 
         {{ $ventas->links() }}

@@ -174,3 +174,55 @@ test('importa un CSV y actualiza el listado sin redirigir', function () {
         ->assertSee('LIVEWIRE-CSV')
         ->assertNoRedirect();
 });
+
+test('el listado separa las ventas pagadas de las no pagadas', function () {
+    $owner = User::factory()->create();
+    $owner->givePermissionTo(Permission::findOrCreate('ventas.ventas.viewAny'));
+    $this->actingAs($owner);
+    $ownerId = $owner->getOwnerId();
+
+    $pagada = Venta::factory()->for($owner, 'user')->create([
+        'owner_id' => $ownerId,
+        'numero' => 'PAGADA-SEP',
+        'estado' => 'pagada',
+    ]);
+    $pendiente = Venta::factory()->for($owner, 'user')->create([
+        'owner_id' => $ownerId,
+        'numero' => 'PENDIENTE-SEP',
+        'estado' => 'pendiente',
+    ]);
+
+    Livewire::test(Index::class)
+        ->assertViewHas('grupos', function (array $grupos) use ($pagada, $pendiente): bool {
+            $idsPagadas = $grupos['pagadas']->pluck('id');
+            $idsNoPagadas = $grupos['no-pagadas']->pluck('id');
+
+            return $idsPagadas->contains($pagada->id)
+                && ! $idsPagadas->contains($pendiente->id)
+                && $idsNoPagadas->contains($pendiente->id)
+                && ! $idsNoPagadas->contains($pagada->id);
+        })
+        ->assertSee('Pagadas')
+        ->assertSee('No pagadas')
+        ->set('vista', 'tarjetas')
+        ->assertSee('PAGADA-SEP')
+        ->assertSee('PENDIENTE-SEP');
+});
+
+test('el listado ofrece pdf formal sii e informal para cada venta', function () {
+    $owner = User::factory()->create();
+    $owner->givePermissionTo(Permission::findOrCreate('ventas.ventas.viewAny'));
+    $this->actingAs($owner);
+
+    $venta = Venta::factory()->for($owner, 'user')->create([
+        'owner_id' => $owner->getOwnerId(),
+        'numero' => 'PDF-OPCIONES',
+        'estado' => 'pendiente',
+    ]);
+
+    Livewire::test(Index::class)
+        ->assertSee('PDF formal SII')
+        ->assertSee('PDF informal')
+        ->assertSee(route('ventas.download', $venta), false)
+        ->assertSee(route('ventas.download-informal', $venta), false);
+});

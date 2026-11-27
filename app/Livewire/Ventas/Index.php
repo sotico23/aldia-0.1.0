@@ -278,9 +278,23 @@ class Index extends Component
             $clientes->whereKey(auth()->user()->getClienteActual()?->id ?? 0);
         }
 
+        $ventas = $filtros->with(['cliente:id,nombre,telefono', 'almacen:id,nombre'])
+            ->withExists('entrega')
+            ->orderBy($orden, $this->direccion === 'asc' ? 'asc' : 'desc')
+            ->orderByDesc('id')
+            ->paginate(15);
+        $grupos = [
+            'pagadas' => $ventas->getCollection()
+                ->filter(fn (Venta $venta): bool => $venta->estado === 'pagada')
+                ->values(),
+            'no-pagadas' => $ventas->getCollection()
+                ->filter(fn (Venta $venta): bool => $venta->estado !== 'pagada')
+                ->values(),
+        ];
+
         return view('livewire.ventas.index', [
-            'ventas' => $filtros->with(['cliente:id,nombre,telefono', 'almacen:id,nombre'])
-                ->withExists('entrega')->orderBy($orden, $this->direccion === 'asc' ? 'asc' : 'desc')->orderByDesc('id')->paginate(15),
+            'ventas' => $ventas,
+            'grupos' => $grupos,
             'resumen' => (clone $base)->selectRaw("COUNT(*) AS total, COUNT(CASE WHEN estado = 'pagada' THEN 1 END) AS pagadas, COUNT(CASE WHEN estado = 'pendiente' THEN 1 END) AS pendientes, COALESCE(SUM(CASE WHEN estado = 'pagada' THEN total ELSE 0 END), 0) AS ingresos")->first(),
             'serie' => $this->serie($base),
             'clientes' => $clientes->where(fn (Builder $query) => $query->where('activo', true)->orWhere('id', (int) ($this->form['cliente_id'] ?? 0)))->orderBy('nombre')->get(['id', 'nombre']),

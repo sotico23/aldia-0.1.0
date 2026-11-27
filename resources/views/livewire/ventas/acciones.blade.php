@@ -1,6 +1,7 @@
 <div class="flex flex-wrap items-center gap-1.5">
     <button type="button" class="{{ $button }}" wire:click="ver({{ $venta->id }})">Ver</button>
-    <a class="{{ $button }}" href="{{ route('ventas.download', $venta) }}">PDF</a>
+    <a class="{{ $button }}" href="{{ route('ventas.download', $venta) }}">PDF formal SII</a>
+    <a class="{{ $button }}" href="{{ route('ventas.download-informal', $venta) }}">PDF informal</a>
     @if(! $venta->entrega_exists && in_array($venta->estado, \App\Models\Venta::ESTADOS_PARA_ENTREGA, true))
         @if(auth()->user()->can('flota.entregas.viewAny') && auth()->user()->can('flota.entregas.create'))
             <button type="button" class="{{ $button }}" wire:click="prepararEntrega({{ $venta->id }})">Enviar a reparto</button>
