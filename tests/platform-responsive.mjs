@@ -6,7 +6,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const root = process.cwd();
-const names = ['Backend/UsuarioRol/Index','Backend/Almacenes/Index','Backend/Productos/Index','Backend/Clientes/Index','Backend/Ventas/Index','Backend/Compras/Index','Backend/Proyectos/Index','Backend/Asistencia/Index','Backend/Empleados/Index','Backend/Planificacion/Index','Backend/Calidad/Index','Backend/Boms/Index','Backend/OrdenProduccion/Index','Backend/ListaPendientes/Index','Backend/Reportes/Index','Backend/Sii/Documentos','LMS/Student/Courses/Index','Notifications/Index'];
+const names = ['Backend/UsuarioRol/Index','Backend/Almacenes/Index','Backend/Productos/Index','Backend/Clientes/Index','Backend/Compras/Index','Backend/Proyectos/Index','Backend/Asistencia/Index','Backend/Empleados/Index','Backend/Planificacion/Index','Backend/Calidad/Index','Backend/Boms/Index','Backend/OrdenProduccion/Index','Backend/ListaPendientes/Index','Backend/Reportes/Index','Backend/Sii/Documentos','LMS/Student/Courses/Index','Notifications/Index'];
 const config = ts.readConfigFile('tsconfig.json', ts.sys.readFile).config;
 const parsed = ts.parseJsonConfigFileContent(config, ts.sys, root);
 const program = ts.createProgram(parsed.fileNames, parsed.options);

@@ -82,41 +82,7 @@ class EntregaController extends Controller implements HasMiddleware
             ->orderBy('nombre')
             ->get();
 
-        // ── Repartidores unificados para asignación de entregas ──
-        // a) Repartidores empleados (internos) con cargo 'repartidor' y estado activo
-        $repartidoresInternos = Repartidor::where('owner_id', $ownerId)
-            ->where('driver_type', Repartidor::TYPE_EMPLOYEE)
-            ->where('estado', 'disponible')
-            ->whereHas('user.empleado', fn ($q) => $q->where('cargo', 'repartidor'))
-            ->with('user:id,name')
-            ->get()
-            ->map(fn ($r) => [
-                'id' => $r->id,
-                'nombre' => $r->user?->name ?? 'Sin nombre',
-                'tipo' => 'interno',
-                'cargo' => 'repartidor',
-                'estado' => $r->estado,
-            ]);
-
-        // b) Freelancers aprobados y disponibles
-        $repartidoresFreelancers = Repartidor::where('owner_id', $ownerId)
-            ->where('driver_type', Repartidor::TYPE_FREELANCER)
-            ->where('approval_status', Repartidor::APPROVAL_APPROVED)
-            ->where('estado', 'disponible')
-            ->with('user:id,name')
-            ->get()
-            ->map(fn ($r) => [
-                'id' => $r->id,
-                'nombre' => $r->user?->name ?? 'Sin nombre',
-                'tipo' => 'freelancer',
-                'cargo' => 'repartidor',
-                'estado' => $r->estado,
-            ]);
-
-        $repartidores = $repartidoresInternos
-            ->merge($repartidoresFreelancers)
-            ->values()
-            ->all();
+        $repartidores = $this->repartidoresDisponibles($ownerId);
 
         $driverId = $request->input('conductor_id');
         $stats = $this->statsService->getDriverStats($ownerId, $driverId);
@@ -149,6 +115,45 @@ class EntregaController extends Controller implements HasMiddleware
         ]);
     }
 
+    public function repartidoresDisponibles(int $ownerId): array
+    {
+        // ── Repartidores unificados para asignación de entregas ──
+        // a) Repartidores empleados (internos) con cargo 'repartidor' y estado activo
+        $repartidoresInternos = Repartidor::where('owner_id', $ownerId)
+            ->where('driver_type', Repartidor::TYPE_EMPLOYEE)
+            ->where('estado', 'disponible')
+            ->whereHas('user.empleado', fn ($q) => $q->where('cargo', 'repartidor'))
+            ->with('user:id,name')
+            ->get()
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'nombre' => $r->user?->name ?? 'Sin nombre',
+                'tipo' => 'interno',
+                'cargo' => 'repartidor',
+                'estado' => $r->estado,
+            ]);
+
+        // b) Freelancers aprobados y disponibles
+        $repartidoresFreelancers = Repartidor::where('owner_id', $ownerId)
+            ->where('driver_type', Repartidor::TYPE_FREELANCER)
+            ->where('approval_status', Repartidor::APPROVAL_APPROVED)
+            ->where('estado', 'disponible')
+            ->with('user:id,name')
+            ->get()
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'nombre' => $r->user?->name ?? 'Sin nombre',
+                'tipo' => 'freelancer',
+                'cargo' => 'repartidor',
+                'estado' => $r->estado,
+            ]);
+
+        return $repartidoresInternos->toBase()
+            ->concat($repartidoresFreelancers)
+            ->values()
+            ->all();
+    }
+
     public function deliveryHistory(Request $request): Response
     {
         return $this->index($request);
@@ -167,6 +172,13 @@ class EntregaController extends Controller implements HasMiddleware
     }
 
     public function store(Request $request): RedirectResponse
+    {
+        $this->crearEntrega($request);
+
+        return redirect()->route('entregas.index');
+    }
+
+    public function crearEntrega(Request $request): Entrega
     {
         $validated = $request->validate([
             'venta_id' => 'nullable|integer|exists:ventas,id',
@@ -240,7 +252,7 @@ class EntregaController extends Controller implements HasMiddleware
             broadcast(new EntregaAsignadaRepartidor($entrega, 'asignado_directo'));
         }
 
-        return redirect()->route('entregas.index');
+        return $entrega;
     }
 
     public function update(Request $request, Entrega $entrega): RedirectResponse

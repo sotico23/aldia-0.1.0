@@ -8,7 +8,7 @@ use App\Helpers\SearchHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\FiltraPorCliente;
 use App\Imports\VentasImport;
-use App\Models\Almacen;
+use App\Livewire\Ventas\Index as VentasIndex;
 use App\Models\Asiento;
 use App\Models\Cliente;
 use App\Models\Cupon;
@@ -33,9 +33,10 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
-use Inertia\Response;
 use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class VentaController extends Controller implements HasMiddleware
@@ -58,165 +59,25 @@ class VentaController extends Controller implements HasMiddleware
         ];
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $ownerId = auth()->user()->getOwnerId();
-        $query = Venta::with(['cliente', 'almacen', 'detalleVentas.producto', 'almacenes'])->where('owner_id', $ownerId)->withExists('entrega')->orderBy('created_at', 'desc');
-
-        if ($this->usuarioEsCliente()) {
-            $query->where(fn ($q) => $q->where(fn ($q) => $q->where('cliente_id', $this->getClienteAuth()->id)));
+        if ($request->header('X-Inertia')) {
+            return Inertia::location(route('ventas.index'));
         }
 
-        $ventas = $query->paginate(15)->through(function ($venta) {
-            // almacen already eager-loaded via with([almacen]) on line 47
+        config(['livewire.csp_safe' => true]);
 
-            return [
-                'id' => $venta->id,
-                'user_id' => $venta->user_id,
-                'puede_enviar' => ! $venta->entrega_exists && in_array($venta->estado, Venta::ESTADOS_PARA_ENTREGA, true),
-                'numero_factura' => $venta->numero_factura,
-                'cliente_id' => $venta->cliente_id,
-                'fecha' => $venta->fecha?->format('Y-m-d'),
-                'subtotal' => $venta->subtotal,
-                'iva' => $venta->iva,
-                'total' => $venta->total,
-                'estado' => $venta->estado,
-                'notas' => $venta->notas,
-                'incluye_iva' => $venta->incluye_iva,
-                'tipo_descuento' => $venta->tipo_descuento,
-                'valor_descuento' => $venta->valor_descuento,
-                'monto_descuento' => $venta->monto_descuento,
-                'almacen_id' => $venta->almacen_id,
-                'almacen_nombre' => $venta->almacen?->nombre,
-                'almacen_ids' => $venta->almacenes->pluck('id'),
-                'almacenes_data' => $venta->almacenes->map(function ($almacen) {
-                    return [
-                        'id' => $almacen->id,
-                        'nombre' => $almacen->nombre,
-                        'pivot' => [
-                            'cantidad_descontada' => $almacen->pivot?->cantidad_descontada ?? 0,
-                        ],
-                    ];
-                }),
-                'cliente' => $venta->cliente,
-                'currency' => $venta->currency ?? 'CLP',
-                'detalle_ventas' => $venta->detalleVentas->map(fn ($d) => [
-                    'id' => $d->id,
-                    'producto_id' => $d->producto_id,
-                    'cantidad' => $d->cantidad,
-                    'precio_unitario' => $d->precio_unitario,
-                    'subtotal' => $d->subtotal,
-                    'producto' => $d->producto,
-                ]),
-            ];
-        });
-        $clientes = Cliente::where('owner_id', $ownerId)->where('activo', true)->get();
-        $productos = Producto::with('inventarios')->where('owner_id', $ownerId)->where('activo', true)->get();
-        $almacenes = Almacen::where('owner_id', $ownerId)->where('activo', true)->get();
-
-        $resumenVentas = [
-            'total_ventas' => Venta::where('owner_id', $ownerId)->count(),
-            'pagadas' => Venta::where('owner_id', $ownerId)->where('estado', 'pagada')->count(),
-            'pendientes' => Venta::where('owner_id', $ownerId)->where('estado', 'pendiente')->count(),
-            'ingresos' => (float) Venta::where('owner_id', $ownerId)->where('estado', 'pagada')->sum('total'),
-        ];
-
-        $months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-        $ventasBase = Venta::where('owner_id', $ownerId);
-
-        // Ventas por Mes (últimos 6 meses)
-        $monthlyData = collect();
-        for ($i = 5; $i >= 0; $i--) {
-            $date = now()->subMonths($i);
-            $key = $date->format('Y-m');
-            $monthlyData->put($key, 0);
-        }
-        $ventasBase->clone()
-            ->where('fecha', '>=', now()->subMonths(5)->startOfMonth())
-            ->selectRaw("DATE_FORMAT(fecha, '%Y-%m') as periodo, SUM(total) as total")
-            ->groupBy('periodo')
-            ->get()
-            ->each(function ($row) use ($monthlyData) {
-                if ($monthlyData->has($row->periodo)) {
-                    $monthlyData->put($row->periodo, (float) $row->total);
-                }
-            });
-        $ventasPorMes = $monthlyData->map(function ($total, $key) use ($months) {
-            $m = (int) substr($key, 5, 2);
-
-            return ['mes' => $months[$m - 1] ?? $key, 'total' => $total];
-        })->values();
-
-        // Ventas por Semana (últimas 6 semanas)
-        $weeklyData = collect();
-        for ($i = 5; $i >= 0; $i--) {
-            $end = now()->subWeeks($i)->endOfWeek();
-            $start = (clone $end)->subDays(6)->startOfDay();
-            $weeklyData->put($start->format('Y-m-d'), [
-                'label' => $start->format('j/n').'-'.$end->format('j/n'),
-                'start' => $start,
-                'end' => $end,
-                'total' => 0,
-            ]);
-        }
-        $ventasBase->clone()
-            ->where('fecha', '>=', $weeklyData->first()['start'])
-            ->where('fecha', '<=', $weeklyData->last()['end'])
-            ->selectRaw('DATE(fecha) as dia, SUM(total) as total')
-            ->groupBy('dia')
-            ->get()
-            ->each(function ($row) use ($weeklyData) {
-                $dt = Carbon::parse($row->dia);
-                $weeklyData->each(function ($week, $key) use ($dt, $row, $weeklyData) {
-                    if ($dt >= $week['start'] && $dt <= $week['end']) {
-                        $current = $weeklyData->get($key);
-                        $current['total'] += (float) $row->total;
-                        $weeklyData->put($key, $current);
-                    }
-                });
-            });
-        $ventasPorSemana = $weeklyData->map(fn ($w) => ['mes' => $w['label'], 'total' => $w['total']])->values();
-
-        // Ventas por Día (últimos 7 días)
-        $dailyData = collect();
-        for ($i = 6; $i >= 0; $i--) {
-            $day = now()->subDays($i)->startOfDay();
-            $dailyData->put($day->format('Y-m-d'), [
-                'label' => $day->format('j/n'),
-                'start' => $day->copy()->startOfDay(),
-                'end' => $day->copy()->endOfDay(),
-                'total' => 0,
-            ]);
-        }
-        $ventasBase->clone()
-            ->where('fecha', '>=', $dailyData->first()['start'])
-            ->where('fecha', '<=', $dailyData->last()['end'])
-            ->selectRaw('DATE(fecha) as dia, SUM(total) as total')
-            ->groupBy('dia')
-            ->get()
-            ->each(function ($row) use ($dailyData) {
-                $key = Carbon::parse($row->dia)->format('Y-m-d');
-                if ($dailyData->has($key)) {
-                    $current = $dailyData->get($key);
-                    $current['total'] += (float) $row->total;
-                    $dailyData->put($key, $current);
-                }
-            });
-        $ventasPorDia = $dailyData->map(fn ($d) => ['mes' => $d['label'], 'total' => $d['total']])->values();
-
-        return Inertia::render('Backend/Ventas/Index', [
-            'ventas' => $ventas,
-            'clientes' => $clientes,
-            'productos' => $productos,
-            'almacenes' => $almacenes,
-            'resumenVentas' => $resumenVentas,
-            'ventasPorMes' => $ventasPorMes,
-            'ventasPorSemana' => $ventasPorSemana,
-            'ventasPorDia' => $ventasPorDia,
-        ]);
+        return app(VentasIndex::class)();
     }
 
     public function store(Request $request): RedirectResponse
+    {
+        $this->crearVenta($request);
+
+        return redirect()->route('ventas.index');
+    }
+
+    public function crearVenta(Request $request): Venta
     {
         Log::info('VentaController::store called', [
             'user_id' => auth()->id(),
@@ -282,7 +143,7 @@ class VentaController extends Controller implements HasMiddleware
 
         // Validar que tenga cliente
         if (! $clienteId) {
-            return back()->withErrors(['cliente_id' => 'Debe seleccionar un cliente o ingresar datos del cliente genérico']);
+            throw ValidationException::withMessages(['cliente_id' => 'Debe seleccionar un cliente o ingresar datos del cliente genérico']);
         }
 
         $subtotal = 0;
@@ -331,7 +192,7 @@ class VentaController extends Controller implements HasMiddleware
                 ->first();
 
             if (! $cupon || ! $cupon->validar((float) $subtotal, auth()->id())) {
-                return back()->withErrors(['cupon_codigo' => 'El cupón ingresado no es válido o ha expirado.']);
+                throw ValidationException::withMessages(['cupon_codigo' => 'El cupón ingresado no es válido o ha expirado.']);
             }
 
             $items = array_map(fn ($item) => [
@@ -378,11 +239,11 @@ class VentaController extends Controller implements HasMiddleware
             $ventaData['tipo_dte'] = $tipoDte;
         }
 
-        $venta = DB::transaction(function () use ($ventaData, $almacenIds, $validated, $cuponId, $cupon, $montoCupon, $total) {
+        return DB::transaction(function () use ($ventaData, $almacenIds, $validated, $cuponId, $cupon, $montoCupon, $total) {
             // Canjear cupón dentro de la transacción (atómico)
             if ($cupon && $cuponId) {
                 if (! $cupon->canjear(auth()->id())) {
-                    throw new \RuntimeException('El cupón no pudo ser canjeado. Verifique que no haya alcanzado el límite de usos.');
+                    throw ValidationException::withMessages(['cupon_codigo' => 'El cupón no pudo ser canjeado. Verifique que no haya alcanzado el límite de usos.']);
                 }
             }
 
@@ -447,8 +308,6 @@ class VentaController extends Controller implements HasMiddleware
 
             return $venta;
         });
-
-        return redirect()->route('ventas.index');
     }
 
     private function verificarStockDisponible(array $productos, array $almacenIds): void
@@ -486,6 +345,13 @@ class VentaController extends Controller implements HasMiddleware
     }
 
     public function update(Request $request, Venta $venta): RedirectResponse
+    {
+        $this->actualizarVenta($request, $venta);
+
+        return redirect()->route('ventas.index');
+    }
+
+    public function actualizarVenta(Request $request, Venta $venta): void
     {
         $this->authorize('update', $venta);
 
@@ -607,11 +473,16 @@ class VentaController extends Controller implements HasMiddleware
         if ($estadoAnterior !== 'pagada' && $venta->estado === 'pagada') {
             $this->procesarPago($venta);
         }
+    }
+
+    public function destroy(Venta $venta): RedirectResponse
+    {
+        $this->eliminarVenta($venta);
 
         return redirect()->route('ventas.index');
     }
 
-    public function destroy(Venta $venta): RedirectResponse
+    public function eliminarVenta(Venta $venta): void
     {
         $this->authorize('delete', $venta);
 
@@ -624,11 +495,16 @@ class VentaController extends Controller implements HasMiddleware
         }
 
         $venta->delete();
-
-        return redirect()->route('ventas.index');
     }
 
     public function updateStatus(Request $request, Venta $venta): RedirectResponse
+    {
+        $this->cambiarEstado($request, $venta);
+
+        return redirect()->back();
+    }
+
+    public function cambiarEstado(Request $request, Venta $venta): void
     {
         $this->authorize('update', $venta);
 
@@ -655,8 +531,6 @@ class VentaController extends Controller implements HasMiddleware
                 $this->restaurarInventario($venta);
             }
         });
-
-        return redirect()->back();
     }
 
     public function downloadPdf(Venta $venta)
@@ -828,6 +702,11 @@ class VentaController extends Controller implements HasMiddleware
 
     public function importCsv(Request $request): RedirectResponse
     {
+        return redirect()->back()->with('success', $this->importarVentas($request));
+    }
+
+    public function importarVentas(Request $request): string
+    {
         $request->validate(['archivo' => 'required|file|mimes:csv,txt,xlsx,xls']);
         $import = new VentasImport(auth()->user()->getOwnerId());
         Excel::import($import, $request->file('archivo'));
@@ -843,7 +722,7 @@ class VentaController extends Controller implements HasMiddleware
             }
         }
 
-        return redirect()->back()->with('success', $message);
+        return $message;
     }
 
     public function importExcel(Request $request): RedirectResponse
