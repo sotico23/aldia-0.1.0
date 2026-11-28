@@ -128,6 +128,9 @@ interface Producto {
     imagen4: string | null;
     imagen5: string | null;
     video: string | null;
+    envio_gratis?: boolean;
+    envio_gratis_comuna?: string | null;
+    precio_envio?: number;
     envase_retornable?: boolean;
     envase_producto_id?: number | null;
     envase_producto?: Producto;
@@ -497,6 +500,9 @@ export default function Index({
         categoria_id: '' as string,
         precio_compra: 0,
         precio_venta: 0,
+        envio_gratis: false,
+        envio_gratis_comuna: "",
+        precio_envio: 0,
         comision_cajero_por_unidad: 0,
         stock_minimo: 0,
         fecha_vencimiento: '',
@@ -1295,6 +1301,9 @@ export default function Index({
             categoria_id: producto.categoria_id?.toString() || '',
             precio_compra: producto.precio_compra,
             precio_venta: producto.precio_venta,
+            envio_gratis: producto.envio_gratis ?? false,
+            envio_gratis_comuna: producto.envio_gratis_comuna ?? "",
+            precio_envio: Number(producto.precio_envio ?? 0),
             comision_cajero_por_unidad:
                 Number(producto.comision_cajero_por_unidad) || 0,
             stock_minimo: producto.stock_minimo,
@@ -2939,6 +2948,25 @@ export default function Index({
                                                         }
                                                         className="h-10 border-none bg-background text-lg font-black text-green-600 shadow-inner focus-visible:ring-green-500/20"
                                                     />
+                                                    <div className="mt-3 space-y-2">
+                                                        <label className="flex items-center gap-2">
+                                                            <input type="checkbox" checked={data.envio_gratis} onChange={(e) => setData('envio_gratis', e.target.checked)} />
+                                                            Envío gratis
+                                                        </label>
+                                                        {data.envio_gratis && (
+                                                            <label className="block">
+                                                                Comuna con envío gratis
+                                                                <Input value={data.envio_gratis_comuna} maxLength={100} placeholder="Vacío para todas las comunas" onChange={(e) => setData('envio_gratis_comuna', e.target.value)} />
+                                                            </label>
+                                                        )}
+                                                        {(!data.envio_gratis || data.envio_gratis_comuna.trim()) && (
+                                                            <label className="block">
+                                                                {data.envio_gratis ? 'Tarifa para otras comunas (CLP)' : 'Tarifa de envío (CLP)'}
+                                                                <Input type="number" min={0} max={99999999} step={1} value={data.precio_envio} onChange={(e) => setData('precio_envio', Number(e.target.value))} />
+                                                            </label>
+                                                        )}
+                                                        {(errors.precio_envio || errors.envio_gratis_comuna) && <p className="text-sm text-red-600">{errors.precio_envio || errors.envio_gratis_comuna}</p>}
+                                                    </div>
                                                     {productoSeVendePorMedida &&
                                                         data.unidad_medida !==
                                                             'unidad' && (

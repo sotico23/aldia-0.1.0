@@ -3,14 +3,11 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Exports\ProductosExport;
-use App\Helpers\SearchHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\HasBulkOperations;
 use App\Imports\ProductosImport;
 use App\Livewire\Productos\Index as ProductosIndex;
 use App\Models\Almacen;
-use App\Models\Categoria;
-use App\Models\Inventario;
 use App\Models\Producto;
 use App\Models\ProductoVariante;
 use App\Models\PublicProfile;
@@ -233,6 +230,9 @@ class ProductoController extends Controller implements HasMiddleware
             'categoria_id' => 'nullable|exists:categorias,id',
             'precio_compra' => 'required|numeric|min:0',
             'precio_venta' => 'required|numeric|min:0',
+            'envio_gratis' => ['sometimes', 'boolean'],
+            'envio_gratis_comuna' => ['nullable', 'string', 'max:100'],
+            'precio_envio' => ['sometimes', 'integer', 'min:0', 'max:99999999'],
             'comision_cajero_por_unidad' => 'nullable|numeric|min:0',
             'stock_minimo' => 'required|integer|min:0',
             'fecha_vencimiento' => 'nullable|date',
@@ -461,6 +461,9 @@ class ProductoController extends Controller implements HasMiddleware
             'categoria_id' => 'nullable|exists:categorias,id',
             'precio_compra' => 'nullable|numeric|min:0',
             'precio_venta' => 'nullable|numeric|min:0',
+            'envio_gratis' => ['sometimes', 'boolean'],
+            'envio_gratis_comuna' => ['nullable', 'string', 'max:100'],
+            'precio_envio' => ['sometimes', 'integer', 'min:0', 'max:99999999'],
             'comision_cajero_por_unidad' => 'nullable|numeric|min:0',
             'stock_minimo' => 'nullable|numeric|min:0',
             'fecha_vencimiento' => 'nullable|date',
@@ -539,6 +542,7 @@ class ProductoController extends Controller implements HasMiddleware
 
         $updateData = array_intersect_key($validated, array_flip([
             'codigo', 'nombre', 'descripcion', 'categoria_id', 'precio_compra',
+            'envio_gratis', 'envio_gratis_comuna', 'precio_envio',
             'precio_venta', 'comision_cajero_por_unidad', 'stock_minimo', 'fecha_vencimiento', 'activo', 'unidad_medida',
             'envase_retornable', 'envase_producto_id', 'tipo_envase', 'medida_pesable',
             'tipo_medida', 'cantidad_medida', 'mostrar_en_perfil',

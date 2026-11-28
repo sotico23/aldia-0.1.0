@@ -261,6 +261,7 @@ class MarketplaceController extends Controller
             'categoria' => $categoria,
             'productos' => $productos,
             'randomProductos' => $randomProductos,
+            'ivaRate' => (float) config('taxes.iva_rate'),
             'paymentConfig' => $paymentConfig ? [
                 'is_active' => (bool) $paymentConfig->is_active,
                 'paypal_active' => (bool) $paymentConfig->paypal_active,

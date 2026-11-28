@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Producto extends Model
 {
@@ -31,6 +32,9 @@ class Producto extends Model
         'categoria_id',
         'precio_compra',
         'precio_venta',
+        'envio_gratis',
+        'envio_gratis_comuna',
+        'precio_envio',
         'comision_cajero_por_unidad',
         'stock_minimo',
         'envase_retornable',
@@ -60,11 +64,27 @@ class Producto extends Model
         'fecha_vencimiento',
     ];
 
+    public function costoEnvioPara(?string $comuna): int
+    {
+        $normalizar = fn (?string $valor): string => (string) Str::of($valor ?? '')
+            ->replace('_', ' ')->ascii()->lower()->squish();
+
+        $zona = $normalizar($this->envio_gratis_comuna);
+
+        if ($this->envio_gratis && ($zona === '' || $zona === $normalizar($comuna))) {
+            return 0;
+        }
+
+        return (int) $this->precio_envio;
+    }
+
     protected function casts(): array
     {
         return [
             'precio_compra' => 'decimal:2',
             'precio_venta' => 'decimal:2',
+            'envio_gratis' => 'boolean',
+            'precio_envio' => 'integer',
             'comision_cajero_por_unidad' => 'decimal:2',
             'activo' => 'boolean',
             'envase_retornable' => 'boolean',

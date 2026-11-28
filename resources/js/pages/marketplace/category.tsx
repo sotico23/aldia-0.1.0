@@ -1,3 +1,4 @@
+import { marketplaceShipping } from '@/lib/marketplace-shipping';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     Store,
@@ -48,6 +49,9 @@ interface Categoria {
 }
 
 interface Producto {
+    envio_gratis?: boolean;
+    envio_gratis_comuna?: string | null;
+    precio_envio?: number;
     id: number;
     nombre: string;
     descripcion: string | null;
@@ -85,6 +89,7 @@ interface Props {
     categoria: Categoria;
     productos: PaginationData<Producto>;
     randomProductos: Producto[];
+    ivaRate: number;
     paymentConfig?: {
         is_active: boolean;
         paypal_active: boolean;
@@ -97,6 +102,7 @@ export default function MarketplaceCategory({
     categoria,
     productos,
     randomProductos,
+    ivaRate,
     paymentConfig,
 }: Props) {
     const { auth, web_settings } = usePage<{
@@ -167,6 +173,7 @@ export default function MarketplaceCategory({
         nombre_cliente: '',
         telefono_cliente: '',
         direccion_cliente: '',
+        comuna: '',
         metodo_pago: 'efectivo',
         notas: '',
     });
@@ -310,6 +317,8 @@ export default function MarketplaceCategory({
     );
 
     const totalItems = Object.values(carrito).reduce((a, b) => a + b, 0);
+    const shipping = marketplaceShipping(productosEnCarrito, datosCheckout.comuna);
+    const tax = totalCarrito * ivaRate;
 
     return (
         <AppLayout
@@ -1104,22 +1113,36 @@ export default function MarketplaceCategory({
                                 )}
                             </div>
                         </div>
+                        <label className="block text-sm">
+                            Comuna de entrega
+                            <Input value={datosCheckout.comuna} maxLength={100} onChange={(e) =>
+                                setDatosCheckout({ ...datosCheckout, comuna: e.target.value })
+                            } />
+                        </label>
                         <div className="mt-2 rounded-lg bg-slate-50 p-3 dark:bg-slate-800">
                             <div className="flex justify-between text-sm">
                                 <span>Subtotal:</span>
                                 <span>${totalCarrito.toFixed(0)}</span>
                             </div>
+                            <div className="flex justify-between text-sm">
+                                <span>Envío:</span>
+                                <span>${shipping.toLocaleString('es-CL')}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span>IVA:</span>
+                                <span>${tax.toFixed(0)}</span>
+                            </div>
                             <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 font-bold dark:border-slate-700">
                                 <span>Total:</span>
                                 <span className="text-primary">
-                                    ${totalCarrito.toFixed(0)}
+                                    ${(totalCarrito + shipping + tax).toFixed(0)}
                                 </span>
                             </div>
                         </div>
                         <Button
                             onClick={enviarCheckout}
                             disabled={
-                                procesando || !datosCheckout.nombre_cliente
+                                procesando || !datosCheckout.nombre_cliente || !datosCheckout.comuna.trim()
                             }
                             className={cn(
                                 'w-full transition-all',

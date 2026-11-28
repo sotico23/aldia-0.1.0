@@ -296,6 +296,9 @@ Route::prefix('v1/marketplace')->middleware('throttle:60,1')->group(function () 
 // Configuración de marca y registro de la aplicación
 Route::get('v1/app/config', [MasterConfigController::class, 'publicConfig']);
 
+Route::get('v1/shop/master/marketplace', [MarketplaceApiController::class, 'masterOverview'])
+    ->middleware(['api-token', 'throttle:api']);
+
 Route::get('v1/shop/branding', [ShopBrandingController::class, 'show'])
     ->middleware('throttle:api');
 Route::post('v1/shop/branding', [ShopBrandingController::class, 'update'])

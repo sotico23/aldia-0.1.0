@@ -1,3 +1,4 @@
+import { marketplaceShipping } from '@/lib/marketplace-shipping';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     Store,
@@ -130,6 +131,9 @@ interface Inventario {
 }
 
 interface Producto {
+    envio_gratis?: boolean;
+    envio_gratis_comuna?: string | null;
+    precio_envio?: number;
     id: number;
     codigo: string;
     nombre: string;
@@ -2365,6 +2369,9 @@ export default function MarketplaceShow({
                                                                 </div>
                                                             </div>
 
+                                                            <p className="text-sm font-semibold">
+                                                                Envío: ${marketplaceShipping(productosEnCarrito, datosCheckout.comuna).toLocaleString('es-CL')}
+                                                            </p>
                                                             <Button
                                                                 onClick={
                                                                     enviarCheckout

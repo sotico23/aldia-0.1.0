@@ -57,6 +57,7 @@ class PedidoController extends Controller
             'nombre_cliente' => 'required|string|max:255',
             'telefono_cliente' => 'nullable|string|max:50',
             'direccion_cliente' => 'nullable|string',
+            'comuna' => ['nullable', 'string', 'max:100'],
             'metodo_pago' => ['nullable', 'string', 'max:100', function ($attribute, $value, $fail) use ($publicProfile) {
                 if (! $value) {
                     return;
@@ -130,12 +131,13 @@ class PedidoController extends Controller
                     'estado' => 'pendiente',
                     'nombre_cliente' => $validated['nombre_cliente'],
                     'telefono_cliente' => $validated['telefono_cliente'] ?? null,
-                    'direccion_cliente' => $validated['direccion_cliente'] ?? null,
+                    'direccion_cliente' => implode(', ', array_filter([$validated['direccion_cliente'] ?? null, isset($validated['comuna']) ? str_replace('_', ' ', $validated['comuna']) : null])) ?: null,
                     'metodo_pago' => $validated['metodo_pago'] ?? null,
                     'notas' => $validated['notas'] ?? null,
                 ]);
 
                 $subtotal = 0;
+                $costoEnvio = 0;
 
                 foreach ($validated['items'] as $item) {
                     $producto = Producto::withoutGlobalScope(OwnerScope::class)
@@ -150,6 +152,7 @@ class PedidoController extends Controller
                     $precio = $producto->precio_venta;
                     $itemSubtotal = $precio * $cantidad;
                     $subtotal += $itemSubtotal;
+                    $costoEnvio = max($costoEnvio, $producto->costoEnvioPara($validated['comuna'] ?? null));
 
                     PedidoItem::create([
                         'pedido_id' => $pedido->id,
@@ -162,12 +165,13 @@ class PedidoController extends Controller
                 }
 
                 $impuesto = $subtotal * config('taxes.iva_rate');
-                $total = $subtotal + $impuesto;
+                $total = $subtotal + $impuesto + $costoEnvio;
 
                 $pedido->update([
                     'subtotal' => $subtotal,
                     'impuesto' => $impuesto,
                     'total' => $total,
+                    'costo_envio' => $costoEnvio,
                 ]);
 
                 // Always create the conversation before any payment redirect

@@ -13,6 +13,7 @@ use App\Scopes\OwnerScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -30,6 +31,9 @@ class MarketplaceApiController extends Controller
     {
         $search = trim((string) $request->query('search', ''));
 
+        $featured = $search === '' && ! $request->filled('category_id')
+            ? $this->featuredStoreIds()
+            : collect();
         $stores = PublicProfile::withoutGlobalScope(OwnerScope::class)
             ->where('is_active', true)
             ->with('user')
@@ -47,15 +51,101 @@ class MarketplaceApiController extends Controller
                         ->where('categorias.activo', true);
                 });
             })
+            ->whereNotIn('public_profiles.id', $featured)
             ->latest()
-            ->limit(100)
+            ->limit(100 - $featured->count())
             ->get()
             ->map(fn (PublicProfile $store): array => $this->storeResource($store));
 
         return response()->json([
             'success' => true,
-            'stores' => $stores,
+            'stores' => $this->featuredStores($featured)->concat($stores),
         ]);
+    }
+
+    public function masterOverview(Request $request): JsonResponse
+    {
+        abort_unless($request->user()?->hasRole('Master'), 403, 'Se requiere el rol Master.');
+
+        $completed = $this->completedOrders();
+        $totals = (clone $completed)->selectRaw('public_profile_id, COUNT(*) AS delivered_orders')
+            ->groupBy('public_profile_id');
+        $profiles = PublicProfile::withoutGlobalScope(OwnerScope::class);
+        $stores = (clone $profiles)->leftJoinSub($totals, 'sales', 'sales.public_profile_id', '=', 'public_profiles.id')
+            ->orderByDesc(DB::raw('COALESCE(sales.delivered_orders, 0)'))
+            ->orderBy('public_profiles.id')
+            ->paginate(25, [
+                'public_profiles.id', 'public_profiles.title', 'public_profiles.slug',
+                'public_profiles.is_active', 'public_profiles.email', 'public_profiles.phone',
+                'public_profiles.created_at', DB::raw('COALESCE(sales.delivered_orders, 0) AS delivered_orders'),
+            ]);
+
+        $products = DB::table('pedido_items')
+            ->joinSub($completed->select(['id', 'public_profile_id']), 'sale', 'sale.id', '=', 'pedido_items.pedido_id')
+            ->join('public_profiles', 'public_profiles.id', '=', 'sale.public_profile_id')
+            ->selectRaw('public_profiles.id AS store_id, public_profiles.title AS store, pedido_items.producto_id, CASE WHEN pedido_items.producto_id IS NULL THEN pedido_items.nombre_producto ELSE NULL END AS historical_name, MAX(pedido_items.nombre_producto) AS name, SUM(pedido_items.cantidad) AS units')
+            ->groupBy('public_profiles.id', 'public_profiles.title', 'pedido_items.producto_id', 'historical_name')
+            ->orderByDesc('units')
+            ->orderBy('store_id')
+            ->orderBy('pedido_items.producto_id')
+            ->orderBy('name')
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'registered_stores' => $stores->total(),
+            'active_stores' => (clone $profiles)->where('is_active', true)->count(),
+            'delivered_orders' => $this->completedOrders()->count(),
+            'featured_stores' => $this->featuredStores($this->featuredStoreIds()),
+            'products' => $products,
+            'stores' => $stores->items(),
+            'page' => $stores->currentPage(),
+            'last_page' => $stores->lastPage(),
+        ]);
+    }
+
+    private function completedOrders(): Builder
+    {
+        return Pedido::withoutGlobalScope(OwnerScope::class)
+            ->where('estado', 'entregado')
+            ->whereNotNull('public_profile_id');
+    }
+
+    private function featuredStoreIds(): Collection
+    {
+        return $this->completedOrders()
+            ->join('public_profiles', 'public_profiles.id', '=', 'pedidos.public_profile_id')
+            ->where('public_profiles.is_active', true)
+            ->selectRaw('pedidos.public_profile_id, COUNT(*) AS delivered_orders')
+            ->groupBy('pedidos.public_profile_id')
+            ->orderByDesc('delivered_orders')
+            ->orderBy('pedidos.public_profile_id')
+            ->limit(3)
+            ->get()
+            ->pluck('public_profile_id');
+    }
+
+    private function featuredStores(Collection $ids): Collection
+    {
+        if ($ids->isEmpty()) {
+            return collect();
+        }
+
+        $profiles = PublicProfile::withoutGlobalScope(OwnerScope::class)
+            ->where('is_active', true)
+            ->whereKey($ids->all())
+            ->with('user')
+            ->withReactionStats()
+            ->get()
+            ->keyBy('id');
+
+        return $ids->map(fn ($id) => $profiles->get($id))
+            ->filter()
+            ->values()
+            ->map(fn (PublicProfile $store, int $index): array => [
+                ...$this->storeResource($store),
+                'featured_rank' => $index + 1,
+            ]);
     }
 
     /** GET /api/v1/marketplace/stores/{slug} */
@@ -141,6 +231,7 @@ class MarketplaceApiController extends Controller
             'nombre_cliente' => ['required', 'string', 'max:255'],
             'telefono_cliente' => ['nullable', 'string', 'max:50'],
             'direccion_entrega' => ['nullable', 'string', 'max:1000'],
+            'comuna' => ['nullable', 'string', 'max:100'],
             'metodo_pago' => ['nullable', 'string', 'max:100'],
             'notas' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1', 'max:100'],
@@ -156,6 +247,7 @@ class MarketplaceApiController extends Controller
         $order = DB::transaction(function () use ($validated, $store, $request): Pedido {
             $lines = [];
             $subtotal = 0.0;
+            $costoEnvio = 0;
 
             foreach ($validated['items'] as $item) {
                 $product = Producto::withoutGlobalScope(OwnerScope::class)
@@ -170,6 +262,7 @@ class MarketplaceApiController extends Controller
                 $quantity = (float) $item['cantidad'];
                 $lineSubtotal = (float) $product->precio_venta * $quantity;
                 $subtotal += $lineSubtotal;
+                $costoEnvio = max($costoEnvio, $product->costoEnvioPara($validated['comuna'] ?? null));
                 $lines[] = [
                     'product' => $product,
                     'quantity' => $quantity,
@@ -187,13 +280,13 @@ class MarketplaceApiController extends Controller
                 'dispatch_mode' => Pedido::DISPATCH_INTERNAL,
                 'nombre_cliente' => $validated['nombre_cliente'],
                 'telefono_cliente' => $validated['telefono_cliente'] ?? null,
-                'direccion_cliente' => $validated['direccion_entrega'] ?? null,
+                'direccion_cliente' => implode(', ', array_filter([$validated['direccion_entrega'] ?? null, $validated['comuna'] ?? null])) ?: null,
                 'metodo_pago' => $validated['metodo_pago'] ?? null,
                 'notas' => $validated['notas'] ?? null,
                 'subtotal' => $subtotal,
                 'impuesto' => 0,
-                'costo_envio' => 0,
-                'total' => $subtotal,
+                'costo_envio' => $costoEnvio,
+                'total' => $subtotal + $costoEnvio,
             ]);
 
             foreach ($lines as $line) {
@@ -375,6 +468,9 @@ class MarketplaceApiController extends Controller
             'nombre' => $product->nombre,
             'descripcion' => $product->descripcion ?? '',
             'precio_venta' => (float) $product->precio_venta,
+            'envio_gratis' => (bool) $product->envio_gratis,
+            'envio_gratis_comuna' => $product->envio_gratis_comuna,
+            'precio_envio' => (int) $product->precio_envio,
             'imagen' => $product->imagen,
             'categoria_id' => $product->categoria_id,
             'categoria_nombre' => $category?->nombre ?? 'General',

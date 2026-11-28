@@ -118,6 +118,26 @@
                         <label class="flex items-center gap-2 text-sm text-teal-900">
                             <input type="checkbox" wire:model.live="form.envase_retornable"> Envase retornable
                         </label>
+                        <div class="col-span-full space-y-3 rounded-lg border border-slate-200 p-3">
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" wire:model.live="form.envio_gratis">
+                                Envío gratis
+                            </label>
+                            @if($form['envio_gratis'] ?? false)
+                                <label class="block">
+                                    Comuna con envío gratis
+                                    <input class="{{ $control }}" wire:model.live.blur="form.envio_gratis_comuna" maxlength="100" placeholder="Vacío para todas las comunas">
+                                </label>
+                                @error('form.envio_gratis_comuna') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                            @endif
+                            @if(!($form['envio_gratis'] ?? false) || filled($form['envio_gratis_comuna'] ?? null))
+                                <label class="block">
+                                    {{ ($form['envio_gratis'] ?? false) ? 'Tarifa para otras comunas (CLP)' : 'Tarifa de envío (CLP)' }}
+                                    <input class="{{ $control }}" type="number" min="0" max="99999999" step="1" wire:model="form.precio_envio">
+                                </label>
+                                @error('form.precio_envio') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                            @endif
+                        </div>
                         @if($form['envase_retornable'] ?? false)
                             <label class="grid gap-1 text-sm text-teal-900">Producto envase
                                 <select class="{{ $control }}" wire:model="form.envase_producto_id">

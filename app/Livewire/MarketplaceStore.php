@@ -36,6 +36,8 @@ class MarketplaceStore extends Component
 
     public string $nuevoComentario = '';
 
+    public string $comunaEntrega = '';
+
     protected $queryString = [
         'tabActivo' => ['except' => 'productos'],
         'filtroAlmacen' => ['except' => null],
@@ -379,6 +381,10 @@ class MarketplaceStore extends Component
             ->latest()
             ->get();
 
+        $itemsCarrito = collect($this->itemsCarrito());
+        $subtotal = (float) $itemsCarrito->sum('subtotal');
+        $envio = (int) $itemsCarrito->max(fn (array $item) => $item['producto']->costoEnvioPara($this->comunaEntrega));
+
         return view('livewire.marketplace-store', [
             'store' => $store,
             'userReaction' => Auth::check() ? $store->reactions()->where('user_id', Auth::id())->first() : null,
@@ -387,8 +393,10 @@ class MarketplaceStore extends Component
             'productos' => $this->productos(),
             'totalProductos' => $this->totalProductos(),
             'reviews' => $reviews,
-            'itemsCarrito' => $this->itemsCarrito(),
-            'totalCarrito' => $this->totalCarrito(),
+            'itemsCarrito' => $itemsCarrito->all(),
+            'subtotalCarrito' => $subtotal,
+            'envioCarrito' => $envio,
+            'totalCarrito' => $subtotal + $subtotal * config('taxes.iva_rate') + $envio,
             'unidadesCarrito' => $this->unidadesCarrito(),
             'promedio' => $this->promedioValoracion(),
             'haComprado' => $this->haComprado($store),

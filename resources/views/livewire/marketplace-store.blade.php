@@ -566,7 +566,12 @@
                     @endforeach
                 </ul>
 
-                <div class="mt-4 flex items-center justify-between border-t border-slate-200 pt-3">
+                <div class="mt-4 space-y-1 border-t border-slate-200 pt-3 text-sm text-slate-600">
+                    <div class="flex justify-between"><span>Subtotal</span><span>${{ number_format($subtotalCarrito, 0, ',', '.') }}</span></div>
+                    <div class="flex justify-between"><span>Envío</span><span>{{ $envioCarrito ? '$'.number_format($envioCarrito, 0, ',', '.') : 'Gratis' }}</span></div>
+                    <div class="flex justify-between"><span>IVA</span><span>${{ number_format($totalCarrito - $subtotalCarrito - $envioCarrito, 0, ',', '.') }}</span></div>
+                </div>
+                <div class="mt-2 flex items-center justify-between">
                     <span class="text-sm font-semibold text-slate-600">Total</span>
                     <span class="text-lg font-bold text-slate-900">${{ number_format($totalCarrito, 0, ',', '.') }}</span>
                 </div>
@@ -609,6 +614,18 @@
                             placeholder="Dirección de entrega"
                             class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
                         >
+
+                        <label class="block text-sm">
+                            Comuna de entrega
+                            <input
+                                type="text"
+                                name="comuna"
+                                wire:model.live.debounce.350ms="comunaEntrega"
+                                maxlength="100"
+                                required
+                                class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                            >
+                        </label>
 
                         <select
                             name="metodo_pago"

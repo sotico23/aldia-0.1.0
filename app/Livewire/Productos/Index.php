@@ -255,7 +255,7 @@ class Index extends Component
             : 'comercial.productos.edit');
 
         $datos = $this->form;
-        foreach (['activo', 'envase_retornable', 'medida_pesable', 'mostrar_en_perfil', 'tiene_variantes'] as $booleano) {
+        foreach (['activo', 'envio_gratis', 'envase_retornable', 'medida_pesable', 'mostrar_en_perfil', 'tiene_variantes'] as $booleano) {
             $datos[$booleano] = ! empty($datos[$booleano]) ? '1' : '0';
         }
 
@@ -266,7 +266,7 @@ class Index extends Component
         }
 
         // La petición sintética no pasa por ConvertEmptyStringsToNull.
-        foreach (['codigo', 'categoria_id', 'fecha_vencimiento', 'tipo_envase', 'envase_producto_id'] as $nullable) {
+        foreach (['codigo', 'categoria_id', 'fecha_vencimiento', 'tipo_envase', 'envase_producto_id', 'envio_gratis_comuna'] as $nullable) {
             if (($datos[$nullable] ?? '') === '') {
                 $datos[$nullable] = null;
             }
@@ -396,6 +396,7 @@ class Index extends Component
         return [
             'codigo' => '', 'nombre' => '', 'descripcion' => '', 'categoria_id' => '',
             'precio_compra' => 0, 'precio_venta' => 0, 'comision_cajero_por_unidad' => 0,
+            'envio_gratis' => false, 'envio_gratis_comuna' => '', 'precio_envio' => 0,
             'stock_minimo' => 0, 'fecha_vencimiento' => '', 'stock' => 0,
             'warehouse_ids' => [], 'unidad_medida' => 'unidad', 'activo' => true,
             'envase_retornable' => false, 'envase_producto_id' => '', 'medida_pesable' => false,

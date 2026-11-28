@@ -22,6 +22,9 @@ test('crea un producto desde el modal Livewire', function () {
         ->set('form.nombre', 'Producto Livewire')
         ->set('form.precio_compra', 1000)
         ->set('form.precio_venta', 2000)
+        ->set('form.envio_gratis', true)
+        ->set('form.envio_gratis_comuna', 'Ñuñoa')
+        ->set('form.precio_envio', 3000)
         ->set('form.stock', 10)
         ->call('guardar')
         ->assertHasNoErrors()
@@ -31,6 +34,9 @@ test('crea un producto desde el modal Livewire', function () {
     $this->assertDatabaseHas('productos', [
         'codigo' => 'LIVE-001',
         'nombre' => 'Producto Livewire',
+        'envio_gratis' => true,
+        'envio_gratis_comuna' => 'Ñuñoa',
+        'precio_envio' => 3000,
         'owner_id' => $this->user->getOwnerId(),
     ]);
 });
