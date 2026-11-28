@@ -99,6 +99,9 @@ Route::prefix('v1/auth')->middleware(['throttle:api-auth'])->group(function () {
         ->middleware('throttle:two-factor-api')
         ->name('api.v1.auth.two-factor.verify');
 
+    Route::post('shop/exchange', [AuthController::class, 'exchangeShopLogin'])
+        ->name('api.v1.auth.shop.exchange');
+
     Route::post('refresh', [AuthController::class, 'refresh'])
         ->name('api.v1.auth.refresh');
 

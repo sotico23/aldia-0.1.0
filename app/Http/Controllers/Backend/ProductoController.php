@@ -7,6 +7,7 @@ use App\Helpers\SearchHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\HasBulkOperations;
 use App\Imports\ProductosImport;
+use App\Livewire\Productos\Index as ProductosIndex;
 use App\Models\Almacen;
 use App\Models\Categoria;
 use App\Models\Inventario;
@@ -27,7 +28,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
-use Inertia\Response;
+use Inertia\Response as InertiaResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class ProductoController extends Controller implements HasMiddleware
 {
@@ -186,7 +188,7 @@ class ProductoController extends Controller implements HasMiddleware
         return new ProductosImport;
     }
 
-    public function show(Producto $producto): Response
+    public function show(Producto $producto): InertiaResponse
     {
         $producto->load(['categoria', 'inventario.almacen', 'variantes.inventarios.almacen']);
 
@@ -195,7 +197,7 @@ class ProductoController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function ver(Producto $producto): Response
+    public function ver(Producto $producto): InertiaResponse
     {
         $producto->load(['categoria', 'inventario.almacen', 'variantes.inventarios.almacen']);
 
@@ -206,101 +208,23 @@ class ProductoController extends Controller implements HasMiddleware
 
     public function index(Request $request): Response
     {
-        $userId = Auth::user()->getOwnerId();
-
-        $query = Producto::with(['categoria', 'inventario.almacen', 'inventarios.almacen', 'envaseProducto', 'skus.valores.varianteValor'])
-            ->where('owner_id', $userId)
-            ->whereNull('parent_id');
-
-        if ($request->filled('search')) {
-            $search = SearchHelper::escapeLike($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->where('nombre', 'like', "%{$search}%")
-                    ->orWhere('codigo', 'like', "%{$search}%")
-                    ->orWhere('descripcion', 'like', "%{$search}%");
-            });
+        if ($request->header('X-Inertia')) {
+            return Inertia::location(route('productos.index'));
         }
 
-        if ($request->filled('categoria_id')) {
-            $query->where('categoria_id', $request->input('categoria_id'));
-        }
+        config(['livewire.csp_safe' => true]);
 
-        if ($request->boolean('stock_bajo')) {
-            $query->whereHas('inventario', function ($q) {
-                $q->whereColumn('cantidad', '<=', 'cantidad_minima');
-            });
-        }
-
-        if ($request->filled('almacen_id')) {
-            $query->whereHas('inventarios', function ($q) use ($request) {
-                $q->where('almacen_id', $request->input('almacen_id'));
-            });
-        }
-
-        $sort = (string) $request->input('sort', '');
-        $direction = $request->input('direction') === 'desc' ? 'desc' : 'asc';
-
-        $sortableColumns = [
-            'nombre' => 'productos.nombre',
-            'descripcion' => 'productos.descripcion',
-            'precio_venta' => 'productos.precio_venta',
-            'estado' => 'productos.activo',
-        ];
-
-        if (isset($sortableColumns[$sort])) {
-            $query->orderBy($sortableColumns[$sort], $direction);
-        } elseif ($sort === 'categoria') {
-            $query->orderBy(
-                Categoria::query()
-                    ->select('nombre')
-                    ->whereColumn('categorias.id', 'productos.categoria_id'),
-                $direction,
-            );
-        } elseif ($sort === 'stock') {
-            $query->orderBy(
-                Inventario::query()
-                    ->selectRaw('COALESCE(SUM(cantidad), 0)')
-                    ->whereColumn('inventarios.producto_id', 'productos.id'),
-                $direction,
-            );
-        } else {
-            $query->orderBy('productos.created_at', 'desc');
-        }
-
-        $query->orderBy('productos.id');
-
-        $productos = $query->paginate(15)->withQueryString();
-
-        $categorias = Categoria::where('tipo', 'producto')
-            ->where('activo', true)
-            ->where('owner_id', $userId)
-            ->get();
-
-        $almacenes = Almacen::where('activo', true)
-            ->where('owner_id', $userId)
-            ->get();
-
-        $productosEnvase = Producto::where('owner_id', $userId)
-            ->where('activo', true)
-            ->orderBy('nombre')
-            ->get(['id', 'nombre', 'codigo']);
-
-        $variantesDisponibles = Variante::with('valores')
-            ->where('owner_id', $userId)
-            ->where('activo', true)
-            ->get();
-
-        return Inertia::render('Backend/Productos/Index', [
-            'productos' => $productos,
-            'categorias' => $categorias,
-            'almacenes' => $almacenes,
-            'productosEnvase' => $productosEnvase,
-            'variantesDisponibles' => $variantesDisponibles,
-            'filters' => $request->only(['search', 'categoria_id', 'stock_bajo', 'almacen_id', 'sort', 'direction']),
-        ]);
+        return app(ProductosIndex::class)();
     }
 
     public function store(Request $request): RedirectResponse
+    {
+        $this->crearProducto($request);
+
+        return redirect()->route('productos.index');
+    }
+
+    public function crearProducto(Request $request): Producto
     {
         $validated = $request->validate([
             'codigo' => 'nullable|string|max:50|unique:productos,codigo',
@@ -518,10 +442,17 @@ class ProductoController extends Controller implements HasMiddleware
             $producto->update(['envase_producto_id' => $producto->id]);
         }
 
-        return redirect()->route('productos.index');
+        return $producto;
     }
 
     public function update(Request $request, Producto $producto): RedirectResponse
+    {
+        $this->actualizarProducto($request, $producto);
+
+        return redirect()->route('productos.index');
+    }
+
+    public function actualizarProducto(Request $request, Producto $producto): void
     {
         $validated = $request->validate([
             'codigo' => 'nullable|string|max:50|unique:productos,codigo,'.$producto->id,
@@ -809,17 +740,21 @@ class ProductoController extends Controller implements HasMiddleware
             $producto->update(['envase_producto_id' => $producto->id]);
         }
 
-        return redirect()->route('productos.index');
     }
 
     public function destroy(Producto $producto): RedirectResponse
+    {
+        $this->eliminarProducto($producto);
+
+        return to_route('productos.index')->with('success', 'Producto eliminado correctamente.');
+    }
+
+    public function eliminarProducto(Producto $producto): void
     {
         if ($producto->owner_id !== Auth::user()->getOwnerId()) {
             abort(403, 'No tienes permiso para eliminar este producto.');
         }
 
         $producto->delete();
-
-        return to_route('productos.index')->with('success', 'Producto eliminado correctamente.');
     }
 }

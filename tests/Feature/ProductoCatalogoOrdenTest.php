@@ -1,10 +1,11 @@
 <?php
 
+use App\Livewire\Productos\Index;
 use App\Models\Almacen;
 use App\Models\Inventario;
 use App\Models\Producto;
 use App\Models\User;
-use Inertia\Testing\AssertableInertia as Assert;
+use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
 
 function crearProductoCatalogo(User $user, string $nombre, array $attributes = []): Producto
@@ -19,6 +20,12 @@ function crearProductoCatalogo(User $user, string $nombre, array $attributes = [
     ], $attributes));
 }
 
+/** @return array<int, string> */
+function nombresDelCatalogo($paginator): array
+{
+    return $paginator->getCollection()->pluck('nombre')->values()->all();
+}
+
 beforeEach(function () {
     $this->user = User::factory()->create();
     $this->user->syncRoles([]);
@@ -29,27 +36,34 @@ beforeEach(function () {
     $this->actingAs($this->user);
 });
 
-test('ordena el catálogo por precio de venta de menor a mayor y de mayor a menor', function () {
+test('la página se abre como Livewire y expulsa a Inertia', function () {
+    $this->withoutVite();
+
+    $this->get(route('productos.index'))
+        ->assertOk()
+        ->assertSeeLivewire(Index::class)
+        ->assertSee('livewire.csp', false);
+
+    $this->get(route('productos.index'), ['X-Inertia' => 'true'])
+        ->assertStatus(409)
+        ->assertHeader('X-Inertia-Location', route('productos.index'));
+});
+
+test('ordena el catálogo por precio de venta en ambos sentidos', function () {
     crearProductoCatalogo($this->user, 'Producto económico', ['precio_venta' => 1000]);
     crearProductoCatalogo($this->user, 'Producto premium', ['precio_venta' => 9000]);
     crearProductoCatalogo($this->user, 'Producto intermedio', ['precio_venta' => 5000]);
 
-    $this->get(route('productos.index', ['sort' => 'precio_venta', 'direction' => 'asc']))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('filters.sort', 'precio_venta')
-            ->where('filters.direction', 'asc')
-            ->where('productos.data.0.nombre', 'Producto económico')
-            ->where('productos.data.1.nombre', 'Producto intermedio')
-            ->where('productos.data.2.nombre', 'Producto premium'));
-
-    $this->get(route('productos.index', ['sort' => 'precio_venta', 'direction' => 'desc']))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('filters.direction', 'desc')
-            ->where('productos.data.0.nombre', 'Producto premium')
-            ->where('productos.data.1.nombre', 'Producto intermedio')
-            ->where('productos.data.2.nombre', 'Producto económico'));
+    Livewire::test(Index::class)
+        ->set('orden', 'precio_venta')
+        ->set('direccion', 'asc')
+        ->assertViewHas('productos', fn ($productos): bool => nombresDelCatalogo($productos) === [
+            'Producto económico', 'Producto intermedio', 'Producto premium',
+        ])
+        ->set('direccion', 'desc')
+        ->assertViewHas('productos', fn ($productos): bool => nombresDelCatalogo($productos) === [
+            'Producto premium', 'Producto intermedio', 'Producto económico',
+        ]);
 });
 
 test('ordena el catálogo por stock total sumando todos los almacenes', function () {
@@ -60,47 +74,25 @@ test('ordena el catálogo por stock total sumando todos los almacenes', function
     $mucho = crearProductoCatalogo($this->user, 'Mucho stock');
     $medio = crearProductoCatalogo($this->user, 'Stock medio');
 
-    Inventario::factory()->create([
-        'producto_id' => $poco->id,
-        'owner_id' => $this->user->getOwnerId(),
-        'almacen_id' => $almacenA->id,
-        'cantidad' => 3,
-    ]);
+    foreach ([[$poco, $almacenA, 3], [$medio, $almacenA, 20], [$mucho, $almacenA, 30], [$mucho, $almacenB, 40]] as [$producto, $almacen, $cantidad]) {
+        Inventario::factory()->create([
+            'producto_id' => $producto->id,
+            'owner_id' => $this->user->getOwnerId(),
+            'almacen_id' => $almacen->id,
+            'cantidad' => $cantidad,
+        ]);
+    }
 
-    Inventario::factory()->create([
-        'producto_id' => $medio->id,
-        'owner_id' => $this->user->getOwnerId(),
-        'almacen_id' => $almacenA->id,
-        'cantidad' => 20,
-    ]);
-
-    Inventario::factory()->create([
-        'producto_id' => $mucho->id,
-        'owner_id' => $this->user->getOwnerId(),
-        'almacen_id' => $almacenA->id,
-        'cantidad' => 30,
-    ]);
-
-    Inventario::factory()->create([
-        'producto_id' => $mucho->id,
-        'owner_id' => $this->user->getOwnerId(),
-        'almacen_id' => $almacenB->id,
-        'cantidad' => 40,
-    ]);
-
-    $this->get(route('productos.index', ['sort' => 'stock', 'direction' => 'asc']))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('productos.data.0.nombre', 'Poco stock')
-            ->where('productos.data.1.nombre', 'Stock medio')
-            ->where('productos.data.2.nombre', 'Mucho stock'));
-
-    $this->get(route('productos.index', ['sort' => 'stock', 'direction' => 'desc']))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('productos.data.0.nombre', 'Mucho stock')
-            ->where('productos.data.1.nombre', 'Stock medio')
-            ->where('productos.data.2.nombre', 'Poco stock'));
+    Livewire::test(Index::class)
+        ->set('orden', 'stock')
+        ->set('direccion', 'asc')
+        ->assertViewHas('productos', fn ($productos): bool => nombresDelCatalogo($productos) === [
+            'Poco stock', 'Stock medio', 'Mucho stock',
+        ])
+        ->set('direccion', 'desc')
+        ->assertViewHas('productos', fn ($productos): bool => nombresDelCatalogo($productos) === [
+            'Mucho stock', 'Stock medio', 'Poco stock',
+        ]);
 });
 
 test('ordena el catálogo alfabéticamente por nombre', function () {
@@ -108,30 +100,27 @@ test('ordena el catálogo alfabéticamente por nombre', function () {
     crearProductoCatalogo($this->user, 'Aguacate');
     crearProductoCatalogo($this->user, 'Mango');
 
-    $this->get(route('productos.index', ['sort' => 'nombre', 'direction' => 'asc']))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('productos.data.0.nombre', 'Aguacate')
-            ->where('productos.data.1.nombre', 'Mango')
-            ->where('productos.data.2.nombre', 'Zanahoria'));
-
-    $this->get(route('productos.index', ['sort' => 'nombre', 'direction' => 'desc']))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('productos.data.0.nombre', 'Zanahoria')
-            ->where('productos.data.1.nombre', 'Mango')
-            ->where('productos.data.2.nombre', 'Aguacate'));
+    Livewire::test(Index::class)
+        ->set('orden', 'nombre')
+        ->set('direccion', 'asc')
+        ->assertViewHas('productos', fn ($productos): bool => nombresDelCatalogo($productos) === [
+            'Aguacate', 'Mango', 'Zanahoria',
+        ])
+        ->set('direccion', 'desc')
+        ->assertViewHas('productos', fn ($productos): bool => nombresDelCatalogo($productos) === [
+            'Zanahoria', 'Mango', 'Aguacate',
+        ]);
 });
 
 test('ignora un criterio de ordenamiento no permitido', function () {
     $antiguo = crearProductoCatalogo($this->user, 'Producto antiguo');
     $antiguo->forceFill(['created_at' => now()->subDay()])->save();
-
     $reciente = crearProductoCatalogo($this->user, 'Producto reciente');
 
-    $this->get(route('productos.index', ['sort' => 'precio_venta desc; drop table productos', 'direction' => 'desc']))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('productos.data.0.nombre', $reciente->nombre)
-            ->where('productos.data.1.nombre', $antiguo->nombre));
+    Livewire::test(Index::class)
+        ->set('orden', 'precio_venta desc; drop table productos')
+        ->set('direccion', 'desc')
+        ->assertViewHas('productos', fn ($productos): bool => nombresDelCatalogo($productos) === [
+            $reciente->nombre, $antiguo->nombre,
+        ]);
 });

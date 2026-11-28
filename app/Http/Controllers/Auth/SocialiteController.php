@@ -79,7 +79,8 @@ class SocialiteController extends Controller
 
             Auth::login($user);
 
-            return redirect()->intended(route('dashboard'));
+            return app(ShopSocialLoginController::class)->complete(request(), $provider)
+                ?? redirect()->intended(route('dashboard'));
         }
 
         $user = User::create([
@@ -95,6 +96,7 @@ class SocialiteController extends Controller
 
         Auth::login($user);
 
-        return redirect()->intended(route('dashboard'));
+        return app(ShopSocialLoginController::class)->complete(request(), $provider)
+                ?? redirect()->intended(route('dashboard'));
     }
 }

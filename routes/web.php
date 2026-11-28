@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\SystemHealthController;
 use App\Http\Controllers\AffiliateController;
 use App\Http\Controllers\Api\Delivery\DeliveryOrdenController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\Auth\ShopSocialLoginController;
 use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\Auth\TelegramAuthController;
 use App\Http\Controllers\Backend\ApiIntegrationController;
@@ -364,6 +365,10 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/documentos/{documento}', [ProveedorDashboardController::class, 'deleteDocument'])->name('documentos.destroy');
     });
 });
+
+Route::get('/shop/auth/{provider}', [ShopSocialLoginController::class, 'start'])
+    ->whereIn('provider', ['google', 'telegram', 'facebook'])
+    ->middleware('throttle:api-auth');
 
 // Telegram Login Widget: rutas dedicadas, antes del grupo genérico para darles prioridad.
 // El widget incrustado en la página de login envía su payload firmado (GET o POST) al

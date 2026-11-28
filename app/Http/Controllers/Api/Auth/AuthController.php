@@ -12,6 +12,7 @@ use App\Services\Auth\ApiAuthService;
 use App\Services\Auth\TwoFactorChallengeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Laravel\Fortify\Fortify;
 use Laravel\Fortify\TwoFactorAuthenticationProvider;
@@ -56,6 +57,37 @@ class AuthController extends Controller
 
             return $this->error((string) $reason, 403);
         }
+
+        return $this->startSession($user, $deviceName, $request);
+    }
+
+    public function exchangeShopLogin(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string', 'regex:/\A[a-f0-9]{64}\z/'],
+            'verifier' => ['required', 'string', 'regex:/\A[A-Za-z0-9_-]{43}\z/'],
+        ]);
+
+        $challenge = hash('sha256', $data['verifier']);
+        $key = 'shop-login:'.hash('sha256', $data['code']).':'.$challenge;
+        $userId = Cache::lock($key.':lock', 10)->get(fn () => Cache::pull($key));
+        $user = $userId ? User::find($userId) : null;
+
+        if (! $user instanceof User) {
+            return $this->error('El inicio de sesión expiró. Inténtalo nuevamente.', 401);
+        }
+
+        [$allowed, $reason] = $this->auth->accountStatus($user);
+        if (! $allowed) {
+            return $this->error((string) $reason, 403);
+        }
+
+        return $this->startSession($user, 'RedClienteShop', $request);
+    }
+
+    private function startSession(User $user, string $deviceName, Request $request): JsonResponse
+    {
+        $email = (string) $user->email;
 
         // Verificacion en dos pasos: se devuelve un desafio opaco en lugar del
         // token. El cliente debe llamar a /api/v1/auth/two-factor/verify.

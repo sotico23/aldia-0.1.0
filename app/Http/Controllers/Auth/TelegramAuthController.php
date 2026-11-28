@@ -32,7 +32,14 @@ class TelegramAuthController extends Controller
         }
 
         try {
-            return Socialite::driver('telegram')->redirect();
+            $provider = Socialite::driver('telegram');
+            $pending = $request->session()->get('shop_social_login');
+
+            if (($pending['provider'] ?? null) === 'telegram' && $pending['expires_at'] >= now()->getTimestamp()) {
+                $provider->redirectUrl(route('telegram.callback', ['shop_state' => $pending['telegram_state']]));
+            }
+
+            return $provider->redirect();
         } catch (\Throwable $e) {
             Log::error('Telegram login widget falló', ['message' => $e->getMessage(), 'class' => get_class($e)]);
 
@@ -44,6 +51,14 @@ class TelegramAuthController extends Controller
 
     public function callback(Request $request): RedirectResponse
     {
+        $pending = $request->session()->get('shop_social_login');
+        if (($pending['provider'] ?? null) === 'telegram' && $pending['expires_at'] >= now()->getTimestamp()) {
+            $state = $request->query('shop_state');
+            if (! is_string($state) || ! hash_equals($pending['telegram_state'], $state)) {
+                abort(403, 'La sesión de Telegram expiró o es inválida.');
+            }
+        }
+
         try {
             $payload = $this->telegramAuthService->verify($request);
         } catch (TelegramAuthException $e) {
@@ -59,7 +74,8 @@ class TelegramAuthController extends Controller
         if ($existing) {
             Auth::login($existing);
 
-            return redirect()->intended(route('dashboard'));
+            return app(ShopSocialLoginController::class)->complete(request(), 'telegram')
+                ?? redirect()->intended(route('dashboard'));
         }
 
         if ($payload['email']) {
@@ -67,7 +83,8 @@ class TelegramAuthController extends Controller
 
             Auth::login($user);
 
-            return redirect()->intended(route('dashboard'));
+            return app(ShopSocialLoginController::class)->complete(request(), 'telegram')
+                ?? redirect()->intended(route('dashboard'));
         }
 
         session()->put('telegram_pending', [
@@ -168,6 +185,7 @@ class TelegramAuthController extends Controller
 
         Auth::login($user);
 
-        return redirect()->intended(route('dashboard'));
+        return app(ShopSocialLoginController::class)->complete(request(), 'telegram')
+                ?? redirect()->intended(route('dashboard'));
     }
 }
