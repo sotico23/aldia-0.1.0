@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\Pos\PosApiController;
 use App\Http\Controllers\Api\TenantDataController;
 use App\Http\Controllers\Api\TrackingController;
 use App\Http\Controllers\Api\V1\MasterConfigController;
+use App\Http\Controllers\Api\V1\ShopBrandingController;
 use App\Http\Controllers\Backend\GlobalSearchController;
 use App\Http\Controllers\Backend\RepartidorSolicitudesController;
 use App\Http\Controllers\Backend\SiiController;
@@ -294,6 +295,11 @@ Route::prefix('v1/marketplace')->middleware('throttle:60,1')->group(function () 
 
 // Configuración de marca y registro de la aplicación
 Route::get('v1/app/config', [MasterConfigController::class, 'publicConfig']);
+
+Route::get('v1/shop/branding', [ShopBrandingController::class, 'show'])
+    ->middleware('throttle:api');
+Route::post('v1/shop/branding', [ShopBrandingController::class, 'update'])
+    ->middleware(['api-token', 'throttle:api']);
 
 // Panel Master: Métricas de Rendimiento y Configuración Global del App
 Route::prefix('v1/master')
